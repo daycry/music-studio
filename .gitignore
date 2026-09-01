@@ -23,3 +23,6 @@ apps/runner/spikes/out/
 
 # Cache de pytest
 .pytest_cache/
+
+# Script de workflow temporal (no forma parte del proyecto)
+.wf-*.js
