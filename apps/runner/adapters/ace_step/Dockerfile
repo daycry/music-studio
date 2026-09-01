@@ -206,7 +206,18 @@ RUN python -c 'import sys, torch; \
 # CUDA correcta. Pedirlo aqui invita a pip a traer la rueda de PyPI (que es
 # CPU-only) y a dejar la GPU muerta en silencio. La segunda asercion re-comprueba
 # `arch_list` DESPUES de instalar, que es la garantia de verdad.
-RUN pip install --no-cache-dir --disable-pip-version-check \
+#
+# `--break-system-packages` (PEP 668): MEDIDO el 2026-09-01, el primer intento de
+# build fallo aqui con "externally-managed-environment". La base
+# `pytorch/pytorch:2.13.0-cuda12.6-cudnn9-runtime` ya no trae conda: es un Python
+# 3.12 de Debian marcado como gestionado por el sistema, y pip se niega a tocarlo.
+# En una imagen de contenedor la advertencia no aplica —el "sistema" ES esta
+# imagen, desechable y reconstruible desde este fichero—, asi que se acepta la
+# ruptura en vez de montar un venv que solo anadiria una capa y una ruta mas que
+# recordar en el ENTRYPOINT. Lo que NO se hace es instalar torch por pip (ver el
+# parrafo de arriba): eso si romperia la GPU en silencio, y por eso la segunda
+# asercion vuelve a comprobar `arch_list` despues de esta linea.
+RUN pip install --no-cache-dir --disable-pip-version-check --break-system-packages \
         transformers==5.16.1 \
         tokenizers==0.23.1 \
         safetensors==0.8.0 \
