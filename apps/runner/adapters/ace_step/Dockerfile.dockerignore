@@ -1,0 +1,125 @@
+# =============================================================================
+# Exclusiones del contexto de build del runner de ACE-Step — T-05
+# =============================================================================
+# POR QUE ESTE NOMBRE Y NO `.dockerignore`
+# ----------------------------------------
+# El contexto de build de esta imagen es `apps/runner` (ver el Dockerfile), y el
+# Dockerfile vive en un subdirectorio del contexto. Docker solo lee un
+# `.dockerignore` situado en la **raiz del contexto**, asi que un fichero
+# llamado `.dockerignore` en esta carpeta no lo leeria nadie: seria decoracion
+# que da una falsa sensacion de seguridad. BuildKit, en cambio, busca primero
+# `<ruta-del-dockerfile>.dockerignore`, que es exactamente este fichero. Es el
+# unico nombre que hace efecto con este reparto de rutas.
+#
+# Requiere BuildKit (Docker 23+; la maquina tiene 29.7.2, que lo usa por
+# defecto). Con `DOCKER_BUILDKIT=0` este fichero se ignora y el contexto se
+# envia entero: no lo hagas.
+#
+# ESTRATEGIA: DENEGAR TODO Y RE-INCLUIR LO JUSTO
+# ----------------------------------------------
+# Una lista negra deja pasar lo que nadie previo. Aqui se empieza excluyendo
+# todo el contexto y se re-incluyen solo los tres arboles que el Dockerfile
+# copia. Asi, cuando alguien deje un `.env`, un `.safetensors` de 6 GB o un
+# volcado de credenciales en `apps/runner`, **no entrara en el contexto** por
+# omision: es la lectura literal de D-14 (los pesos van montados, nunca en la
+# imagen) y de D-15 (ninguna credencial cerca del runner).
+#
+# Si un COPY del Dockerfile falla con "file not found", casi siempre es que su
+# ruta no esta re-incluida aqui. Para inspeccionar lo que se manda de verdad:
+#   docker build --no-cache --progress=plain -t ctx-check \
+#       -f apps/runner/adapters/ace_step/Dockerfile apps/runner
+# Es un fallo ruidoso e inmediato, nunca silencioso.
+# =============================================================================
+
+# --- 1. Denegar todo el contexto ---------------------------------------------
+**
+
+# --- 2. Re-incluir solo lo que el Dockerfile copia ----------------------------
+# Se re-incluyen el directorio y su contenido por separado: segun la
+# implementacion del emparejador, re-incluir solo el directorio no basta para
+# que sus hijos vuelvan, y re-incluir solo los hijos no basta para que se
+# recorra el directorio. Poner las dos formas es inofensivo y robusto.
+!contracts.py
+!spikes/_timing.py
+!spikes/_mock.py
+!adapters
+!adapters/**
+
+# --- 3. Re-excluir la basura que vive dentro de lo re-incluido ----------------
+# El orden importa: gana la ultima regla que casa, asi que estas van despues.
+**/__pycache__
+**/__pycache__/**
+**/*.py[cod]
+**/.pytest_cache
+**/.pytest_cache/**
+**/.mypy_cache
+**/.mypy_cache/**
+**/.ruff_cache
+**/.ruff_cache/**
+
+# --- 4. Guardia dura: pesos y artefactos de modelo ----------------------------
+# Los pesos se MONTAN en /weights. Que nunca entren en el contexto no es solo
+# higiene de tamano: es lo que mantiene medible el arranque en frio de T-03 y lo
+# que impide que un `.pt`/`.pkl` en cuarentena acabe dentro de una imagen (D-14:
+# deserializar un pickle ejecuta el codigo que lleve dentro).
+**/*.safetensors
+**/*.pt
+**/*.pth
+**/*.bin
+**/*.ckpt
+**/*.pkl
+**/*.pickle
+**/*.onnx
+**/*.gguf
+**/*.npz
+
+# --- 5. Guardia dura: credenciales (D-15) -------------------------------------
+# El runner corre sin credenciales persistentes. Estas reglas existen para que
+# un despiste local no se convierta en una capa de imagen publicada.
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/id_rsa*
+**/id_ed25519*
+**/.netrc
+**/.git-credentials
+**/.aws
+**/.ssh
+**/credentials
+**/credentials.*
+**/secrets
+**/secrets.*
+**/*.secret
+**/service-account*.json
+# Deliberadamente NO se usa un comodin tipo `**/*token*`: excluiria de tapadillo
+# codigo legitimo del shim (`tokenizer*.py`, `detokenizer*.py`) y el fallo se
+# manifestaria como un ImportError incomprensible dentro del contenedor.
+
+# --- 6. Salidas de spikes y audio generado ------------------------------------
+# Informes de perfilado y pistas de prueba: pueden pesar y no aportan nada a la
+# inferencia. El audio de G1 se guarda fuera del repositorio.
+**/outputs
+**/outputs/**
+**/*.wav
+**/*.flac
+**/*.mp3
+**/*.log
+
+# --- 7. Ruido de herramientas y del sistema operativo -------------------------
+**/.git
+**/.git/**
+**/.gitignore
+**/.venv
+**/.venv/**
+**/venv
+**/venv/**
+**/node_modules
+**/node_modules/**
+**/.vscode
+**/.idea
+**/Thumbs.db
+**/desktop.ini
+**/.DS_Store

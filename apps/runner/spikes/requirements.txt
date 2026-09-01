@@ -1,0 +1,99 @@
+# =============================================================================
+# Dependencias de los SPIKES de la Fase 0 y del adapter minimo de ACE-Step (T-05)
+# =============================================================================
+# Fecha: 2026-08-18. Alcance: solo Fase 0 (T-03, T-04, T-05, T-07).
+#
+# EL MODO --mock NO NECESITA NADA DE ESTE FICHERO. Los tres scripts de spike
+# (`vram_profile.py`, `concurrency_profile.py`, `capability_probe.py`), el
+# contrato (`../contracts.py`) y las utilidades (`_timing.py`, `_mock.py`) se
+# ejecutan de principio a fin con **Python 3.13 y la biblioteca estandar**. Eso
+# es a proposito: en la maquina donde se escribieron no hay GPU, `nvidia-smi` no
+# existe y `torch` no esta instalado, asi que todos los imports de acelerador y
+# de audio no estandar son **perezosos** (dentro de la funcion que los usa).
+# Verificacion sin instalar nada:
+#     python apps/runner/spikes/capability_probe.py --mock
+#
+# ESTO NO ES EL TOOLING DEL MONOREPO. El `pyproject.toml`/lockfile del backend,
+# el `package.json` del frontend y el CI son **T-10 y siguientes**, detras del
+# gate **G1**. Este fichero es un requirements plano para una unica cosa: montar
+# el entorno del contenedor de `T-05` (o de una GPU local de desarrollo) durante
+# la Fase 0. No lo promociones a dependencia de plataforma.
+#
+# CUDA: `torch` y `torchaudio` se instalan desde el indice de PyTorch, no de
+# PyPI. Con CUDA 12.4:
+#     pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu124
+#
+# AVISO SOBRE LOS PINES: aqui no hay GPU, asi que **ninguna de estas versiones se
+# ha resuelto ni compilado en esta maquina**. Estan fijadas para que la instalacion
+# sea reproducible, pero la primera tarea de quien monte la maquina con GPU es
+# comprobarlas contra el driver instalado (`nvidia-smi` da la version de CUDA
+# soportada) y, si cambian, actualizar este fichero **con el pin nuevo**, nunca
+# aflojandolo a un rango.
+#
+# LICENCIAS (D-30 / I-13b): toda herramienta del pipeline necesita ficha de
+# licencia con uso comercial verificado ANTES de integrarse. Por eso aqui NO
+# aparecen Demucs (separacion de fuentes), el watermarker ni RVC: son fases
+# posteriores y su ficha de licencia esta pendiente. MusicGen esta descartado
+# (CC BY-NC, prohibido para uso comercial): no lo anadas.
+# =============================================================================
+
+torch==2.5.1
+# Motor de inferencia. Es lo que aporta CUDA, la deteccion de VRAM
+# (`_timing.vram_snapshot_mb`, `_timing.gpu_info` -> `torch.cuda`) y el
+# offloading por debajo de los 24 GB de confort (D-06/D-29). Instalalo desde el
+# indice cu124; la rueda de PyPI viene sin CUDA y dejaria el adapter cayendo al
+# mock en silencio, que es justo el fallo que los spikes vigilan.
+
+torchaudio==2.5.1
+# Lectura y escritura de audio del pipeline del modelo. Version acoplada a la de
+# torch (2.5.x con 2.5.x): un desparejo aqui rompe la carga de extensiones
+# nativas con un error que no menciona la causa. No se usa para el resample de
+# exportacion a 48 kHz, que va con soxr y es T-19/T-45, no Fase 0.
+
+safetensors==0.4.5
+# **La unica puerta de entrada de pesos permitida (D-14).** Formato sin
+# ejecucion de codigo al deserializar. Prohibido `torch.load`, `pickle`,
+# `joblib`, `dill` o `np.load(allow_pickle=True)` sobre un checkpoint: cargar un
+# pickle EJECUTA el codigo que lleve dentro (RCE), y `weights_sha256` verifica
+# integridad, NO inocuidad. `contracts.assert_safetensors()` rechaza cualquier
+# otra extension antes de abrir el fichero.
+
+numpy==2.1.3
+# Dependencia real de torch/torchaudio y del pipeline del modelo. Se fija de
+# forma explicita porque el salto a la serie 2.x rompe extensiones compiladas
+# contra 1.x: dejarla implicita convierte una actualizacion transitiva en un
+# fallo de importacion en la GPU. Los spikes NO la usan: `_timing.summarize()`
+# calcula media, mediana y p95 con `statistics` y `math` para que el modo mock no
+# dependa de nada.
+
+soundfile==0.12.1
+# OPCIONAL, solo para `capability_probe.py` (T-07). El perfil de energia con el
+# que la sonda detecta si un parametro de capacidad tuvo efecto se lee con el
+# modulo estandar `wave` cuando el artefacto es WAV; si el adapter entrega FLAC o
+# MP3 (D-09), la biblioteca estandar no lo decodifica y la sonda intenta un
+# import PEREZOSO de soundfile. Sin el, la comparacion se degrada y el informe lo
+# declara en vez de fingir la medida. Necesita `libsndfile` en el sistema (en la
+# imagen Debian/Ubuntu del contenedor: `apt-get install -y libsndfile1`).
+
+# -----------------------------------------------------------------------------
+# ACE-Step 1.5 (el modelo) — SIN PIN TODAVIA, A PROPOSITO
+# -----------------------------------------------------------------------------
+# El paquete del proyecto upstream (3,5B parametros, Apache 2.0) no se puede
+# fijar desde aqui de forma honesta: su release y su API **no se han verificado
+# en esta maquina** (no hay GPU ni release descargada). El adapter de `T-05` no
+# lo importa a ciegas: aisla toda la integracion en un unico punto
+# (`ACE_STEP_PIPELINE_FACTORY`, por defecto `ace_step_shim:build_pipeline`) y, si
+# el shim no esta, el modo real **falla con mensaje explicito en vez de fingir**.
+#
+# Quien monte la maquina con GPU, como parte de T-03/T-05:
+#   1. descarga la release, comprueba que la licencia sigue siendo Apache 2.0 con
+#      uso comercial permitido y anota la ficha de licencia (I-13b);
+#   2. escribe `apps/runner/adapters/ace_step/ace_step_shim.py` contra la API
+#      real, no contra la supuesta;
+#   3. **descomenta la linea de abajo con la etiqueta exacta de la release** (tag
+#      o commit, nunca una rama movil: un pin que se mueve no es un pin) y anota
+#      aqui el `weights_sha256` de los pesos usados.
+#
+# acestep @ git+https://github.com/<org>/ACE-Step@<tag-o-commit-exacto>
+#   # Pesos: ace_step_1_5.safetensors (se MONTAN como volumen en /weights, nunca
+#   # viajan en la imagen: es lo que hace medible el arranque en frio de T-03).

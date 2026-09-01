@@ -1,0 +1,20 @@
+{
+  "_comment": "Parámetros económicos compartidos por evaluator, planner y jira-sync. Creado el 2026-07-27 en el arranque de la iniciativa de plataforma musical.",
+  "tarifaHora": 50,
+  "monedaCoste": "EUR",
+  "modeloIA": "claude-opus-5",
+  "precioTokens": {
+    "moneda": "USD",
+    "unidad": "por_millon",
+    "input": 5.0,
+    "output": 25.0,
+    "verificado": "2026-09-01",
+    "fuente": "https://platform.claude.com/docs/en/about-claude/pricing",
+    "_nota": "Claude Opus 5 estandar (no batch, no fast mode, sin cache). Batch API aplica -50%; cache hit 0,1x input. Reverificado 2026-09-01 contra la doc oficial: Opus 5 sigue a 5/25 $/M (sin cambios)."
+  },
+  "tipoCambioUsdEur": 0.92,
+  "ratioSupervision": 0.25,
+  "margenContingencia": 0.2,
+  "horasJornada": 8,
+  "horasMesFTE": 160
+}

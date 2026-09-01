@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.venv-spikes/
+
+# Entorno local de Claude (no compartible)
+.claude/settings.local.json
+.claude/.headroom_*
+
+# Pesos y artefactos de modelo: NUNCA en el repo (viven en D:\srv\ace-step)
+*.safetensors
+*.pt
+*.bin
+*.ckpt
+weights/
+
+# Salidas de spikes y evidencias pesadas
+apps/runner/spikes/out/
+*.wav
+*.flac
+*.mp3
+
+# Cache de pytest
+.pytest_cache/
