@@ -222,6 +222,16 @@ MAX_HEADER_BYTES = 16 * 1024 * 1024
 #: convertir los 6 GB, y no se puede reescribir la cabecera si cambia de
 #: longitud (moveria todos los `data_offsets`). Con longitud fija, al terminar
 #: se hace `seek` y se sobreescriben cabecera y manifiesto en su sitio.
+#:
+#: CUADRE DE TAMANOS con la cifra de aceptacion del analisis (6.163.403.698 B).
+#: Esa cifra suponia un manifiesto de ~4.000 B y contaba SOLO el bloque de
+#: datos. Medido con `--dry-run` sobre el arbol real:
+#:     bloque de datos  6.163.407.890 B   (+4.192 B = 8.192 reservados - 4.000 estimados)
+#:     cabecera + 8 B      143.560 B
+#:     FICHERO TOTAL   6.163.551.450 B
+#: El bloque de datos queda dentro del +-16 KiB de la aceptacion; la diferencia
+#: del total es la cabecera, que aquella cifra no incluia. `--dry-run` imprime
+#: los dos numeros para que no haya que reconstruir la resta.
 AUX_MANIFEST_BYTES = 8192
 
 #: Espacio libre minimo exigido en el destino antes de abrir el fichero.
@@ -342,6 +352,8 @@ def _importar_safe_open() -> Any:
 
 def sha256_fichero(ruta: Path, bloque: int = 8 * 1024 * 1024) -> str:
     """SHA-256 de un fichero por streaming. No carga el fichero en RAM."""
+    if not ruta.is_file():
+        raise BuildError(f"No existe el fichero a hashear: {ruta}")
     h = hashlib.sha256()
     with open(ruta, "rb") as f:
         while True:
@@ -422,8 +434,9 @@ def _comprobar_destino(destino: Path, bytes_necesarios: int, permitir_disco_sist
        margen, lo que sea mayor.
     """
     carpeta = destino.parent
-    carpeta.mkdir(parents=True, exist_ok=True)
 
+    # La comprobacion de unidad va ANTES del mkdir: rechazar el destino no debe
+    # dejar creado un directorio en el disco que se acaba de rechazar.
     if os.name == "nt" and not permitir_disco_sistema:
         # `Path.drive` devuelve 'D:' en Windows y '' en POSIX; en POSIX esta
         # regla no aplica y se salta a proposito.
@@ -437,6 +450,7 @@ def _comprobar_destino(destino: Path, bytes_necesarios: int, permitir_disco_sist
                 f"que haces."
             )
 
+    carpeta.mkdir(parents=True, exist_ok=True)
     exigido = max(MIN_FREE_BYTES, int(bytes_necesarios * 1.05))
     libre = shutil.disk_usage(carpeta).free
     if libre < exigido:
@@ -805,7 +819,8 @@ def _interpretar_pickle_inerte(datos: bytes) -> tuple[_EspecTensor, AuditoriaPic
             auditoria.opcodes += 1
             if auditoria.opcodes > MAX_OPCODES:
                 raise PickleRechazado(
-                    f"El pickle supera los {MAX_OPCODES} opcodes. El canonico tiene 30."
+                    f"El pickle supera los {MAX_OPCODES} opcodes. El canonico tiene 39 "
+                    "(medido sobre el fichero en cuarentena)."
                 )
             if len(pila) > MAX_PILA_PICKLE:
                 raise PickleRechazado(f"Pila del pickle desbordada (> {MAX_PILA_PICKLE}).")
@@ -882,7 +897,6 @@ def _interpretar_pickle_inerte(datos: bytes) -> tuple[_EspecTensor, AuditoriaPic
 
             # --- capa 2 + 3: los tres opcodes controlados ---------------------
             elif nombre == "GLOBAL":
-                auditoria.opcodes += 0
                 partes = str(arg).split(" ")
                 if len(partes) != 2:
                     raise PickleRechazado(f"GLOBAL malformado en el offset {pos}: {arg!r}")
@@ -1748,6 +1762,11 @@ def construir_manifiesto(
             "en la imagen, y son trabajo de T-03.",
             "__metadata__ es un espejo DOCUMENTAL. load_file() lo descarta y la factoria del "
             "shim no lo recibe: nada funcional puede depender de el.",
+            "sources[].path registra la ruta ABSOLUTA del host. Dos builds desde arboles "
+            "colocados en rutas distintas producen manifiestos distintos y, por tanto, "
+            "SHA-256 distintos, aunque los pesos sean identicos: el criterio de identidad "
+            "real son los sha256 de las fuentes, no el del artefacto. Para un build "
+            "reproducible byte a byte hacen falta la misma ruta y la misma --built-at.",
         ],
     }
 
@@ -1837,6 +1856,11 @@ def _escribir_bloque_datos(
     torch = _importar_torch()
     safe_open = _importar_safe_open()
 
+    # `safe_open` es un gestor de contexto; aqui la vida del handle no encaja en
+    # un `with` porque abarca un tramo variable del plan, asi que se maneja a
+    # mano con `try/finally`. Se guardan las dos referencias (contexto y handle)
+    # en vez de asumir que `__enter__` devuelve `self`.
+    contexto = None
     manejador = None
     fuente_abierta: Path | None = None
     escritos = 0
@@ -1846,19 +1870,19 @@ def _escribir_bloque_datos(
     try:
         for entrada in plan.entradas:
             if entrada.origen == "bytes":
-                if manejador is not None:
-                    manejador.__exit__(None, None, None)
-                    manejador, fuente_abierta = None, None
+                if contexto is not None:
+                    contexto.__exit__(None, None, None)
+                    contexto, manejador, fuente_abierta = None, None, None
                 datos = entrada.datos
                 if datos is None or len(datos) != entrada.nbytes:
                     raise BuildError(f"Blob incoherente para {entrada.clave!r}.")
                 destino.write(datos)
             else:
                 if entrada.fuente != fuente_abierta:
-                    if manejador is not None:
-                        manejador.__exit__(None, None, None)
-                    manejador = safe_open(str(entrada.fuente), framework="pt", device="cpu")
-                    manejador.__enter__()
+                    if contexto is not None:
+                        contexto.__exit__(None, None, None)
+                    contexto = safe_open(str(entrada.fuente), framework="pt", device="cpu")
+                    manejador = contexto.__enter__()
                     fuente_abierta = entrada.fuente
                     _log(f"leyendo {entrada.fuente.name}", silencioso=silencioso)
 
@@ -1899,8 +1923,8 @@ def _escribir_bloque_datos(
                     silencioso=silencioso,
                 )
     finally:
-        if manejador is not None:
-            manejador.__exit__(None, None, None)
+        if contexto is not None:
+            contexto.__exit__(None, None, None)
 
 
 def construir_artefacto(
@@ -2489,9 +2513,9 @@ def _selftest_rechazos(ruta_pt: Path, raiz: Path) -> dict[str, str]:
                             (la capa de integridad).
     """
     resultados: dict[str, str] = {}
-    contenido = {n: zipfile.ZipFile(ruta_pt).read(n) for n in zipfile.ZipFile(ruta_pt).namelist()}
+    with zipfile.ZipFile(ruta_pt) as zf:
+        contenido = {n: zf.read(n) for n in zf.namelist()}
     nombre_pkl = next(n for n in contenido if n.endswith("data.pkl"))
-    prefijo = nombre_pkl.rsplit("/", 1)[0]
 
     # (1) pickle hostil: importa os.system y lo reduce. Nunca se ejecuta; lo que
     # se comprueba es que el auditor lo para en seco.
@@ -2528,7 +2552,6 @@ def _selftest_rechazos(ruta_pt: Path, raiz: Path) -> dict[str, str]:
     except PickleRechazado as exc:
         resultados["sha_distinto"] = str(exc).splitlines()[0]
 
-    del prefijo  # solo se usaba para documentar la forma del ZIP
     return resultados
 
 
@@ -2717,7 +2740,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         destino_json = (
             Path(args.provenance_out)
             if args.provenance_out
-            else salida.with_suffix("").with_suffix(".provenance.json")
+            else salida.with_name(salida.stem + ".provenance.json")
         )
         escribir_procedencia(registro, destino_json)
 
@@ -2752,6 +2775,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         return EXIT_GUARD
     except BuildError as exc:
         print(f"\n[{TASK}/{TOOL}] ERROR: {exc}", file=sys.stderr)
+        return EXIT_CONFIG
+    except OSError as exc:
+        # Red de seguridad para fallos de sistema de ficheros que no han pasado
+        # por las puertas de arriba (permisos, unidad desconectada, disco lleno
+        # a mitad de escritura). Se reporta como error de configuracion, no como
+        # traza sin manejar.
+        print(f"\n[{TASK}/{TOOL}] ERROR DE E/S: {exc}", file=sys.stderr)
         return EXIT_CONFIG
     except KeyboardInterrupt:  # pragma: no cover - interactivo
         print(f"\n[{TASK}/{TOOL}] Interrumpido por el usuario.", file=sys.stderr)
