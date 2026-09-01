@@ -123,3 +123,20 @@
 **/Thumbs.db
 **/desktop.ini
 **/.DS_Store
+
+# ---------------------------------------------------------------------------
+# CORRECCION 2026-09-01 — el `!adapters/**` de arriba re-incluia DE MAS
+# ---------------------------------------------------------------------------
+# Verificado inspeccionando la imagen construida: dentro de
+# /app/adapters/ace_step/ viajaban el propio `Dockerfile`, este mismo
+# `Dockerfile.dockerignore` y los `.md` de documentacion. Nada de eso se
+# ejecuta, y los ficheros de build dentro de la imagen que describen son ruido
+# que ademas confunde a quien la inspeccione.
+#
+# Las reglas posteriores ganan a las anteriores, asi que estas cuatro recortan
+# el `!adapters/**` sin tocarlo.
+adapters/**/Dockerfile
+adapters/**/Dockerfile.*
+adapters/**/*.md
+adapters/**/acestep_analysis
+adapters/**/acestep_analysis/**

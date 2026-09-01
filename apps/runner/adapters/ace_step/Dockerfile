@@ -53,6 +53,12 @@
 # efecto teniendo el Dockerfile en un subdirectorio del contexto. Docker 29.7.2
 # usa BuildKit por defecto; no fuerces `DOCKER_BUILDKIT=0` o el contexto se
 # enviara entero.
+#
+# TRAMPA MEDIDA (2026-09-01): NO anadas ademas un `.dockerignore` en la raiz del
+# contexto (`apps/runner/.dockerignore`) "por si acaso". Se hizo, y BuildKit lo
+# SOMBREA en silencio: manda `Dockerfile.dockerignore` y el otro no se aplica
+# nunca. El resultado es el peor de los dos mundos: dos ficheros con reglas
+# distintas, uno muerto, y nadie avisando de cual esta en vigor. Se elimino.
 # =============================================================================
 
 
@@ -401,15 +407,26 @@ COPY --chown=10001:10001 spikes/_timing.py /app/spikes/_timing.py
 COPY --chown=10001:10001 spikes/_mock.py /app/spikes/_mock.py
 COPY --chown=10001:10001 adapters/ace_step/ /app/adapters/ace_step/
 
-# CODIGO VENDORIZADO DE UPSTREAM — lo activa T-03; hoy el directorio no existe,
-# asi que la linea va comentada (un COPY de una ruta inexistente rompe el
-# build). Ahi iran `configuration_acestep_v15.py` y
-# `modeling_acestep_v15_turbo.py` revisados y parcheados (centinela de mascara
-# en fp16, reconstruccion de `rotary_emb.inv_freq`, construccion en meta-device)
-# mas `oobleck_decoder.py` (obra derivada de diffusers, Apache-2.0, con su aviso
-# de copyright y su nota de modificacion). Es codigo, no pesos: por eso viaja en
-# la imagen y no en /weights. Descomentar tal cual cuando exista:
-# COPY --chown=10001:10001 adapters/ace_step/vendor/ /app/adapters/ace_step/vendor/
+# CODIGO VENDORIZADO DE UPSTREAM — ya existe (2026-09-01) en
+# `adapters/ace_step/vendor/`: `configuration_acestep_v15.py`,
+# `modeling_acestep_v15_turbo.py` y `config.json`, fijados a la revision
+# 19671f406d603126926c1b7e2adc169acbcade22 y con sus SHA-256 en el README del
+# directorio. Estan aqui, y no se descargan en arranque, porque CLAUDE.md
+# prohibe `trust_remote_code`/`auto_map`.
+#
+# NO hace falta un COPY propio: el `COPY adapters/ace_step/` de arriba ya los
+# arrastra. Un COPY adicional solo anadiria una capa redundante. (El README.md
+# del directorio no viaja: `.dockerignore` excluye `**/*.md`, y la documentacion
+# no se ejecuta.)
+#
+# Es codigo, no pesos: por eso viaja en la imagen y no en /weights.
+#
+# PENDIENTE de T-03, y conviene no confundirlo con "hecho": los parches
+# (centinela de mascara en fp16, reconstruccion de `rotary_emb.inv_freq`,
+# construccion en meta-device) y `oobleck_decoder.py` (obra derivada de
+# diffusers, Apache-2.0, con su aviso de copyright y su nota de modificacion).
+# Y sobre todo la REVISION de seguridad linea a linea: son 109 KB de Python que
+# se EJECUTAN al importarse, y vendorizarlos los hace inmutables, no inocuos.
 
 USER 10001:10001
 

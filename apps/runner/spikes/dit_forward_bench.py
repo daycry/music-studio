@@ -47,6 +47,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import statistics
 import sys
 import time
@@ -57,8 +58,10 @@ import types
 # ---------------------------------------------------------------------------
 P = argparse.ArgumentParser()
 P.add_argument("--weights", default="/weights/ace_step_1_5.safetensors")
-P.add_argument("--code-dir", default="/upstream",
-               help="Dir con modeling_acestep_v15_turbo.py y configuration_acestep_v15.py")
+P.add_argument("--code-dir", default=None,
+               help="Dir con modeling_acestep_v15_turbo.py y configuration_acestep_v15.py. "
+                    "Por defecto se autodetecta: primero el codigo VENDORIZADO que viaja en la "
+                    "imagen, y solo si no esta, /upstream montado a mano.")
 P.add_argument("--reps", type=int, default=5)
 P.add_argument("--warmup", type=int, default=2)
 P.add_argument("--lengths", default="375,750,1125,1500,2250,3000,3750",
@@ -133,7 +136,32 @@ _vq = types.ModuleType("vector_quantize_pytorch")
 _vq.ResidualFSQ = _ResidualFSQStub
 sys.modules["vector_quantize_pytorch"] = _vq
 
-sys.path.insert(0, ARGS.code_dir)
+# Resolucion del codigo del modelo. El orden importa: primero el VENDORIZADO,
+# que viaja dentro de la imagen fijado por hash (CLAUDE.md prohibe
+# `trust_remote_code`, asi que el codigo de terceros que se ejecuta tiene que
+# estar en el repo y ser revisable en un diff). El montaje manual de /upstream
+# queda solo como respaldo para ejecutar fuera del contenedor.
+_CANDIDATOS = [ARGS.code_dir] if ARGS.code_dir else [
+    "/app/adapters/ace_step/vendor",                                   # imagen
+    os.path.join(os.path.dirname(os.path.abspath(__file__)),           # arbol local
+                 "..", "adapters", "ace_step", "vendor"),
+    "/upstream",                                                       # respaldo
+]
+_CODE_DIR = None
+for _c in _CANDIDATOS:
+    if _c and os.path.isfile(os.path.join(_c, "modeling_acestep_v15_turbo.py")):
+        _CODE_DIR = os.path.abspath(_c)
+        break
+if _CODE_DIR is None:
+    raise SystemExit(
+        "No encuentro el codigo del modelo. Buscado en: "
+        + ", ".join(repr(c) for c in _CANDIDATOS if c)
+        + ". Opciones: (a) usar la imagen del runner, que ya lo lleva vendorizado en "
+          "/app/adapters/ace_step/vendor; (b) pasar --code-dir; (c) montar el upstream "
+          "en /upstream."
+    )
+print("[bench] codigo del modelo desde: %s" % _CODE_DIR)
+sys.path.insert(0, _CODE_DIR)
 import configuration_acestep_v15 as cfgmod     # noqa: E402
 import modeling_acestep_v15_turbo as mod       # noqa: E402
 
