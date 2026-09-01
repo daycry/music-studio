@@ -145,7 +145,10 @@ generacion:
 
 | Tipo | Estado | Dependencias | Tiempo estimado (base) | Tokens previstos |
 |---|---|---|---|---|
-| devops | pendiente | T-02 | 24 h | 1,50 M in / 0,21 M out |
+| devops | **en-progreso** (2026-09-01) | T-02 *(completado)* | 24 h | 1,50 M in / 0,21 M out |
+
+**Avance del 2026-09-01 (orquestador `/dev-cycle`).** Se ha construido y verificado el **artefacto de pesos** que esta tarea necesitaba y que no existía publicado (ver `pre-dev-checklist.md` ítem 7-bis / CS-50): `apps/runner/tools/build_artifact.py` fusiona los cuatro componentes upstream de la revisión fijada en `D:\srv\ace-step\weights\ace_step_1_5.safetensors` (6.163.551.450 B, 1.177 tensores, SHA-256 `3faa5ac9…5812d947`), con conversión BF16→FP16 offline (**0 desbordamientos**, 2.181 flush-to-zero sobre 3.074.063.112 elementos) y el latente de silencio convertido **sin ejecutar su pickle**. `--selftest` y `--verify` en verde. También se corrigió el suelo de VRAM (CS-51) con `VRAM_FLOOR_TOLERANCE_MB`, con 13 tests nuevos.
+**Lo que sigue abierto y es el grueso de la tarea:** *ninguna* de las mediciones que definen `T-03` está hecha. Falta el **shim `ace_step_shim.py`** (sin él `_resolve_pipeline_factory()` aborta antes de mapear los pesos), y con él los tiempos de inferencia, el perfil de VRAM y el arranque en frío. **Riesgo nº 1 identificado y NO medido:** GP104 ejecuta FP16 nativo a 1/64 del FP32; si cuBLAS no promociona a FP32 en `sm_61`, las 10 pistas de G1 pasan de ~20 min a un orden de horas. **Obligatorio un smoke test cronometrado a 30 s antes de comprometer las 10 pistas.**
 
 **Archivos:** `apps/runner/spikes/inference_timing.md`, `apps/runner/spikes/vram_profile.py`
 
@@ -199,7 +202,10 @@ generacion:
 
 | Tipo | Estado | Dependencias | Tiempo estimado (base) | Tokens previstos |
 |---|---|---|---|---|
-| devops | pendiente | T-02 | 16 h | 0,80 M in / 0,11 M out |
+| devops | **en-progreso** (2026-09-01) | T-02 *(completado)* | 16 h | 0,80 M in / 0,11 M out |
+
+**Avance del 2026-09-01 (orquestador `/dev-cycle`) — 2 de 4 criterios cumplidos y verificados.** `apps/runner/adapters/ace_step/Dockerfile` (+ `apps/runner/.dockerignore`, en la raíz del contexto, que es donde BuildKit lo busca). Imagen `ace-step-runner:t05` construida (11,5 GB) y **ejecutada con `--gpus all`** sobre la GTX 1070. Elección de base dictada por Pascal: CUDA 13.0 eliminó sm_50–sm_72 y las ruedas cu128 (torch 2.7+) dejaron de traer Pascal, así que se fija `pytorch/pytorch:2.13.0-cuda12.6-cudnn9-runtime` **por digest**, con dos aserciones de build sobre `torch.cuda.get_arch_list()` para que una rueda sin Pascal rompa el build en vez de dejar la GPU muerta en silencio. Evidencia medida dentro del contenedor: `torch 2.13.0+cu126` · CUDA 12.6 · **cuDNN 9.10.2** (por debajo de 9.12.0, que retiró CC 6.1) · `arch_list` con `sm_60` (binariamente compatible con `sm_61`) · GPU detectada `GTX 1070 sm_61` · **matmul fp16 en GPU correcto** · `total_memory = 8.589.672.448 B = 8191 MiB`, que confirma el off-by-one de CS-51 dentro del contenedor. Incidencia resuelta: el primer build falló por **PEP 668** (la base ya no trae conda, sino un Python 3.12 de Debian gestionado por el sistema) → `--break-system-packages`, documentado en el fichero; torch **sigue sin instalarse por pip**.
+**Lo que falta para cerrar:** los dos criterios que dependen del **shim `ace_step_shim.py`** (entregable de `T-03`) — que el contenedor exponga `load()/generate()/health()/unload()` y que `health()` responda tras el arranque en frío. Hoy `load()` aborta en `_resolve_pipeline_factory()` con «shim ausente», que es el fallo correcto y esperado.
 
 **Archivos:** `apps/runner/adapters/ace_step/Dockerfile`, `apps/runner/adapters/ace_step/adapter.py`
 
