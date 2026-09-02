@@ -633,12 +633,49 @@ class AceStepAdapter:
                 )
             self._verificar_integridad(ruta)
 
-        # 3) Carga a VRAM. Imports perezosos: en la maquina de desarrollo no hay
-        #    torch, y este fichero tiene que poder importarse igualmente.
+        # 3) Carga del artefacto. Imports perezosos: en la maquina de desarrollo
+        #    no hay torch, y este fichero tiene que poder importarse igualmente.
         #    M-5: si cualquiera de las etapas 3-4 falla, se limpia el estado
         #    parcial (pipeline con pesos en VRAM, state_dict huerfano) y se
         #    relanza la excepcion original: un load() fallido deja el adapter
         #    descargado, consistente y reintentable.
+        #
+        # POR QUE EL ARTEFACTO SE MAPEA EN CPU Y NO EN `ctx.device` (2026-09-02)
+        # ---------------------------------------------------------------------
+        # Hasta hoy esta linea era `load_file(ruta, device=ctx.device)`, es decir,
+        # el artefacto ENTERO aterrizaba en VRAM antes de que el shim pudiera
+        # opinar sobre donde va cada componente. Con el artefacto de 5.878 MiB eso
+        # daba un pico de 6.178 MiB sobre ~6.988 MiB libres: 810 MiB de holgura. Al
+        # incorporar el planificador de 5 Hz (`lm.*`, +1.264 MiB en bf16) el
+        # artefacto pasa a 7.180 MiB y NO CABE: la carga reventaria antes de
+        # ejecutar una sola linea del shim.
+        #
+        # La alternativa era dejar el LM en un fichero aparte montado en /weights.
+        # Se descarto: rompe el "un solo artefacto" (un `weights_sha256`, un
+        # manifiesto de procedencia, una ruta que verificar) y deja intactos los
+        # 810 MiB de holgura, que es el problema de fondo. Mapear en CPU lo
+        # resuelve de raiz.
+        #
+        # Que cambia, medido:
+        #   * `load_file(..., device="cpu")` de safetensors NO copia: mapea el
+        #     fichero. MEDIDO sobre el artefacto de 5.878 MiB: RSS +45 MiB y
+        #     26,1 s (solo cabecera). El coste de leer los bytes se paga despues,
+        #     cuando el shim toca cada tensor, y en total es el MISMO que ya se
+        #     pagaba (los ~455 s de `vram_load` de las corridas del 2026-09-02 son
+        #     esas mismas paginas entrando por el bind mount).
+        #   * El pico de VRAM durante la construccion deja de ser el tamano del
+        #     artefacto y pasa a ser lo que el shim decide residenciar en GPU
+        #     (`dit.decoder`, 3.005 MiB). El pico de una GENERACION no cambia:
+        #     sigue siendo el condicionamiento, 6.190 MiB medidos.
+        #
+        # Contrato que esto le impone al shim, y que `ace_step_shim.py` cumple:
+        # tiene que colocar cada componente EL MISMO consumiendo el diccionario
+        # con `pop` (ya lo hacia, C3) y ademas MATERIALIZAR en RAM anonima lo que
+        # se quede en CPU. Un tensor que sigue respaldado por el mapeo del fichero
+        # se relee del disco pagina a pagina en cada subida a VRAM (42,91 s frente
+        # a 0,43 s, medido en `text_conditioning`), y la pagina es ademas
+        # desalojable: en un contenedor de 7,9 GiB eso no es una optimizacion, es
+        # la diferencia entre generar y no generar.
         state_dict: Any = None
         try:
             with timer.stage("vram_load"):
@@ -654,7 +691,10 @@ class AceStepAdapter:
                 factoria = _resolve_pipeline_factory()
                 # `load_file` es el cargador de safetensors: mapea tensores, no
                 # deserializa objetos de Python. Es justamente lo que exige D-14.
-                state_dict = load_file(ruta, device=ctx.device)
+                # `device="cpu"` es DELIBERADO y no debe volver a `ctx.device`:
+                # ver el bloque de comentario de arriba. Quien decide que va a la
+                # GPU es el shim, componente a componente.
+                state_dict = load_file(ruta, device="cpu")
                 self._pipeline = factoria(
                     state_dict=state_dict,
                     device=ctx.device,
@@ -662,7 +702,8 @@ class AceStepAdapter:
                     offload=self._offload,
                 )
                 # El diccionario de pesos ya vive dentro del pipeline: soltar la
-                # referencia local evita mantener una copia viva en VRAM.
+                # referencia local evita mantener viva una copia (y, con el mapeo
+                # en CPU, el propio mapeo del fichero).
                 state_dict = None
 
             # 4) Warm-up: primera pasada en vacio y compilacion de kernels. Es un

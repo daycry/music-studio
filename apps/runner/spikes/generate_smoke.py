@@ -58,6 +58,27 @@ Uso (dentro del contenedor, con pesos y salida montados)::
       --entrypoint python ace-step-runner:t05 \
       /work/spikes/generate_smoke.py --duraciones 30,180
 
+El A/B del planificador de 5 Hz
+------------------------------
+`--sin-lm` desactiva el planificador (`usar_lm=False`) y devuelve `src_latents` al
+latente de silencio, que es como generaba este pipeline antes de conectarlo. Las
+dos pistas se producen con **la misma semilla, la misma letra, el mismo prompt y
+los mismos metadatos**; lo unico que cambia es si hubo plan. Dos contenedores, uno
+cada vez (el artefacto ocupa 7,0 GiB y cargarlo dos veces en el mismo proceso no
+cabe en 8 GB de VRAM)::
+
+    # A — con planificador
+    ... generate_smoke.py --duraciones 25 --semilla 20260902 \
+        --fichero-pesos ace_step_1_5_lm.safetensors --etiqueta lm-on
+
+    # B — control, sin planificador
+    ... generate_smoke.py --duraciones 25 --semilla 20260902 \
+        --fichero-pesos ace_step_1_5_lm.safetensors --etiqueta lm-off --sin-lm
+
+Cualquier otra diferencia entre las dos ordenes invalida la comparacion. El
+informe JSON registra `peticion_base.model_params` completo, asi que siempre se
+puede comprobar cual de las dos es cada fichero.
+
 Codigo de salida: `0` si todas las comprobaciones bloqueantes pasan en todas las
 duraciones, `1` si alguna falla, `2` si la ejecucion revienta antes de poder
 comprobar nada.
@@ -97,11 +118,121 @@ TOLERANCIA_DURACION = 0.05
 RMS_MINIMO = 10 ** (-60.0 / 20.0)
 PICO_MINIMO = 10 ** (-26.0 / 20.0)
 
+# OJO A LAS TILDES Y A LA EÑE. La primera version de estas constantes iba sin
+# ellas, y no era un detalle cosmetico: el normalizador es NFC y no elimina
+# acentos, asi que "sonar" y "sonar" son secuencias de tokens DISTINTAS y
+# palabras distintas. Le estabamos pidiendo al modelo que cantara "sonar" (emitir
+# sonido) cuando la letra dice "sonar". Con `vocal_language="es"` esto degrada la
+# pronunciacion y la prosodia, y hundiria el WER del gate G1 por un motivo que no
+# es del modelo sino nuestro. Cualquier letra que se escriba aqui va acentuada.
 PROMPT_POR_DEFECTO = (
-    "pop electronico nocturno en castellano, voz femenina calida, sintetizadores "
-    "analogicos, guitarra con delay, bajo profundo, bateria suave, 92 BPM, "
-    "melancolico, produccion limpia"
+    "pop electrónico nocturno en castellano, voz femenina cálida, sintetizadores "
+    "analógicos, guitarra con delay, bajo profundo, batería suave, 92 BPM, "
+    "melancólico, producción limpia"
 )
+
+# Metadatos musicales. Hasta el 2026-09-02 se enviaban SIEMPRE como `N/A`, y el
+# bloque de metas del prompt viajaba en blanco en cada generacion. Upstream los
+# rellena con la cadena de pensamiento de su planificador de 5 Hz; como aqui ese
+# planificador esta desconectado, si no los ponemos a mano no los pone nadie.
+# El BPM por defecto concuerda con el que ya dice el prompt de estilo (92): un
+# prompt que pide 92 BPM y un bloque de metas que dice "no aplica" es una
+# contradiccion que el modelo tiene que resolver adivinando.
+BPM_POR_DEFECTO = 92
+TONALIDAD_POR_DEFECTO = "A minor"
+COMPAS_POR_DEFECTO = "4/4"
+
+
+def _construir_model_params(args, usar_lm: bool | None = None) -> dict:
+    """Arma `model_params` omitiendo lo que se pida dejar sin especificar.
+
+    Pasar `--bpm 0`, `--tonalidad ""` o `--compas ""` deja ese metadato fuera,
+    que es como reproducir el comportamiento anterior para comparar A/B.
+    """
+    params: dict = {"vocal_language": args.idioma_voz}
+    if args.bpm:
+        params["bpm"] = int(args.bpm)
+    if args.tonalidad:
+        params["keyscale"] = args.tonalidad
+    if args.compas:
+        params["timesignature"] = args.compas
+    # El A/B del planificador de 5 Hz. `--sin-lm` es la rama de control: mismo
+    # artefacto, misma semilla, misma letra, mismo prompt y mismos metadatos; lo
+    # unico que cambia es si `src_latents` es el plan del LM o el latente de
+    # silencio. Cualquier otra diferencia entre las dos corridas invalida la
+    # comparacion, asi que no se toca nada mas.
+    # `usar_lm` puede venir forzado por la celda de la matriz A/B; si no viene,
+    # manda `--sin-lm`, que es el comportamiento de siempre.
+    params["usar_lm"] = (not args.sin_lm) if usar_lm is None else bool(usar_lm)
+    params["lm_cfg"] = args.lm_cfg
+    params["lm_temperatura"] = args.lm_temperatura
+    return params
+
+
+
+@dataclass(frozen=True)
+class CasoAB:
+    """Una celda de la matriz A/B: todo lo que puede variar entre pistas.
+
+    El A/B del planificador solo significa algo si entre la rama CON y la rama
+    SIN no cambia nada mas que `usar_lm`. Pero para saber si la diferencia
+    CON-vs-SIN es mayor que el ruido, hace falta ademas variar la semilla, y eso
+    obliga a cruzar dos ejes. Esta estructura es ese cruce, y existe para que la
+    matriz se ejecute tras UNA sola carga: el arranque en frio son ~643 s y seis
+    contenedores serian ~64 min de puro cargar el mismo artefacto seis veces.
+
+    Que la matriz corra en un unico proceso NO contamina la comparacion, y esto
+    esta verificado en el codigo, no supuesto:
+
+    * El ruido de difusion sale de `prepare_noise`, que construye un
+      `torch.Generator` propio sembrado con `seed` (`modeling_acestep_v15_turbo.py`).
+      No lee el RNG global, asi que no le afecta lo que haya corrido antes.
+    * El bucle ODE vendorizado (`vendor/pipeline/diffusion.py`) no vuelve a
+      sortear nada: solo llama a `prepare_noise` una vez.
+    * El planificador siembra el RNG global el mismo (`torch.manual_seed`) al
+      entrar, asi que su plan tampoco depende del estado que dejo la pista
+      anterior.
+
+    Consecuencia que es justo lo que se quiere medir: a igual semilla, la rama
+    CON y la rama SIN reciben EXACTAMENTE el mismo ruido inicial. Lo unico que
+    difiere entre las dos es `src_latents` (el plan del LM o el latente de
+    silencio).
+    """
+
+    etiqueta: str
+    duracion_s: int
+    semilla: int
+    usar_lm: bool
+
+
+def _parsear_matriz(texto: str) -> list[CasoAB]:
+    """Convierte "etiqueta:duracion:semilla:si|no,..." en celdas de la matriz."""
+    casos: list[CasoAB] = []
+    for crudo in str(texto).split(","):
+        crudo = crudo.strip()
+        if not crudo:
+            continue
+        partes = crudo.split(":")
+        if len(partes) != 4:
+            raise SystemExit(
+                f"--matriz: celda invalida {crudo!r}. Formato: "
+                "etiqueta:duracion_s:semilla:si|no"
+            )
+        etiqueta, duracion, semilla, lm = (p.strip() for p in partes)
+        if lm not in ("si", "no"):
+            raise SystemExit(f"--matriz: en {crudo!r} el 4.o campo debe ser 'si' o 'no'.")
+        casos.append(
+            CasoAB(
+                etiqueta=etiqueta,
+                duracion_s=int(duracion),
+                semilla=int(semilla),
+                usar_lm=(lm == "si"),
+            )
+        )
+    if not casos:
+        raise SystemExit("--matriz vacia.")
+    return casos
+
 
 LETRA_POR_DEFECTO = """[verse]
 Se apaga la ciudad y enciendo la consola,
@@ -110,7 +241,7 @@ Un cable, dos acordes, la lluvia en el cristal,
 y un coro de neones que no sabe terminar.
 
 [chorus]
-Canta, que la maquina aprendio a sonar,
+Canta, que la máquina aprendió a soñar,
 canta, que la noche no se va a acabar.
 Deja que la onda se condense al respirar,
 y guarda cada huella, que la vamos a firmar.
@@ -284,6 +415,11 @@ class EscuchaEtapas(logging.Handler):
     """
 
     HITOS: tuple[tuple[str, str], ...] = (
+        # El planificador de 5 Hz va PRIMERO en la generacion (produce los
+        # `src_latents` que consume el condicionamiento) y solo aparece con
+        # usar_lm=True. En esta tarjeta corre en CPU y es la etapa mas cara de la
+        # pista, asi que sin ella el reparto de tiempos no dice nada.
+        ("Planificador listo en", "planificacion"),
         ("Condicionamiento listo en", "condicionamiento"),
         ("Difusion completada en", "difusion"),
         ("Decode en", "decode"),
@@ -534,6 +670,21 @@ async def ejecutar(args: argparse.Namespace) -> int:
         max_gpu_seconds=args.max_gpu_seconds,
     )
 
+    # La matriz A/B, si se pidio; si no, una celda por duracion con la semilla y
+    # la rama globales, que es exactamente el comportamiento anterior.
+    if args.matriz:
+        casos = _parsear_matriz(args.matriz)
+    else:
+        casos = [
+            CasoAB(
+                etiqueta=args.etiqueta,
+                duracion_s=d,
+                semilla=args.semilla,
+                usar_lm=not args.sin_lm,
+            )
+            for d in args.duraciones
+        ]
+
     informe: dict[str, Any] = {
         "spike": "generate_smoke",
         "tarea": "T-03",
@@ -554,7 +705,23 @@ async def ejecutar(args: argparse.Namespace) -> int:
             "letra": args.letra,
             "semilla": args.semilla,
             "duraciones_s": args.duraciones,
+            # Se registra el `model_params` COMPLETO, no solo el prompt: la rama
+            # del A/B (`usar_lm`) vive ahi y sin ella el informe no dice cual de
+            # las dos versiones es.
+            "model_params": _construir_model_params(args),
         },
+        # La matriz A/B efectiva. `peticion_base` describe lo COMUN a todas las
+        # pistas (prompt, letra, metadatos); aqui esta lo que varia entre ellas,
+        # que son los dos unicos ejes del experimento: `usar_lm` y `semilla`.
+        "matriz": [
+            {
+                "etiqueta": c.etiqueta,
+                "duracion_s": c.duracion_s,
+                "semilla": c.semilla,
+                "usar_lm": c.usar_lm,
+            }
+            for c in casos
+        ],
         "muestreo_vram": {
             "periodo_ms": round(args.periodo_muestreo * 1000, 1),
             "nota": (
@@ -601,8 +768,10 @@ async def ejecutar(args: argparse.Namespace) -> int:
         print(f"[carga] lista en {t_carga_fin - t_carga_ini:.2f} s {resumen_carga}")
 
         # --- Generaciones ---------------------------------------------------- #
-        for duracion_pedida in args.duraciones:
-            clave = f"{args.etiqueta}-{duracion_pedida}s-{int(time.time())}"
+        for caso in casos:
+            duracion_pedida = caso.duracion_s
+            clave = f"{caso.etiqueta}-{duracion_pedida}s-{int(time.time())}"
+            params_caso = _construir_model_params(args, usar_lm=caso.usar_lm)
             peticion = GenerationRequest(
                 style_prompt=args.prompt,
                 duration_s=duracion_pedida,
@@ -610,10 +779,13 @@ async def ejecutar(args: argparse.Namespace) -> int:
                 idempotency_key=clave,
                 lyrics=args.letra,
                 instrumental=False,
-                seed=args.semilla,
-                model_params={"vocal_language": "es"},
+                seed=caso.semilla,
+                model_params=params_caso,
             )
-            print(f"\n[generacion] {duracion_pedida} s, semilla {args.semilla}, clave {clave}")
+            print(
+                f"\n[generacion] {duracion_pedida} s, semilla {caso.semilla}, "
+                f"planificador {'SI' if caso.usar_lm else 'NO'}, clave {clave}"
+            )
             t_gen_ini = time.perf_counter()
             resultado = await adaptador.generate(peticion)
             t_gen_fin = time.perf_counter()
@@ -640,6 +812,12 @@ async def ejecutar(args: argparse.Namespace) -> int:
                 {
                     "duracion_pedida_s": duracion_pedida,
                     "idempotency_key": clave,
+                    # Los tres ejes del A/B, explicitos en cada fila: sin esto el
+                    # informe no permite reconstruir que pista es cual.
+                    "etiqueta": caso.etiqueta,
+                    "semilla": caso.semilla,
+                    "usar_lm": caso.usar_lm,
+                    "model_params": params_caso,
                     "total_s": round(t_gen_fin - t_gen_ini, 3),
                     "etapas": ventanas,
                     "segundos_no_atribuidos_a_ninguna_etapa": cola,
@@ -683,8 +861,14 @@ async def ejecutar(args: argparse.Namespace) -> int:
             for nombre, valor in verificacion.get("indicadores", {}).items():
                 print(f"    [{'ok ' if valor else '  !'}] {nombre} (informativo)")
             if not todo_ok:
-                print("[abortado] comprobaciones bloqueantes fallidas: no se sigue.")
-                break
+                if args.seguir_tras_fallo:
+                    # En la matriz A/B una celda mala no invalida las demas, y la
+                    # carga (~643 s) ya esta pagada: se sigue y el codigo de
+                    # salida se queda en 1.
+                    print("[aviso] comprobaciones bloqueantes fallidas: se sigue con la matriz.")
+                else:
+                    print("[abortado] comprobaciones bloqueantes fallidas: no se sigue.")
+                    break
 
     except BaseException as exc:  # noqa: BLE001  (el informe se escribe pase lo que pase)
         informe["fallo"] = {
@@ -730,12 +914,61 @@ def construir_parser() -> argparse.ArgumentParser:
         "en la primera que falle (la corta primero, para cerrar el ciclo antes de "
         "gastar tiempo).",
     )
+    parser.add_argument(
+        "--matriz",
+        default=None,
+        help=(
+            "Matriz A/B ejecutada tras UNA sola carga: celdas "
+            "'etiqueta:duracion_s:semilla:si|no' separadas por comas, donde el ultimo "
+            "campo es el planificador. Gana sobre --duraciones/--semilla/--sin-lm. "
+            "Existe porque el arranque en frio son ~643 s: seis pistas en seis "
+            "contenedores serian ~64 min de cargar seis veces el mismo artefacto. "
+            "No contamina la comparacion (ver CasoAB)."
+        ),
+    )
+    parser.add_argument(
+        "--seguir-tras-fallo",
+        action="store_true",
+        dest="seguir_tras_fallo",
+        help=(
+            "No aborta la matriz cuando una celda falla sus comprobaciones "
+            "bloqueantes. El codigo de salida sigue siendo 1."
+        ),
+    )
     parser.add_argument("--prompt", default=PROMPT_POR_DEFECTO, help="Prompt de estilo.")
     parser.add_argument("--letra", default=LETRA_POR_DEFECTO, help="Letra en castellano.")
     parser.add_argument(
         "--letra-fichero", default=None, help="Fichero UTF-8 con la letra (gana sobre --letra)."
     )
     parser.add_argument("--semilla", type=int, default=20260902, help="Semilla (trazabilidad).")
+    parser.add_argument("--bpm", type=int, default=BPM_POR_DEFECTO,
+                        help="Tempo en el bloque de metas. 0 lo omite (comportamiento anterior).")
+    parser.add_argument("--tonalidad", default=TONALIDAD_POR_DEFECTO,
+                        help='Tonalidad, p.ej. "A minor". Cadena vacia para omitirla.')
+    parser.add_argument("--compas", default=COMPAS_POR_DEFECTO,
+                        help='Compas, p.ej. "4/4". Cadena vacia para omitirlo.')
+    parser.add_argument("--idioma-voz", default="es", dest="idioma_voz",
+                        help="Idioma del canto (vocal_language).")
+    parser.add_argument(
+        "--sin-lm",
+        action="store_true",
+        dest="sin_lm",
+        help=(
+            "Desactiva el planificador de 5 Hz (usar_lm=False): `src_latents` vuelve a ser "
+            "el latente de silencio. Es la rama de CONTROL del A/B. Ejecuta la misma orden "
+            "dos veces, una con esta bandera y otra sin ella, manteniendo --semilla, "
+            "--letra, --prompt, --bpm, --tonalidad y --compas, y cambiando solo --etiqueta."
+        ),
+    )
+    parser.add_argument(
+        "--lm-cfg", type=float, default=2.0, dest="lm_cfg",
+        help=("Escala de CFG del planificador (defecto 2,0, el de upstream). 1,0 lo "
+              "desactiva y divide por dos su coste: una pasada por codigo en vez de dos."),
+    )
+    parser.add_argument(
+        "--lm-temperatura", type=float, default=0.85, dest="lm_temperatura",
+        help="Temperatura de muestreo del planificador (defecto 0,85, el de upstream).",
+    )
     parser.add_argument("--salida", default=os.environ.get("ACE_STEP_OUTPUT_DIR", "/outputs"))
     parser.add_argument("--pesos", default=None, help="Directorio de pesos (por defecto, entorno).")
     parser.add_argument(
@@ -744,7 +977,20 @@ def construir_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--dispositivo", default=None, help="Por defecto, ACE_STEP_DEVICE.")
     parser.add_argument("--dtype", default=None, help="Por defecto, ACE_STEP_DTYPE.")
-    parser.add_argument("--max-gpu-seconds", type=int, default=600)
+    parser.add_argument(
+        # Sube de 600 a 1800 el 2026-09-02, y no es un aflojamiento gratuito.
+        # D-17 cuenta la CARGA dentro del presupuesto (`gpu_previo`), y el
+        # arranque en frio del artefacto con planificador son 614,1 s MEDIDOS
+        # (vram_load 571,4 + warm-up 42,7, este ultimo con el planificador ya
+        # dentro): con 600 el trabajo se abortaba ANTES de generar nada, con el
+        # mensaje correcto pero inutilizando el spike. Los 600 estaban calibrados
+        # contra el artefacto anterior (394-463 s). El techo sigue existiendo y
+        # sigue siendo un techo: 1800 deja sitio a una pista larga tras un
+        # arranque en frio y aborta igual si algo se queda colgado.
+        "--max-gpu-seconds", type=int, default=1800,
+        help=("Techo de D-17 en segundos, CARGA INCLUIDA. Arranque en frio medido con "
+              "el artefacto con planificador: 614 s."),
+    )
     parser.add_argument("--periodo-muestreo", type=float, default=PERIODO_MUESTREO_S)
     parser.add_argument("--etiqueta", default="t03-smoke", help="Prefijo de los ficheros.")
     parser.add_argument("--raiz-app", default=None, help="Raiz del runner (por defecto /app).")

@@ -293,6 +293,90 @@ FICHAS_LICENCIA = (
 
 
 # --------------------------------------------------------------------------- #
+# Planificador de 5 Hz (LM). OPCIONAL: solo entra con `--incluir-lm`.
+# --------------------------------------------------------------------------- #
+#
+# El LM es el planificador que el pipeline de upstream usa para emitir los
+# `lm_hints` a 5 Hz que, en el camino NO-cover, SUSTITUYEN a los latentes de
+# origen antes de entrar en el DiT. Sin el, esos hints salen del latente de
+# silencio y el modelo compone a ciegas.
+#
+# Vive en OTRO repo y con OTRA revision que los pesos principales: se publica y
+# se versiona por separado, asi que tiene sus propias constantes. Mezclarlo con
+# `UPSTREAM_REVISION` seria mentir en el manifiesto.
+
+#: Repo y revision fijada del planificador. Jamas `refs/main`.
+LM_REPO = "ACE-Step/acestep-5Hz-lm-0.6B"
+LM_REVISION = "148d8ea0225bdab342ee1ae3a354275ccd60ca80"
+LM_LICENCIA_SPDX = "MIT"
+
+DEFAULT_LM_ROOT = rf"D:\srv\ace-step\upstream\lm-0.6B-{LM_REVISION[:8]}"
+
+#: Quinto prefijo del artefacto, y solo cuando se pide el LM. Quitar `lm.`
+#: devuelve las claves upstream exactas (`model.embed_tokens.weight`, ...).
+PREFIJO_LM = "lm."
+
+#: El arbol del LM es PLANO: los ficheros cuelgan de la raiz, no de un
+#: subdirectorio por componente como en el arbol principal.
+REL_LM_WEIGHTS = ("model.safetensors",)
+REL_LM_CONFIG = ("config.json",)
+REL_LM_TOKENIZER = ("tokenizer.json",)
+REL_LM_TOKENIZER_CONFIG = ("tokenizer_config.json",)
+REL_LM_SPECIAL_TOKENS = ("special_tokens_map.json",)
+#: MEDIDO el 2026-09-02, y no es opcional: `chat_template` NO viaja dentro de
+#: `tokenizer_config.json` en esta revision (se comprobo clave a clave: el JSON
+#: solo trae add_bos_token, add_prefix_space, additional_special_tokens,
+#: bos_token, clean_up_tokenization_spaces, eos_token, errors,
+#: extra_special_tokens, model_max_length, pad_token, split_special_tokens,
+#: tokenizer_class y unk_token). Sin este fichero,
+#: `AutoTokenizer.from_pretrained` carga sin protestar y luego
+#: `apply_chat_template` —que es como `prompt.py` construye TODOS los prompts—
+#: revienta con `ValueError: Cannot use chat template functions because
+#: tokenizer.chat_template is not set`. Verificado montando los dos directorios:
+#: con 4 ficheros falla, con 5 rinde la plantilla de 125 caracteres correcta.
+REL_LM_CHAT_TEMPLATE = ("chat_template.jinja",)
+
+#: Recuentos canonicos del LM en la revision fijada, medidos sobre la cabecera:
+#: 310 tensores = 1 embed_tokens + 28 capas x 11 + 1 norm final. NO hay
+#: `lm_head.weight`: el config trae `tie_word_embeddings: true` y upstream lo
+#: ata a `model.embed_tokens.weight` al cargar.
+CANON_TENSORES_LM = 310
+CANON_TENSORES_AUX_LM = 5
+CANON_LM_PARAMETROS = 662_884_352
+CANON_LM_SHA256_MODELO = (
+    "5d92a60806e2e88c04de58ddc6dde93f2bc8f1336162b3ad5853886c9bcc6b82"
+)
+
+#: dtype del LM DENTRO del artefacto. Por defecto BF16 **tal cual**, copiado
+#: byte a byte sin reinterpretar. Motivo medido (rango dinamico del checkpoint,
+#: 662.884.352 elementos):
+#:     |max| global 99,5 (en `model.layers.0.self_attn.k_norm.weight`)
+#:     valores por encima del techo de fp16 (65.504): 0
+#:     NaN/Inf en origen: 0
+#: es decir, convertir a fp16 SERIA seguro (658x de margen). Se elige BF16 de
+#: todos modos porque el LM **no va a la GPU**: cabe en 810 MiB de holgura de
+#: VRAM ni en fp16 (1.264 MiB), Pascal (sm_61) no ejecuta bf16, y su ALU fp16
+#: va a 1/64 del ritmo de fp32. Ejecutandose en CPU, el camino
+#: bf16 -> fp32 es EXACTO (bf16 son los 16 bits altos de un fp32), mientras que
+#: bf16 -> fp16 -> fp32 perderia 506 valores por flush-to-zero para nada.
+#: `--lm-dtype f16` queda disponible por si la fase de integracion decide
+#: llevarlo a VRAM.
+LM_DTYPE_POR_DEFECTO = "BF16"
+LM_DTYPES_ADMITIDOS = ("BF16", "F16")
+
+#: Reserva de `aux.manifest_json` cuando el LM entra. El manifiesto actual ya
+#: ocupa 7.739 B de los 8.192 reservados (453 B de holgura): la seccion del LM
+#: no cabe. Se dobla la reserva SOLO en ese caso, para que el artefacto sin LM
+#: siga siendo byte a byte el mismo.
+AUX_MANIFEST_BYTES_LM = 16384
+
+#: Ficha de licencia del LM. Se anade a las dos de siempre SOLO con `--incluir-lm`.
+FICHAS_LICENCIA_LM = (
+    ("acestep_5hz_lm", "MIT", "LICENSE.acestep-5Hz-lm-0.6B.mit.txt"),
+)
+
+
+# --------------------------------------------------------------------------- #
 # Excepciones
 # --------------------------------------------------------------------------- #
 
@@ -1262,6 +1346,44 @@ class GuardiasNumericas:
     elementos: int = 0
     tensores: int = 0
 
+    #: Contabilidad SEPARADA del planificador. Va aparte a proposito: los
+    #: contadores de arriba describen *la conversion bfloat16 -> float16*, y con
+    #: `--lm-dtype bf16` el LM no se convierte, se copia. Sumarlo ahi haria que
+    #: `guard_elements` dejase de significar "elementos convertidos".
+    con_lm: bool = False
+    lm_tensores: int = 0
+    lm_elementos: int = 0
+    lm_copiados_sin_convertir: int = 0
+    lm_max_abs_weight: float = 0.0
+    lm_max_abs_clave: str = ""
+
+    def registrar_lm(self, clave: str, tensor: Any, *, copiado: bool) -> None:
+        """Mide un tensor del LM. `copiado=True` = BF16 tal cual, sin conversion.
+
+        Se comprueba la finitud del ORIGEN aunque no haya conversion: un bf16
+        con NaN copiado tal cual sigue siendo un artefacto roto, y detectarlo
+        aqui cuesta una pasada que ya estamos haciendo.
+        """
+        torch = _importar_torch()
+
+        no_finitos = int((~torch.isfinite(tensor)).sum())
+        if no_finitos:
+            raise BuildError(
+                f"El tensor del LM {clave!r} contiene {no_finitos} valores no finitos. "
+                "El checkpoint del planificador esta corrupto o la revision no es la "
+                f"fijada ({LM_REVISION})."
+            )
+
+        maximo = float(tensor.abs().max())
+        if maximo > self.lm_max_abs_weight:
+            self.lm_max_abs_weight = maximo
+            self.lm_max_abs_clave = clave
+
+        self.lm_tensores += 1
+        self.lm_elementos += int(tensor.numel())
+        if copiado:
+            self.lm_copiados_sin_convertir += 1
+
     def registrar(self, clave: str, origen: Any, destino: Any) -> None:
         """Mide un tensor recien convertido y aborta si algo se sale.
 
@@ -1311,10 +1433,26 @@ class GuardiasNumericas:
                 "de 1000 la conversion a fp16 deja de ser defendible (las activaciones "
                 "amplifican los pesos y el techo de fp16 es 65.504)."
             )
+        # El LM en BF16 NO pasa por el techo de fp16 (no se convierte), asi que
+        # aqui la cota solo detecta corrupcion, no riesgo de desbordamiento. Si
+        # el LM se guarda en F16 va por `registrar()` y la cota de arriba ya lo
+        # cubre.
+        if self.lm_max_abs_weight > 1e6:
+            raise BuildError(
+                f"lm_max_abs_weight={self.lm_max_abs_weight} en {self.lm_max_abs_clave!r}: "
+                "un peso asi no es plausible en un checkpoint sano. Se aborta."
+            )
 
     def como_metadatos(self) -> dict[str, str]:
-        """Vista de ancho fijo para la cabecera y el manifiesto."""
-        return {
+        """Vista de ancho fijo para la cabecera y el manifiesto.
+
+        El JUEGO DE CLAVES lo fija `con_lm` en el constructor, nunca el estado
+        acumulado. La cabecera se serializa dos veces —placeholder con las
+        guardias a cero y valor real al cerrar— y tiene que medir lo mismo las
+        dos: si una clave apareciese solo cuando su contador pasa de cero, la
+        segunda cabecera seria mas larga y moveria todos los `data_offsets`.
+        """
+        plano = {
             "guard_max_abs_weight": _fmt_real(self.max_abs_weight),
             "guard_overflow_count": _fmt_contador(self.overflow_count),
             "guard_subnormal_count": _fmt_contador(self.subnormal_count),
@@ -1322,6 +1460,14 @@ class GuardiasNumericas:
             "guard_elements": _fmt_contador(self.elementos),
             "guard_tensors_converted": _fmt_contador(self.tensores),
         }
+        if self.con_lm:
+            plano.update({
+                "guard_lm_max_abs_weight": _fmt_real(self.lm_max_abs_weight),
+                "guard_lm_tensors": _fmt_contador(self.lm_tensores),
+                "guard_lm_elements": _fmt_contador(self.lm_elementos),
+                "guard_lm_copied_unconverted": _fmt_contador(self.lm_copiados_sin_convertir),
+            })
+        return plano
 
 
 # --------------------------------------------------------------------------- #
@@ -1343,6 +1489,8 @@ class Expectativas:
     tensores_vae_encoder: int = CANON_TENSORES_VAE_ENCODER
     latente_shape: tuple[int, ...] = CANON_LATENTE_SHAPE
     latente_sha256: str | None = CANON_LATENTE_STORAGE_SHA256
+    #: Solo se comprueba cuando se pide el LM.
+    tensores_lm: int = CANON_TENSORES_LM
 
 
 @dataclass(frozen=True, slots=True)
@@ -1352,6 +1500,8 @@ class Rutas:
     upstream_root: Path
     quarantine_pt: Path
     licenses_dir: Path
+    #: Arbol del planificador de 5 Hz. `None` mientras no se pida `--incluir-lm`.
+    lm_root: Path | None = None
 
     def acestep_weights(self) -> Path:
         return self.upstream_root.joinpath(*REL_ACESTEP_WEIGHTS)
@@ -1361,6 +1511,19 @@ class Rutas:
 
     def vae_weights(self) -> Path:
         return self.upstream_root.joinpath(*REL_VAE_WEIGHTS)
+
+    def lm_raiz(self) -> Path:
+        if self.lm_root is None:
+            raise BuildError(
+                "Se ha pedido incluir el LM pero no hay --lm-root configurado."
+            )
+        return self.lm_root
+
+    def lm_weights(self) -> Path:
+        return self.lm_raiz().joinpath(*REL_LM_WEIGHTS)
+
+    def lm_blob(self, rel: tuple[str, ...]) -> Path:
+        return self.lm_raiz().joinpath(*rel)
 
 
 @dataclass(slots=True)
@@ -1373,6 +1536,10 @@ class PlanFusion:
     latente: LatenteConvertido
     incluir_vae_encoder: bool
     avisos: list[str] = field(default_factory=list)
+    incluir_lm: bool = False
+    lm_dtype: str = LM_DTYPE_POR_DEFECTO
+    #: Reserva de `aux.manifest_json` de ESTE plan (cambia si entra el LM).
+    bytes_manifiesto: int = AUX_MANIFEST_BYTES
 
     @property
     def bytes_datos(self) -> int:
@@ -1391,6 +1558,7 @@ def _entradas_desde_safetensors(
     prefijo: str,
     *,
     filtro_clave: Any = None,
+    dtype_salida: str = "F16",
 ) -> tuple[list[EntradaPlan], dict[str, TensorUpstream]]:
     """Convierte la cabecera de un safetensors upstream en entradas del plan.
 
@@ -1413,7 +1581,7 @@ def _entradas_desde_safetensors(
         entradas.append(
             EntradaPlan(
                 clave=f"{prefijo}{clave}",
-                dtype_salida="F16",
+                dtype_salida=dtype_salida,
                 shape=info.shape,
                 nbytes=elementos * 2,
                 origen="tensor",
@@ -1430,8 +1598,16 @@ def construir_plan(
     *,
     incluir_vae_encoder: bool,
     expectativas: Expectativas,
+    incluir_lm: bool = False,
+    lm_dtype: str = LM_DTYPE_POR_DEFECTO,
 ) -> PlanFusion:
     """Pasada 1: solo cabeceras y blobs pequenos. No toca los 6 GB de datos."""
+    if lm_dtype not in LM_DTYPES_ADMITIDOS:
+        raise BuildError(
+            f"--lm-dtype {lm_dtype!r} no admitido; use uno de {LM_DTYPES_ADMITIDOS}."
+        )
+    fichas_licencia = FICHAS_LICENCIA + (FICHAS_LICENCIA_LM if incluir_lm else ())
+    bytes_manifiesto = AUX_MANIFEST_BYTES_LM if incluir_lm else AUX_MANIFEST_BYTES
     avisos: list[str] = []
     entradas: list[EntradaPlan] = []
     hashes: dict[str, dict[str, Any]] = {}
@@ -1493,6 +1669,38 @@ def construir_plan(
         )
     entradas.extend(ent_vae)
 
+    # --- lm.* (opcional) --------------------------------------------------
+    # El planificador de 5 Hz. Va DESPUES del VAE y antes de los aux.* para que
+    # `_escribir_bloque_datos` mantenga un unico `safe_open` por fichero fuente:
+    # las entradas del plan estan agrupadas por origen a proposito.
+    ent_lm: list[EntradaPlan] = []
+    if incluir_lm:
+        ruta_lm = rutas.lm_weights()
+        registrar_hash("lm_model_safetensors", ruta_lm)
+        if expectativas.tensores_lm == CANON_TENSORES_LM:
+            # Solo se exige el sha256 canonico cuando se usan los recuentos
+            # canonicos; el selftest monta un arbol sintetico y no lo tiene.
+            obtenido = hashes["lm_model_safetensors"]["sha256"]
+            if obtenido != CANON_LM_SHA256_MODELO:
+                raise BuildError(
+                    f"{ruta_lm}: sha256 {obtenido} != {CANON_LM_SHA256_MODELO}. Esos pesos "
+                    f"NO son la revision fijada del planificador ({LM_REVISION})."
+                )
+        ent_lm, _ = _entradas_desde_safetensors(ruta_lm, PREFIJO_LM, dtype_salida=lm_dtype)
+        if len(ent_lm) != expectativas.tensores_lm:
+            raise BuildError(
+                f"{ruta_lm.name}: {len(ent_lm)} tensores, se esperaban "
+                f"{expectativas.tensores_lm}. Revision del LM distinta o descarga incompleta."
+            )
+        if expectativas.tensores_lm == CANON_TENSORES_LM:
+            parametros = sum(math.prod(e.shape) if e.shape else 1 for e in ent_lm)
+            if parametros != CANON_LM_PARAMETROS:
+                raise BuildError(
+                    f"{ruta_lm.name}: {parametros} parametros, se esperaban "
+                    f"{CANON_LM_PARAMETROS}."
+                )
+        entradas.extend(ent_lm)
+
     # --- aux.* -----------------------------------------------------------
     # Los blobs se copian TAL CUAL (ver `_leer_bytes`). El orden es fijo y
     # deliberado; `aux.manifest_json` va SIEMPRE el ultimo porque es el unico
@@ -1521,6 +1729,27 @@ def construir_plan(
         "aux.text_tokenizer.tokenizer_config_json": "qwen3_tokenizer_config_json",
         "aux.text_tokenizer.special_tokens_map_json": "qwen3_special_tokens_map_json",
     }
+    if incluir_lm:
+        # Mismo criterio que con el text_encoder: `tokenizer.json` ENTERO (el
+        # recorte a vocab.json+merges.txt pierde el post_processor y falla en
+        # silencio), mas config y mapa de tokens especiales. `added_tokens.json`,
+        # `vocab.json` y `merges.txt` NO entran: son la via del tokenizer lento y
+        # su contenido ya esta dentro de `tokenizer.json` (6,7 MB redundantes).
+        blobs.extend([
+            ("aux.lm.config_json", rutas.lm_blob(REL_LM_CONFIG)),
+            ("aux.lm_tokenizer.tokenizer_json", rutas.lm_blob(REL_LM_TOKENIZER)),
+            ("aux.lm_tokenizer.tokenizer_config_json", rutas.lm_blob(REL_LM_TOKENIZER_CONFIG)),
+            ("aux.lm_tokenizer.special_tokens_map_json", rutas.lm_blob(REL_LM_SPECIAL_TOKENS)),
+            ("aux.lm_tokenizer.chat_template_jinja", rutas.lm_blob(REL_LM_CHAT_TEMPLATE)),
+        ])
+        etiquetas_hash.update({
+            "aux.lm.config_json": "lm_config_json",
+            "aux.lm_tokenizer.tokenizer_json": "lm_tokenizer_json",
+            "aux.lm_tokenizer.tokenizer_config_json": "lm_tokenizer_config_json",
+            "aux.lm_tokenizer.special_tokens_map_json": "lm_special_tokens_map_json",
+            "aux.lm_tokenizer.chat_template_jinja": "lm_chat_template_jinja",
+        })
+
     for clave, ruta_blob in blobs:
         datos = _leer_bytes(ruta_blob, tope=64 * 1024 * 1024)
         registrar_hash(etiquetas_hash[clave], ruta_blob)
@@ -1565,15 +1794,15 @@ def construir_plan(
         EntradaPlan(
             clave="aux.manifest_json",
             dtype_salida="U8",
-            shape=(AUX_MANIFEST_BYTES,),
-            nbytes=AUX_MANIFEST_BYTES,
+            shape=(bytes_manifiesto,),
+            nbytes=bytes_manifiesto,
             origen="bytes",
-            datos=b" " * AUX_MANIFEST_BYTES,  # placeholder; se reescribe al cerrar
+            datos=b" " * bytes_manifiesto,  # placeholder; se reescribe al cerrar
         )
     )
 
     # --- licencias -------------------------------------------------------
-    for componente, spdx, nombre in FICHAS_LICENCIA:
+    for componente, spdx, nombre in fichas_licencia:
         ruta_lic = rutas.licenses_dir / nombre
         if ruta_lic.is_file():
             hashes[f"license_{componente}"] = {
@@ -1599,8 +1828,9 @@ def construir_plan(
             )
 
     n_aux = sum(1 for e in entradas if e.clave.startswith(PREFIJO_AUX))
-    if n_aux != CANON_TENSORES_AUX:
-        raise BuildError(f"Se han planificado {n_aux} tensores 'aux.*'; se esperaban {CANON_TENSORES_AUX}.")
+    aux_esperados = CANON_TENSORES_AUX + (CANON_TENSORES_AUX_LM if incluir_lm else 0)
+    if n_aux != aux_esperados:
+        raise BuildError(f"Se han planificado {n_aux} tensores 'aux.*'; se esperaban {aux_esperados}.")
 
     recuentos = {
         "dit": len(ent_dit),
@@ -1610,6 +1840,10 @@ def construir_plan(
         "aux": n_aux,
         "total": len(entradas),
     }
+    # La clave 'lm' solo aparece cuando el LM entra: `recuentos` se serializa en
+    # `__metadata__`, y anadir un "lm":0 cambiaria los bytes del artefacto sin LM.
+    if incluir_lm:
+        recuentos["lm"] = len(ent_lm)
 
     # Assert de recuento del formato: 677 + 310 + 182 + 8 = 1177.
     esperado_total = (
@@ -1617,7 +1851,8 @@ def construir_plan(
         + expectativas.tensores_text_encoder
         + expectativas.tensores_vae_decoder
         + (expectativas.tensores_vae_encoder if incluir_vae_encoder else 0)
-        + CANON_TENSORES_AUX
+        + (expectativas.tensores_lm if incluir_lm else 0)
+        + aux_esperados
     )
     if recuentos["total"] != esperado_total:
         raise BuildError(
@@ -1627,8 +1862,11 @@ def construir_plan(
     claves = [e.clave for e in entradas]
     if len(set(claves)) != len(claves):
         raise BuildError("Hay claves duplicadas en el plan de fusion.")
+    prefijos_validos = (PREFIJO_DIT, PREFIJO_TEXT_ENCODER, PREFIJO_VAE, PREFIJO_AUX)
+    if incluir_lm:
+        prefijos_validos += (PREFIJO_LM,)
     for clave in claves:
-        if not clave.startswith((PREFIJO_DIT, PREFIJO_TEXT_ENCODER, PREFIJO_VAE, PREFIJO_AUX)):
+        if not clave.startswith(prefijos_validos):
             raise BuildError(f"Clave sin prefijo valido en el plan: {clave!r}")
 
     return PlanFusion(
@@ -1638,6 +1876,9 @@ def construir_plan(
         latente=latente,
         incluir_vae_encoder=incluir_vae_encoder,
         avisos=avisos,
+        incluir_lm=incluir_lm,
+        lm_dtype=lm_dtype,
+        bytes_manifiesto=bytes_manifiesto,
     )
 
 
@@ -1663,7 +1904,8 @@ def construir_manifiesto(
         return None if entrada is None else entrada.get("sha256")
 
     licencias = []
-    for componente, spdx, _nombre in FICHAS_LICENCIA:
+    fichas = FICHAS_LICENCIA + (FICHAS_LICENCIA_LM if plan.incluir_lm else ())
+    for componente, spdx, _nombre in fichas:
         info = plan.hashes[f"license_{componente}"]
         licencias.append({
             "component": componente,
@@ -1673,7 +1915,7 @@ def construir_manifiesto(
             "license_file_path": info["path"],
         })
 
-    return {
+    manifiesto: dict[str, Any] = {
         "manifest_schema_version": MANIFEST_SCHEMA_VERSION,
         "manifest_schema_note": (
             "BORRADOR. El esquema del manifiesto de procedencia de GENERACION lo firma "
@@ -1770,6 +2012,72 @@ def construir_manifiesto(
         ],
     }
 
+    # La seccion del LM se anade SOLO cuando el planificador entra. El artefacto
+    # sin LM tiene que seguir dando los mismos bytes que antes de existir esta
+    # opcion, y el manifiesto va dentro del fichero.
+    if plan.incluir_lm:
+        manifiesto["lm"] = {
+            "included": True,
+            # CORREGIDO el 2026-09-02: la version anterior de este texto decia
+            # `torch.where(is_covers == 0, ...)`, que es el sentido CONTRARIO al
+            # del codigo real (linea 1646 de modeling_acestep_v15_turbo.py). Un
+            # manifiesto de procedencia que describe mal el mecanismo es peor que
+            # uno que calle.
+            "role": (
+                "Planificador de 5 Hz. Sus hints SUSTITUYEN a los latentes de origen "
+                "antes del DiT (modeling_acestep_v15_turbo.py, linea 1646: "
+                "src_latents = torch.where(is_covers.unsqueeze(-1).unsqueeze(-1) > 0, "
+                "lm_hints_25Hz, src_latents)). OJO al sentido: los hints entran cuando "
+                "is_covers es CIERTO, e is_covers no significa 'es una version de otra "
+                "cancion' sino 'hay plan semantico' (upstream lo calcula como "
+                "is_cover = (task_type == 'cover') or has_code_hint, o sea cierto en "
+                "cuanto hay codigos). Sin planificador, src_latents es un recorte del "
+                "latente de SILENCIO y el modelo compone a ciegas."
+            ),
+            "repo": LM_REPO,
+            "revision": LM_REVISION,
+            "architecture": "Qwen3ForCausalLM",
+            "parameters": CANON_LM_PARAMETROS,
+            "tensors": plan.recuentos.get("lm"),
+            "source_dtype": "bfloat16",
+            "stored_dtype": "bfloat16" if plan.lm_dtype == "BF16" else "float16",
+            "weights_sha256": (plan.hashes.get("lm_model_safetensors") or {}).get("sha256"),
+            "tie_word_embeddings": True,
+            "load_note": (
+                "NO hay 'lm.lm_head.weight': el config trae tie_word_embeddings=true. Al "
+                "reconstruir Qwen3ForCausalLM hay que atar lm_head a model.embed_tokens (lo "
+                "hace tie_weights()); un load_state_dict(strict=True) crudo se quejara de "
+                "que falta lm_head.weight. Quitar el prefijo 'lm.' devuelve las claves "
+                "upstream exactas ('model.embed_tokens.weight', 'model.layers.N....')."
+            ),
+            "dtype_note": (
+                "Con stored_dtype=bfloat16 los bytes son COPIA EXACTA del upstream: no hay "
+                "reinterpretacion. Medido sobre los 662.884.352 elementos: |max| 99,5 en "
+                "model.layers.0.self_attn.k_norm.weight, 0 valores por encima del techo de "
+                "fp16 (65.504), 0 NaN y 0 Inf; es decir, fp16 tambien seria seguro (658x de "
+                "margen). Se guarda en bf16 porque el LM se ejecuta en CPU, donde "
+                "bf16 -> fp32 es exacto, y porque Pascal (sm_61) no ejecuta bf16 ni tiene "
+                "VRAM libre para el."
+            ),
+            "trust_remote_code": (
+                "NO se usa. llm_inference.py de upstream llama a from_pretrained(..., "
+                "trust_remote_code=True), prohibido por CLAUDE.md. Aqui es innecesario: el "
+                "config.json NO trae auto_map y Qwen3ForCausalLM es una arquitectura nativa "
+                "de transformers."
+            ),
+        }
+        manifiesto["prefix_contract"]["lm."] = (
+            "Planificador de 5 Hz (acestep-5Hz-lm-0.6B). Quitar 'lm.' devuelve las claves "
+            "upstream exactas de Qwen3ForCausalLM. Es el UNICO prefijo que puede no ser "
+            "float16: ver lm.stored_dtype."
+        )
+        manifiesto["prefix_contract"]["regla_dura"] = (
+            "Toda clave que no empiece por uno de los CINCO prefijos (dit., text_encoder., "
+            "vae., lm., aux.) es error fatal en el shim."
+        )
+
+    return manifiesto
+
 
 def _manifiesto_plano(manifiesto: dict[str, Any], plan: PlanFusion) -> dict[str, str]:
     """Vista `str -> str` del manifiesto para `__metadata__`.
@@ -1814,24 +2122,39 @@ def _manifiesto_plano(manifiesto: dict[str, Any], plan: PlanFusion) -> dict[str,
             "load_file() descarta __metadata__; el canal funcional es aux.manifest_json"
         ),
     }
+    if plan.incluir_lm:
+        # Todos de longitud determinada por las entradas (hashes de 64, revision
+        # de 40, literales fijos): la cabecera sigue pudiendo reescribirse en su
+        # sitio al cerrar el fichero.
+        plano.update({
+            "lm_included": "true",
+            "lm_repo": LM_REPO,
+            "lm_revision": LM_REVISION,
+            "lm_stored_dtype": "bfloat16" if plan.lm_dtype == "BF16" else "float16",
+            "source_sha256_lm": hash_de("lm_model_safetensors"),
+            "source_sha256_lm_tokenizer_json": hash_de("lm_tokenizer_json"),
+        })
     plano.update({k: str(v) for k, v in manifiesto["conversion_guards"].items()})
     return plano
 
 
-def _serializar_manifiesto_fijo(manifiesto: dict[str, Any]) -> bytes:
-    """Serializa el manifiesto y lo rellena a `AUX_MANIFEST_BYTES`.
+def _serializar_manifiesto_fijo(
+    manifiesto: dict[str, Any],
+    bytes_reservados: int = AUX_MANIFEST_BYTES,
+) -> bytes:
+    """Serializa el manifiesto y lo rellena a `bytes_reservados`.
 
     El relleno son espacios: `json.loads` los tolera al final, asi que el shim
     puede hacer `json.loads(bytes(tensor))` sin ceremonias.
     """
     crudo = json.dumps(manifiesto, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
-    if len(crudo) > AUX_MANIFEST_BYTES:
+    if len(crudo) > bytes_reservados:
         raise BuildError(
-            f"El manifiesto ocupa {len(crudo)} B y solo hay {AUX_MANIFEST_BYTES} B "
-            f"reservados en aux.manifest_json. Sube AUX_MANIFEST_BYTES (y con el cambia "
+            f"El manifiesto ocupa {len(crudo)} B y solo hay {bytes_reservados} B "
+            f"reservados en aux.manifest_json. Sube la reserva (y con ella cambia "
             f"el tamano del artefacto) o acorta el manifiesto."
         )
-    return crudo + b" " * (AUX_MANIFEST_BYTES - len(crudo))
+    return crudo + b" " * (bytes_reservados - len(crudo))
 
 
 # --------------------------------------------------------------------------- #
@@ -1897,10 +2220,21 @@ def _escribir_bloque_datos(
                     raise BuildError(
                         f"{entrada.clave!r}: dtype {origen.dtype}, se esperaba bfloat16."
                     )
-                convertido = origen.to(torch.float16).contiguous()
-                guardias.registrar(entrada.clave, origen, convertido)
-
-                bloque = convertido.numpy()
+                if entrada.dtype_salida == "BF16":
+                    # Camino del planificador con `--lm-dtype bf16`: NO hay
+                    # conversion, se copian los mismos bytes. numpy no tiene
+                    # bfloat16, asi que se saca por una vista uint8 (el ultimo
+                    # eje pasa de N a 2N); al ser una VISTA y no un cast, los
+                    # bytes escritos son literalmente los de origen.
+                    guardias.registrar_lm(entrada.clave, origen, copiado=True)
+                    convertido = origen.contiguous()
+                    bloque = convertido.view(torch.uint8).numpy()
+                else:
+                    convertido = origen.to(torch.float16).contiguous()
+                    guardias.registrar(entrada.clave, origen, convertido)
+                    if entrada.clave.startswith(PREFIJO_LM):
+                        guardias.registrar_lm(entrada.clave, convertido, copiado=False)
+                    bloque = convertido.numpy()
                 vista = memoryview(bloque)
                 if not vista.c_contiguous:  # pragma: no cover - .contiguous() lo garantiza
                     raise BuildError(f"{entrada.clave!r}: buffer no contiguo tras la conversion.")
@@ -1936,6 +2270,8 @@ def construir_artefacto(
     built_at: str,
     permitir_disco_sistema: bool,
     silencioso: bool = False,
+    incluir_lm: bool = False,
+    lm_dtype: str = LM_DTYPE_POR_DEFECTO,
 ) -> dict[str, Any]:
     """Construye el artefacto completo y devuelve el registro de procedencia.
 
@@ -1944,12 +2280,16 @@ def construir_artefacto(
     cargaria tan contento (el SHA-256 lo salvaria, pero solo si esta configurado).
     """
     plan = construir_plan(
-        rutas, incluir_vae_encoder=incluir_vae_encoder, expectativas=expectativas
+        rutas,
+        incluir_vae_encoder=incluir_vae_encoder,
+        expectativas=expectativas,
+        incluir_lm=incluir_lm,
+        lm_dtype=lm_dtype,
     )
     for aviso in plan.avisos:
         _log(f"AVISO: {aviso}", silencioso=False)
 
-    guardias = GuardiasNumericas()
+    guardias = GuardiasNumericas(con_lm=incluir_lm)
     manifiesto = construir_manifiesto(plan, built_at=built_at, guardias=guardias)
     metadatos = _manifiesto_plano(manifiesto, plan)
     cabecera = serializar_cabecera(plan.entradas, metadatos)
@@ -1989,7 +2329,9 @@ def construir_artefacto(
                     f"({len(cabecera)} -> {len(cabecera_final)}). No se puede reescribir en "
                     "su sitio sin mover todos los data_offsets."
                 )
-            bytes_manifiesto = _serializar_manifiesto_fijo(manifiesto_final)
+            bytes_manifiesto = _serializar_manifiesto_fijo(
+                manifiesto_final, plan.bytes_manifiesto
+            )
 
             f.flush()
             f.seek(8)
@@ -2063,6 +2405,28 @@ CASOS_TOKENIZER: tuple[tuple[str, str], ...] = (
 )
 
 
+def _artefacto_declara_lm(artefacto: Path) -> bool:
+    """Dice si el artefacto lleva planificador, leyendo solo su cabecera.
+
+    No abre los gigabytes: los primeros 8 bytes de un `safetensors` son la
+    longitud del JSON de cabecera, y ahi ya estan los nombres de todos los
+    tensores. Basta con ver si alguno empieza por `lm.`.
+
+    Devuelve `False` ante cualquier problema de lectura en vez de reventar: esta
+    funcion solo elige una expectativa, y quien de verdad valida es
+    `verificar_artefacto`, que fallara con su mensaje propio si algo no cuadra.
+    """
+    try:
+        with open(artefacto, "rb") as fichero:
+            longitud = int.from_bytes(fichero.read(8), "little")
+            if not 0 < longitud <= 64 * 1024 * 1024:
+                return False
+            cabecera = json.loads(fichero.read(longitud))
+    except Exception:  # noqa: BLE001  (una cabecera ilegible no es cosa nuestra)
+        return False
+    return any(clave.startswith("lm.") for clave in cabecera)
+
+
 def verificar_artefacto(
     artefacto: Path,
     rutas: Rutas,
@@ -2070,6 +2434,8 @@ def verificar_artefacto(
     incluir_vae_encoder: bool,
     expectativas: Expectativas,
     silencioso: bool = False,
+    incluir_lm: bool = False,
+    lm_dtype: str = LM_DTYPE_POR_DEFECTO,
 ) -> dict[str, Any]:
     """Reabre el artefacto y comprueba que es lo que dice ser.
 
@@ -2095,12 +2461,14 @@ def verificar_artefacto(
         claves = list(h.keys())
         metadatos = h.metadata() or {}
 
+        aux_esperados = CANON_TENSORES_AUX + (CANON_TENSORES_AUX_LM if incluir_lm else 0)
         esperado_total = (
             expectativas.tensores_dit
             + expectativas.tensores_text_encoder
             + expectativas.tensores_vae_decoder
             + (expectativas.tensores_vae_encoder if incluir_vae_encoder else 0)
-            + CANON_TENSORES_AUX
+            + (expectativas.tensores_lm if incluir_lm else 0)
+            + aux_esperados
         )
         if len(claves) != esperado_total:
             problemas.append(f"{len(claves)} claves, se esperaban {esperado_total}.")
@@ -2112,6 +2480,8 @@ def verificar_artefacto(
             "vae_encoder": sum(1 for k in claves if k.startswith("vae.encoder.")),
             "aux": sum(1 for k in claves if k.startswith(PREFIJO_AUX)),
         }
+        if incluir_lm:
+            por_prefijo["lm"] = sum(1 for k in claves if k.startswith(PREFIJO_LM))
         resumen["counts"] = por_prefijo
         if por_prefijo["dit"] != expectativas.tensores_dit:
             problemas.append(f"dit.*: {por_prefijo['dit']} != {expectativas.tensores_dit}")
@@ -2126,11 +2496,17 @@ def verificar_artefacto(
             )
         if not incluir_vae_encoder and por_prefijo["vae_encoder"]:
             problemas.append("hay tensores vae.encoder.* y no se pidieron.")
-        if por_prefijo["aux"] != CANON_TENSORES_AUX:
-            problemas.append(f"aux.*: {por_prefijo['aux']} != {CANON_TENSORES_AUX}")
+        if por_prefijo["aux"] != aux_esperados:
+            problemas.append(f"aux.*: {por_prefijo['aux']} != {aux_esperados}")
+        if incluir_lm and por_prefijo["lm"] != expectativas.tensores_lm:
+            problemas.append(f"lm.*: {por_prefijo['lm']} != {expectativas.tensores_lm}")
+        if not incluir_lm and any(k.startswith(PREFIJO_LM) for k in claves):
+            problemas.append("hay tensores lm.* y no se pidieron.")
 
-        sueltas = [k for k in claves if not k.startswith(
-            (PREFIJO_DIT, PREFIJO_TEXT_ENCODER, PREFIJO_VAE, PREFIJO_AUX))]
+        prefijos_validos = (PREFIJO_DIT, PREFIJO_TEXT_ENCODER, PREFIJO_VAE, PREFIJO_AUX)
+        if incluir_lm:
+            prefijos_validos += (PREFIJO_LM,)
+        sueltas = [k for k in claves if not k.startswith(prefijos_validos)]
         if sueltas:
             problemas.append(f"claves sin prefijo valido: {sueltas[:5]}")
 
@@ -2144,6 +2520,9 @@ def verificar_artefacto(
                     esperado = torch.float32
                 else:
                     esperado = torch.uint8
+            elif clave.startswith(PREFIJO_LM):
+                # El LM es el unico prefijo que puede no ser fp16.
+                esperado = torch.bfloat16 if lm_dtype == "BF16" else torch.float16
             else:
                 esperado = torch.float16
             if tensor.dtype is not esperado:
@@ -2170,7 +2549,26 @@ def verificar_artefacto(
                 rutas.upstream_root.joinpath(*REL_QWEN3_SPECIAL_TOKENS),
             ),
         ]
+        if incluir_lm:
+            pares.extend([
+                ("aux.lm.config_json", rutas.lm_blob(REL_LM_CONFIG)),
+                ("aux.lm_tokenizer.tokenizer_json", rutas.lm_blob(REL_LM_TOKENIZER)),
+                (
+                    "aux.lm_tokenizer.tokenizer_config_json",
+                    rutas.lm_blob(REL_LM_TOKENIZER_CONFIG),
+                ),
+                (
+                    "aux.lm_tokenizer.special_tokens_map_json",
+                    rutas.lm_blob(REL_LM_SPECIAL_TOKENS),
+                ),
+                (
+                    "aux.lm_tokenizer.chat_template_jinja",
+                    rutas.lm_blob(REL_LM_CHAT_TEMPLATE),
+                ),
+            ])
+
         tokenizer_empotrado: str | None = None
+        tokenizer_lm_empotrado: str | None = None
         for clave, ruta_fuente in pares:
             if clave not in claves:
                 problemas.append(f"falta el blob {clave}")
@@ -2186,6 +2584,8 @@ def verificar_artefacto(
                 )
             elif clave == "aux.text_tokenizer.tokenizer_json":
                 tokenizer_empotrado = empotrado.decode("utf-8")
+            elif clave == "aux.lm_tokenizer.tokenizer_json":
+                tokenizer_lm_empotrado = empotrado.decode("utf-8")
 
         # --- latente ------------------------------------------------------
         if "aux.silence_latent" in claves:
@@ -2219,6 +2619,20 @@ def verificar_artefacto(
                     problemas.append(f"aux.manifest_json sin campo {campo!r}")
             if manifiesto.get("stored_dtype") != "float16":
                 problemas.append("aux.manifest_json: stored_dtype != float16")
+            if incluir_lm:
+                bloque_lm = manifiesto.get("lm") or {}
+                esperado_lm = "bfloat16" if lm_dtype == "BF16" else "float16"
+                if not bloque_lm:
+                    problemas.append("aux.manifest_json sin seccion 'lm' y se pidio el LM")
+                elif bloque_lm.get("stored_dtype") != esperado_lm:
+                    problemas.append(
+                        f"aux.manifest_json: lm.stored_dtype "
+                        f"{bloque_lm.get('stored_dtype')!r} != {esperado_lm!r}"
+                    )
+                elif bloque_lm.get("revision") != LM_REVISION:
+                    problemas.append("aux.manifest_json: lm.revision no es la fijada")
+            elif manifiesto.get("lm"):
+                problemas.append("aux.manifest_json trae seccion 'lm' y no se pidio el LM")
             if metadatos.get("upstream_revision") != manifiesto.get("upstream_revision"):
                 problemas.append("__metadata__ y aux.manifest_json discrepan en upstream_revision")
         else:
@@ -2238,6 +2652,18 @@ def verificar_artefacto(
             )
         )
 
+    if incluir_lm:
+        if tokenizer_lm_empotrado is None:
+            problemas.append("no se pudo extraer el tokenizer del LM para la paridad de ids")
+        else:
+            problemas.extend(
+                _verificar_tokenizer(
+                    tokenizer_lm_empotrado,
+                    rutas.lm_blob(REL_LM_TOKENIZER),
+                    canario_qwen3_embedding=False,
+                )
+            )
+
     resumen["problems"] = problemas
     resumen["ok"] = not problemas
     if problemas:
@@ -2247,7 +2673,12 @@ def verificar_artefacto(
     return resumen
 
 
-def _verificar_tokenizer(empotrado: str, ruta_fuente: Path) -> list[str]:
+def _verificar_tokenizer(
+    empotrado: str,
+    ruta_fuente: Path,
+    *,
+    canario_qwen3_embedding: bool = True,
+) -> list[str]:
     """Reconstruye el tokenizer desde el blob empotrado y compara ids.
 
     Comprueba lo que un `vocab.json + merges.txt` perderia en silencio: que el
@@ -2293,6 +2724,14 @@ def _verificar_tokenizer(empotrado: str, ruta_fuente: Path) -> list[str]:
     #       (<|endoftext|> == 151643) y NO hay sufijo, es un fallo duro aunque
     #       la paridad cuadre: significa que el blob no es el tokenizer.json
     #       completo.
+    #
+    # (b) NO vale para el tokenizer del planificador y por eso es opcional. Ese
+    # comparte la base de vocabulario de Qwen (<|endoftext|> sigue siendo 151643)
+    # pero es un causal LM: su post_processor es ByteLevel, no TemplateProcessing,
+    # y legitimamente NO anade sufijo —su eos es <|im_end|> (151645), que lo pone
+    # la generacion, no el tokenizer—. Comprobado sobre el fichero real de la
+    # revision fijada: encode("hola mundo") -> [71, 7924, 28352]. Aplicarle (b)
+    # seria un falso positivo que tumbaria --verify --incluir-lm.
     eos = desde_str.token_to_id("<|endoftext|>")
     if eos is not None:
         ids_empotrado = desde_str.encode("hola mundo").ids
@@ -2304,7 +2743,7 @@ def _verificar_tokenizer(empotrado: str, ruta_fuente: Path) -> list[str]:
                 f"el tokenizer EMPOTRADO no anade <|endoftext|> ({eos}) y el fuente si: "
                 "se ha perdido el post_processor al empotrarlo."
             )
-        elif not sufijo_fuente and eos == 151643:
+        elif not sufijo_fuente and eos == 151643 and canario_qwen3_embedding:
             problemas.append(
                 "el blob del tokenizer tiene el vocabulario de Qwen3-Embedding "
                 "(<|endoftext|> == 151643) pero NO anade el sufijo: no es el tokenizer.json "
@@ -2489,6 +2928,12 @@ def ejecutar_selftest(*, silencioso: bool = False) -> dict[str, Any]:
         # rechazado nada no esta verificada.
         rechazos = _selftest_rechazos(ruta_pt, raiz)
 
+        # --- ciclo del planificador de 5 Hz --------------------------------
+        # Se ejecuta DESPUES del ciclo de siempre y sobre su propio arbol, para
+        # que el artefacto sin LM siga midiendo y hasheando exactamente lo mismo
+        # que antes de que esta opcion existiera. Ese sha256 es la prueba.
+        lm_resultados = _selftest_lm(raiz, upstream, ruta_pt, forma_latente, silencioso=silencioso)
+
         return {
             "artifact_sha256": registro["artifact"]["sha256"],
             "artifact_bytes": registro["artifact"]["bytes"],
@@ -2498,7 +2943,158 @@ def ejecutar_selftest(*, silencioso: bool = False) -> dict[str, Any]:
             "tokenizer_checked": tokenizer_disponible,
             "pickle_rejections": rechazos,
             "warnings": registro["warnings"],
+            "lm": lm_resultados,
         }
+
+
+def _selftest_lm(
+    raiz: Path,
+    upstream: Path,
+    ruta_pt: Path,
+    forma_latente: tuple[int, ...],
+    *,
+    silencioso: bool,
+) -> dict[str, Any]:
+    """Ciclo build+verify con `--incluir-lm`, en BF16 y en F16.
+
+    Comprueba las tres cosas que la opcion promete y que no se pueden dar por
+    supuestas:
+      1. el artefacto con LM se construye y se verifica en los dos dtypes;
+      2. con BF16 los bytes del bloque `lm.*` son **identicos** a los del
+         safetensors de origen (es copia, no conversion);
+      3. con F16 el dtype almacenado cambia de verdad y el tamano baja a la
+         mitad en ese bloque.
+    """
+    torch = _importar_torch()
+    safe_open = _importar_safe_open()
+    from safetensors.torch import save_file  # noqa: PLC0415
+
+    lm_dir = raiz / "lm-0.6B-sintetico"
+    lm_dir.mkdir()
+
+    def bf16_lm(*forma: int) -> Any:
+        n = math.prod(forma)
+        # Rango deliberadamente amplio (incluye 300, por encima del techo de
+        # fp16 NO, pero si por encima de lo tipico) para que la medida de
+        # lm_max_abs_weight tenga recorrido.
+        plano = torch.linspace(-300.0, 300.0, steps=n, dtype=torch.float32)
+        return plano.reshape(*forma).to(torch.bfloat16)
+
+    # Misma FORMA que el real: embed_tokens + capa + norm, sin lm_head (atado).
+    pesos_lm = {
+        "model.embed_tokens.weight": bf16_lm(16, 8),
+        "model.layers.0.self_attn.q_proj.weight": bf16_lm(16, 8),
+        "model.layers.0.self_attn.q_norm.weight": bf16_lm(4),
+        "model.layers.0.mlp.gate_proj.weight": bf16_lm(12, 8),
+        "model.norm.weight": bf16_lm(8),
+    }
+    save_file(pesos_lm, str(lm_dir.joinpath(*REL_LM_WEIGHTS)), metadata={"format": "pt"})
+    lm_dir.joinpath(*REL_LM_CONFIG).write_bytes(
+        b'{\n  "architectures" : ["Qwen3ForCausalLM"] , "tie_word_embeddings": true\n}\n'
+    )
+    lm_dir.joinpath(*REL_LM_TOKENIZER_CONFIG).write_bytes(b'{"tokenizer_class":"Qwen2Tokenizer"}')
+    lm_dir.joinpath(*REL_LM_SPECIAL_TOKENS).write_bytes(b'{"eos_token":"<|im_end|>"}')
+    # `chat_template.jinja` es un fichero aparte en el repo del LM (NO viaja
+    # dentro de `tokenizer_config.json`) y sin el `apply_chat_template` revienta.
+    # Aqui basta una plantilla minima valida: el selftest comprueba el
+    # round-trip byte a byte del blob, no que Jinja la sepa renderizar.
+    lm_dir.joinpath(*REL_LM_CHAT_TEMPLATE).write_bytes(
+        b"{% for m in messages %}{{ m['role'] }}: {{ m['content'] }}\n{% endfor %}"
+    )
+    # El tokenizer del LM se reaprovecha del arbol principal: para la paridad de
+    # ids da igual cual sea mientras sea un tokenizer valido.
+    lm_dir.joinpath(*REL_LM_TOKENIZER).write_bytes(
+        upstream.joinpath(*REL_QWEN3_TOKENIZER).read_bytes()
+    )
+
+    rutas = Rutas(
+        upstream_root=upstream,
+        quarantine_pt=ruta_pt,
+        licenses_dir=raiz / "provenance",
+        lm_root=lm_dir,
+    )
+    expectativas = Expectativas(
+        tensores_dit=6,
+        tensores_text_encoder=3,
+        tensores_vae_decoder=2,
+        tensores_vae_encoder=1,
+        latente_shape=forma_latente,
+        latente_sha256=None,
+        tensores_lm=len(pesos_lm),
+    )
+
+    salidas: dict[str, Any] = {}
+    for etiqueta, dtype_lm in (("bf16", "BF16"), ("f16", "F16")):
+        salida = raiz / f"out_lm_{etiqueta}" / "ace_step_1_5.safetensors"
+        registro = construir_artefacto(
+            rutas,
+            salida,
+            incluir_vae_encoder=False,
+            expectativas=expectativas,
+            built_at="2026-01-01T00:00:00Z",
+            permitir_disco_sistema=True,
+            silencioso=True,
+            incluir_lm=True,
+            lm_dtype=dtype_lm,
+        )
+        verificar_artefacto(
+            salida,
+            rutas,
+            incluir_vae_encoder=False,
+            expectativas=Expectativas(
+                tensores_dit=expectativas.tensores_dit,
+                tensores_text_encoder=expectativas.tensores_text_encoder,
+                tensores_vae_decoder=expectativas.tensores_vae_decoder,
+                tensores_vae_encoder=expectativas.tensores_vae_encoder,
+                latente_shape=forma_latente,
+                latente_sha256=registro["manifest"]["silence_latent"]["storage_sha256"],
+                tensores_lm=expectativas.tensores_lm,
+            ),
+            silencioso=True,
+            incluir_lm=True,
+            lm_dtype=dtype_lm,
+        )
+
+        # Comparacion tensor a tensor contra el origen.
+        identicos = 0
+        with safe_open(str(salida), framework="pt", device="cpu") as art, \
+             safe_open(str(lm_dir.joinpath(*REL_LM_WEIGHTS)), framework="pt", device="cpu") as ori:
+            for clave in pesos_lm:
+                a = art.get_tensor(f"{PREFIJO_LM}{clave}")
+                b = ori.get_tensor(clave)
+                if dtype_lm == "BF16":
+                    if a.dtype is not torch.bfloat16:
+                        raise BuildError(f"selftest LM: {clave} deberia ser bfloat16, es {a.dtype}")
+                    # Copia byte a byte: se comparan los BYTES, no los valores.
+                    if a.contiguous().view(torch.uint8).numpy().tobytes() != \
+                       b.contiguous().view(torch.uint8).numpy().tobytes():
+                        raise BuildError(
+                            f"selftest LM: {clave} no es copia byte a byte del origen. "
+                            "Con --lm-dtype bf16 no puede haber ninguna reinterpretacion."
+                        )
+                    identicos += 1
+                else:
+                    if a.dtype is not torch.float16:
+                        raise BuildError(f"selftest LM: {clave} deberia ser float16, es {a.dtype}")
+                    if not bool(torch.equal(a.float(), b.float().to(torch.float16).float())):
+                        raise BuildError(f"selftest LM: {clave} no coincide con la conversion a fp16")
+                    identicos += 1
+
+        guardias = registro["manifest"]["conversion_guards"]
+        salidas[etiqueta] = {
+            "sha256": registro["artifact"]["sha256"],
+            "bytes": registro["artifact"]["bytes"],
+            "tensors": registro["artifact"]["tensors"],
+            "lm_stored_dtype": registro["manifest"]["lm"]["stored_dtype"],
+            "lm_tensors_checked": identicos,
+            "guard_lm_max_abs_weight": guardias["guard_lm_max_abs_weight"],
+            "guard_lm_copied_unconverted": guardias["guard_lm_copied_unconverted"],
+        }
+        _log(f"selftest LM {etiqueta}: OK ({identicos} tensores comparados)", silencioso=silencioso)
+
+    if salidas["bf16"]["sha256"] == salidas["f16"]["sha256"]:
+        raise BuildError("selftest LM: bf16 y f16 han dado el mismo artefacto; el dtype no se aplica.")
+    return salidas
 
 
 def _selftest_rechazos(ruta_pt: Path, raiz: Path) -> dict[str, str]:
@@ -2571,19 +3167,22 @@ def imprimir_plan(plan: PlanFusion, cabecera_bytes: int) -> None:
     print()
     print("## Recuentos por prefijo")
     print()
-    for etiqueta, clave in (
+    filas_prefijo = [
         ("dit.*", "dit"),
         ("text_encoder.*", "text_encoder"),
         ("vae.decoder.*", "vae_decoder"),
         ("vae.encoder.*", "vae_encoder"),
-        ("aux.*", "aux"),
-    ):
+    ]
+    if plan.incluir_lm:
+        filas_prefijo.append((f"lm.* ({plan.lm_dtype})", "lm"))
+    filas_prefijo.append(("aux.*", "aux"))
+    for etiqueta, clave in filas_prefijo:
         bytes_prefijo = sum(
             e.nbytes for e in plan.entradas
             if e.clave.startswith(
                 {"dit": PREFIJO_DIT, "text_encoder": PREFIJO_TEXT_ENCODER,
                  "vae_decoder": "vae.decoder.", "vae_encoder": "vae.encoder.",
-                 "aux": PREFIJO_AUX}[clave]
+                 "lm": PREFIJO_LM, "aux": PREFIJO_AUX}[clave]
             )
         )
         print(f"  {etiqueta:<20} {plan.recuentos[clave]:>5} tensores  {bytes_prefijo / 2**20:>10.1f} MiB")
@@ -2651,6 +3250,22 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--include-vae-encoder", action="store_true",
                         help="Incluye vae.encoder.* (183 tensores, +161 MiB). Por defecto NO: "
                              "no hace falta para text2music y engorda el pico de carga.")
+    parser.add_argument("--incluir-lm", action="store_true", dest="incluir_lm",
+                        help="Incluye el planificador de 5 Hz bajo el prefijo 'lm.' "
+                             "(310 tensores + 5 blobs aux, +1,26 GiB en bf16). Por defecto NO. "
+                             "PRECONDICION YA RESUELTA (2026-09-02): el adapter mapea el "
+                             "artefacto con load_file(..., device='cpu') y el shim coloca cada "
+                             "componente, asi que este artefacto ya no aterriza entero en VRAM. "
+                             "El shim exige los CINCO blobs: sin "
+                             "aux.lm_tokenizer.chat_template_jinja no hay plantilla de chat y "
+                             "no hay planificacion posible.")
+    parser.add_argument("--lm-root", default=DEFAULT_LM_ROOT,
+                        help=f"Arbol del planificador. Defecto: {DEFAULT_LM_ROOT}")
+    parser.add_argument("--lm-dtype", default="bf16", choices=("bf16", "f16"),
+                        help="dtype del LM dentro del artefacto. 'bf16' (defecto) copia los "
+                             "bytes del upstream sin tocarlos: exacto, y lo correcto si el LM "
+                             "se ejecuta en CPU. 'f16' convierte (medido seguro: |max| 99,5 "
+                             "frente al techo 65.504) para quien quiera llevarlo a VRAM.")
     parser.add_argument("--built-at", default=None,
                         help="Marca UTC 'AAAA-MM-DDTHH:MM:SSZ'. Fijarla hace el build "
                              "reproducible byte a byte; por defecto se usa el reloj.")
@@ -2676,6 +3291,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"[{TASK}/{TOOL}] SELFTEST OK")
             print(f"  tensores            : {resultado['tensors']}")
             print(f"  bytes               : {resultado['artifact_bytes']}")
+            for etiqueta, datos in resultado.get("lm", {}).items():
+                print(
+                    f"  ciclo con LM ({etiqueta:>4}): {datos['tensors']} tensores, "
+                    f"{datos['bytes']} B, lm dtype {datos['lm_stored_dtype']}, "
+                    f"{datos['lm_tensors_checked']} tensores comparados con el origen"
+                )
             print(f"  sha256              : {resultado['artifact_sha256']}")
             print(f"  determinista        : {resultado['deterministic']}")
             print(f"  tokenizer verificado: {resultado['tokenizer_checked']}")
@@ -2684,10 +3305,34 @@ def main(argv: Sequence[str] | None = None) -> int:
                 print(f"    - {caso}: {motivo[:120]}")
             return EXIT_OK
 
+        lm_dtype = {"bf16": "BF16", "f16": "F16"}[args.lm_dtype]
+
+        # AUTODETECCION DEL LM AL VERIFICAR. Va AQUI, antes de armar `Rutas`, y no
+        # justo antes de llamar al verificador: `lm_root` se decide en esa misma
+        # estructura, asi que activar la bandera despues dejaba el verificador
+        # pidiendo el LM sin saber donde esta su origen. Ese fue exactamente el
+        # fallo del primer intento ("Se ha pedido incluir el LM pero no hay
+        # --lm-root configurado"), y antes de eso un segfault al mezclar estados.
+        #
+        # El motivo de la autodeteccion: un verificador al que hay que decirle que
+        # esta verificando es medio verificador. Obligar a recordar `--incluir-lm`
+        # convierte un descuido en un falso fallo, y el artefacto YA declara lo que
+        # lleva. `--incluir-lm` explicito sigue mandando, para poder forzar la
+        # expectativa y cazar un artefacto que mienta sobre si mismo.
+        incluir_lm = args.incluir_lm
+        if args.verify and not incluir_lm and _artefacto_declara_lm(Path(args.out)):
+            incluir_lm = True
+            _log(
+                "El artefacto declara tensores 'lm.': se verifica CON "
+                "planificador (autodetectado).",
+                silencioso=args.quiet,
+            )
+
         rutas = Rutas(
             upstream_root=Path(args.upstream_root),
             quarantine_pt=Path(args.quarantine_pt),
             licenses_dir=Path(args.licenses_dir),
+            lm_root=Path(args.lm_root) if incluir_lm else None,
         )
         salida = Path(args.out)
         expectativas = Expectativas()
@@ -2699,6 +3344,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 incluir_vae_encoder=args.include_vae_encoder,
                 expectativas=expectativas,
                 silencioso=args.quiet,
+                incluir_lm=incluir_lm,
+                lm_dtype=lm_dtype,
             )
             print(f"[{TASK}/{TOOL}] VERIFICACION OK: {salida}")
             print(f"  bytes    : {resumen['bytes']}")
@@ -2711,8 +3358,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 rutas,
                 incluir_vae_encoder=args.include_vae_encoder,
                 expectativas=expectativas,
+                incluir_lm=args.incluir_lm,
+                lm_dtype=lm_dtype,
             )
-            guardias = GuardiasNumericas()
+            guardias = GuardiasNumericas(con_lm=args.incluir_lm)
             built_at = _validar_marca_tiempo(args.built_at) if args.built_at else _ahora_utc()
             manifiesto = construir_manifiesto(plan, built_at=built_at, guardias=guardias)
             cabecera = serializar_cabecera(plan.entradas, _manifiesto_plano(manifiesto, plan))
@@ -2735,6 +3384,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             built_at=built_at,
             permitir_disco_sistema=args.allow_system_drive,
             silencioso=args.quiet,
+            incluir_lm=args.incluir_lm,
+            lm_dtype=lm_dtype,
         )
 
         destino_json = (
@@ -2758,6 +3409,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"    subnormal_count     : {int(guardias['guard_subnormal_count'])}")
         print(f"    flush_to_zero_count : {int(guardias['guard_flush_to_zero_count'])}")
         print(f"    elementos convertidos: {int(guardias['guard_elements'])}")
+        if args.incluir_lm:
+            print()
+            print("  Planificador de 5 Hz (lm.*):")
+            print(f"    dtype almacenado    : {registro['manifest']['lm']['stored_dtype']}")
+            print(f"    lm_max_abs_weight   : {float(guardias['guard_lm_max_abs_weight']):.5f}")
+            print(f"    tensores            : {int(guardias['guard_lm_tensors'])}")
+            print(f"    copiados sin convertir: {int(guardias['guard_lm_copied_unconverted'])}")
         print()
         print("  SHA-256 del artefacto (exportar como ACE_STEP_WEIGHTS_SHA256):")
         print(f"    {registro['artifact']['sha256']}")

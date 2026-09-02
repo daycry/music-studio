@@ -313,6 +313,106 @@ El propio informe lo dice en `recomendaciones`.
 pero **parcial** (por ejemplo, se agotó `--max-gpu-seconds-total`) · `2` fallo operativo
 (no hay adapter, VRAM insuficiente, `health()` no listo) y no se escribe matriz.
 
+### 5.4 A/B del planificador de 5 Hz — `generate_smoke.py --matriz`
+
+Mide **si el planificador cambia la calidad**. Hasta el 2026-09-02 el planificador de
+upstream estaba desconectado y `src_latents` era un recorte del latente de **silencio**: el
+DiT componía a ciegas. Ahora el plan entra en su sitio y se enciende o se apaga con
+`model_params["usar_lm"]`.
+
+Requiere el artefacto **con** planificador (`--incluir-lm`, 7,0 GiB, 1.492 tensores):
+
+```bash
+python apps/runner/tools/build_artifact.py --incluir-lm \
+  --out "D:\srv\ace-step\weights\ace_step_1_5_lm.safetensors"
+python apps/runner/tools/build_artifact.py --verify --incluir-lm \
+  --out "D:\srv\ace-step\weights\ace_step_1_5_lm.safetensors"
+```
+
+#### Un par no basta: hace falta la vara de medir
+
+Generar una pista con planificador y otra sin él **no responde a la pregunta**. Ya está
+medido en este proyecto que cambiar la semilla mueve mucho el audio, así que dos pistas
+distintas no demuestran nada: si el planificador mueve el audio *menos* que un cambio de
+semilla, su efecto no se distingue del azar. Por eso el experimento mínimo honesto cruza
+**dos ejes** —planificador sí/no × dos semillas— y añade un par largo, porque lo que se le
+supone al planificador es **estructura**, y a 25 s puede no haber estructura que planificar.
+
+`--matriz` ejecuta ese cruce **tras una sola carga**, que es lo que lo hace viable: el
+arranque en frío son ~643 s, y seis contenedores serían ~64 min de cargar seis veces el
+mismo artefacto.
+
+```bash
+MSYS_NO_PATHCONV=1 docker run --rm --gpus all --name ab-planificador \
+  -e ACE_STEP_REQUIRE_GPU=1 \
+  -v "D:\srv\ace-step\weights:/weights:ro" -v "D:\srv\ace-step\out:/outputs" \
+  -v "C:\...\apps\runner:/work:ro" \
+  --entrypoint python ace-step-runner:t05 -u /work/spikes/generate_smoke.py \
+  --fichero-pesos ace_step_1_5_lm.safetensors \
+  --matriz "lm-si-s1:25:20260902:si,lm-no-s1:25:20260902:no,lm-si-s2:25:771013:si,lm-no-s2:25:771013:no,lm-si-60:60:20260902:si,lm-no-60:60:20260902:no" \
+  --seguir-tras-fallo --max-gpu-seconds 2400 --etiqueta ab-planificador
+```
+
+Cada celda es `etiqueta:duracion_s:semilla:si|no`. Prompt, letra, BPM, tonalidad y compás
+son comunes a todas: lo único que varía son los dos ejes.
+
+> **El `-u` no es decorativo.** Si rediriges la salida a un fichero (`> ab.log`), Python
+> pasa a bufferear por bloques y el log se queda mudo durante minutos: parece que la carga
+> se ha colgado cuando en realidad va avanzando. Con un arranque en frío de ~11 min esa
+> confusión cuesta cara. `-u` (o `PYTHONUNBUFFERED=1`) hace que cada hito aparezca al
+> instante.
+
+**Que las seis pistas salgan del mismo proceso no contamina la comparación**, y está
+verificado en el código, no supuesto:
+
+* El ruido de difusión sale de `prepare_noise`, que construye un `torch.Generator` propio
+  sembrado con la semilla (`modeling_acestep_v15_turbo.py`). No lee el RNG global.
+* El bucle ODE vendorizado (`vendor/pipeline/diffusion.py`) no vuelve a sortear nada:
+  llama a `prepare_noise` una vez y sigue.
+* El planificador siembra el RNG global él mismo (`torch.manual_seed`) al entrar, así que
+  su plan tampoco depende de lo que corrió antes.
+
+De ahí la propiedad que hace válido el A/B: **a igual semilla, la rama CON y la rama SIN
+reciben exactamente el mismo ruido inicial**. Lo único distinto entre las dos es
+`src_latents`.
+
+#### Medir el resultado — `medir_ab.py`
+
+```bash
+python apps/runner/spikes/medir_ab.py \
+  --directorio "D:\srv\ace-step\out" --salida "D:\srv\ace-step\out\ab-medidas.json"
+```
+
+No necesita GPU. Mide nivel (RMS, pico, factor de cresta), espectro (centroide, rolloff
+95 %, energía sobre 4 kHz, planitud, flujo) y —lo que de verdad importa aquí— **estructura**
+(autocorrelación de la envolvente de energía, dispersión del RMS por segundo, y curva de
+novedad sobre la matriz de autosimilitud para contar fronteras de sección).
+
+Y sobre todo **compara contrastes, no pistas sueltas**:
+
+| contraste | qué es |
+|---|---|
+| `d_lm` | diferencia CON − SIN a igual semilla. El efecto del planificador. |
+| `d_semilla` | diferencia s1 − s2 dentro de la misma rama. El ruido de referencia. |
+| `d_cruzado` | distinta rama y distinta semilla. Cota superior. |
+| `ratio_lm_semilla` | `d_lm / d_semilla`. **Menor que 1 = el planificador mueve menos que el azar.** |
+
+> Los descriptores están verificados contra señales de valor teórico conocido en
+> `tests/test_medir_ab.py` (centroide de ruido blanco = `sr/4`, rolloff 95 % = `0,95·sr/2`,
+> factor de cresta de un seno = 3,01 dB). Un centroide mal calculado no da un error: da un
+> número plausible y una conclusión falsa.
+
+**Lo que cuesta, medido en la GTX 1070 (2026-09-02):** arranque en frío 614 s
+(`vram_load` 571 s + warm-up 43 s, el warm-up ya con planificador), así que el A/B completo
+son ~21 min de los que ~20 son cargar dos veces. El planificador corre **en CPU** y cuesta
+342-448 ms por código: a 5 códigos por segundo de pista, una de 25 s son ~50 s de
+planificación frente a ~1,4 s de difusión. `--lm-cfg 1.0` lo divide por dos a cambio de
+perder el guiado.
+
+> **El presupuesto de D-17 incluye la carga.** Por eso `--max-gpu-seconds` pasó de 600 a
+> 1800: con 600 el trabajo se abortaba tras cargar y antes de generar nada. El techo sigue
+> siendo un techo.
+
 ---
 
 ## 6. Qué criterio de aceptación cierra cada comando

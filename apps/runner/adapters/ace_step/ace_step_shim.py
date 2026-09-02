@@ -4,8 +4,8 @@ Que es esto
 -----------
 `adapter.py` aisla a proposito la construccion del grafo del modelo y su bucle de
 muestreo en **un unico punto de integracion**: resuelve
-`ACE_STEP_PIPELINE_FACTORY` (por defecto `ace_step_shim:build_pipeline`), carga el
-artefacto con `load_file(ruta, device=ctx.device)` e invoca
+`ACE_STEP_PIPELINE_FACTORY` (por defecto `ace_step_shim:build_pipeline`), mapea el
+artefacto con `load_file(ruta, device="cpu")` e invoca
 
     build_pipeline(*, state_dict, device, dtype, offload)
 
@@ -28,6 +28,9 @@ piezas ya vendorizadas, verificadas y medidas en la GPU objetivo:
 * `vendor/pipeline/` — condicionamiento, programacion de pasos, bucle de Euler y
   puente al decode (revision GitHub `ca1e85fe...`, MIT).
 * `vendor/oobleck_decoder.py` — decoder del VAE con decode por trozos.
+* `vendor/lm/` — planificador de 5 Hz: prompts, decodificacion restringida, bucle
+  de generacion y paso de codigos a `lm_hints_25Hz` (revision GitHub
+  `ca1e85fe...`, MIT; pesos `acestep-5Hz-lm-0.6B` @ `148d8ea0...`, MIT).
 * `text_conditioning.py` — constructores verificados del tokenizer y del Qwen3.
 
 Las CUATRO condiciones medidas que este fichero hace cumplir
@@ -76,10 +79,12 @@ de 180 s proyecta 23,1 GiB: no cabe, y ni siquiera se intenta (un OOM de driver
 deja el asignador cacheante de PyTorch inservible). Se llama siempre a
 `decodificar_por_trozos` con los parametros medidos (W=256, S=48, G=16).
 
-**C3 — despacho por componente.** El artefacto entra ENTERO en VRAM (5.878 MiB de
-los 7.202 libres) porque el adapter hace `load_file(..., device=ctx.device)`. Este
-fichero lo reparte por prefijos y **consume el diccionario destructivamente**
-(`pop`) segun convierte, para no mantener nunca dos copias vivas del mismo tensor:
+**C3 — despacho por componente.** Desde el 2026-09-02 el adapter hace
+`load_file(..., device="cpu")`, o sea que el artefacto llega **mapeado**, no en
+VRAM. Este fichero lo reparte por prefijos, **consume el diccionario
+destructivamente** (`pop`) y **materializa** cada tensor donde le toca (un tensor
+que siguiera respaldado por el fichero se releeria del disco pagina a pagina en
+cada subida a VRAM: 42,91 s frente a 0,43 s medidos):
 
     componente            MiB      donde vive          cuando esta en VRAM
     dit.decoder         3.004,9    VRAM permanente     siempre
@@ -87,15 +92,42 @@ fichero lo reparte por prefijos y **consume el diccionario destructivamente**
                        (1.160,4 en el artefacto; el codificador de letra pasa de
                         772 a 1.544 al promoverse a fp32, ver mas abajo)
     text_encoder.       1.136,4    RAM                 solo al codificar texto
-    dit.tokenizer         200,3    RAM                 nunca (no se usa)
-    dit.detokenizer       200,3    RAM                 nunca (no se usa)
+    dit.tokenizer         200,3    RAM                 solo al planificar
+    dit.detokenizer       200,3    RAM                 solo al planificar
     vae.decoder           161,0    RAM                 solo al decodificar
+    lm.                 1.264,4    RAM                 NUNCA (corre en CPU)
     aux.                   14,6    RAM/VRAM            trivial
 
-`dit.tokenizer` y `dit.detokenizer` se cargan (para que el recuento de 677 claves
-cuadre con `strict=True` y el objeto sea fiel a upstream) pero **no se usan**: en
-`text2music` `is_covers` es falso, asi que `lm_hints_25Hz` se descarta por un
-`torch.where` y calcularlo solo costaria dos pasadas. Ver `vendor/pipeline/conditioning.py`.
+El planificador de 5 Hz (`lm.*`, opcional)
+------------------------------------------
+Hasta el 2026-09-02 `dit.tokenizer` y `dit.detokenizer` se cargaban y **no se
+usaban**, y `src_latents` era siempre un recorte del latente de SILENCIO: el DiT
+componia a ciegas. Upstream no genera asi. En su pipeline un Qwen3 de 0,6 B
+(`acestep-5Hz-lm-0.6B`) escribe primero los metadatos de la pieza y despues una
+secuencia de codigos de audio a 5 Hz; el cuantizador FSQ y el detokenizador los
+estiran a 25 Hz y el resultado **sustituye** a `src_latents`. Y lo activa por
+defecto justo en esta tarjeta: `gpu_config.py`, tier de 6-8 GB,
+`init_lm_default: True`, `max_duration_with_lm: 480`.
+
+La sustitucion la escribe upstream como
+`torch.where(is_covers > 0, lm_hints_25Hz, src_latents)`, y ahi esta la trampa
+que mantuvo esto desconectado sin que nada avisara: `is_covers` **no** significa
+«es una version de otra cancion». Upstream lo calcula como
+`is_cover = (task_type == "cover") or has_code_hint`, o sea **cierto en cuanto
+hay codigos**. Significa «hay plan semantico». Pasar los codigos con
+`is_covers=False` los descarta en silencio: mismo audio, sin error.
+
+Aqui la cadena entera vive en `PipelineAceStep._planificar` y se enciende y se
+apaga con `model_params["usar_lm"]` (por defecto True). Esa perilla es el
+entregable: permite generar dos pistas con la misma semilla, la misma letra y el
+mismo prompt en las que lo unico distinto es si hubo plan. El LM corre en **CPU
+en bf16** (medido: 77 ms/token y 1.265 MiB, frente a 153 ms/token y 2.537 MiB en
+fp32); el cuantizador y el detokenizador suben a VRAM solo durante esa llamada.
+
+Un artefacto sin `lm.*` sigue siendo valido: da el pipeline de siempre, y
+`usar_lm=True` falla con un mensaje que dice como reconstruirlo. No se degrada en
+silencio, porque una pista con plan y otra sin el no son comparables y la
+comparacion es justo lo que se esta midiendo.
 
 **C4 — atencion eager forzada.** En sm_61 la ruta SDPA cae al kernel
 mem-efficient: 282,20 ms frente a 21,87 ms de eager con softmax en fp32 sobre
@@ -169,7 +201,11 @@ from __future__ import annotations
 
 import json
 import logging
+import math
+import os
+import shutil
 import sys
+import tempfile
 import time
 from collections.abc import Callable
 from contextlib import contextmanager
@@ -203,6 +239,11 @@ from vendor.pipeline.conditioning import (  # noqa: E402
     longitud_latente,
     preparar_condicionamiento_text2music,
 )
+from vendor.lm.constants import (  # noqa: E402
+    CODIGOS_POR_SEGUNDO,
+    VENTANA_AGRUPACION,
+    codigos_para_duracion,
+)
 from vendor.pipeline.constants import LATENT_HOP, SAMPLE_RATE  # noqa: E402
 from vendor.pipeline.decode import decodificar_latentes  # noqa: E402
 from vendor.pipeline.diffusion import generar_latentes_text2music  # noqa: E402
@@ -227,6 +268,48 @@ CLAVE_NULL_CONDITION = "dit.null_condition_emb"
 
 CLAVE_CONFIG_ACESTEP = "aux.config.acestep_json"
 CLAVE_SILENCE_LATENT = "aux.silence_latent"
+
+# --------------------------------------------------------------------------- #
+# El planificador de 5 Hz (`lm.*`). OPCIONAL: solo si el artefacto lo trae.
+# --------------------------------------------------------------------------- #
+#: Prefijo del planificador y su recuento canonico (28 capas x 11 + embed + norm).
+#: NO hay `lm_head.weight`: el config trae `tie_word_embeddings: true`.
+PREFIJO_LM = "lm."
+CLAVES_LM = 310
+
+CLAVE_LM_CONFIG = "aux.lm.config_json"
+#: Los cuatro ficheros que `AutoTokenizer.from_pretrained` necesita ver en un
+#: directorio. `chat_template.jinja` es OBLIGATORIO y va aparte: MEDIDO el
+#: 2026-09-02, `tokenizer_config.json` de esta revision NO trae `chat_template`,
+#: y sin el fichero `apply_chat_template` —que es como `vendor/lm/prompt.py`
+#: construye TODOS los prompts— levanta `ValueError: Cannot use chat template
+#: functions because tokenizer.chat_template is not set`. Con 4 ficheros falla;
+#: con 5 rinde la plantilla correcta. Comprobado montando ambos directorios.
+BLOBS_LM_TOKENIZER = {
+    "aux.lm_tokenizer.tokenizer_json": "tokenizer.json",
+    "aux.lm_tokenizer.tokenizer_config_json": "tokenizer_config.json",
+    "aux.lm_tokenizer.special_tokens_map_json": "special_tokens_map.json",
+    "aux.lm_tokenizer.chat_template_jinja": "chat_template.jinja",
+}
+
+#: dtype del planificador EN EJECUCION. Se decide al construir el pipeline (el LM
+#: se carga una sola vez) y por eso es variable de entorno, no `model_params`.
+#:
+#: BF16 por defecto, y la razon es medida, no heredada. El checkpoint es bf16 y el
+#: LM corre en CPU (nunca en la GTX 1070: en fp16 son 1.264 MiB frente a 810 MiB
+#: de holgura, y sm_61 no tiene bf16). En CPU, con torch 2.13:
+#:
+#:     dtype   RAM del modelo   ms/token (incremental)   |max logit|
+#:     bf16       1.265 MiB              77                  57,2
+#:     fp32       2.537 MiB             153                  57,4
+#:
+#: es decir bf16 es **el doble de rapido y ocupa la mitad**, sin conversion de los
+#: pesos (bf16 es su formato nativo) y con el mismo rango que fp32. Y la RAM
+#: importa: el contenedor tiene 7.883 MiB y el resto del pipeline ya ocupa
+#: ~3.630 MiB de RAM residente. `fp32` queda como valvula por si alguna vez se
+#: sospecha de la precision de las activaciones.
+ENV_LM_DTYPE = "ACE_STEP_LM_DTYPE"
+_LM_DTYPES = {"bf16": torch.bfloat16, "fp32": torch.float32}
 
 #: Techo duro de duracion. MEDIDO en la GTX 1070: 420 s pasan y 480 s revientan.
 #: Se expresa en tramas latentes (25 Hz) porque es la magnitud que manda en la
@@ -260,6 +343,20 @@ _PARAMS_ADMITIDOS = frozenset(
         "ventana_vae",
         "solape_vae",
         "guarda_vae",
+        # -- planificador de 5 Hz ------------------------------------------- #
+        # `usar_lm` es la perilla del A/B y por eso existe todo lo demas: con el
+        # mismo artefacto, la misma semilla, la misma letra y el mismo prompt se
+        # generan las dos versiones y se comparan. Por defecto True porque es lo
+        # que hace upstream en esta tarjeta (`gpu_config.py`, tier3 de 6-8 GB:
+        # `init_lm_default: True`). Con False el camino es EXACTAMENTE el de
+        # antes de conectar el planificador: `src_latents` = latente de silencio.
+        "usar_lm",
+        # Muestreo del LM. Los defectos son los de `GenerationParams` de upstream
+        # (`lm_cfg_scale=2.0`, `lm_temperature=0.85`). `lm_cfg=1.0` desactiva el
+        # CFG y **divide por dos** el coste del planificador (una pasada por
+        # codigo en vez de dos), a cambio de perder el guiado.
+        "lm_cfg",
+        "lm_temperatura",
     }
 )
 
@@ -331,6 +428,49 @@ def _pico_difusion_bytes(tramas: int) -> int:
 
 
 # --------------------------------------------------------------------------- #
+# Conversion entre tramas latentes (25 Hz) y codigos del planificador (5 Hz)
+# --------------------------------------------------------------------------- #
+
+def _codigos_para_tramas(tramas: int) -> int:
+    """Codigos de 5 Hz que hacen falta para cubrir `tramas` fotogramas a 25 Hz.
+
+    Division **hacia arriba**: cada codigo rinde exactamente
+    `VENTANA_AGRUPACION` = 5 fotogramas, asi que quedarse corto dejaria el final
+    de la pista sin plan. Upstream resuelve el desajuste al reves, recortando
+    (`lm_hints_25Hz[:, :src_latents.shape[1], :]`), y eso es lo que hace el
+    condicionamiento con el sobrante: nunca hay que rellenar.
+
+    Casi siempre es exacto: para una duracion entera de segundos, `longitud_latente`
+    da `25*d` tramas y `25*d/5 = 5*d` codigos, sin resto. El techo solo actua en el
+    borde de abajo, donde upstream impone un suelo de 128 tramas (5,12 s): ahi
+    hacen falta 26 codigos (130 fotogramas) y sobran 2.
+    """
+    return -(-tramas // VENTANA_AGRUPACION)
+
+
+def _duracion_para_codigos(codigos: int) -> float:
+    """Duracion en segundos que hay que pedirle al planificador para `codigos` codigos.
+
+    `codigos_para_duracion` de upstream es `int(duracion * 5)`, y el redondeo
+    binario muerde: `int(1.4 * 5)` es **6**, no 7, porque `1.4*5` vale
+    6,999999999999999. Como la decodificacion restringida fuerza el EOS en ese
+    entero exacto, un codigo de menos no es un detalle: `planificar()` aborta.
+    Aqui se comprueba y se corrige con el minimo incremento representable.
+    """
+    duracion = codigos / CODIGOS_POR_SEGUNDO
+    intentos = 0
+    while codigos_para_duracion(duracion) < codigos:
+        duracion = math.nextafter(duracion, math.inf)
+        intentos += 1
+        if intentos > 8:  # no puede pasar; si pasa, mejor ruidoso que en bucle
+            raise RuntimeError(
+                f"No se encontro una duracion que rinda {codigos} codigos "
+                f"(ultimo intento {duracion!r})."
+            )
+    return duracion
+
+
+# --------------------------------------------------------------------------- #
 # Extraccion destructiva del state_dict
 # --------------------------------------------------------------------------- #
 
@@ -342,11 +482,21 @@ def _extraer(
 ) -> dict[str, torch.Tensor]:
     """Saca del `state_dict` las claves con `prefijo` y las coloca en `destino`.
 
-    **Consume** (`pop`) tensor a tensor. El adapter ya cargo el artefacto entero en
-    VRAM, asi que construir un sub-diccionario sin sacar las claves del original
-    mantendria las dos copias vivas: en una tarjeta de 8 GB eso es la diferencia
-    entre generar y no generar. Cuando el destino coincide con el origen no se
-    copia nada: los 3.004,9 MiB de `dit.decoder` se asignan tal cual.
+    **Consume** (`pop`) tensor a tensor: construir un sub-diccionario sin sacar las
+    claves del original mantendria dos referencias vivas al mismo tensor y, con
+    ellas, el mapeo entero del artefacto.
+
+    MATERIALIZACION OBLIGATORIA (2026-09-02). Desde que `adapter.py` mapea el
+    artefacto con `load_file(..., device="cpu")`, los tensores que entran aqui
+    estan **respaldados por el fichero**, no por RAM anonima. Un `.to(cuda)`
+    materializa; un destino CPU no haria nada y dejaria el tensor mapeado. Eso es
+    justo la trampa que `text_conditioning.construir_text_encoder` ya evitaba
+    clonando: un peso mapeado se relee del disco pagina a pagina en **cada**
+    subida a VRAM (42,91 s frente a 0,43 s medidos) y ademas es desalojable. Por
+    eso, cuando el destino es CPU, se **clona**.
+
+    El clon no duplica el pico: el original se suelta en la misma vuelta del
+    bucle, y lo que se suelta son paginas de cache de fichero, no RAM anonima.
 
     Returns:
         Sub-diccionario con el prefijo ya quitado, listo para
@@ -365,10 +515,17 @@ def _extraer(
     fuera: dict[str, torch.Tensor] = {}
     for clave in claves:
         tensor = state_dict.pop(clave)
-        fuera[clave[len(prefijo) :]] = tensor if tensor.device == destino else tensor.to(destino)
+        if tensor.device != destino:
+            colocado = tensor.to(destino)
+        else:
+            # Mismo dispositivo: `.to()` seria un no-op y dejaria el tensor
+            # respaldado por el mapeo del artefacto. `clone()` lo pasa a RAM
+            # anonima. Ver el docstring.
+            colocado = tensor.clone()
+        fuera[clave[len(prefijo) :]] = colocado
         # Soltar la referencia local libera la copia de origen en cuanto la
         # conversion ha terminado, sin esperar al final del bucle.
-        del tensor
+        del tensor, colocado
     return fuera
 
 
@@ -690,6 +847,121 @@ def _instanciar_dit(config: Any) -> torch.nn.Module:
     return modelo
 
 
+# --------------------------------------------------------------------------- #
+# Instanciacion del planificador de 5 Hz (Qwen3 0,6 B)
+# --------------------------------------------------------------------------- #
+
+def _instanciar_lm(config_json: dict[str, Any], dtype: torch.dtype) -> torch.nn.Module:
+    """Instancia `Qwen3ForCausalLM` desde el config del artefacto, sin red.
+
+    Mismo patron que `_instanciar_dit` y por el **mismo** motivo medido:
+    `Qwen3RotaryEmbedding` calcula `inv_freq` en el constructor y lo registra como
+    buffer NO persistente, asi que no viaja en el `state_dict`. Construido en
+    `meta` ese calculo no ocurre, `load_state_dict(strict=...)` no lo echa en
+    falta y el modelo queda roto **sin dar error**. Se construye esa unica clase
+    en CPU rebindeando el nombre en el modulo de `transformers` y restaurandolo
+    en `finally`.
+
+    VERIFICADO el 2026-09-02 contra el camino de referencia: los logits de este
+    modelo y los de `Qwen3ForCausalLM.from_pretrained(directorio)` sobre la misma
+    entrada dan `max|diff| = 0` (identicos bit a bit), con
+    `inv_freq[:3] = [1,0, 0,8058, 0,6494]` en ambos.
+
+    Nada de `trust_remote_code` ni `auto_map` (invariante de CLAUDE.md): la clase
+    se referencia por nombre y el config se rechaza si declara otra arquitectura.
+    """
+    from transformers import Qwen3Config, Qwen3ForCausalLM  # noqa: PLC0415
+    from transformers.models.qwen3 import modeling_qwen3  # noqa: PLC0415
+
+    arquitecturas = config_json.get("architectures") or []
+    if arquitecturas != ["Qwen3ForCausalLM"]:
+        raise RuntimeError(
+            f"El config del planificador declara architectures={arquitecturas!r} y este "
+            "shim solo carga ['Qwen3ForCausalLM']."
+        )
+    if "auto_map" in config_json:
+        raise RuntimeError(
+            "El config del planificador declara 'auto_map': eso pide cargar codigo de "
+            "terceros en tiempo de ejecucion. Prohibido por CLAUDE.md."
+        )
+    limpio = {k: v for k, v in config_json.items() if k not in ("architectures", "auto_map")}
+    config = Qwen3Config(**limpio)
+
+    class _RotatorioEnCpu(modeling_qwen3.Qwen3RotaryEmbedding):  # type: ignore[misc, name-defined]
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            with torch.device("cpu"):
+                super().__init__(*args, **kwargs)
+
+    _RotatorioEnCpu.__name__ = modeling_qwen3.Qwen3RotaryEmbedding.__name__
+    _RotatorioEnCpu.__qualname__ = modeling_qwen3.Qwen3RotaryEmbedding.__qualname__
+
+    original = modeling_qwen3.Qwen3RotaryEmbedding
+    dtype_previo = torch.get_default_dtype()
+    modeling_qwen3.Qwen3RotaryEmbedding = _RotatorioEnCpu
+    torch.set_default_dtype(dtype)
+    try:
+        with torch.device("meta"):
+            modelo = Qwen3ForCausalLM(config)
+    finally:
+        torch.set_default_dtype(dtype_previo)
+        modeling_qwen3.Qwen3RotaryEmbedding = original
+
+    persistentes = set(modelo.state_dict().keys())
+    buffers = dict(modelo.named_buffers())
+    en_meta = [n for n in buffers if n not in persistentes and buffers[n].is_meta]
+    if en_meta:
+        raise RuntimeError(
+            f"Quedan buffers no persistentes del planificador en 'meta': {en_meta}. "
+            "Con `inv_freq` a cero RoPE pierde la posicion y el LM emitiria codigos "
+            "sin sentido SIN dar error. Se aborta."
+        )
+    return modelo
+
+
+def _construir_tokenizer_lm(state_dict: dict[str, torch.Tensor], destino: Path) -> Any:
+    """Reconstruye el tokenizer del planificador desde los blobs `aux.lm_tokenizer.*`.
+
+    `transformers` solo sabe cargar un tokenizer rapido **desde un directorio**, y
+    el tokenizer de este checkpoint no es reconstruible a mano: son 65.561
+    `added_tokens_decoder` (los `<|audio_code_N|>`) y una plantilla de chat de la
+    que depende cada prompt. Asi que los CUATRO ficheros se vuelcan a un directorio
+    temporal y se carga de ahi. No es red: son bytes que ya viajaban dentro del
+    artefacto y que salen de el byte a byte (el fusor lo verifica con
+    `--verify`).
+
+    Los blobs se **auditan antes de escribirlos**: si algun JSON declara
+    `auto_map`, se aborta. `AutoTokenizer` no ejecuta codigo con
+    `trust_remote_code=False` (el defecto), pero la comprobacion explicita es
+    barata y no depende de que ese defecto siga siendo el mismo manana.
+    """
+    destino.mkdir(parents=True, exist_ok=True)
+    for clave, nombre in BLOBS_LM_TOKENIZER.items():
+        texto = _texto_de_blob(state_dict, clave)
+        if nombre.endswith(".json"):
+            try:
+                datos = json.loads(texto)
+            except json.JSONDecodeError as exc:
+                raise RuntimeError(f"{clave!r} no es JSON valido: {exc}") from exc
+            if isinstance(datos, dict) and "auto_map" in datos:
+                raise RuntimeError(
+                    f"{clave!r} declara 'auto_map': cargarlo ejecutaria codigo de terceros. "
+                    "Prohibido por CLAUDE.md."
+                )
+        (destino / nombre).write_text(texto, encoding="utf-8")
+
+    from transformers import AutoTokenizer  # noqa: PLC0415
+
+    tokenizer = AutoTokenizer.from_pretrained(str(destino))
+    if tokenizer.chat_template is None:
+        raise RuntimeError(
+            "El tokenizer del planificador se cargo SIN plantilla de chat. Todos los "
+            "prompts de `vendor/lm/prompt.py` se construyen con `apply_chat_template`, "
+            f"asi que sin ella no hay planificacion. Falta el blob "
+            f"'aux.lm_tokenizer.chat_template_jinja' en el artefacto."
+        )
+    return tokenizer
+
+
 def _forzar_atencion_eager(modelo: torch.nn.Module, config: Any) -> None:
     """C4: atencion eager por asignacion directa, con assert duro.
 
@@ -831,6 +1103,10 @@ class PipelineAceStep:
         dispositivo: torch.device,
         dtype: torch.dtype,
         offload: bool,
+        planificador: Any = None,
+        residencia_audio_tokenizer: _Residencia | None = None,
+        residencia_detokenizer: _Residencia | None = None,
+        dir_tokenizer_lm: Path | None = None,
     ) -> None:
         self._modelo = modelo
         self._dit_encoder = residencia_dit_encoder
@@ -842,6 +1118,11 @@ class PipelineAceStep:
         self._dtype = dtype
         self._offload = offload
         self._liberado = False
+        # -- planificador de 5 Hz (puede no existir: artefacto sin `lm.*`) --- #
+        self._planificador = planificador
+        self._audio_tokenizer = residencia_audio_tokenizer
+        self._detokenizer = residencia_detokenizer
+        self._dir_tokenizer_lm = dir_tokenizer_lm
 
     # -- ciclo de vida ------------------------------------------------------ #
 
@@ -879,7 +1160,15 @@ class PipelineAceStep:
         if self._liberado:
             return
         self._liberado = True
-        for residencia in (self._vae, self._text_encoder, self._dit_encoder):
+        for residencia in (
+            self._vae,
+            self._text_encoder,
+            self._dit_encoder,
+            self._audio_tokenizer,
+            self._detokenizer,
+        ):
+            if residencia is None:
+                continue
             try:
                 residencia.soltar()
             except Exception as exc:  # noqa: BLE001  (release no puede tumbar el unload)
@@ -887,6 +1176,12 @@ class PipelineAceStep:
         self._modelo = None  # type: ignore[assignment]
         self._silence_latent = None  # type: ignore[assignment]
         self._tokenizador = None
+        # El planificador son ~1.265 MiB de RAM; soltarlo es la mitad del sentido
+        # de release() cuando el proceso sigue vivo tras un unload().
+        self._planificador = None
+        if self._dir_tokenizer_lm is not None:
+            shutil.rmtree(self._dir_tokenizer_lm, ignore_errors=True)
+            self._dir_tokenizer_lm = None
         if self._dispositivo.type == "cuda":
             torch.cuda.empty_cache()
 
@@ -931,15 +1226,76 @@ class PipelineAceStep:
             solape=opciones["solape_vae"],
             guarda=opciones["guarda_vae"],
         )
-        total_pasos = PASOS_POR_DEFECTO + len(plan.inicios)
+        # `usar_lm` pedido explicitamente y sin planificador = error duro. Sin
+        # pedir nada y sin planificador = camino de siempre con un aviso. La
+        # diferencia importa: degradar en silencio una peticion EXPLICITA es
+        # exactamente lo que dejo el planificador desconectado sin que nadie se
+        # enterara; pero abortar porque el llamante no dijo nada impediria cargar
+        # el artefacto anterior, que sigue siendo valido.
+        hay_planificador = self._planificador is not None
+        if opciones["usar_lm"] is True and not hay_planificador:
+            raise RuntimeError(
+                "Se pidio usar_lm=True pero este artefacto no trae el planificador de 5 Hz "
+                f"(prefijo {PREFIJO_LM!r}). Reconstruyelo con "
+                "`build_artifact.py --incluir-lm`, o pasa usar_lm=False para generar por el "
+                "camino de siempre. No se degrada en silencio: una pista sin plan y otra con "
+                "plan no son comparables, y el A/B es justo lo que se esta midiendo."
+            )
+        usar_lm = hay_planificador if opciones["usar_lm"] is None else bool(opciones["usar_lm"])
+        codigos_objetivo = _codigos_para_tramas(tramas) if usar_lm else 0
+        # El total incluye los codigos del planificador porque en esta tarjeta el
+        # planificador es la MAYORIA del tiempo de pared: MEDIDO en CPU, 342-448
+        # ms por codigo con CFG 2,0, frente a ~2,8 s por los ocho pasos enteros de
+        # difusion. Un progreso que solo contase la difusion se quedaria clavado en
+        # 0 durante casi toda la generacion. Si ademas se dispara la fase de
+        # razonamiento, esta emite tokens que no estaban en la cuenta; por eso el
+        # total se ensancha en vez de mentir hacia abajo.
+        total_pasos = PASOS_POR_DEFECTO + len(plan.inicios) + codigos_objetivo
         hechos = 0
 
-        def _avanzar(_hecho: int, _total: int) -> None:
+        def _avanzar(_hecho: int = 0, _total: int = 0) -> None:
             nonlocal hechos
             hechos += 1
-            on_step(hechos, total_pasos)
+            on_step(hechos, max(total_pasos, hechos))
 
         tiempos: dict[str, float] = {}
+
+        # -- 0. Planificador de 5 Hz ---------------------------------------- #
+        lm_hints: torch.Tensor | None = None
+        info_plan: dict[str, Any] | None = None
+        if usar_lm:
+            marca = time.perf_counter()
+            lm_hints, info_plan = self._planificar(
+                style_prompt=style_prompt,
+                lyrics=None if instrumental else lyrics,
+                tramas=tramas,
+                codigos_objetivo=codigos_objetivo,
+                seed=seed,
+                opciones=opciones,
+                on_token=_avanzar,
+            )
+            tiempos["planning_s"] = time.perf_counter() - marca
+            # El prefijo y el orden de los argumentos son contrato con
+            # `spikes/generate_smoke.py::EscuchaEtapas`, que lee `args[0]` como la
+            # duracion declarada de la etapa. No reordenar.
+            _LOG.info(
+                "Planificador listo en %.2f s: %d codigos a 5 Hz -> hints %s "
+                "(fase1 %.2f s, fase2 %.2f s, rms %.4f). Metadatos del plan: %s",
+                tiempos["planning_s"],
+                codigos_objetivo,
+                tuple(lm_hints.shape),
+                info_plan["tiempos"].get("fase1", 0.0),
+                info_plan["tiempos"].get("fase2", 0.0),
+                info_plan["hints_rms"],
+                info_plan["metadatos"],
+            )
+        else:
+            _LOG.info(
+                "Planificador NO usado (%s): `src_latents` sera el latente de silencio, "
+                "que es el camino que el pipeline tenia antes de conectarlo.",
+                "usar_lm=False" if opciones["usar_lm"] is False
+                else "el artefacto no trae lm.*",
+            )
 
         # -- 1. Condicionamiento -------------------------------------------- #
         # Suben a la vez el Qwen3 (1.136 MiB) y el `dit.encoder` (1.160 MiB)
@@ -963,8 +1319,10 @@ class PipelineAceStep:
                 bpm=opciones["bpm"],
                 keyscale=opciones["keyscale"],
                 timesignature=opciones["timesignature"],
+                lm_hints_25Hz=lm_hints,
             )
         tiempos["conditioning_s"] = time.perf_counter() - marca
+        del lm_hints
 
         # Comprobacion de finitud AQUI, y no ocho pasos de difusion mas tarde: un
         # solo NaN en el condicionamiento se reparte por todo el latente via la
@@ -1069,6 +1427,120 @@ class PipelineAceStep:
             pcm16=pcm16,
         )
 
+    # -- planificador ------------------------------------------------------- #
+
+    def _planificar(
+        self,
+        *,
+        style_prompt: str,
+        lyrics: str | None,
+        tramas: int,
+        codigos_objetivo: int,
+        seed: int | None,
+        opciones: dict[str, Any],
+        on_token: Callable[..., None],
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        """Ejecuta el planificador y devuelve `(lm_hints_25Hz, info)`.
+
+        Cadena completa, que es lo unico que hace esta funcion:
+
+            prompt del planificador
+              -> generacion restringida (lista blanca de 64.000 `<|audio_code_N|>`
+                 + EOS forzado en el codigo `int(duracion*5)`)
+              -> codigos a 5 Hz
+              -> `model.tokenizer.quantizer.get_output_from_indices`  [1, N, 2048]
+              -> `model.detokenizer`                                  [1, N*5, 64]
+              -> `lm_hints_25Hz`
+
+        Donde corre cada pieza y por que:
+
+        * El **LM** en CPU. En fp16 son 1.264 MiB frente a 810 MiB de holgura de
+          VRAM, y sm_61 no ejecuta bf16. Ademas el diseno de upstream ya es
+          secuencial: `gpu_config.py` del tier de 6-8 GB descarga el DiT antes de
+          arrancar el LM, o sea que los dos nunca son residentes a la vez.
+        * El **cuantizador y el detokenizador** suben a VRAM el rato justo. Son
+          401 MiB y en ese momento solo `dit.decoder` esta residente, asi que
+          sobran ~4 GiB. En CPU tendrian que correr en fp16, que en x86 no tiene
+          kernels vectorizados y es la via lenta por nada.
+
+        Aviso que vale la generacion entera: los cinco bufferes NO persistentes
+        del FSQ (`_levels`, `_basis`, `implicit_codebook`, `scales`,
+        `soft_clamp_input_value`) no viajan en el `state_dict`. Hasta que se
+        conecto el planificador daba igual porque `text2music` no llamaba a
+        `tokenize`/`detokenize`; ahora si se llaman. `_instanciar_dit` los
+        materializa construyendo `ResidualFSQ` en CPU, y por eso ahi hay un
+        `assert` que aborta si alguno se queda en `meta`: con esos bufferes a cero
+        los hints serian basura **sin levantar ningun error**.
+        """
+        from vendor.lm.planificador import hints_25Hz  # noqa: PLC0415
+
+        duracion_lm = _duracion_para_codigos(codigos_objetivo)
+        metadatos = {
+            "bpm": opciones["bpm"],
+            "keyscale": opciones["keyscale"],
+            "timesignature": opciones["timesignature"],
+        }
+        plan = self._planificador.planificar(
+            estilo=style_prompt,
+            letra=lyrics or "",
+            duracion_s=duracion_lm,
+            metadatos_usuario=metadatos,
+            temperatura=float(opciones["lm_temperatura"]),
+            escala_cfg=float(opciones["lm_cfg"]),
+            # La MISMA semilla que la difusion. Es lo que permite generar la
+            # version con planificador y la version sin el y saber que la unica
+            # diferencia entre las dos es el planificador.
+            semilla=seed,
+            on_token=on_token,
+        )
+        if len(plan.codigos) != codigos_objetivo:
+            raise RuntimeError(
+                f"El planificador devolvio {len(plan.codigos)} codigos y hacian falta "
+                f"{codigos_objetivo} para {tramas} tramas latentes."
+            )
+
+        # Codigos -> hints. El cuantizador y el detokenizador viven en RAM: suben
+        # a VRAM solo para esta llamada.
+        with _residentes(self._audio_tokenizer, self._detokenizer):
+            with torch.inference_mode():
+                hints = hints_25Hz(
+                    self._modelo,
+                    plan.codigos,
+                    device=self._dispositivo,
+                    dtype=self._dtype,
+                )
+            # `.clone()` saca el tensor de `inference_mode`: va a viajar dentro
+            # del condicionamiento y a acabar en la cache de atencion del DiT
+            # durante ocho pasos, y un tensor de inferencia ahi dentro es una
+            # trampa que solo salta mas tarde y lejos.
+            hints = hints.to(device=self._dispositivo, dtype=self._dtype).clone()
+
+        if not torch.isfinite(hints).all():
+            raise RuntimeError(
+                "El detokenizador produjo hints no finitos "
+                f"(nan={int(torch.isnan(hints).sum())}, inf={int(torch.isinf(hints).sum())}). "
+                "Esto sustituye a `src_latents`: condicionar el DiT con esto convierte el "
+                "latente entero en NaN."
+            )
+        esperadas = codigos_objetivo * VENTANA_AGRUPACION
+        if hints.dim() != 3 or hints.shape[0] != 1 or hints.shape[1] != esperadas:
+            raise RuntimeError(
+                f"Los hints tienen forma {tuple(hints.shape)} y se esperaba "
+                f"[1, {esperadas}, 64] ({codigos_objetivo} codigos x "
+                f"{VENTANA_AGRUPACION} fotogramas)."
+            )
+        info = {
+            "metadatos": plan.metadatos,
+            "codigos": len(plan.codigos),
+            "duracion_pedida_al_lm_s": duracion_lm,
+            "segundos_de_plan": plan.segundos,
+            "tiempos": plan.tiempos,
+            "hints_rms": float(hints.float().pow(2).mean().sqrt()),
+            "hints_min": float(hints.float().min()),
+            "hints_max": float(hints.float().max()),
+        }
+        return hints, info
+
     # -- parametros --------------------------------------------------------- #
 
     @staticmethod
@@ -1094,8 +1566,125 @@ class PipelineAceStep:
             "ventana_vae": int(params.get("ventana_vae", VENTANA_LATENTE_POR_DEFECTO)),
             "solape_vae": int(params.get("solape_vae", SOLAPE_LATENTE_POR_DEFECTO)),
             "guarda_vae": int(params.get("guarda_vae", GUARDA_LATENTE_POR_DEFECTO)),
+            # OJO: `None` significa «el llamante no dijo nada», y NO es lo mismo
+            # que `True`. Lo resuelve `render()`, que es quien sabe si el
+            # artefacto trae planificador. Sin esta distincion, el defecto True
+            # haria que un artefacto SIN `lm.*` fallara ya en el warm-up y no se
+            # pudiera ni cargar.
+            "usar_lm": None if params.get("usar_lm") is None else bool(params["usar_lm"]),
+            "lm_cfg": float(params.get("lm_cfg", 2.0)),
+            "lm_temperatura": float(params.get("lm_temperatura", 0.85)),
         }
+        if opciones["lm_cfg"] < 1.0:
+            raise ValueError(f"lm_cfg debe ser >= 1,0; llego {opciones['lm_cfg']}.")
+        if opciones["lm_temperatura"] <= 0.0:
+            raise ValueError(
+                f"lm_temperatura debe ser > 0; llego {opciones['lm_temperatura']}."
+            )
         return opciones
+
+
+# --------------------------------------------------------------------------- #
+# Construccion del planificador desde el artefacto
+# --------------------------------------------------------------------------- #
+
+def _construir_planificador(
+    state_dict: dict[str, torch.Tensor],
+    dispositivo: torch.device,
+) -> tuple[Any, Path]:
+    """Saca del artefacto el planificador de 5 Hz y lo deja listo en CPU.
+
+    Consume `lm.*` (310 tensores) y los cinco blobs `aux.lm*` (config del modelo
+    mas los cuatro ficheros del tokenizer). Devuelve el
+    `PlanificadorLM` y el directorio temporal del tokenizer, que el pipeline
+    borra en `release()`.
+
+    Tres detalles que no son opcionales:
+
+    1. **El LM se queda en CPU**, siempre, aunque el resto corra en CUDA. En fp16
+       son 1.264 MiB frente a los 810 MiB de holgura de la GTX 1070, y sm_61 no
+       tiene bf16. No es un apano: `gpu_config.py` de upstream descarga el DiT
+       antes de arrancar el LM en este mismo tier de 6-8 GB, o sea que el plan
+       secuencial es el diseno.
+    2. **`tie_weights()` despues de cargar.** El checkpoint no trae
+       `lm_head.weight` (`tie_word_embeddings: true`), asi que `strict=True`
+       fallaria. Se carga con `strict=False`, se comprueba que la UNICA clave que
+       falta es esa y se atan. Si faltara cualquier otra cosa, se aborta.
+    3. **Los pesos se clonan** al sacarlos del mapeo (lo hace `_extraer`): un LM
+       mapeado se releeria del disco en cada generacion.
+    """
+    nombre_dtype = os.environ.get(ENV_LM_DTYPE, "bf16").strip().lower()
+    if nombre_dtype not in _LM_DTYPES:
+        raise RuntimeError(
+            f"{ENV_LM_DTYPE}={nombre_dtype!r} no es valido; admitidos: "
+            f"{sorted(_LM_DTYPES)}."
+        )
+    dtype_lm = _LM_DTYPES[nombre_dtype]
+    inicio = time.perf_counter()
+
+    config_lm = json.loads(_texto_de_blob(state_dict, CLAVE_LM_CONFIG))
+    modelo_lm = _instanciar_lm(config_lm, dtype_lm)
+
+    pesos = _extraer(state_dict, PREFIJO_LM, torch.device("cpu"), CLAVES_LM)
+    # El dtype de ejecucion manda sobre el de almacenamiento. Se convierte tensor
+    # a tensor **sacandolo del diccionario**: hacerlo por comprension mantendria
+    # vivas las dos versiones enteras a la vez (1.265 + 2.529 MiB en fp32).
+    for clave in list(pesos):
+        tensor = pesos[clave]
+        if tensor.dtype is not dtype_lm:
+            pesos[clave] = tensor.to(dtype_lm)
+        del tensor
+    faltan, sobran = modelo_lm.load_state_dict(pesos, strict=False, assign=True)
+    del pesos
+    if sobran:
+        raise RuntimeError(
+            f"El artefacto trae claves del planificador que el modelo no espera: "
+            f"{list(sobran)[:5]}."
+        )
+    if list(faltan) != ["lm_head.weight"]:
+        raise RuntimeError(
+            f"Al planificador le faltan claves distintas de la esperada: {list(faltan)}. "
+            "La unica ausencia legitima es 'lm_head.weight' (`tie_word_embeddings: true`)."
+        )
+    modelo_lm.tie_weights()
+    modelo_lm.eval()
+    modelo_lm.requires_grad_(False)
+
+    en_meta = [
+        n for n, t in (*modelo_lm.named_parameters(), *modelo_lm.named_buffers()) if t.is_meta
+    ]
+    if en_meta:
+        raise RuntimeError(
+            f"Quedan {len(en_meta)} tensores del planificador en 'meta' (por ejemplo "
+            f"{en_meta[:5]}). Usarlos daria codigos sin sentido, no un error."
+        )
+    if modelo_lm.lm_head.weight.data_ptr() != modelo_lm.model.embed_tokens.weight.data_ptr():
+        raise RuntimeError(
+            "`lm_head.weight` no comparte almacenamiento con `embed_tokens.weight` tras "
+            "`tie_weights()`: la cabeza de salida quedaria sin inicializar."
+        )
+
+    dir_tokenizer = Path(tempfile.mkdtemp(prefix="ace_step_lm_tok_"))
+    try:
+        tokenizer = _construir_tokenizer_lm(state_dict, dir_tokenizer)
+        from vendor.lm.planificador import PlanificadorLM  # noqa: PLC0415
+
+        planificador = PlanificadorLM(modelo_lm, tokenizer)
+    except BaseException:
+        shutil.rmtree(dir_tokenizer, ignore_errors=True)
+        raise
+
+    bytes_lm = sum(p.numel() * p.element_size() for p in modelo_lm.parameters())
+    _LOG.info(
+        "Planificador de 5 Hz listo en %.2f s: %d parametros en %s sobre CPU (%.0f MiB de "
+        "RAM). El dispositivo de computo del resto del pipeline es %s; el LM NO sube a el.",
+        time.perf_counter() - inicio,
+        sum(p.numel() for p in modelo_lm.parameters()),
+        nombre_dtype,
+        bytes_lm / _MIB,
+        dispositivo,
+    )
+    return planificador, dir_tokenizer
 
 
 # --------------------------------------------------------------------------- #
@@ -1114,14 +1703,17 @@ def build_pipeline(
     Es la funcion que resuelve `adapter._resolve_pipeline_factory()`. Recibe
     exactamente estos cuatro argumentos por palabra clave y nada mas.
 
-    El `state_dict` llega **ya en el dispositivo de computo** (el adapter hace
-    `load_file(ruta, device=ctx.device)`), es decir, 5.878 MiB en VRAM de los
-    7.202 libres de la GPU objetivo. Por eso se consume destructivamente: cada
-    componente se saca con `pop`, se coloca donde le toca y la copia de origen se
-    libera acto seguido. Al volver, el diccionario del llamante esta vacio.
+    El `state_dict` llega **mapeado en CPU** (el adapter hace
+    `load_file(ruta, device="cpu")` desde el 2026-09-02: ver el bloque de
+    comentario de `adapter.py`, etapa 3). Los tensores estan respaldados por el
+    fichero, no por RAM: quien decide que sube a VRAM es esta funcion, componente
+    a componente. Se consume destructivamente —cada componente se saca con `pop`,
+    se **materializa** donde le toca y la entrada del mapeo se libera acto
+    seguido— y al volver el diccionario del llamante esta vacio.
 
     Args:
-        state_dict: los 1.177 tensores del artefacto.
+        state_dict: los 1.177 tensores del artefacto, o 1.492 si trae ademas el
+            planificador de 5 Hz (`lm.*`, 310 tensores + 5 blobs `aux.lm*`).
         device: dispositivo de computo (`"cuda:0"`).
         dtype: precision pedida por el `RunnerContext`. **Manda el artefacto**: es
             fp16 y no se hace upcast (C1); si se pide otra cosa se avisa.
@@ -1167,6 +1759,9 @@ def build_pipeline(
     residencia_vae: _Residencia | None = None
     residencia_texto: _Residencia | None = None
     residencia_encoder: _Residencia | None = None
+    residencia_audio_tok: _Residencia | None = None
+    residencia_detok: _Residencia | None = None
+    dir_tokenizer_lm: Path | None = None
     try:
         # -- 0. dtype: manda el artefacto (C1) ------------------------------- #
         muestra = state_dict.get("dit.decoder.layers.0.mlp.up_proj.weight")
@@ -1258,14 +1853,63 @@ def build_pipeline(
             modelo.encoder.lyric_encoder, dtype_artefacto
         )
 
-        # 4c. `dit.tokenizer` y `dit.detokenizer` -> RAM, y no se usan nunca en
-        #     text2music (ver el docstring del modulo). Se cargan para que el
-        #     recuento de 677 claves cuadre con strict=True y el objeto siga siendo
-        #     fiel a upstream; en VRAM serian 400 MiB tirados.
+        # 4c. `dit.tokenizer` y `dit.detokenizer` -> RAM (200,3 MiB cada uno).
+        #     DEJARON de ser peso muerto el 2026-09-02: con el planificador
+        #     conectado son justamente la cadena
+        #     `quantizer.get_output_from_indices` -> `detokenizer` que convierte
+        #     los codigos de 5 Hz en `lm_hints_25Hz`. Suben a VRAM solo durante esa
+        #     llamada (ver `PipelineAceStep._planificar`).
+        #
+        # Y en cuanto se usan aparece un desajuste de dtype que estando sin usar
+        # no podia salir. MEDIDO el 2026-09-02: `get_output_from_indices` revienta
+        # con `RuntimeError: mat1 and mat2 must have the same dtype, but got Float
+        # and Half`.
+        #
+        # El culpable es `quantizer.scales`, que `vector_quantize_pytorch`
+        # construye como `levels_tensor.float() ** -ind`: ese `.float()` es
+        # **explicito**, asi que sale fp32 pase lo que pase con el dtype por
+        # defecto, mientras que `project_out` es un `Linear` con los pesos fp16 del
+        # artefacto. (Los otros bufferes del FSQ si respetan el dtype por defecto y
+        # ya salen fp16: `implicit_codebook` y `soft_clamp_input_value`. Tambien
+        # estaban en fp32 los `inv_freq` de los dos modulos rotatorios.)
+        #
+        # Lo que NO hay que tocar: `_levels` y `_basis` son **int32** por
+        # construccion. `_basis` llega a valores de ~10^4 y fp16 deja de
+        # representar enteros exactos a partir de 2.048, asi que convertirlos
+        # corromperia `indices // _basis` EN SILENCIO.
+        #
+        # `Module.to(dtype)` hace exactamente lo correcto: convierte solo los
+        # tensores en coma flotante y deja los enteros donde estan. Es ademas lo
+        # que hace upstream, que carga el modelo entero con `dtype=bfloat16`.
+        #
+        # Y fp16 basta aqui, medido y no supuesto: la cadena completa de hints en
+        # fp16 frente a la misma en fp32 da max|diff| = 0,0031 sobre un |max| de
+        # 5,77 (0,053 %), correlacion 0,99999946 y cero valores no finitos. No es
+        # el caso del codificador de letra.
         for nombre in ("tokenizer", "detokenizer"):
             pesos = _extraer(state_dict, f"dit.{nombre}.", torch.device("cpu"), CLAVES_DIT[nombre])
-            getattr(modelo, nombre).load_state_dict(pesos, strict=True, assign=True)
+            submodulo = getattr(modelo, nombre)
+            submodulo.load_state_dict(pesos, strict=True, assign=True)
             del pesos
+            submodulo.to(dtype_artefacto)
+            enteros = {
+                n: t.dtype
+                for n, t in submodulo.named_buffers()
+                if not t.is_floating_point()
+            }
+            desalineados = [
+                n
+                for n, t in (*submodulo.named_parameters(), *submodulo.named_buffers())
+                if t.is_floating_point() and t.dtype is not dtype_artefacto
+            ]
+            if desalineados:
+                raise RuntimeError(
+                    f"dit.{nombre}: quedan tensores en coma flotante fuera de "
+                    f"{dtype_artefacto}: {desalineados[:5]}. La cadena de hints mezclaria "
+                    "dtypes y fallaria dentro del cuantizador."
+                )
+            _LOG.debug("dit.%s alineado a %s; bufferes enteros intactos: %s",
+                       nombre, dtype_artefacto, enteros)
 
         # 4d. `null_condition_emb`: un solo tensor, a VRAM con el decoder.
         nulo = _extraer(state_dict, CLAVE_NULL_CONDITION, dispositivo, 1)
@@ -1289,6 +1933,24 @@ def build_pipeline(
             )
         _forzar_atencion_eager(modelo, config)
         residencia_encoder = _Residencia("dit.encoder", modelo.encoder, dispositivo)
+        residencia_audio_tok = _Residencia("dit.tokenizer", modelo.tokenizer, dispositivo)
+        residencia_detok = _Residencia("dit.detokenizer", modelo.detokenizer, dispositivo)
+
+        # -- 4e. El planificador de 5 Hz (opcional) -------------------------- #
+        # Solo si el artefacto lo trae. Un artefacto sin `lm.*` sigue siendo
+        # valido: da el pipeline de siempre y `usar_lm=True` falla con un mensaje
+        # que dice como reconstruirlo, en vez de degradar en silencio.
+        planificador = None
+        if any(clave.startswith(PREFIJO_LM) for clave in state_dict):
+            planificador, dir_tokenizer_lm = _construir_planificador(state_dict, dispositivo)
+        else:
+            _LOG.warning(
+                "El artefacto NO trae el planificador de 5 Hz (prefijo %r). `src_latents` "
+                "seguira siendo el latente de silencio, que es lo que upstream llama "
+                "componer a ciegas. Reconstruye con `build_artifact.py --incluir-lm` para "
+                "poder hacer el A/B.",
+                PREFIJO_LM,
+            )
 
         # -- 5. Latente de silencio y limpieza del resto de aux.* ------------ #
         silence_latent = state_dict.pop(CLAVE_SILENCE_LATENT, None)
@@ -1324,17 +1986,29 @@ def build_pipeline(
             dispositivo=dispositivo,
             dtype=dtype_artefacto,
             offload=bool(offload),
+            planificador=planificador,
+            residencia_audio_tokenizer=residencia_audio_tok,
+            residencia_detokenizer=residencia_detok,
+            dir_tokenizer_lm=dir_tokenizer_lm,
         )
     except BaseException:
         # M-5 del adapter: un fallo aqui no puede dejar pesos huerfanos en VRAM.
         # El adapter llamara ademas a release() si el objeto llego a existir, pero
         # si el fallo ocurre a mitad de construccion no hay objeto que liberar.
-        for residencia in (residencia_vae, residencia_texto, residencia_encoder):
+        for residencia in (
+            residencia_vae,
+            residencia_texto,
+            residencia_encoder,
+            residencia_audio_tok,
+            residencia_detok,
+        ):
             if residencia is not None:
                 try:
                     residencia.soltar()
                 except Exception:  # noqa: BLE001, S110
                     pass
+        if dir_tokenizer_lm is not None:
+            shutil.rmtree(dir_tokenizer_lm, ignore_errors=True)
         state_dict.clear()
         if dispositivo.type == "cuda":
             torch.cuda.empty_cache()

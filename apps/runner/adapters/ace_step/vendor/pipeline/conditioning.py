@@ -72,16 +72,19 @@ se recorre solo esa rama trivial, que es exactamente:
   codificador del VAE no interviene**, que es la razon por la que nuestro
   artefacto de pesos no lo incluye.
 * `chunk_masks` = todo a 1 (se genera la pista entera), `spans` = ("full", 0, T).
-* `is_covers` = falso -> `src_latents` = latente de silencio; el `torch.where`
-  contra las pistas del tokenizador de audio devuelve `src_latents` intacto.
+* `src_latents` = latente de silencio **si no hay plan**. Si el planificador de
+  5 Hz esta activo, `lm_hints_25Hz` ocupa su lugar: es la rama que upstream
+  selecciona con `is_covers > 0`, y `is_covers` significa «hay plan semantico»,
+  no «esto es una version» (ver el bloque de comentario del punto de sustitucion).
 * `refer_audios` = un tensor de ceros -> el codificador de timbre recibe los
   primeros 750 fotogramas del latente de silencio.
 
 Que NO esta aqui
 ----------------
-Cover, repaint, lego, extract, complete, LoRA, `audio_code_hints`,
-`precomputed_lm_hints_25Hz`, `source_repaint_latents`, la rama sin cover del CFG
-(`audio_cover_strength < 1.0`), el formato SFT-lego de captions y el lote (B>1).
+Cover, repaint, lego, extract, complete, LoRA, `source_repaint_latents`, la rama
+sin cover del CFG (`audio_cover_strength < 1.0`), el formato SFT-lego de captions
+y el lote (B>1). Si esta el equivalente de `precomputed_lm_hints_25Hz`: el
+argumento `lm_hints_25Hz`.
 """
 
 from __future__ import annotations
@@ -331,6 +334,7 @@ def preparar_condicionamiento_text2music(
     keyscale: str | None = None,
     timesignature: str | None = None,
     instruccion: str = DEFAULT_DIT_INSTRUCTION,
+    lm_hints_25Hz: torch.Tensor | None = None,
 ) -> CondicionamientoText2Music:
     """Prepara todo el condicionamiento de una generacion `text2music`.
 
@@ -351,6 +355,10 @@ def preparar_condicionamiento_text2music(
         bpm / keyscale / timesignature: metadatos opcionales del prompt.
         instruccion: instruccion del DiT. El unico valor con sentido en
             `text2music` es el de por defecto.
+        lm_hints_25Hz: salida del planificador de 5 Hz ya detokenizada,
+            `[1, T', 64]`. Si se da, **sustituye** al latente de silencio como
+            `src_latents`. Si es `None`, el camino es el de siempre. Ver el bloque
+            «Planificador» mas abajo.
 
     Returns:
         `CondicionamientoText2Music` listo para `diffusion.generar_latentes_text2music`.
@@ -364,6 +372,52 @@ def preparar_condicionamiento_text2music(
     # `chunk_mask` es todo unos, `is_cover` falso y `src_latents` el silencio.
     src_latents = _recorte_de_silencio(silencio, latent_length).unsqueeze(0)  # [1, T, 64]
     canales = src_latents.shape[-1]
+
+    # -- Planificador de 5 Hz ---------------------------------------------- #
+    # MODIFICADO respecto a upstream: se admiten hints precalculados.
+    #
+    # Upstream escribe esto en `prepare_condition` (modeling, linea 1646):
+    #
+    #     lm_hints_25Hz = precomputed_lm_hints_25Hz[:, :src_latents.shape[1], :]
+    #     src_latents = torch.where(is_covers.unsqueeze(-1).unsqueeze(-1) > 0,
+    #                               lm_hints_25Hz, src_latents)
+    #
+    # OJO A LA SEMANTICA DE `is_covers`, que es lo mas facil de leer al reves:
+    # los hints entran cuando `is_covers` es **cierto**, y `is_covers` NO
+    # significa «esto es una version de otra cancion». Upstream lo calcula en
+    # `conditioning_masks.py` como `is_cover = (task_type == "cover") or
+    # has_code_hint`, es decir: **cierto en cuanto hay codigos**. Traducido:
+    # `is_covers` quiere decir «hay plan semantico». Pasar los codigos con
+    # `is_covers=False` los descarta en silencio —mismo audio, sin error ni
+    # aviso—, que es la razon de que el planificador pudiera estar desconectado
+    # sin que nada chillara.
+    #
+    # Con B=1 ese `torch.where` es una eleccion entre dos tensores completos, asi
+    # que aqui se expresa como lo que es: si hay plan, `src_latents` ES el plan.
+    # No se propaga ninguna bandera `is_covers` porque en este modulo no hay lote
+    # que enmascarar, y una bandera que solo puede valer «todo si» o «todo no»
+    # es una trampa esperando a que alguien la ponga al reves.
+    if lm_hints_25Hz is not None:
+        if lm_hints_25Hz.dim() != 3 or lm_hints_25Hz.shape[0] != 1:
+            raise ValueError(
+                f"`lm_hints_25Hz` deberia ser [1, T', 64] y llego "
+                f"{tuple(lm_hints_25Hz.shape)}."
+            )
+        if lm_hints_25Hz.shape[-1] != canales:
+            raise ValueError(
+                f"`lm_hints_25Hz` trae {lm_hints_25Hz.shape[-1]} canales y el latente "
+                f"acustico tiene {canales}."
+            )
+        if lm_hints_25Hz.shape[1] < latent_length:
+            # Upstream solo recorta, nunca rellena, porque su tokenizador anade
+            # relleno y siempre le sobra. Si aqui faltan fotogramas, el final de
+            # la pista se quedaria sin plan: es un error de quien pidio los
+            # codigos, no algo que se pueda apanar sin mentir.
+            raise ValueError(
+                f"`lm_hints_25Hz` cubre {lm_hints_25Hz.shape[1]} fotogramas y hacen falta "
+                f"{latent_length}. Pide al planificador `ceil(T/5)` codigos."
+            )
+        src_latents = lm_hints_25Hz[:, :latent_length, :].to(device=device, dtype=dtype)
 
     # `conditioning_target`: `latent_masks` = unos hasta la longitud real. Con
     # B=1 y sin relleno, es todo unos.
@@ -446,15 +500,13 @@ def preparar_condicionamiento_text2music(
             refer_audio_order_mask=refer_audio_order_mask,
         )
 
-    # MODIFICADO respecto a upstream: se omiten `model.tokenize()` y
-    # `model.detokenize()`. `prepare_condition` los ejecuta SIEMPRE para calcular
-    # `lm_hints_25Hz` y acto seguido hace
-    #     src_latents = torch.where(is_covers > 0, lm_hints_25Hz, src_latents)
-    # En `text2music` `is_covers` es falso para todo el lote, asi que el
-    # resultado es `src_latents` sin tocar: el calculo es **numericamente
-    # irrelevante** y solo cuesta una pasada por el tokenizador de audio (32
-    # tensores) mas otra por el detokenizador (28). Ese ahorro es lo que hace
-    # que la generacion quepa en los 8 GB de la GPU objetivo.
+    # MODIFICADO respecto a upstream: no se llama a `model.tokenize()`.
+    # `prepare_condition` la ejecuta SIEMPRE para derivar unos hints del propio
+    # `hidden_states` —que en `text2music` es el latente de silencio, o sea, un
+    # plan de la nada— y luego los descarta o no segun `is_covers`. Aqui los
+    # hints, si los hay, llegan ya hechos por `lm_hints_25Hz` (el bloque de mas
+    # arriba), y si no los hay no se calcula nada: la pasada por el tokenizador
+    # de audio (32 tensores) mas el detokenizador (28) se ahorra entera.
     context_latents = torch.cat([src_latents, chunk_masks.to(dtype)], dim=-1)
 
     return CondicionamientoText2Music(
