@@ -68,6 +68,11 @@ P.add_argument("--lengths", default="375,750,1125,1500,2250,3000,3750",
                help="Longitudes L en TOKENS DEL DiT (L = segundos*25/patch_size)")
 P.add_argument("--enc-len", type=int, default=210,
                help="L_enc del encoder_hidden_states (cross-attention)")
+P.add_argument("--bsz", type=int, default=1,
+               help="Tamano de lote del forward. 1 = turbo (sin guia) y tambien la "
+                    "pasada gemela SECUENCIAL del sft. 2 = la pasada gemela POR LOTE "
+                    "de upstream (cond + incond en una sola llamada), que es lo que "
+                    "hay que medir para saber si cabe en 8 GB.")
 P.add_argument("--attn", default="eager", choices=["eager", "sdpa"])
 P.add_argument("--steps", type=int, default=8, help="Pasos de difusion del turbo (sin CFG)")
 P.add_argument("--tracks", type=int, default=10, help="Pistas del gate G1")
@@ -467,8 +472,14 @@ log("  tras transpose(1,2) -> %s  (frames: %d = %.0f s)" % (
 assert sil.shape[-1] == AC, "silence_latent mal orientado"
 
 
-def make_inputs(L, enc_len, gen):
-    """L = tokens del DiT (tras patchify). T = PATCH*L frames latentes @25 Hz."""
+def make_inputs(L, enc_len, gen, bsz=1):
+    """L = tokens del DiT (tras patchify). T = PATCH*L frames latentes @25 Hz.
+
+    `bsz` replica las entradas igual que hace la guia POR LOTE de upstream
+    (`torch.cat([xt, xt])` y el condicionamiento concatenado con el nulo): lo que
+    se mide con bsz=2 es EXACTAMENTE el coste de esa pasada gemela en un solo
+    forward, frente a bsz=1, que es el de la secuencial.
+    """
     T = L * PATCH
     if T > sil.shape[1]:
         reps = int(math.ceil(T / float(sil.shape[1])))
@@ -480,6 +491,11 @@ def make_inputs(L, enc_len, gen):
     x = torch.randn(1, T, AC, generator=gen, device=dev, dtype=torch.float16)
     enc = torch.randn(1, enc_len, HID, generator=gen, device=dev, dtype=torch.float16) * 0.02
     ts = torch.full((1,), 1.0, dtype=torch.float16, device=dev)       # t=1.0, primer paso turbo
+    if bsz > 1:
+        x = x.repeat(bsz, 1, 1)
+        ctx = ctx.repeat(bsz, 1, 1)
+        enc = enc.repeat(bsz, 1, 1)
+        ts = ts.repeat(bsz)
     return x, ctx, enc, ts, T
 
 
@@ -494,8 +510,8 @@ log("  use_cache=False y past_key_values=None en TODAS las reps: cada forward "
 # ---------------------------------------------------------------------------
 # 7. Benchmark
 # ---------------------------------------------------------------------------
-hdr("6. BENCHMARK: %d forwards por longitud (warmup %d), attn=%s" % (
-    ARGS.reps, ARGS.warmup, ARGS.attn))
+hdr("6. BENCHMARK: %d forwards por longitud (warmup %d), attn=%s, bsz=%d" % (
+    ARGS.reps, ARGS.warmup, ARGS.attn, ARGS.bsz))
 
 lengths = [int(x) for x in ARGS.lengths.split(",") if x.strip()]
 rows = []
@@ -523,10 +539,10 @@ for L in lengths:
     secs = T / FPS
     torch.cuda.empty_cache()
     torch.cuda.reset_peak_memory_stats()
-    entry = {"L_tokens": L, "T_frames": T, "audio_s": round(secs, 1)}
+    entry = {"L_tokens": L, "T_frames": T, "audio_s": round(secs, 1), "bsz": ARGS.bsz}
     x = ctx = enc = y = yf = None
     try:
-        x, ctx, enc, ts, T = make_inputs(L, ARGS.enc_len, gen)
+        x, ctx, enc, ts, T = make_inputs(L, ARGS.enc_len, gen, ARGS.bsz)
         for _ in range(ARGS.warmup):
             y = one_forward(x, ctx, enc, ts)
         torch.cuda.synchronize()
@@ -557,7 +573,7 @@ for L in lengths:
             "peak_vram_MiB": round(torch.cuda.max_memory_allocated() / 2 ** 20, 1),
             "activations_MiB": round((torch.cuda.max_memory_allocated() - alloc) / 2 ** 20, 1),
         })
-        assert list(y.shape) == [1, T, AC], "shape inesperada %s" % (y.shape,)
+        assert list(y.shape) == [ARGS.bsz, T, AC], "shape inesperada %s" % (y.shape,)
         log("  L=%5d T=%5d (%5.0fs)  mediana %9.2f ms  [%.1f-%.1f]  pico %7.1f MiB  "
             "finito=%s |max|=%.3f std=%.3f" % (
                 L, T, secs, entry["median_ms"], entry["min_ms"], entry["max_ms"],

@@ -136,12 +136,35 @@ un artefacto de pesos **derivado** de tres modelos de terceros. Ejecutarlo es un
 decision del propietario, no de la herramienta: el codigo esta escrito, revisado
 y es reproducible, pero *correrlo* sobre los pesos reales queda a su criterio.
 
+Otra variante del mismo entrenamiento: `--dit-root`
+---------------------------------------------------
+Upstream publica el mismo modelo en varias variantes que solo se diferencian en
+el DiT: la `turbo` (destilada a 8 pasos, con la guia horneada en los pesos) y la
+`sft` (sin destilar, 50 pasos y guia explicita). Comparten text_encoder, VAE,
+tokenizer y latente de silencio, y —comprobado sobre la cabecera, sin cargar los
+4,8 GB— **exactamente las mismas 677 claves con las mismas formas y el mismo
+dtype**: el intercambio es un cambio de valores, no un remapeo.
+
+`--dit-root` construye el artefacto de otra variante apuntando a su arbol, que
+es PLANO (`model.safetensors` y `config.json` en la raiz) porque se publica como
+repo aparte. Cambia SOLO el DiT y su `config.json` —que viajan juntos a
+proposito: el del turbo trae `is_turbo: true` y el de la sft `is_turbo: false`, y
+colar el equivocado no da ningun error de carga—; todo lo demas sigue saliendo de
+`--upstream-root`. El manifiesto lo declara en `dit_source` y `--verify` lo
+autodetecta desde `__metadata__`.
+
+Sin la opcion no cambia nada: el artefacto turbo sale byte a byte igual
+(comprobado reconstruyendolo entero y comparando su SHA-256, no supuesto).
+
 Uso
 ---
     python tools/build_artifact.py --dry-run     # plan, recuentos y tamano exacto
     python tools/build_artifact.py --selftest    # ciclo build+verify sobre un arbol sintetico
     python tools/build_artifact.py               # build real (minutos, ~6,2 GB)
     python tools/build_artifact.py --verify      # reabre y valida el artefacto ya escrito
+    python tools/build_artifact.py --incluir-lm
+        --dit-root D:/srv/ace-step/upstream/sft-c410d249
+        --out D:/srv/ace-step/weights/ace_step_1_5_sft_lm.safetensors
 
 Dependencias: `torch` (CPU basta), `safetensors>=0.8.0`, `numpy`. `tokenizers`
 solo para `--verify` y `--selftest`. Sin red, sin CUDA, sin `transformers`.
@@ -278,6 +301,17 @@ REL_QWEN3_SPECIAL_TOKENS = ("Qwen3-Embedding-0.6B", "special_tokens_map.json")
 REL_VAE_WEIGHTS = ("vae", "diffusion_pytorch_model.safetensors")
 REL_VAE_CONFIG = ("vae", "config.json")
 
+#: Rutas relativas de un arbol de DiT ALTERNATIVO (`--dit-root`). El turbo cuelga
+#: de `acestep-v15-turbo/` DENTRO del arbol upstream; las otras variantes del
+#: mismo entrenamiento (p. ej. la `sft`, sin destilar) se publican como repo
+#: aparte y su arbol es PLANO, igual que el del planificador. De ahi que las
+#: relativas sean distintas y no un simple cambio de subdirectorio.
+#:
+#: `--dit-root` cambia SOLO el DiT y su config. El text_encoder (Qwen3), el VAE,
+#: el tokenizer y el latente de silencio siguen saliendo de `--upstream-root`.
+REL_DIT_ALT_WEIGHTS = ("model.safetensors",)
+REL_DIT_ALT_CONFIG = ("config.json",)
+
 #: Los cuatro prefijos del artefacto. REGLA DURA para el shim: toda clave que no
 #: empiece por uno de estos es error fatal.
 PREFIJO_DIT = "dit."
@@ -369,6 +403,13 @@ LM_DTYPES_ADMITIDOS = ("BF16", "F16")
 #: no cabe. Se dobla la reserva SOLO en ese caso, para que el artefacto sin LM
 #: siga siendo byte a byte el mismo.
 AUX_MANIFEST_BYTES_LM = 16384
+
+#: Ampliacion de la reserva cuando se usa `--dit-root`. MEDIDO: con la seccion
+#: `dit_source` el manifiesto sin LM sube a 8.620 B y revienta los 8.192 de
+#: siempre. Se amplia SOLO en ese caso —y se suma a la del LM cuando van los
+#: dos—, por el mismo motivo de siempre: sin la opcion, el artefacto turbo no se
+#: mueve ni un byte.
+AUX_MANIFEST_BYTES_DIT_ALT = 2048
 
 #: Ficha de licencia del LM. Se anade a las dos de siempre SOLO con `--incluir-lm`.
 FICHAS_LICENCIA_LM = (
@@ -1502,9 +1543,28 @@ class Rutas:
     licenses_dir: Path
     #: Arbol del planificador de 5 Hz. `None` mientras no se pida `--incluir-lm`.
     lm_root: Path | None = None
+    #: Arbol de un DiT alternativo (`--dit-root`). `None` significa el turbo que
+    #: cuelga de `upstream_root`, que es el comportamiento de siempre: con este
+    #: campo a `None` el artefacto turbo sale byte a byte igual.
+    dit_root: Path | None = None
 
     def acestep_weights(self) -> Path:
+        if self.dit_root is not None:
+            return self.dit_root.joinpath(*REL_DIT_ALT_WEIGHTS)
         return self.upstream_root.joinpath(*REL_ACESTEP_WEIGHTS)
+
+    def acestep_config(self) -> Path:
+        """`config.json` del DiT: viaja SIEMPRE con los pesos que describe.
+
+        Separarlos seria el fallo silencioso de manual. El config del turbo trae
+        `is_turbo: true` y el de la variante sft `is_turbo: false`; el shim
+        construye el `AceStepConfig` con lo que encuentre en
+        `aux.config.acestep_json` y no tiene forma de saber que le han colado el
+        config equivocado: cargaria sin un solo error y generaria mal.
+        """
+        if self.dit_root is not None:
+            return self.dit_root.joinpath(*REL_DIT_ALT_CONFIG)
+        return self.upstream_root.joinpath(*REL_ACESTEP_CONFIG)
 
     def qwen3_weights(self) -> Path:
         return self.upstream_root.joinpath(*REL_QWEN3_WEIGHTS)
@@ -1538,6 +1598,8 @@ class PlanFusion:
     avisos: list[str] = field(default_factory=list)
     incluir_lm: bool = False
     lm_dtype: str = LM_DTYPE_POR_DEFECTO
+    #: Arbol del DiT si se uso `--dit-root`; `None` con el turbo de serie.
+    dit_root: Path | None = None
     #: Reserva de `aux.manifest_json` de ESTE plan (cambia si entra el LM).
     bytes_manifiesto: int = AUX_MANIFEST_BYTES
 
@@ -1608,6 +1670,8 @@ def construir_plan(
         )
     fichas_licencia = FICHAS_LICENCIA + (FICHAS_LICENCIA_LM if incluir_lm else ())
     bytes_manifiesto = AUX_MANIFEST_BYTES_LM if incluir_lm else AUX_MANIFEST_BYTES
+    if rutas.dit_root is not None:
+        bytes_manifiesto += AUX_MANIFEST_BYTES_DIT_ALT
     avisos: list[str] = []
     entradas: list[EntradaPlan] = []
     hashes: dict[str, dict[str, Any]] = {}
@@ -1706,7 +1770,7 @@ def construir_plan(
     # deliberado; `aux.manifest_json` va SIEMPRE el ultimo porque es el unico
     # que se reescribe al cerrar el fichero.
     blobs: list[tuple[str, Path]] = [
-        ("aux.config.acestep_json", rutas.upstream_root.joinpath(*REL_ACESTEP_CONFIG)),
+        ("aux.config.acestep_json", rutas.acestep_config()),
         ("aux.config.qwen3_json", rutas.upstream_root.joinpath(*REL_QWEN3_CONFIG)),
         ("aux.config.vae_json", rutas.upstream_root.joinpath(*REL_VAE_CONFIG)),
         # tokenizer.json ENTERO. Ver el aviso del docstring del modulo: sustituirlo
@@ -1878,6 +1942,7 @@ def construir_plan(
         avisos=avisos,
         incluir_lm=incluir_lm,
         lm_dtype=lm_dtype,
+        dit_root=rutas.dit_root,
         bytes_manifiesto=bytes_manifiesto,
     )
 
@@ -2012,6 +2077,29 @@ def construir_manifiesto(
         ],
     }
 
+    # La seccion del DiT alternativo se anade SOLO cuando se ha usado
+    # `--dit-root`, por el mismo motivo que la del LM: el manifiesto va DENTRO
+    # del fichero, asi que anadir campos incondicionalmente cambiaria los bytes
+    # del artefacto turbo. Su sha256 es la prueba de que no ha cambiado.
+    if plan.dit_root is not None:
+        manifiesto["dit_source"] = {
+            "override": True,
+            "root": str(plan.dit_root),
+            "weights_sha256": hash_de("acestep_model_safetensors"),
+            "config_sha256": hash_de("acestep_config_json"),
+            "note": (
+                "El DiT NO procede de 'upstream_revision': se ha construido con --dit-root. "
+                "El resto del artefacto (text_encoder, vae, tokenizer de texto y latente de "
+                "silencio) SI procede de esa revision. El criterio de identidad del DiT es "
+                "dit_source.weights_sha256, no upstream_revision."
+            ),
+            "config_note": (
+                "aux.config.acestep_json viene de esta misma raiz, no del turbo: es el config "
+                "que describe ESTOS pesos (is_turbo, model_version). Mezclarlos daria un "
+                "modelo mal configurado sin ningun error de carga."
+            ),
+        }
+
     # La seccion del LM se anade SOLO cuando el planificador entra. El artefacto
     # sin LM tiene que seguir dando los mismos bytes que antes de existir esta
     # opcion, y el manifiesto va dentro del fichero.
@@ -2122,6 +2210,14 @@ def _manifiesto_plano(manifiesto: dict[str, Any], plan: PlanFusion) -> dict[str,
             "load_file() descarta __metadata__; el canal funcional es aux.manifest_json"
         ),
     }
+    if plan.dit_root is not None:
+        # Longitud determinada por las entradas (la raiz es un argumento, no un
+        # dato medido a mitad de la escritura), asi que la cabecera se sigue
+        # pudiendo reescribir en su sitio al cerrar el fichero.
+        plano.update({
+            "dit_source_override": "true",
+            "dit_source_root": str(plan.dit_root),
+        })
     if plan.incluir_lm:
         # Todos de longitud determinada por las entradas (hashes de 64, revision
         # de 40, literales fijos): la cabecera sigue pudiendo reescribirse en su
@@ -2427,6 +2523,30 @@ def _artefacto_declara_lm(artefacto: Path) -> bool:
     return any(clave.startswith("lm.") for clave in cabecera)
 
 
+def _dit_root_declarado(artefacto: Path) -> str | None:
+    """Devuelve la raiz de `--dit-root` con la que se construyo, o `None`.
+
+    Se lee de `__metadata__`, que vive en la cabecera: no hay que tocar los
+    gigabytes. Igual que `_artefacto_declara_lm`, esto solo ELIGE una
+    expectativa. Quien valida de verdad es `verificar_artefacto`, que compara el
+    blob `aux.config.acestep_json` byte a byte contra el `config.json` de esa
+    raiz: si la raiz no es la buena, falla con su mensaje propio.
+    """
+    try:
+        with open(artefacto, "rb") as fichero:
+            longitud = int.from_bytes(fichero.read(8), "little")
+            if not 0 < longitud <= 64 * 1024 * 1024:
+                return None
+            cabecera = json.loads(fichero.read(longitud))
+    except Exception:  # noqa: BLE001  (una cabecera ilegible no es cosa nuestra)
+        return None
+    metadatos = cabecera.get("__metadata__") or {}
+    if metadatos.get("dit_source_override") != "true":
+        return None
+    raiz = metadatos.get("dit_source_root")
+    return str(raiz) if raiz else None
+
+
 def verificar_artefacto(
     artefacto: Path,
     rutas: Rutas,
@@ -2536,7 +2656,7 @@ def verificar_artefacto(
 
         # --- round-trip byte a byte de los blobs U8 ----------------------
         pares = [
-            ("aux.config.acestep_json", rutas.upstream_root.joinpath(*REL_ACESTEP_CONFIG)),
+            ("aux.config.acestep_json", rutas.acestep_config()),
             ("aux.config.qwen3_json", rutas.upstream_root.joinpath(*REL_QWEN3_CONFIG)),
             ("aux.config.vae_json", rutas.upstream_root.joinpath(*REL_VAE_CONFIG)),
             ("aux.text_tokenizer.tokenizer_json", rutas.upstream_root.joinpath(*REL_QWEN3_TOKENIZER)),
@@ -2633,6 +2753,22 @@ def verificar_artefacto(
                     problemas.append("aux.manifest_json: lm.revision no es la fijada")
             elif manifiesto.get("lm"):
                 problemas.append("aux.manifest_json trae seccion 'lm' y no se pidio el LM")
+            if rutas.dit_root is not None:
+                bloque_dit = manifiesto.get("dit_source") or {}
+                if not bloque_dit:
+                    problemas.append(
+                        "aux.manifest_json sin seccion 'dit_source' y el DiT viene de --dit-root"
+                    )
+                elif bloque_dit.get("root") != str(rutas.dit_root):
+                    problemas.append(
+                        f"aux.manifest_json: dit_source.root {bloque_dit.get('root')!r} != "
+                        f"{str(rutas.dit_root)!r}"
+                    )
+            elif manifiesto.get("dit_source"):
+                problemas.append(
+                    "aux.manifest_json declara 'dit_source' pero se esta verificando como si "
+                    "el DiT fuera el turbo de serie: falta --dit-root."
+                )
             if metadatos.get("upstream_revision") != manifiesto.get("upstream_revision"):
                 problemas.append("__metadata__ y aux.manifest_json discrepan en upstream_revision")
         else:
@@ -2934,6 +3070,14 @@ def ejecutar_selftest(*, silencioso: bool = False) -> dict[str, Any]:
         # que antes de que esta opcion existiera. Ese sha256 es la prueba.
         lm_resultados = _selftest_lm(raiz, upstream, ruta_pt, forma_latente, silencioso=silencioso)
 
+        # --- ciclo con DiT alternativo (--dit-root) -------------------------
+        # Mismo criterio que con el LM: DESPUES del ciclo de siempre y sobre su
+        # propio arbol, para que el artefacto de serie mida y hashee exactamente
+        # lo mismo que antes de que la opcion existiera.
+        dit_root_resultado = _selftest_dit_root(
+            raiz, upstream, ruta_pt, expectativas, registro, silencioso=silencioso
+        )
+
         return {
             "artifact_sha256": registro["artifact"]["sha256"],
             "artifact_bytes": registro["artifact"]["bytes"],
@@ -2944,7 +3088,153 @@ def ejecutar_selftest(*, silencioso: bool = False) -> dict[str, Any]:
             "pickle_rejections": rechazos,
             "warnings": registro["warnings"],
             "lm": lm_resultados,
+            "dit_root": dit_root_resultado,
         }
+
+
+def _selftest_dit_root(
+    raiz: Path,
+    upstream: Path,
+    ruta_pt: Path,
+    expectativas: Expectativas,
+    registro_base: dict[str, Any],
+    *,
+    silencioso: bool,
+) -> dict[str, Any]:
+    """Ciclo build+verify con `--dit-root` sobre un arbol de DiT alternativo.
+
+    Comprueba las cuatro cosas que la opcion promete y que no se pueden dar por
+    supuestas:
+
+      1. el DiT y su `config.json` salen del arbol alternativo (que es PLANO), y
+         el text_encoder, el VAE y el tokenizer siguen saliendo del upstream;
+      2. el artefacto resultante NO es el de serie (si lo fuera, la opcion no
+         estaria haciendo nada y el experimento seria un espejismo);
+      3. el manifiesto lo declara y `__metadata__` permite autodetectarlo al
+         verificar, sin volver a pasar la opcion;
+      4. verificar ese artefacto COMO SI fuera el de serie FALLA. Es el camino de
+         error: sin el no habria prueba de que el config viaja con sus pesos.
+    """
+    torch = _importar_torch()
+    from safetensors.torch import save_file  # noqa: PLC0415
+
+    dit_alt = raiz / "dit_alt"
+    dit_alt.mkdir()
+
+    # Mismas claves y mismas formas que el DiT de serie, valores distintos: es
+    # exactamente la situacion del sft real frente al turbo (677 claves
+    # identicas, otros pesos). Lo unico que distingue un checkpoint de otro son
+    # los valores, y eso es lo que tiene que llegar al artefacto.
+    tensores_base, _meta, _inicio = leer_cabecera_safetensors(
+        upstream.joinpath(*REL_ACESTEP_WEIGHTS)
+    )
+    pesos_alt: dict[str, Any] = {}
+    for clave, info in tensores_base.items():
+        n = math.prod(info.shape) if info.shape else 1
+        plano = torch.linspace(-2.0, 2.0, steps=n, dtype=torch.float32)
+        pesos_alt[clave] = plano.reshape(*info.shape).to(torch.bfloat16)
+    save_file(pesos_alt, str(dit_alt.joinpath(*REL_DIT_ALT_WEIGHTS)), metadata={"format": "pt"})
+    # Config con espaciado raro a proposito, igual que los del arbol sintetico:
+    # asi el round-trip byte a byte de --verify significa algo.
+    dit_alt.joinpath(*REL_DIT_ALT_CONFIG).write_bytes(
+        b'{\n  "model_type" :  "acestep_v15" ,  "is_turbo" :  false\n}\n'
+    )
+
+    rutas = Rutas(
+        upstream_root=upstream,
+        quarantine_pt=ruta_pt,
+        licenses_dir=raiz / "provenance",
+        dit_root=dit_alt,
+    )
+    salida = raiz / "out_dit_alt" / "ace_step_1_5.safetensors"
+    registro = construir_artefacto(
+        rutas,
+        salida,
+        incluir_vae_encoder=False,
+        expectativas=expectativas,
+        built_at="2026-01-01T00:00:00Z",
+        permitir_disco_sistema=True,
+        silencioso=silencioso,
+    )
+
+    manifiesto = registro["manifest"]
+    bloque = manifiesto.get("dit_source") or {}
+    if bloque.get("root") != str(dit_alt):
+        raise BuildError(f"El manifiesto no declara el DiT alternativo: dit_source={bloque!r}")
+    fuentes = manifiesto["sources"]
+    if fuentes["acestep_model_safetensors"]["path"] != str(
+        dit_alt.joinpath(*REL_DIT_ALT_WEIGHTS)
+    ):
+        raise BuildError("Con --dit-root el manifiesto sigue apuntando al DiT de serie.")
+    if fuentes["acestep_config_json"]["path"] != str(dit_alt.joinpath(*REL_DIT_ALT_CONFIG)):
+        raise BuildError("Con --dit-root el config del DiT sigue saliendo del arbol upstream.")
+    if fuentes["qwen3_model_safetensors"]["path"] != str(
+        upstream.joinpath(*REL_QWEN3_WEIGHTS)
+    ):
+        raise BuildError("--dit-root ha movido el text_encoder, y solo debe mover el DiT.")
+    if fuentes["vae_model_safetensors"]["path"] != str(upstream.joinpath(*REL_VAE_WEIGHTS)):
+        raise BuildError("--dit-root ha movido el VAE, y solo debe mover el DiT.")
+    if registro["artifact"]["sha256"] == registro_base["artifact"]["sha256"]:
+        raise BuildError(
+            "El artefacto con --dit-root ha salido identico al de serie: la opcion no hace nada."
+        )
+
+    declarada = _dit_root_declarado(salida)
+    if declarada != str(dit_alt):
+        raise BuildError(
+            f"La autodeteccion de --dit-root ha devuelto {declarada!r}, se esperaba "
+            f"{str(dit_alt)!r}."
+        )
+    if _dit_root_declarado(Path(registro_base["artifact"]["path"])) is not None:
+        raise BuildError("El artefacto de serie declara un DiT alternativo, y no deberia.")
+
+    expectativas_verify = Expectativas(
+        tensores_dit=expectativas.tensores_dit,
+        tensores_text_encoder=expectativas.tensores_text_encoder,
+        tensores_vae_decoder=expectativas.tensores_vae_decoder,
+        tensores_vae_encoder=expectativas.tensores_vae_encoder,
+        latente_shape=expectativas.latente_shape,
+        latente_sha256=manifiesto["silence_latent"]["storage_sha256"],
+    )
+    verificar_artefacto(
+        salida,
+        rutas,
+        incluir_vae_encoder=False,
+        expectativas=expectativas_verify,
+        silencioso=silencioso,
+    )
+
+    # Camino de error: el mismo artefacto verificado como si fuera el de serie
+    # tiene que FALLAR, porque `aux.config.acestep_json` es el del arbol
+    # alternativo. Una comprobacion que nunca ha fallado no esta verificada.
+    rutas_serie = Rutas(
+        upstream_root=upstream,
+        quarantine_pt=ruta_pt,
+        licenses_dir=raiz / "provenance",
+    )
+    try:
+        verificar_artefacto(
+            salida,
+            rutas_serie,
+            incluir_vae_encoder=False,
+            expectativas=expectativas_verify,
+            silencioso=True,
+        )
+    except VerificacionFallida:
+        pass
+    else:
+        raise BuildError(
+            "Verificar el artefacto de --dit-root como si fuera el de serie ha pasado: el "
+            "config del DiT no esta viajando con sus pesos."
+        )
+
+    _log("selftest --dit-root: OK", silencioso=silencioso)
+    return {
+        "tensors": registro["artifact"]["tensors"],
+        "bytes": registro["artifact"]["bytes"],
+        "sha256": registro["artifact"]["sha256"],
+        "root_detected": declarada,
+    }
 
 
 def _selftest_lm(
@@ -3165,6 +3455,10 @@ def imprimir_plan(plan: PlanFusion, cabecera_bytes: int) -> None:
     total = 8 + cabecera_bytes + plan.bytes_datos
     print(f"[{TASK}/{TOOL}] PLAN DE FUSION (dry-run: no se escribe nada)")
     print()
+    if plan.dit_root is not None:
+        print(f"## DiT ALTERNATIVO (--dit-root): {plan.dit_root}")
+        print("   El resto (text_encoder, vae, tokenizer, latente) sigue en --upstream-root.")
+        print()
     print("## Recuentos por prefijo")
     print()
     filas_prefijo = [
@@ -3239,6 +3533,15 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--upstream-root", default=DEFAULT_UPSTREAM_ROOT,
                         help=f"Arbol upstream de la revision fijada. Defecto: {DEFAULT_UPSTREAM_ROOT}")
+    parser.add_argument("--dit-root", default=None,
+                        help="Arbol PLANO (model.safetensors + config.json en la raiz) del que "
+                             "sacar el DiT y SU config, en lugar de acestep-v15-turbo/ dentro "
+                             "de --upstream-root. Sirve para construir el artefacto de otra "
+                             "variante del mismo entrenamiento (p. ej. la sft, sin destilar). "
+                             "Cambia SOLO el DiT: text_encoder, VAE, tokenizer y latente de "
+                             "silencio siguen viniendo de --upstream-root. Sin esta opcion no "
+                             "cambia nada y el artefacto turbo sale byte a byte igual. Al "
+                             "verificar se autodetecta desde __metadata__ del artefacto.")
     parser.add_argument("--quarantine-pt", default=DEFAULT_QUARANTINE_PT,
                         help=f"Latente de silencio en cuarentena. Defecto: {DEFAULT_QUARANTINE_PT}")
     parser.add_argument("--licenses-dir", default=DEFAULT_LICENSES_DIR,
@@ -3297,6 +3600,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                     f"{datos['bytes']} B, lm dtype {datos['lm_stored_dtype']}, "
                     f"{datos['lm_tensors_checked']} tensores comparados con el origen"
                 )
+            dit_alt = resultado.get("dit_root") or {}
+            if dit_alt:
+                print(
+                    f"  ciclo con --dit-root: {dit_alt['tensors']} tensores, "
+                    f"{dit_alt['bytes']} B, raiz autodetectada al verificar: "
+                    f"{dit_alt['root_detected']}"
+                )
             print(f"  sha256              : {resultado['artifact_sha256']}")
             print(f"  determinista        : {resultado['deterministic']}")
             print(f"  tokenizer verificado: {resultado['tokenizer_checked']}")
@@ -3328,11 +3638,29 @@ def main(argv: Sequence[str] | None = None) -> int:
                 silencioso=args.quiet,
             )
 
+        # AUTODETECCION DE --dit-root AL VERIFICAR, por el mismo motivo que la del
+        # LM: el artefacto ya declara de donde salio su DiT en `__metadata__`, y
+        # obligar a recordar la opcion convierte un descuido en un falso fallo (el
+        # blob `aux.config.acestep_json` no cuadraria con el config del turbo).
+        # `--dit-root` explicito sigue mandando, para poder cazar un artefacto que
+        # mienta sobre su propio origen.
+        dit_root = Path(args.dit_root) if args.dit_root else None
+        if args.verify and dit_root is None:
+            declarada = _dit_root_declarado(Path(args.out))
+            if declarada:
+                dit_root = Path(declarada)
+                _log(
+                    f"El artefacto declara un DiT alternativo: se verifica contra "
+                    f"{declarada} (autodetectado).",
+                    silencioso=args.quiet,
+                )
+
         rutas = Rutas(
             upstream_root=Path(args.upstream_root),
             quarantine_pt=Path(args.quarantine_pt),
             licenses_dir=Path(args.licenses_dir),
             lm_root=Path(args.lm_root) if incluir_lm else None,
+            dit_root=dit_root,
         )
         salida = Path(args.out)
         expectativas = Expectativas()

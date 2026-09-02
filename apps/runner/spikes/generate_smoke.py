@@ -79,6 +79,24 @@ Cualquier otra diferencia entre las dos ordenes invalida la comparacion. El
 informe JSON registra `peticion_base.model_params` completo, asi que siempre se
 puede comprobar cual de las dos es cada fichero.
 
+El A/B de la variante de pesos (turbo destilado vs sft sin destilar)
+--------------------------------------------------------------------
+`--variante` elige la programacion y la guia; `--fichero-pesos` elige los pesos.
+**Son dos perillas y hay que mover las dos**: los dos checkpoints tienen las
+mismas 677 claves con las mismas formas, asi que cruzarlos no da ningun error,
+solo audio peor. Un contenedor cada vez::
+
+    # A — turbo: 8 pasos, sin guia (lo de siempre)
+    ... generate_smoke.py --duraciones 25 --semilla 20260902 \
+        --fichero-pesos ace_step_1_5_lm.safetensors \
+        --variante turbo --etiqueta var-turbo
+
+    # B — sft: 50 pasos con guia APG. ~12x mas difusion (100 pasadas del DiT
+    #     en vez de 8), asi que conviene empezar por una duracion corta.
+    ... generate_smoke.py --duraciones 25 --semilla 20260902 \
+        --fichero-pesos ace_step_1_5_sft_lm.safetensors \
+        --variante sft --etiqueta var-sft
+
 Codigo de salida: `0` si todas las comprobaciones bloqueantes pasan en todas las
 duraciones, `1` si alguna falla, `2` si la ejecucion revienta antes de poder
 comprobar nada.
@@ -156,6 +174,16 @@ def _construir_model_params(args, usar_lm: bool | None = None) -> dict:
         params["keyscale"] = args.tonalidad
     if args.compas:
         params["timesignature"] = args.compas
+    # La variante de pesos. Va SIEMPRE, aunque sea la de por defecto, porque el
+    # informe JSON guarda `model_params` entero y una comparacion turbo-vs-sft
+    # en la que haya que adivinar cual era cual no sirve de nada.
+    params["variante"] = args.variante
+    # `--pasos` y `--guidance` solo viajan si se piden: `None` significa «el
+    # defecto de la variante», que NO es el mismo numero para las dos.
+    if args.pasos:
+        params["pasos"] = int(args.pasos)
+    if args.guidance is not None:
+        params["guidance_scale"] = float(args.guidance)
     # El A/B del planificador de 5 Hz. `--sin-lm` es la rama de control: mismo
     # artefacto, misma semilla, misma letra, mismo prompt y mismos metadatos; lo
     # unico que cambia es si `src_latents` es el plan del LM o el latente de
@@ -654,6 +682,12 @@ async def ejecutar(args: argparse.Namespace) -> int:
     if modulo_adapter._env_flag("ACE_STEP_MOCK"):  # noqa: SLF001
         raise SystemExit("ACE_STEP_MOCK esta activo: esto no seria una generacion real.")
 
+    # La variante viaja por ENTORNO ademas de en `model_params` porque el
+    # WARM-UP ocurre dentro de `load()`, antes de que exista peticion alguna que
+    # pueda llevarla. Sin esto, cargar los pesos `sft` calienta en `turbo` y
+    # muere con un latente de NaN antes de generar nada.
+    os.environ["ACE_STEP_VARIANTE"] = args.variante
+
     adaptador = modulo_adapter.AceStepAdapter(
         weights_name=args.fichero_pesos,
         output_dir=salida,
@@ -969,6 +1003,29 @@ def construir_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--lm-temperatura", type=float, default=0.85, dest="lm_temperatura",
         help="Temperatura de muestreo del planificador (defecto 0,85, el de upstream).",
+    )
+    parser.add_argument(
+        "--variante",
+        default="turbo",
+        choices=["turbo", "sft"],
+        help=(
+            "Variante de pesos, que decide la programacion y la guia: 'turbo' = 8 pasos "
+            "sin guia (el artefacto de produccion); 'sft' = modelo base sin destilar, 50 "
+            "pasos y guia APG, o sea DOS pasadas del DiT por paso. OJO: la variante NO se "
+            "deduce del fichero de pesos, asi que hay que darla junto con --fichero-pesos "
+            "(ace_step_1_5_sft_lm.safetensors). Pedir 'sft' con los pesos del turbo, o al "
+            "reves, no da ningun error: da audio peor."
+        ),
+    )
+    parser.add_argument(
+        "--pasos", type=int, default=None,
+        help=("Pasos de difusion. Por defecto, el de la variante (8 turbo / 50 sft). En "
+              "turbo solo se admite 8."),
+    )
+    parser.add_argument(
+        "--guidance", type=float, default=None, dest="guidance",
+        help=("Escala de la guia APG del sft (defecto 7,0, el de upstream). 1,0 la "
+              "desactiva y ahorra la pasada gemela. No aplica al turbo."),
     )
     parser.add_argument("--salida", default=os.environ.get("ACE_STEP_OUTPUT_DIR", "/outputs"))
     parser.add_argument("--pesos", default=None, help="Directorio de pesos (por defecto, entorno).")

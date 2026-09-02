@@ -205,6 +205,7 @@ def descriptores(x: np.ndarray, estereo: np.ndarray, tasa: int) -> dict[str, flo
         ),
     }
     d.update(estructura(x, mag, tasa))
+    d.update(pulso(mag, tasa))
     return d
 
 
@@ -295,6 +296,198 @@ def estructura(x: np.ndarray, mag: np.ndarray, tasa: int) -> dict[str, float]:
              "cambios_seccion": float("nan"), "cambios_por_minuto": float("nan")}
         )
     return salida
+
+
+# --- Ritmo: envolvente de ATAQUES, tempo y fuerza del pulso ----------------- #
+#
+# Por que un bloque aparte y no reusar `acf_env_pico`: aquel mide la envolvente de
+# ENERGIA (RMS por trama). Sirve para ver si la pista se repite a si misma, pero
+# un pad que sube y baja le da tanta autocorrelacion como un bombo. Lo que aqui se
+# quiere medir es el ENCAJE RITMICO —la queja del propietario es que las voces no
+# siguen el ritmo de la base—, y para eso hay que mirar los ATAQUES: saltos
+# positivos del espectro, no el nivel.
+#
+# Todo lo de este bloque es un PROXY instrumental. Mide la mezcla, no la voz
+# aislada, y no dictamina calidad musical: eso es escucha humana (G1). Sirve para
+# decir si hay o no una diferencia MEDIBLE entre dos ramas.
+
+#: Rango de tempo donde se busca el pulso. Fuera de el, lo que se encuentra son
+#: armonicos del compas o de la frase, no el pulso.
+BPM_MIN, BPM_MAX = 50.0, 200.0
+#: Banda del bombo y del sub 808: es la que lleva la rejilla.
+BANDA_GRAVE_HZ = (30.0, 200.0)
+#: Banda telefonica. La voz cantada vive aqui casi entera, y la percusion grave
+#: casi nada, que es justo lo que hace util comparar las dos.
+BANDA_VOZ_HZ = (300.0, 3400.0)
+
+
+def envolvente_ataques(
+    mag: np.ndarray,
+    tasa: int,
+    banda: tuple[float, float] | None = None,
+    ref: float | None = None,
+) -> np.ndarray:
+    """Envolvente de ataques (flujo espectral rectificado) de una banda.
+
+    En dB y no en lineal a proposito: un ataque es un salto MULTIPLICATIVO, y en
+    lineal el instrumento mas fuerte de la mezcla se come los ataques de todos los
+    demas —que es exactamente el error que haria invisible el problema de la voz
+    contra un bombo alto—. El suelo a `TOP_DB` por debajo de `ref` evita que el
+    silencio entre golpes genere saltos enormes al volver a entrar.
+
+    `ref` es la potencia de referencia de los dB y NO es un detalle. MEDIDO: con
+    una referencia POR BANDA (el maximo de cada banda), un tren de golpes de 60 Hz
+    daba en la banda de voz una envolvente de ataques casi tan grande como en la
+    banda grave (ratio 1,63) pese a no haber nada de voz. La causa es que
+    normalizar cada banda contra su propio maximo sube el suelo de la banda vacia
+    hasta la escala completa, y entonces la fuga del transitorio —que en energia
+    es despreciable— se convierte en un ataque de libro. Con una referencia COMUN
+    a todo el espectro, una banda 40 dB por debajo se queda pegada al suelo y su
+    flujo es el que le corresponde: casi cero.
+
+    Esto importa porque la comparacion voz-contra-grave se apoya en que las dos
+    bandas sean comparables en magnitud. Para el TEMPO daba igual (la
+    autocorrelacion es invariante a escala); para el ENCAJE, no.
+    """
+    frecs = np.fft.rfftfreq(N_FFT, d=1.0 / tasa)
+    m = mag
+    if banda is not None:
+        sel = (frecs >= banda[0]) & (frecs < banda[1])
+        if not sel.any():
+            return np.zeros(max(mag.shape[1] - 1, 0))
+        m = mag[sel]
+    pot = m**2
+    if ref is None:
+        ref = float(np.max(mag**2))
+    ref = float(ref) + 1e-20
+    db = 10.0 * np.log10(np.maximum(pot / ref, 10.0 ** (-TOP_DB / 10.0)))
+    return np.maximum(np.diff(db, axis=1), 0.0).mean(axis=0)
+
+
+def tempo_por_autocorrelacion(
+    env: np.ndarray, tasa_env: float, bpm_min: float = BPM_MIN, bpm_max: float = BPM_MAX
+) -> tuple[float, float]:
+    """Devuelve `(bpm, fuerza_del_pulso)` por autocorrelacion de la envolvente.
+
+    `fuerza_del_pulso` es la altura del pico de la autocorrelacion NORMALIZADA por
+    el lag 0, con la envolvente centrada: 0 es «no hay periodicidad a ese tempo» y
+    1 es «la envolvente se repite identica». Es la medida que discrimina un pulso
+    marcado de uno emborronado, y por eso es la que mas importa aqui.
+    """
+    e = np.asarray(env, dtype=np.float64)
+    if e.size < 4 or not np.isfinite(e).all() or np.std(e) < 1e-12:
+        return float("nan"), float("nan")
+    e = e - e.mean()
+    acf = np.correlate(e, e, mode="full")[e.size - 1 :]
+    if acf[0] <= 0:
+        return float("nan"), float("nan")
+    acf = acf / acf[0]
+    lag_min = max(int(round(60.0 / bpm_max * tasa_env)), 1)
+    lag_max = min(int(round(60.0 / bpm_min * tasa_env)), acf.size - 1)
+    if lag_max <= lag_min:
+        return float("nan"), float("nan")
+    tramo = acf[lag_min : lag_max + 1]
+    i = int(np.argmax(tramo))
+    lag = lag_min + i
+    fuerza = float(tramo[i])
+    # Interpolacion parabolica sobre los tres puntos del pico: a 93,75 tramas/s un
+    # lag entero son ~1,5 BPM de resolucion a 94 BPM, que es mas error del que
+    # tiene sentido reportar cuando se compara contra un objetivo exacto.
+    if 0 < lag < acf.size - 1:
+        y0, y1, y2 = acf[lag - 1], acf[lag], acf[lag + 1]
+        denom = y0 - 2.0 * y1 + y2
+        if abs(denom) > 1e-12:
+            lag = lag + 0.5 * (y0 - y2) / denom
+    if lag <= 0:
+        return float("nan"), float("nan")
+    return float(60.0 * tasa_env / lag), fuerza
+
+
+def _plegar_bpm(bpm: float, minimo: float = 70.0, maximo: float = 140.0) -> float:
+    """Lleva el tempo a una octava comparable, doblando o partiendo por dos.
+
+    La autocorrelacion no distingue 94 de 47 ni de 188: los tres explican la misma
+    envolvente. Para comparar dos ramas hace falta mirarlas en la misma octava.
+    """
+    if not math.isfinite(bpm) or bpm <= 0:
+        return float("nan")
+    for _ in range(8):
+        if bpm < minimo:
+            bpm *= 2.0
+        elif bpm > maximo:
+            bpm /= 2.0
+        else:
+            break
+    return float(bpm)
+
+
+def desfase_voz_beat(
+    env_voz: np.ndarray, env_grave: np.ndarray, tasa_env: float, bpm: float
+) -> tuple[float, float]:
+    """`(desfase_ms, coherencia)` entre los ataques de la voz y los del grave.
+
+    Se busca el maximo de la correlacion cruzada normalizada dentro de MEDIO pulso
+    a cada lado: mas alla, el que se encontraria es el golpe siguiente, no el
+    mismo desplazado.
+
+    Signo: **positivo = la voz llega TARDE** respecto al grave.
+    `np.correlate(a, b, "full")[centro + k] = sum_t a[t+k]*b[t]`, que es maximo
+    cuando `a[s] ~ b[s-k]`, o sea cuando `a` es `b` retrasada `k` tramas.
+
+    `coherencia` es esa correlacion en su maximo (-1..1): si es baja, no es que la
+    voz vaya adelantada o atrasada de forma consistente, es que NO SIGUE una
+    rejilla comun con el grave. Para la queja del propietario, una coherencia baja
+    dice mas que un desfase grande.
+    """
+    a = np.asarray(env_voz, dtype=np.float64)
+    b = np.asarray(env_grave, dtype=np.float64)
+    n = min(a.size, b.size)
+    if n < 8 or not math.isfinite(bpm) or bpm <= 0:
+        return float("nan"), float("nan")
+    a, b = a[:n], b[:n]
+    if np.std(a) < 1e-12 or np.std(b) < 1e-12:
+        return float("nan"), float("nan")
+    a = (a - a.mean()) / np.std(a)
+    b = (b - b.mean()) / np.std(b)
+    cc = np.correlate(a, b, mode="full") / n
+    centro = n - 1
+    max_lag = max(int(round(60.0 / bpm / 2.0 * tasa_env)), 1)
+    inicio, fin = max(centro - max_lag, 0), min(centro + max_lag, cc.size - 1)
+    tramo = cc[inicio : fin + 1]
+    i = int(np.argmax(tramo))
+    lag = (inicio + i) - centro
+    return float(lag / tasa_env * 1000.0), float(tramo[i])
+
+
+def pulso(mag: np.ndarray, tasa: int) -> dict[str, float]:
+    """Bloque de ritmo completo: tempo, fuerza del pulso y encaje voz-base."""
+    tasa_env = tasa / SALTO
+    # UNA referencia para las tres envolventes: ver `envolvente_ataques`. Con una
+    # por banda, la fuga de los transitorios del bombo en la banda de voz sale del
+    # mismo tamano que la voz y el encaje medido es un espejismo.
+    ref = float(np.max(mag**2))
+    env_total = envolvente_ataques(mag, tasa, None, ref)
+    env_grave = envolvente_ataques(mag, tasa, BANDA_GRAVE_HZ, ref)
+    env_voz = envolvente_ataques(mag, tasa, BANDA_VOZ_HZ, ref)
+
+    bpm, fuerza = tempo_por_autocorrelacion(env_total, tasa_env)
+    bpm_g, fuerza_g = tempo_por_autocorrelacion(env_grave, tasa_env)
+    bpm_v, fuerza_v = tempo_por_autocorrelacion(env_voz, tasa_env)
+    desfase_ms, coherencia = desfase_voz_beat(env_voz, env_grave, tasa_env, bpm_g)
+
+    return {
+        "bpm_acf": bpm,
+        "bpm_acf_plegado": _plegar_bpm(bpm),
+        "pulso_fuerza": fuerza,
+        "bpm_grave": bpm_g,
+        "bpm_grave_plegado": _plegar_bpm(bpm_g),
+        "pulso_fuerza_grave": fuerza_g,
+        "bpm_voz": bpm_v,
+        "bpm_voz_plegado": _plegar_bpm(bpm_v),
+        "pulso_fuerza_voz": fuerza_v,
+        "desfase_voz_beat_ms": desfase_ms,
+        "coherencia_voz_beat": coherencia,
+    }
 
 
 # --- Distancias entre pistas ------------------------------------------------ #

@@ -18,7 +18,7 @@ import generate_smoke as gs
 class _Args:
     """Lo minimo que mira `_construir_model_params`."""
 
-    def __init__(self, sin_lm: bool = False) -> None:
+    def __init__(self, sin_lm: bool = False, variante: str = "turbo") -> None:
         self.idioma_voz = "es"
         self.bpm = 92
         self.tonalidad = "A minor"
@@ -26,6 +26,9 @@ class _Args:
         self.sin_lm = sin_lm
         self.lm_cfg = 2.0
         self.lm_temperatura = 0.85
+        self.variante = variante
+        self.pasos = None
+        self.guidance = None
 
 
 # --------------------------------------------------------------------------- #
@@ -111,3 +114,36 @@ def test_parser_acepta_la_matriz_real() -> None:
         par = [c for c in de_25 if c.semilla == semilla]
         assert len(par) == 2
         assert {c.usar_lm for c in par} == {True, False}
+
+
+# --------------------------------------------------------------------------- #
+# La perilla de variante
+# --------------------------------------------------------------------------- #
+def test_la_variante_viaja_siempre_en_model_params() -> None:
+    """Aunque sea la de por defecto: el informe guarda `model_params` entero y una
+    comparacion turbo-vs-sft en la que haya que adivinar cual era cual no vale."""
+    assert gs._construir_model_params(_Args())["variante"] == "turbo"
+    assert gs._construir_model_params(_Args(variante="sft"))["variante"] == "sft"
+
+
+def test_pasos_y_guidance_solo_viajan_si_se_piden() -> None:
+    """`None` significa 'el defecto de la variante', que NO es el mismo numero
+    para las dos (8/3,0 en turbo, 50/1,0 en sft). Mandar un numero fijo desde
+    aqui le colaria al sft la programacion del turbo."""
+    params = gs._construir_model_params(_Args(variante="sft"))
+    assert "pasos" not in params
+    assert "guidance_scale" not in params
+
+    args = _Args(variante="sft")
+    args.pasos, args.guidance = 30, 5.0
+    params = gs._construir_model_params(args)
+    assert params["pasos"] == 30
+    assert params["guidance_scale"] == 5.0
+
+
+def test_guidance_uno_no_se_pierde() -> None:
+    """1,0 desactiva la guia y es un valor con significado: `if args.guidance`
+    lo habria tirado por falsy. Se comprueba porque ya paso una vez con --bpm 0."""
+    args = _Args(variante="sft")
+    args.guidance = 1.0
+    assert gs._construir_model_params(args)["guidance_scale"] == 1.0

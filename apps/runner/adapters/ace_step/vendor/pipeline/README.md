@@ -12,7 +12,13 @@ que estar en el repositorio, fijado por hash y revisable en un diff.
 
 ## Alcance: solo `text2music` del turbo
 
-Traido: 8 pasos, `shift=3.0`, **sin CFG**, lote 1.
+Traido: lote 1, en las dos variantes de pesos.
+
+* `turbo` (produccion): 8 pasos, `shift=3.0`, **sin guia**.
+* `sft` (modelo base sin destilar, anadido el 2026-09-02): N pasos (50 por defecto),
+  `shift=1.0` y **guia APG** con pasada gemela SECUENCIAL. OJO: verificado el 2026-09-02
+  que el `sft` desborda fp16 en la GTX 1070 y no llega a producir audio; el detalle, en
+  `../sft/README.md`.
 
 **NO** traido, a proposito: `cover`, `cover-nofsq`, `repaint`, `lego`, `extract`, `complete`,
 LoRA, audio2audio, `audio_code_hints`, `precomputed_lm_hints_25Hz`, `flow_edit`, correccion DCW,
@@ -70,9 +76,9 @@ Y, del directorio padre (revision de HuggingFace, hash ya registrado en `vendor/
 |---|---|---|---|
 | `__init__.py` | 3372 | `a9df70b724d578686a1183b8f9bcf4212827e99a0602147175c06b8414f8cb2f` | nada (fachada nuestra, imports perezosos) |
 | `constants.py` | 10240 | `2470ce0af5d0dae7581383996425d4821e9103589f73d2b380b46fec0f137594` | `constants.py`, `prompt_utils.py`, `metadata_utils.py` |
-| `scheduler.py` | 7697 | `c831ae64493eb070934b1791d5bd05c90a145239deeac7ccee1870c1685ce00e` | `generate_audio` (`VALID_SHIFTS`, `SHIFT_TIMESTEPS`) |
+| `scheduler.py` | 21346 | `379bc1e1506b3dc38519b2aad957096d9a04635466aadd116ccaea4a3af191b2` | `generate_audio` del turbo (`VALID_SHIFTS`, `SHIFT_TIMESTEPS`) **y del base** (`linspace` + desplazamiento) |
 | `conditioning.py` | 22269 | `7d9052eff12b657d0da875e4b58afc21d8800c5f79c6207e45665ca8dd8e46a0` | los cinco `conditioning_*.py`, `task_utils.py`, `prepare_condition` |
-| `diffusion.py` | 12817 | `1bc99d583115379294cb84a319815546f42932fc4103700c418d0dc4302a6cd4` | `generate_audio` (bucle), `generate_music_decode.py` (validacion) |
+| `diffusion.py` | 26100 | `fd4fe9b0b2832d0f89d3d8bcd63f3383694426648e41c71ef33053bc4eaf0ed6` | `generate_audio` (bucle del turbo **y del base, con guia**), `generate_music_decode.py` (validacion). La guia APG **se importa** de `../sft/apg_guidance.py`, no se copia |
 | `decode.py` | 7763 | `ba859a2ee185d48caaf80e0a98115ebb1737ebb2db9b0b205c66fdc4083846d4` | `generate_music_decode.py` (transposicion y dtype) |
 
 ## El VAE NO esta duplicado aqui
@@ -94,9 +100,9 @@ Resumen de las modificaciones, para no tener que leer los seis ficheros:
 | Modulo | Modificaciones |
 |---|---|
 | `constants.py` | mixins convertidos en funciones de modulo; cinco numeros magicos con nombre (`SAMPLE_RATE`, `LATENT_HOP`, `LATENT_HZ`, `MIN_LATENT_LENGTH`, `REFER_AUDIO_LATENT_FRAMES`, `MAX_*_TOKENS`); `construir_meta_dict` acepta `None` donde upstream revienta con `AttributeError` |
-| `scheduler.py` | el redondeo del `shift` se devuelve al llamante (`programacion_efectiva`) en vez de quedar en un log que nadie lee durante una generacion |
+| `scheduler.py` | el redondeo del `shift` se devuelve al llamante (`programacion_efectiva`) en vez de quedar en un log que nadie lee durante una generacion; la programacion continua del base se calcula en doble y no en el dtype del modelo (el modulo tiene que importarse sin `torch`); `shift<=0` y `pasos` fuera de rango se **rechazan** en vez de clamparse en silencio como hace `GenerationParams` |
 | `conditioning.py` | solo la rama trivial de `text2music`; sin lote; se omiten `model.tokenize()`/`detokenize()` (con `is_covers=False` su resultado se descarta, es numericamente irrelevante); `longitud_latente` calcula el entero en vez de materializar 115 MB de ceros; se quita el kwarg `lyric_attention_mask=None` que upstream cuela por `**kwargs` de `Qwen3Model.forward`; el codificador de texto puede vivir en **otro dispositivo** que el DiT (en 8 GB no caben a la vez); `.clone()` de los estados ocultos al salir de `inference_mode` |
-| `diffusion.py` | callback `on_step(paso, total)` en cada paso, que es el punto de control de **D-17** y no existe en upstream; el condicionamiento llega ya calculado; sin ramas de cover ni SDE; se valida el latente al salir de la difusion y no mas tarde, en el decode |
+| `diffusion.py` | callback `on_step(paso, total)` en cada paso, que es el punto de control de **D-17** y no existe en upstream; el condicionamiento llega ya calculado; sin ramas de cover ni SDE; se valida el latente al salir de la difusion y no mas tarde, en el decode; la pasada gemela de la guia es **secuencial** (dos llamadas de lote 1, dos caches) y no de lote 2, con la medida que lo justifica en el docstring; fuera de `cfg_interval` no se calcula la incondicional en vez de calcularla y tirarla |
 | `decode.py` | siempre trocea (el decode monolitico de 180 s no cabe en 8 GB); sin caminos MLX/MPS/CPU; sin `latent_shift`/`latent_rescale` (identidad en sus valores neutros); el decoder llega por argumento en vez de por `self.vae` |
 
 ## Estado de revision — lease antes de confiar

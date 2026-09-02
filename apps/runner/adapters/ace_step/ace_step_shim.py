@@ -250,7 +250,11 @@ from vendor.lm.constants import (  # noqa: E402
 from vendor.pipeline.constants import LATENT_HOP, SAMPLE_RATE  # noqa: E402
 from vendor.pipeline.decode import decodificar_latentes  # noqa: E402
 from vendor.pipeline.diffusion import generar_latentes_text2music  # noqa: E402
-from vendor.pipeline.scheduler import PASOS_POR_DEFECTO, SHIFT_POR_DEFECTO  # noqa: E402
+from vendor.pipeline.scheduler import (  # noqa: E402
+    VARIANTE_POR_DEFECTO,
+    normalizar_variante,
+    programacion_de_variante,
+)
 
 __all__ = ["AudioRenderizado", "PipelineAceStep", "build_pipeline"]
 
@@ -324,6 +328,15 @@ BLOBS_LM_TOKENIZER = {
 #: ~3.630 MiB de RAM residente. `fp32` queda como valvula por si alguna vez se
 #: sospecha de la precision de las activaciones.
 ENV_LM_DTYPE = "ACE_STEP_LM_DTYPE"
+
+#: Variante de PESOS que trae el artefacto (`turbo` | `sft`).
+#:
+#: Existe porque la variante NO es solo una opcion de la peticion: decide la
+#: programacion, la guia y —desde el 2026-09-02— si la corriente residual del DiT
+#: se promueve a fp32. El WARM-UP corre ANTES de la primera peticion, asi que sin
+#: esta variable se calentaria en `turbo` con pesos `sft` y reventaria con un
+#: latente de NaN en el arranque. MEDIDO: eso es exactamente lo que paso.
+ENV_VARIANTE = "ACE_STEP_VARIANTE"
 _LM_DTYPES = {"bf16": torch.bfloat16, "fp32": torch.float32}
 
 #: Techo duro de duracion. MEDIDO en la GTX 1070: 420 s pasan y 480 s revientan.
@@ -350,6 +363,18 @@ _MARGEN_BYTES = 256 * _MIB
 #: pero eso no autoriza a tragarse lo que el llamante pida).
 _PARAMS_ADMITIDOS = frozenset(
     {
+        # -- variante de pesos ---------------------------------------------- #
+        # `variante` NO se autodetecta del artefacto y es deliberado. Los dos
+        # checkpoints tienen las MISMAS 677 claves con las mismas formas, asi
+        # que cargar el `sft` con la programacion del turbo no da ningun error:
+        # da 8 pasos sin guia sobre unos pesos que esperan 50 con guia, o sea
+        # audio peor y ninguna pista de por que. El unico campo del config que
+        # los distingue (`is_turbo`) no lo lee nadie, ni upstream ni nosotros,
+        # asi que adivinar a partir de el seria fiarse de un dato muerto. Lo
+        # dice el llamante, o se usa el turbo, que es el de produccion.
+        "variante",
+        "pasos",
+        "guidance_scale",
         "shift",
         "vocal_language",
         "bpm",
@@ -793,6 +818,277 @@ class _CodificadorLetraFp32(torch.nn.Module):
                 "hay que revisar el rango de todo el condicionamiento."
             )
         return BaseModelOutput(last_hidden_state=estados.to(self._dtype_salida))
+
+
+# --------------------------------------------------------------------------- #
+# Corriente residual del DiT en fp32 (segunda excepcion medida de C1)
+# --------------------------------------------------------------------------- #
+
+def _convertir(valor: Any, origen: torch.dtype, destino: torch.dtype) -> Any:
+    """Cambia el dtype de `valor` solo si es un tensor y esta exactamente en `origen`.
+
+    Deliberadamente SUPERFICIAL: recorre argumentos de primer nivel y no entra en
+    tuplas ni diccionarios. Los unicos tensores que hay que mover son la corriente
+    residual y su version normalizada; `position_embeddings` (la tupla `cos, sin`),
+    las mascaras y `encoder_hidden_states` siguen siendo fp16 y deben quedarse como
+    estan, porque promoverlos costaria VRAM sin arreglar nada.
+    """
+    if isinstance(valor, torch.Tensor) and valor.dtype is origen:
+        return valor.to(destino)
+    return valor
+
+
+class _ResidualDitFp32:
+    """Lleva en fp32 la corriente residual del DiT dejando los PESOS en fp16.
+
+    Por que existe: los pesos `sft` (sin destilar) desbordan fp16 en la difusion.
+    MEDIDO el 2026-09-02 en la GTX 1070: la corriente residual del decoder crece
+    capa a capa y en `layers.20` (de 24) la suma residual pasa de |max| = 6.000 a
+    6,4e4, que es el techo de fp16 (65.504). Diez elementos salen `inf`, las cuatro
+    capas siguientes los vuelven `NaN` y el latente entero se contamina.
+
+    Es EL MISMO fallo que ya tenia el codificador de letra (ver
+    `_CodificadorLetraFp32`), en otro modulo y con los otros pesos: el checkpoint
+    publicado es bf16, que tiene el exponente de fp32, y al fusionar el artefacto a
+    fp16 se perdio esa cabecera de rango. El turbo, destilado, no llega a esas
+    magnitudes y por eso nunca lo enseno.
+
+    Por que NO se resuelve como el codificador de letra: alli el remedio fue
+    promover el submodulo entero a fp32 (772 -> 1.544 MiB). Aqui el decoder son
+    2.393,9 M de parametros: en fp32 son 9,6 GiB y la tarjeta tiene 8. Promover
+    solo las capas que desbordan (18-23) costaria ~1 GiB de VRAM PERMANENTE, y el
+    pico medido de una generacion ya esta en 7.606 MiB de 8.191.
+
+    Que se hace en su lugar: los pesos se quedan en fp16 y lo que sube a fp32 son
+    unicamente las ACTIVACIONES de la corriente residual, un tensor `[1, L, 2048]`
+    (12,3 MiB en fp32 a 120 s). El reparto es exacto porque la arquitectura es
+    pre-norm:
+
+      * `self_attn_norm` / `cross_attn_norm` / `mlp_norm` son `Qwen3RMSNorm`, que
+        ya calcula en fp32 internamente y devuelve al dtype de su entrada. Con la
+        corriente en fp32 la normalizacion sale en fp32, y lo que entra a cada
+        subcapa se baja a fp16 en el gancho: despues de normalizar los valores son
+        del orden de la unidad, o sea que ahi fp16 sobra.
+      * La salida de cada subcapa se sube a fp32 en el gancho de salida, y las tres
+        sumas residuales de `AceStepDiTLayer` (`hidden_states + attn_output *
+        gate_msa`, la de la atencion cruzada y la del MLP) ocurren ya en fp32. Es
+        justo la operacion que desbordaba.
+      * `norm_out` normaliza antes de `proj_out`, asi que la salida del DiT vuelve
+        al orden de la unidad y se baja a fp16 antes de la convolucion final.
+
+    O sea: todos los `matmul` siguen siendo fp16 contra pesos fp16 —no se pierde la
+    velocidad ni se gasta VRAM en un upcast— y solo la ACUMULACION, que es lo unico
+    que necesita rango, se hace ancha.
+
+    Precision: fp16 tiene 10 bits de mantisa y bf16 tiene 7. Mientras no desborde,
+    esta ruta es MAS precisa que el bf16 nativo del checkpoint, no menos.
+
+    Se implementa con ganchos y no editando
+    `vendor/sft/modeling_acestep_v15_base.py` por la misma razon que
+    `_CodificadorLetraFp32`: el fichero vendorizado tiene que seguir siendo
+    comparable byte a byte con su SHA-256 registrado.
+
+    OJO: se instala SOLO para la variante `sft`. El turbo no lo necesita (no
+    desborda) y activarselo cambiaria su numerica, con lo que dejaria de ser el
+    control del A/B contra lo que el propietario ya ha escuchado.
+    """
+
+    #: Subcapas de `AceStepDiTLayer` que reciben la corriente YA normalizada y por
+    #: tanto pueden trabajar en fp16 sin riesgo de rango.
+    _SUBCAPAS = ("self_attn", "cross_attn", "mlp")
+
+    def __init__(
+        self,
+        decoder: torch.nn.Module,
+        dtype_pesos: torch.dtype,
+        *,
+        activo: bool = True,
+        vigilar: bool = True,
+    ) -> None:
+        self._decoder = decoder
+        self._dtype_pesos = dtype_pesos
+        # Solo tiene sentido si los pesos son fp16: en fp32 o bf16 no hay nada que
+        # arreglar y los ganchos serian una conversion inutil.
+        self._activo = bool(activo) and dtype_pesos is torch.float16
+        self._vigilar = bool(vigilar)
+        self._asas: list[Any] = []
+        self._pasadas = 0
+        #: Filas `(nombre, |max| finito, no finitos)` de la PRIMERA pasada del DiT.
+        self.picos: list[tuple[str, float, int]] = []
+
+    @classmethod
+    def para_variante(
+        cls, decoder: torch.nn.Module, variante: str, dtype_pesos: torch.dtype
+    ) -> "_ResidualDitFp32":
+        """Devuelve la promocion, activa solo para la variante que desborda."""
+        return cls(decoder, dtype_pesos, activo=(variante == "sft"))
+
+    @property
+    def activo(self) -> bool:
+        return self._activo
+
+    # -- ganchos ----------------------------------------------------------- #
+
+    def _pre_capa_cero(self, _modulo: Any, args: tuple) -> tuple | None:
+        """Sube la corriente a fp32 justo al entrar en la pila de capas.
+
+        Va en la capa 0 y no antes a proposito: `position_embeddings` y las
+        mascaras 4D se construyen ARRIBA a partir del dtype de la corriente, y
+        tienen que seguir saliendo en fp16.
+        """
+        self._pasadas += 1
+        if args and isinstance(args[0], torch.Tensor) and args[0].dtype is self._dtype_pesos:
+            if self._vigilar and self._pasadas == 1:
+                self._anotar("entrada", args[0])
+            return (args[0].to(torch.float32),) + tuple(args[1:])
+        return None
+
+    def _pre_subcapa(self, _modulo: Any, args: tuple, kwargs: dict) -> tuple[tuple, dict]:
+        """Baja a fp16 lo que entra a una subcapa (ya viene normalizado)."""
+        return (
+            tuple(_convertir(a, torch.float32, self._dtype_pesos) for a in args),
+            {k: _convertir(v, torch.float32, self._dtype_pesos) for k, v in kwargs.items()},
+        )
+
+    def _post_subcapa(self, nombre: str) -> Any:
+        """Sube a fp32 la salida de una subcapa para que el residual sume ancho."""
+
+        def _gancho(_modulo: Any, _args: tuple, salida: Any) -> Any:
+            if isinstance(salida, tuple):
+                # `AceStepAttention` devuelve `(attn_output, attn_weights)`. Solo se
+                # toca el primero: los pesos de atencion son `[1, 16, L, L]` y
+                # promoverlos a fp32 a 120 s serian ~140 MiB tirados a la basura.
+                cabeza = _convertir(salida[0], self._dtype_pesos, torch.float32)
+                self._anotar(nombre, cabeza)
+                return (cabeza,) + tuple(salida[1:])
+            convertida = _convertir(salida, self._dtype_pesos, torch.float32)
+            self._anotar(nombre, convertida)
+            return convertida
+
+        return _gancho
+
+    def _post_capa(self, nombre: str) -> Any:
+        """Anota la corriente residual a la salida de cada capa. NO la modifica."""
+
+        def _gancho(_modulo: Any, _args: tuple, salida: Any) -> None:
+            if isinstance(salida, tuple) and salida:
+                self._anotar(nombre, salida[0])
+            return None
+
+        return _gancho
+
+    def _pre_proj_out(self, _modulo: Any, args: tuple) -> tuple | None:
+        """Devuelve la corriente a fp16 antes de la convolucion de salida."""
+        if args and isinstance(args[0], torch.Tensor) and args[0].dtype is torch.float32:
+            tensor = args[0]
+            if self._vigilar and self._pasadas == 1:
+                techo = torch.finfo(self._dtype_pesos).max
+                pico = float(tensor.abs().max())
+                self.picos.append(("proj_out", pico, 0))
+                if pico > techo:
+                    raise RuntimeError(
+                        f"La salida del DiT llega a {pico:.4g} y no cabe en "
+                        f"{self._dtype_pesos} (maximo {techo:.6g}). `norm_out` deberia "
+                        "dejarla en el orden de la unidad: si no lo hace, mantener solo "
+                        "la corriente residual en fp32 ya no basta."
+                    )
+            return (tensor.to(self._dtype_pesos),) + tuple(args[1:])
+        return None
+
+    def _anotar(self, nombre: str, tensor: Any) -> None:
+        """Mide una sola vez, en la primera pasada del DiT.
+
+        Solo la primera: cada anotacion es un `.max()` con sincronizacion, y con 50
+        pasos x 2 pasadas x 96 modulos serian 9.600 sincronizaciones por pista. La
+        primera pasada basta porque el desbordamiento medido aparecia en el paso 0,
+        y del resto ya responde `validar_latentes()`.
+        """
+        if not self._vigilar or self._pasadas != 1 or not isinstance(tensor, torch.Tensor):
+            return
+        finitos = torch.isfinite(tensor)
+        cuantos_finitos = int(finitos.sum())
+        no_finitos = int(tensor.numel()) - cuantos_finitos
+        pico = float(tensor[finitos].abs().max()) if cuantos_finitos else float("nan")
+        self.picos.append((nombre, pico, no_finitos))
+        if no_finitos:
+            raise RuntimeError(
+                f"{nombre} produjo {no_finitos} valores no finitos en la primera pasada del "
+                f"DiT con la corriente residual ya en fp32 (|max| finito {pico:.4g}, techo de "
+                f"{self._dtype_pesos} {torch.finfo(self._dtype_pesos).max:.6g}). El "
+                "desbordamiento NO esta solo en la suma residual: tambien desborda DENTRO de "
+                "la subcapa, y entonces hace falta promover los PESOS de esa subcapa, no solo "
+                "las activaciones."
+            )
+
+    # -- ciclo de vida ----------------------------------------------------- #
+
+    def __enter__(self) -> "_ResidualDitFp32":
+        if not self._activo:
+            return self
+        # Fallo RUIDOSO si la arquitectura vendorizada cambia de forma. Estos
+        # ganchos dependen de nombres concretos (`layers`, `self_attn`,
+        # `cross_attn`, `mlp`, `proj_out`): si upstream los renombra, lo que se
+        # obtendria sin esta comprobacion es un no-op silencioso, o sea otra vez
+        # un latente de NaN a los ocho minutos y sin pista de por que.
+        capas = getattr(self._decoder, "layers", None)
+        if not capas:
+            raise RuntimeError(
+                "El decoder del DiT no expone `layers`: la promocion de la corriente "
+                "residual a fp32 no sabe donde engancharse."
+            )
+        if getattr(self._decoder, "proj_out", None) is None:
+            raise RuntimeError(
+                "El decoder del DiT no expone `proj_out`: sin ese gancho la corriente "
+                "llegaria en fp32 a una convolucion de pesos fp16 y reventaria por dtype."
+            )
+        self._asas.append(capas[0].register_forward_pre_hook(self._pre_capa_cero))
+        for indice, capa in enumerate(capas):
+            presentes = [n for n in self._SUBCAPAS if getattr(capa, n, None) is not None]
+            if not presentes:
+                raise RuntimeError(
+                    f"La capa {indice} del DiT no expone ninguna de {self._SUBCAPAS}: la "
+                    "corriente residual subiria a fp32 y ninguna subcapa la bajaria."
+                )
+            for nombre in presentes:
+                subcapa = getattr(capa, nombre)
+                self._asas.append(
+                    subcapa.register_forward_pre_hook(self._pre_subcapa, with_kwargs=True)
+                )
+                self._asas.append(
+                    subcapa.register_forward_hook(self._post_subcapa(f"layers.{indice}.{nombre}"))
+                )
+            self._asas.append(capa.register_forward_hook(self._post_capa(f"layers.{indice}")))
+        self._asas.append(self._decoder.proj_out.register_forward_pre_hook(self._pre_proj_out))
+        _LOG.info(
+            "Corriente residual del DiT promovida a fp32 (%d ganchos sobre %d capas); "
+            "los pesos siguen en %s.",
+            len(self._asas),
+            len(capas),
+            self._dtype_pesos,
+        )
+        return self
+
+    def __exit__(self, *_excepcion: Any) -> None:
+        for asa in self._asas:
+            asa.remove()
+        self._asas.clear()
+
+    def resumen(self, cada: int = 4) -> str:
+        """Traza compacta del crecimiento de la corriente residual, capa a capa."""
+        filas: list[str] = []
+        for nombre, pico, _ in self.picos:
+            if nombre == "entrada":
+                filas.append(f"entrada={pico:.4g}")
+                continue
+            resto = nombre.removeprefix("layers.")
+            if not nombre.startswith("layers.") or "." in resto:
+                continue
+            if int(resto) % cada == 0 or int(resto) == len(self._decoder.layers) - 1:
+                filas.append(f"L{resto}={pico:.4g}")
+        for nombre, pico, _ in self.picos:
+            if nombre == "proj_out":
+                filas.append(f"proj_out={pico:.4g}")
+        return " -> ".join(filas)
 
 
 # --------------------------------------------------------------------------- #
@@ -1240,6 +1536,7 @@ class PipelineAceStep:
         residencia_audio_tokenizer: _Residencia | None = None,
         residencia_detokenizer: _Residencia | None = None,
         dir_tokenizer_lm: Path | None = None,
+        variante_por_defecto: str = VARIANTE_POR_DEFECTO,
     ) -> None:
         self._modelo = modelo
         self._dit_encoder = residencia_dit_encoder
@@ -1256,6 +1553,10 @@ class PipelineAceStep:
         self._audio_tokenizer = residencia_audio_tokenizer
         self._detokenizer = residencia_detokenizer
         self._dir_tokenizer_lm = dir_tokenizer_lm
+        # Variante de los PESOS cargados. Solo la usa el warm-up: las peticiones
+        # de verdad traen la suya en `params`, y `generate_smoke.py` la manda
+        # siempre. Ver `ENV_VARIANTE`.
+        self._variante_por_defecto = normalizar_variante(variante_por_defecto)
 
     # -- ciclo de vida ------------------------------------------------------ #
 
@@ -1279,7 +1580,10 @@ class PipelineAceStep:
             duration_s=6,
             instrumental=True,
             seed=0,
-            params={},
+            # La variante del ARTEFACTO, no la de por defecto del modulo: con
+            # pesos `sft` y programacion `turbo` el warm-up saca NaN y tumba la
+            # carga entera antes de la primera peticion.
+            params={"variante": self._variante_por_defecto},
             on_step=lambda paso, total: None,
         )
         _LOG.info(
@@ -1383,7 +1687,14 @@ class PipelineAceStep:
         # 0 durante casi toda la generacion. Si ademas se dispara la fase de
         # razonamiento, esta emite tokens que no estaban en la cuenta; por eso el
         # total se ensancha en vez de mentir hacia abajo.
-        total_pasos = PASOS_POR_DEFECTO + len(plan.inicios) + codigos_objetivo
+        #
+        # Los pasos de difusion salen de la VARIANTE, no de una constante: son 8
+        # en turbo y 50 en sft. Con la constante, una generacion `sft` se
+        # quedaria clavada al 100 % durante 42 pasos.
+        _, _, pasos_difusion, _ = programacion_de_variante(
+            opciones["variante"], shift=opciones["shift"], pasos=opciones["pasos"]
+        )
+        total_pasos = pasos_difusion + len(plan.inicios) + codigos_objetivo
         hechos = 0
 
         def _avanzar(_hecho: int = 0, _total: int = 0) -> None:
@@ -1494,32 +1805,78 @@ class PipelineAceStep:
 
         # -- 2. Difusion ----------------------------------------------------- #
         # Guardarrail ANTES de asignar el ruido inicial y las caches de atencion.
+        #
+        # La estimacion vale igual para las dos variantes, y no es casualidad: la
+        # pasada gemela del `sft` es SECUENCIAL (dos llamadas de lote 1), asi que
+        # las activaciones transitorias son las mismas que las del turbo, que es
+        # lo que `_PICO_DIFUSION_MEDIDO` recoge. Lo unico que anade el `sft` es
+        # una segunda cache de atencion cruzada (L_enc x 2048 x 2 por capa, del
+        # orden de decenas de MiB) y los temporales en doble de `apg_forward`
+        # (unos pocos MiB a 4.500 tramas). Ambos caben de sobra en el margen fijo
+        # de `_MARGEN_BYTES` (256 MiB).
+        #
+        # Si algun dia se pasa a la guia POR LOTE (lo de upstream), esta cuenta
+        # deja de valer: MEDIDO con `dit_forward_bench --bsz 2`, el lote 2 anade
+        # 674,6 MiB de activaciones a 4.500 tramas. Cabria —no es el OOM que se
+        # temia— pero se comeria el margen y habria que re-derivar
+        # `_PICO_DIFUSION_MEDIDO`. El razonamiento completo, en `diffusion.py`.
         _exigir_vram(
             self._dispositivo,
             int(_pico_difusion_bytes(tramas) * _FACTOR_HOLGURA) + _MARGEN_BYTES,
             f"el bucle de difusion de {tramas} tramas latentes ({duracion:.1f} s)",
         )
         marca = time.perf_counter()
-        resultado = generar_latentes_text2music(
-            model=self._modelo,
-            cond=cond,
-            seed=seed,
-            shift=opciones["shift"],
-            on_step=_avanzar,
+        # Segunda excepcion medida de C1. Con los pesos `sft` la corriente residual
+        # del DiT desborda fp16 en `layers.20` de 24 y el latente sale NaN entero.
+        # Se promueve a fp32 la ACUMULACION dejando los pesos —y por tanto todos
+        # los `matmul`— en fp16; ver `_ResidualDitFp32`, que explica por que no se
+        # puede promover el modulo como se hizo con el codificador de letra.
+        # Para el turbo es un no-op deliberado: no desborda, y cambiarle la
+        # numerica lo invalidaria como control de este A/B.
+        residual_fp32 = _ResidualDitFp32.para_variante(
+            self._modelo.decoder, opciones["variante"], self._dtype
         )
+        with residual_fp32:
+            resultado = generar_latentes_text2music(
+                model=self._modelo,
+                cond=cond,
+                seed=seed,
+                variante=opciones["variante"],
+                shift=opciones["shift"],
+                pasos=opciones["pasos"],
+                guidance_scale=opciones["guidance_scale"],
+                on_step=_avanzar,
+            )
         tiempos["diffusion_s"] = time.perf_counter() - marca
+        if residual_fp32.activo:
+            # La traza del crecimiento capa a capa es la evidencia de que el
+            # remedio hacia falta: sin ella no se distingue «no desbordaba» de
+            # «desbordaba y ahora no».
+            _LOG.info(
+                "Corriente residual del DiT en la primera pasada: %s (techo de fp16 65.504).",
+                residual_fp32.resumen(),
+            )
         latentes = resultado.target_latents
+        costes = dict(resultado.time_costs)
         # El condicionamiento ya no hace falta y ocupa VRAM que el decode va a
         # necesitar: la cache de atencion cruzada del DiT vive dentro de
         # `generar_latentes_text2music` y muere con ella, pero estos tensores no.
         del cond, resultado
         if self._dispositivo.type == "cuda":
             torch.cuda.empty_cache()
+        # Se registran las PASADAS del DiT ademas de los pasos: con guia son dos
+        # por paso, y sin ese numero el s/paso del `sft` no se puede comparar con
+        # el del turbo.
         _LOG.info(
-            "Difusion completada en %.2f s (%.3f s/paso, %d pasos).",
+            "Difusion completada en %.2f s (%.3f s/paso, %d pasos, variante %s, "
+            "shift %.2f, guia %.2f, %d pasadas del DiT).",
             tiempos["diffusion_s"],
-            tiempos["diffusion_s"] / PASOS_POR_DEFECTO,
-            PASOS_POR_DEFECTO,
+            tiempos["diffusion_s"] / pasos_difusion,
+            pasos_difusion,
+            costes.get("variante"),
+            costes.get("shift", float("nan")),
+            costes.get("guidance_scale", float("nan")),
+            int(costes.get("dit_forward_passes", 0)),
         )
 
         # -- 3. Decode del VAE, siempre por trozos (C2) ---------------------- #
@@ -1683,6 +2040,12 @@ class PipelineAceStep:
         El adapter no interpreta `model_params` (no hay `params_schema` hasta
         T-30), pero eso no autoriza a tragarse en silencio lo que llegue: un
         parametro desconocido se rechaza con la lista de los admitidos.
+
+        `shift`, `pasos` y `guidance_scale` se quedan en `None` cuando el
+        llamante no los dice, y los resuelve `scheduler.py` SEGUN LA VARIANTE.
+        Es importante que sea asi y no con un numero fijo: el defecto del turbo
+        es `shift=3,0` y el del `sft` es `shift=1,0`, asi que un defecto unico
+        le colaria al `sft` la programacion del turbo sin que se notase.
         """
         desconocidos = sorted(set(params) - _PARAMS_ADMITIDOS)
         if desconocidos:
@@ -1690,8 +2053,16 @@ class PipelineAceStep:
                 f"model_params desconocidos: {desconocidos}. Admitidos: "
                 f"{sorted(_PARAMS_ADMITIDOS)}."
             )
+        variante = normalizar_variante(params.get("variante") or VARIANTE_POR_DEFECTO)
         opciones = {
-            "shift": float(params.get("shift", SHIFT_POR_DEFECTO)),
+            "variante": variante,
+            "shift": None if params.get("shift") is None else float(params["shift"]),
+            "pasos": None if params.get("pasos") is None else int(params["pasos"]),
+            "guidance_scale": (
+                None
+                if params.get("guidance_scale") is None
+                else float(params["guidance_scale"])
+            ),
             "vocal_language": str(params.get("vocal_language", "es")),
             "bpm": params.get("bpm"),
             "keyscale": params.get("keyscale"),
@@ -1714,6 +2085,23 @@ class PipelineAceStep:
             raise ValueError(
                 f"lm_temperatura debe ser > 0; llego {opciones['lm_temperatura']}."
             )
+        if opciones["guidance_scale"] is not None and opciones["guidance_scale"] < 1.0:
+            raise ValueError(
+                f"guidance_scale debe ser >= 1,0 (1,0 = sin guia); llego "
+                f"{opciones['guidance_scale']}."
+            )
+        if variante == "turbo" and opciones["guidance_scale"] not in (None, 1.0):
+            raise ValueError(
+                "guidance_scale solo aplica a la variante 'sft': el turbo lleva la "
+                "guia horneada en los pesos de la destilacion."
+            )
+        # Se valida AQUI, y no al llegar a la difusion, porque para entonces ya
+        # se han pagado el planificador (minutos de CPU) y el condicionamiento.
+        # `programacion_de_variante` es la misma funcion que usara el bucle, asi
+        # que lo que pase esta linea muestrea seguro.
+        programacion_de_variante(
+            variante, shift=opciones["shift"], pasos=opciones["pasos"]
+        )
         return opciones
 
 
@@ -2160,6 +2548,7 @@ def build_pipeline(
             residencia_audio_tokenizer=residencia_audio_tok,
             residencia_detokenizer=residencia_detok,
             dir_tokenizer_lm=dir_tokenizer_lm,
+            variante_por_defecto=os.environ.get(ENV_VARIANTE) or VARIANTE_POR_DEFECTO,
         )
     except BaseException:
         # M-5 del adapter: un fallo aqui no puede dejar pesos huerfanos en VRAM.
