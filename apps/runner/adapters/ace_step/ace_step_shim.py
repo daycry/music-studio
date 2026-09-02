@@ -1038,6 +1038,109 @@ class AudioRenderizado:
     path: str | None = None
 
 
+#: Techo del limitador, en dBFS. -1,0 dB es la practica habitual de masterizado:
+#: deja margen para que el remuestreo y los codificadores con perdida (que T-45
+#: aplicara despues) no vuelvan a pasarse de fondo de escala, porque el pico
+#: *reconstruido* de una senal puede superar al pico de sus muestras.
+TECHO_LIMITADOR_DB = -1.0
+
+#: Ventana del limitador, en muestras a 48 kHz. 10 ms de anticipacion y 100 ms de
+#: relajacion: lo bastante lentos para que la reduccion de ganancia no module la
+#: senal audiblemente (eso sonaria a "bombeo"), y lo bastante rapidos para no
+#: aplastar un tema entero por un unico transitorio.
+_ANTICIPACION_MUESTRAS = 480
+_RELAJACION_MUESTRAS = 4800
+
+
+def _limitar_picos(onda: torch.Tensor) -> tuple[torch.Tensor, dict[str, float]]:
+    """Baja los picos por debajo del techo SIN recortar, y dice cuanto bajo.
+
+    Por que existe
+    --------------
+    Hasta el 2026-09-02 esta etapa hacia `clamp(-1, 1)`: **recorte duro**, que es
+    la forma mas fea de distorsionar — aplana la cresta de la onda e introduce
+    armonicos que se oyen como aspereza. Medido sobre una pista real de 180 s:
+    208 muestras de 17.280.000 tocaban fondo de escala.
+
+    Son pocas, pero el problema no es cuantas: es que un recorte nuestro se
+    escucha en **G1** y penalizaria la dimension 2 de la rubrica («calidad de
+    mezcla y ausencia de artefactos») **por un fallo de exportacion, no del
+    modelo**. Juzgar mal a ACE-Step por algo que hacemos nosotros es exactamente
+    lo que ese gate no debe hacer.
+
+    Que hace y que NO hace
+    ----------------------
+    Aplica una **reduccion de ganancia suave y con anticipacion**: calcula el
+    pico local en una ventana deslizante, deriva la ganancia necesaria para no
+    pasar del techo, la suaviza y la aplica. Donde no hay pico, la ganancia es 1
+    y la senal sale **intacta**.
+
+    **No es normalizacion de loudness.** Eso es `T-19`/`T-45` (EBU R128 por
+    destino) y no se adelanta aqui: una pista floja sigue saliendo floja. Esto
+    solo impide que se pase de fondo de escala.
+    """
+    techo = 10.0 ** (TECHO_LIMITADOR_DB / 20.0)
+    pico_entrada = float(onda.abs().max())
+    informe = {
+        "pico_entrada": pico_entrada,
+        "pico_entrada_db": (
+            20.0 * math.log10(pico_entrada) if pico_entrada > 0 else float("-inf")
+        ),
+        "reduccion_db": 0.0,
+        "porcentaje_tocado": 0.0,
+    }
+    if pico_entrada <= techo:
+        return onda, informe
+
+    # Envolvente de pico: el maximo entre canales, porque la ganancia tiene que
+    # ser la MISMA en todos o la imagen estereo se moveria al limitar.
+    # OJO al eje: la onda llega como [1, C, N], asi que hay que reducir el lote Y
+    # los canales para quedarse con [N]. Un `amax(dim=0)` a secas solo quita el
+    # lote y deja [C, N], que luego se aplana a 2N y no casa con la senal.
+    envolvente = onda.abs().amax(dim=(0, 1))
+
+    # Pico local con anticipacion. `max_pool1d` sobre la envolvente da, para cada
+    # muestra, el pico mas alto de su vecindario: asi la ganancia empieza a bajar
+    # ANTES de que llegue el transitorio, en vez de reaccionar tarde.
+    ventana = 2 * _ANTICIPACION_MUESTRAS + 1
+    pico_local = torch.nn.functional.max_pool1d(
+        envolvente.view(1, 1, -1),
+        kernel_size=ventana,
+        stride=1,
+        padding=_ANTICIPACION_MUESTRAS,
+    ).view(-1)
+
+    ganancia = torch.clamp(techo / pico_local.clamp_min(1e-9), max=1.0)
+
+    # Suavizado de la relajacion: sin el, la ganancia salta y eso se oye como
+    # distorsion de intermodulacion. Media movil sobre la ventana de relajacion.
+    if _RELAJACION_MUESTRAS > 1:
+        nucleo = torch.ones(1, 1, _RELAJACION_MUESTRAS) / _RELAJACION_MUESTRAS
+        # RELLENO CON 1,0, NO CON CEROS. `conv1d(padding=...)` rellena con ceros,
+        # y como aqui se promedia una GANANCIA, esos ceros la hunden en los
+        # bordes: medido, la ganancia caia a ~0,5 en la primera muestra, o sea un
+        # fundido de entrada de -6 dB en TODAS las pistas. El valor neutro de una
+        # ganancia es 1, no 0, asi que se rellena a mano y se convoluciona sin
+        # padding.
+        borde = _RELAJACION_MUESTRAS // 2
+        acolchada = torch.nn.functional.pad(
+            ganancia.view(1, 1, -1), (borde, borde), mode="constant", value=1.0
+        )
+        ganancia = torch.nn.functional.conv1d(acolchada, nucleo).view(-1)
+        ganancia = ganancia[: envolvente.numel()]
+        # El suavizado puede dejar la ganancia por encima de lo necesario en el
+        # borde de un transitorio, asi que se vuelve a acotar por el minimo:
+        # suavizar nunca debe deshacer la proteccion.
+        ganancia = torch.minimum(
+            ganancia, torch.clamp(techo / pico_local.clamp_min(1e-9), max=1.0)
+        )
+
+    salida = onda * ganancia.unsqueeze(0)
+    informe["reduccion_db"] = float(-20.0 * math.log10(max(float(ganancia.min()), 1e-9)))
+    informe["porcentaje_tocado"] = float((ganancia < 0.999).float().mean()) * 100.0
+    return salida, informe
+
+
 def _a_pcm16(onda: torch.Tensor) -> tuple[bytes, int, int]:
     """Convierte `[1, C, N]` en fp32 a PCM de 16 bit entrelazado little-endian.
 
@@ -1065,13 +1168,16 @@ def _a_pcm16(onda: torch.Tensor) -> tuple[bytes, int, int]:
             "El decode del VAE devolvio muestras no finitas (NaN o inf). No se "
             "entrega audio corrupto."
         )
-    pico = float(onda.abs().max())
-    if pico > 1.0:
-        _LOG.warning(
-            "La forma de onda llega a %.3f de pico y se recorta a 1,0 (%.1f%% por encima). "
-            "La normalizacion de loudness es T-19/T-45, no esta etapa.",
-            pico,
-            (pico - 1.0) * 100.0,
+    onda, informe = _limitar_picos(onda)
+    if informe["reduccion_db"] > 0.0:
+        _LOG.info(
+            "Limitador: pico de entrada %.3f (%.2f dBFS), reduccion maxima %.2f dB "
+            "sobre %.4f%% de las muestras. Techo de salida %.2f dBFS.",
+            informe["pico_entrada"],
+            informe["pico_entrada_db"],
+            informe["reduccion_db"],
+            informe["porcentaje_tocado"],
+            TECHO_LIMITADOR_DB,
         )
     enteros = (onda.clamp(-1.0, 1.0) * 32767.0).round().to(torch.int16)
     canales, muestras = enteros.shape
