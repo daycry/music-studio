@@ -3,7 +3,7 @@ tasks: tasks.md
 titulo: Tareas — Plataforma musical IA (Fase 0 + Fase 1)
 slug: plataforma-musical-ia
 fecha: 2026-08-18
-actualizado: 2026-09-01
+actualizado: 2026-09-02
 autor: planner
 plan: ./improvement-plan.md
 generacion:
@@ -26,12 +26,12 @@ generacion:
 | Sub-fase | Tareas | Estado | Horas est. (base) | Coste € (c/margen) |
 |---|---|---|---|---|
 | F1 · Gate G2 y gobernanza | T-01, T-02 | completado | 0 h | 0 € |
-| F2 · Fase 0 — spikes y protocolo G1 | T-03…T-08 | **en-progreso** *(1 de 6 en revisión: `T-08`; `T-03`…`T-07` pendientes, bloqueadas por CS-36)* | 67 h | 4.020 € |
+| F2 · Fase 0 — spikes y protocolo G1 | T-03…T-08 | **en-progreso** *(2026-09-02: `T-05`, `T-06`, `T-07` **completadas** · `T-03` y `T-04` `en-progreso`, les falta la mitad que exige pod de RunPod —aparcado por presupuesto— · `T-08` `en-revision`, pendiente de la firma del propietario)* | 67 h | 4.020 € |
 | F3 · Gate G1 (escucha) | T-09 | pendiente | 0 h | 0 € |
 | F4 · Cimientos de plataforma (C-13) | T-10…T-25 | pendiente | 214 h | 12.840 € |
 | F5 · Trazabilidad + registry (C-10a + C-11) | T-26…T-34 | pendiente | 145 h | 8.700 € |
-| F6 · Infraestructura GPU (C-14) | T-35…T-41, T-85 | pendiente | 112 h | 6.720 € |
-| F7 · Generación end-to-end (C-01) | T-42…T-48 | pendiente | 78 h | 4.680 € |
+| F6 · Infraestructura GPU (C-14) | T-35…T-41, T-85 | pendiente *(adelanto parcial de `T-85` hecho en F2: `gpu_tiers.py` — ver su ficha)* | 112 h | 6.720 € |
+| F7 · Generación end-to-end (C-01) | T-42…T-48 | pendiente *(adelanto parcial de `T-45` hecho en F2: limitador de picos — ver su ficha)* | 78 h | 4.680 € |
 | F8 · Instrumental + auth (C-02 + C-12) | T-49…T-52 | pendiente | 40 h | 2.400 € |
 | F9 · Verificación final y cierre | T-53 | pendiente | 0 h | 0 € |
 | **Subtotal aprobado y ejecutable (F1–F9)** | **54 tareas** | — | **656 h** | **39.360 €** |
@@ -48,6 +48,8 @@ generacion:
 ⏳ **Ampliación PROPUESTA el 2026-09-01 (`T-86`, instalador del runner GPU local, D-30): +32 h base / +38,4 h con margen / +1.920 € — PENDIENTE de ratificación económica.** **No está sumada en las cifras ratificadas**, que siguen siendo **656 h / 39.360 €** (F1–F9) y **1.063 h / 63.780 €** (ledger completo). Si el usuario la ratifica: F6 pasaría de 112 h/6.720 € a **144 h/8.640 €**, Fase 0+1 de 656 h/39.360 € a **688 h base / 825,6 h / 41.280 €** y el ledger completo a **1.095 h / 65.700 €**. Hasta entonces, `T-86` **no se ejecuta**. Rango estimado 24–40 h según el cierre de **I-22** (SO objetivo).
 
 **Léase con la distinción intacta:** de los 63.780 € del ledger completo, **656 h / 39.360 € (F1–F9) son ejecutables hoy y están íntegramente ratificados** (2026-08-18, incluida la ampliación `T-85`/D-29). Los 24.420 € de F10+F11 son pre-planificación bloqueada por gate — no autorizan gasto. F12 (Fase 4) no tiene tareas y no forma parte del total del ledger; se muestra solo como referencia.
+
+> 🔄 **Pasada de coherencia del 2026-09-02 (cierre de F2).** La fila de F2 decía «`T-03`…`T-07` pendientes, bloqueadas por CS-36» y llevaba desfasada desde el 2026-09-01: **CS-36 (pesos) se cerró ese mismo día** y las cinco tareas han avanzado. Estado real hoy: **3 completadas** (`T-05`, `T-06`, `T-07`), **2 en progreso** (`T-03`, `T-04` — a las dos les falta exactamente lo mismo, el pod de RunPod, **aparcado por presupuesto el 2026-09-02**) y **1 en revisión** (`T-08`, esperando la ratificación firmada del propietario). **Ninguna hora ni cifra ratificada cambia** (656 h / 39.360 €). Dos adelantos de alcance de fases posteriores, hechos porque el spike los necesitaba, quedan anotados en su ficha de origen y **no se cobran ni se descuentan de F2**: `gpu_tiers.py` (parte de `T-85`, F6) y el limitador de picos (parte de `T-45`, F7).
 
 **Vocabulario de estados:** `pendiente` · `en-progreso` · `en-revision` · `completado` · `cancelado` · **`bloqueada (gate)`** (estado exclusivo de `T-54`…`T-84`: no puede pasar a `pendiente` hasta que su gate correspondiente se supere). **Prioridad por defecto:** `Alta` (heredada de la spec) salvo que se indique otra.
 
@@ -145,25 +147,70 @@ generacion:
 
 | Tipo | Estado | Dependencias | Tiempo estimado (base) | Tokens previstos |
 |---|---|---|---|---|
-| devops | **en-progreso** (2026-09-01) | T-02 *(completado)* | 24 h | 1,50 M in / 0,21 M out |
+| devops | **en-progreso** (2026-09-02) — pipeline completo y medido en GPU local; falta el arranque en frío de S-01 contra RunPod | T-02 *(completado)* | 24 h | 1,50 M in / 0,21 M out |
 
 **Avance del 2026-09-01 (orquestador `/dev-cycle`).** Se ha construido y verificado el **artefacto de pesos** que esta tarea necesitaba y que no existía publicado (ver `pre-dev-checklist.md` ítem 7-bis / CS-50): `apps/runner/tools/build_artifact.py` fusiona los cuatro componentes upstream de la revisión fijada en `D:\srv\ace-step\weights\ace_step_1_5.safetensors` (6.163.551.450 B, 1.177 tensores, SHA-256 `3faa5ac9…5812d947`), con conversión BF16→FP16 offline (**0 desbordamientos**, 2.181 flush-to-zero sobre 3.074.063.112 elementos) y el latente de silencio convertido **sin ejecutar su pickle**. `--selftest` y `--verify` en verde. También se corrigió el suelo de VRAM (CS-51) con `VRAM_FLOOR_TOLERANCE_MB`, con 13 tests nuevos.
 **Lo que sigue abierto y es el grueso de la tarea:** *ninguna* de las mediciones que definen `T-03` está hecha. Falta el **shim `ace_step_shim.py`** (sin él `_resolve_pipeline_factory()` aborta antes de mapear los pesos), y con él los tiempos de inferencia, el perfil de VRAM y el arranque en frío. **Riesgo nº 1 identificado y NO medido:** GP104 ejecuta FP16 nativo a 1/64 del FP32; si cuBLAS no promociona a FP32 en `sm_61`, las 10 pistas de G1 pasan de ~20 min a un orden de horas. **Obligatorio un smoke test cronometrado a 30 s antes de comprometer las 10 pistas.**
 
-**Archivos:** `apps/runner/spikes/inference_timing.md`, `apps/runner/spikes/vram_profile.py`
+**Avance del 2026-09-02 (`implementer`) — arreglado el defecto abierto mas grande de F2: `vram_load`.** El arranque en frio medido el 2026-09-02 era de **709,08 s de `vram_load`** (~12 min solo de cargar el artefacto), lo que rompia la promesa de arranque en frio de 2–6 min que `ui-design.md` le hace al usuario **antes de escribirla en codigo**. Causa medida, no supuesta: el adapter mapeaba el artefacto con `load_file(ruta, device="cpu")` y el shim materializaba **tensor a tensor**, o sea fallos de pagina de 4 KiB sobre el bind mount de Docker, a **10,9–11,9 MiB/s** (`apps/runner/spikes/medir_carga.py`).
 
-**Criterios de aceptación**
-- [ ] Tiempo de inferencia por pista medido en GPU ≥ 24 GB (referencia S-02: 150 s totales, ~90 s de inferencia pura de ACE-Step).
-- [ ] VRAM pico medida con y sin offloading, documentada frente al suelo de 8 GB y el confort de 24 GB (spec §11.1).
-- [ ] Arranque en frío medido con imagen cacheada (rango esperado 2–6 min) y sin cachear (5–12 min).
-- [ ] Resultados documentados en `apps/runner/spikes/inference_timing.md`, con recomendación de ajuste a S-02/S-02b si los valores medidos difieren.
-- [ ] Tiempos de inferencia y perfil de VRAM medidos en **GPU local**; si la GPU local difiere de la L40S objetivo, se documenta el **factor de conversión** aplicado a S-02/S-02b.
-- [ ] El coste cloud de esta tarea se limita a la medición de arranque en frío (imagen cacheada / no cacheada); la medición de inferencia/VRAM no genera gasto de GPU cloud.
+Arreglo: **lectura contigua** (`apps/runner/adapters/ace_step/carga_contigua.py`). Los tensores de un `safetensors` estan uno detras de otro, asi que se lee el rango entero de cada tramo de una vez (`readinto`) y los tensores del artefacto son **vistas** de ese buffer, sin una sola copia extra. El plan de tramos se recalcula desde la cabecera en cada arranque y **corta en cuanto un rango deja de ser contiguo**: no se supone el orden, se comprueba (en el artefacto real: 1.492 tensores, cero huecos, nueve tramos por componente). `dit.decoder` se lee **directo a VRAM** por una escalera con buffer de escala de 32 MiB, para no pasar por un pico de 3.005 MiB de RAM en un contenedor de 7,9 GiB.
+
+Dos hallazgos de medicion que van en el codigo por si alguien los deshace:
+- **Paralelizar la lectura la hunde.** Con 4–32 hilos la tasa cae a 12–28 MiB/s (D: es un disco mecanico y los hilos lo vuelven acceso aleatorio). Se lee con **un hilo y hacia delante**; 103–119 MiB/s (`apps/runner/spikes/probe_io.py`). El techo fisico son 141–144 MiB/s leyendo el mismo rango desde Windows fuera de Docker.
+- **La alineacion del buffer no es un detalle.** Con `bytearray` (que devuelve `pagina + 16`) la carga daba 86,7 MiB/s y el warm-up **subia** a 80,0 s, porque el planificador de 5 Hz corre en CPU. Con el buffer reservado por el asignador de PyTorch (64 bytes) son 118,8 MiB/s y el warm-up baja a 36,8 s.
+
+**A/B completo, misma orden y misma pista de 25 s** (GTX 1070, `ace_step_1_5_lm.safetensors`, 7.181 MiB; el respaldo se activa con `ACE_STEP_CARGA_CONTIGUA=0`, que es como se midio la columna izquierda **hoy**, no de memoria):
+
+| | `load_file` (antes) | contigua (ahora) |
+|---|---|---|
+| `vram_load` | **641,97 s** | **72,93 / 77,25 s** *(dos corridas)* |
+| warm-up | 39,14 s | 36,76 / 39,11 s |
+| **arranque en frio** | **681,11 s** | **109,70 / 116,37 s** |
+| generacion de 25 s | 127,75 s | 110,63 / 113,06 s |
+
+La pista sale identica antes y despues (RMS -18,22 dBFS, pico -1,0 dBFS, correlacion L/R 0,8656, 13/13 comprobaciones del smoke en verde): esto es una optimizacion de E/S, no un cambio de modelo.
+
+El reparto por componente **no cambia** (`dit.decoder` residente en VRAM, 3.007 MiB; el resto en RAM) ni el guardarrail de VRAM, que ahora tambien se aplica antes de reservar el buffer del cargador. Picos de VRAM de la generacion, iguales o mejores: condicionamiento 7.514 MiB (antes 7.606), difusion 4.217 (4.221), decode 5.583 (5.583). Suite: **423 tests en verde** (376 previos + 47 nuevos en `apps/runner/tests/test_carga_contigua.py`, incluida una ida y vuelta comparada tensor a tensor contra `load_file` y un guardarrail que impide que el reparto del shim y el plan del cargador se separen).
+
+**Sigue abierto:** el arranque en frio de S-01 contra el pod de RunPod (pull de imagen y descarga de pesos) no esta medido y **ningun criterio de aceptacion de esta ficha se marca por esto**: lo medido aqui es el termino de carga del modelo, con imagen y pesos ya locales.
+
+**Avance del 2026-09-02 (cierre de F2) — de «ninguna medición hecha» a «el pipeline genera audio real y está medido».** Todo lo de abajo está ejecutado en la máquina de referencia (GTX 1070 `sm_61`, 8.191 MiB, imagen `ace-step-runner:t05`, `ACE_STEP_REQUIRE_GPU=1`); los informes JSON viven en `D:\srv\ace-step\out\`.
+
+1. **Artefacto con planificador, construido y verificado.** `D:\srv\ace-step\weights\ace_step_1_5_lm.safetensors` — **7.529.590.739 B, 1.492 tensores** (comprobado hoy leyendo la cabecera: `dit` 677 + `text_encoder` 310 + `lm` 310 + `vae` 182 + `aux` 13). El artefacto sin planificador (`ace_step_1_5.safetensors`, 6.163.551.450 B, 1.177 tensores, CS-50) sigue al lado y se conserva.
+2. **Viabilidad en Pascal medida — el riesgo nº 1 de esta ficha se cierra en la dirección buena.** fp16 **sí promociona**: no se cae al 1/64 de FP32 que se temía. El que sí muerde es otro y no estaba previsto: **SDPA cae al kernel *mem-efficient* y tarda 282,20 ms frente a 21,87 ms de la atención eager con softmax en fp32**, a las formas reales del DiT. Son **12,9×**, y es silencioso. Por eso `sm_61` fuerza atención eager (`adapters/ace_step/gpu_tiers.py`, punto 3 de su cabecera).
+3. **El pipeline completo genera audio real**, 240 s con letra en castellano — con tildes y eñes, que no es cosmético: «sonar» y «soñar» son palabras distintas para el tokenizador. Los metadatos `bpm`/`keyscale`/`timesignature` se envían; antes iban a `N/A`.
+4. **Planificador de 5 Hz conectado, con su efecto medido contra una vara de medir honesta.** El contraste no es «suena mejor» sino `d_lm / d_semilla`: cuánto mueve el planificador frente a lo que mueve cambiar la semilla (`apps/runner/spikes/medir_ab.py`, `out/ab-medidas.json`). Ratios sobre el par de 25 s: `rolloff95` **6,5×** · flujo espectral 5,6× · cambios de sección 5,0× · centroide 4,7× · factor de cresta 4,3× · RMS 3,8× · pulso (`acf_env_pico`) 3,7×. **Dos descriptores caen por debajo de 1** (`rango_rms_1s` 0,12 · `std_rms_1s` 0,30): en dinámica de largo plazo el planificador mueve **menos** que la semilla. Va siempre puesto, pero **no sale gratis en esta tarjeta**: ver el punto 6.
+5. **Limitador de picos integrado** (`ace_step_shim.py`, `TECHO_LIMITADOR_DB = -1,0` dBFS, ventana de 10 ms de anticipación). Verificado en `out/con-limitador-informe.json`: `pico_dbfs` exactamente **−1,0** y `pico_dentro_de_escala: true`. Es un **adelanto parcial de `T-45`** (F7) — anotado en su ficha.
+6. **Perfil por etapas de una pista de 240 s** (`out/libre-informe.json`, planificador activo). Aquí está el dato que faltaba en toda descripción previa de esta tarea:
+
+| Etapa | Tiempo | VRAM pico |
+|---|---:|---:|
+| **planificación (LM de 5 Hz)** | **615,320 s** | 4.779 MiB |
+| condicionamiento | 11,917 s | **7.606 MiB** ← pico real de la generación |
+| difusión | 37,363 s | 5.941 MiB |
+| decode | 25,099 s | 5.547 MiB |
+| escritura | 0,633 s | 4.075 MiB |
+| **total** | **690,348 s** | — |
+
+> **La planificación es el 89 % del tiempo**, no la difusión. Cualquier lectura de estos números que cite solo «11,9 + 37,3 + 24,8 s» está describiendo el 11 % de la pista. Corrida de control (`libre-canonica`, mismo brief con etiquetas canónicas): planificación 553,488 s · condicionamiento 7,040 · difusión 36,792 · decode 24,827 · total **622,857 s**. Y **el pico de VRAM está en el condicionamiento (7.606 MiB), no en la difusión (5.941)** — es la distinción que sostiene la aritmética de `T-04`.
+
+**Lo que esto significa para S-02, sin maquillar:** S-02 dice **150 s por pista en GPU de ≥ 24 GB**. Aquí una pista de 240 s cuesta **623–690 s** con planificador, sobre una tarjeta de 2016 con offloading obligatorio. **No es un factor de conversión defendible**: cambian arquitectura (`sm_61` vs `sm_89`), nivel de GPU (`tier3` vs el `tier6b` de la spec) y dtype a la vez. Por eso el criterio 5 sigue abierto.
+
+**Archivos:** `apps/runner/spikes/inference_timing.md` *(⚠️ **no existe todavía**, comprobado el 2026-09-02: hoy las mediciones viven en los informes JSON de `D:\srv\ace-step\out\` y en esta ficha, que **no** es donde el criterio 4 las pide)*, `apps/runner/spikes/vram_profile.py` *(existe)*. Escritos por el camino y no previstos en la ficha: `apps/runner/spikes/{generate_smoke,medir_ab,medir_carga,probe_io,pascal_speed_probe,dit_forward_bench,capability_probe}.py`, `apps/runner/adapters/ace_step/{ace_step_shim,text_conditioning,carga_contigua,gpu_tiers}.py` y `apps/runner/tools/build_artifact.py`
+
+**Criterios de aceptación** *(revisados uno a uno el 2026-09-02: 1 de 6 cumplido, 4 parciales, 1 no cumplido)*
+- [ ] ⛔ Tiempo de inferencia por pista medido en GPU ≥ 24 GB (referencia S-02: 150 s totales, ~90 s de inferencia pura de ACE-Step). — **NO cumplido.** Lo medido es en **8 GB**, que no es lo que el criterio pide.
+- [ ] 🟡 VRAM pico medida con y sin offloading, documentada frente al suelo de 8 GB y el confort de 24 GB (spec §11.1). — **Parcial:** perfil por etapas medido **con** offloading (pico 7.606 MiB, en el condicionamiento). **Sin** offloading es imposible en esta tarjeta: el suelo residente por proceso ya son 4.013 MiB de 8.191 (ver `T-04`).
+- [ ] 🟡 Arranque en frío medido con imagen cacheada (rango esperado 2–6 min) y sin cachear (5–12 min). — **Parcial:** medido el **término de carga del modelo**, con imagen y pesos ya locales: 755,5–778,7 s antes del arreglo de lectura contigua y **109,7–140,2 s después** (reverificado hoy en `out/t05-health-informe.json`: 140,24 s = `vram_load` 83,34 + warm-up 52,48). **Falta lo que S-01 mide de verdad**: *scheduling* del pod, *pull* de la imagen y descarga de pesos, que solo existen en RunPod. Consecuencia registrada como **CS-55** en `pre-dev-checklist.md`.
+- [ ] 🟡 Resultados documentados en `apps/runner/spikes/inference_timing.md`, con recomendación de ajuste a S-02/S-02b si los valores medidos difieren. — **Parcial:** los números están medidos y trazados (informes JSON + esta ficha), pero **el fichero no existe**. No es un formalismo: es donde debe vivir la recomendación sobre S-02/S-02b.
+- [ ] 🟡 Tiempos de inferencia y perfil de VRAM medidos en **GPU local**; si la GPU local difiere de la L40S objetivo, se documenta el **factor de conversión** aplicado a S-02/S-02b. — **Parcial:** medidos en GPU local, sí. **Factor de conversión, no**: extrapolar de `sm_61` con offloading a `sm_89` sin él sería inventarse un número. Se cierra midiendo, o declarando por escrito que S-02 no se recalibra desde esta tarjeta.
+- [x] ✅ El coste cloud de esta tarea se limita a la medición de arranque en frío (imagen cacheada / no cacheada); la medición de inferencia/VRAM no genera gasto de GPU cloud. *(2026-09-02 — **0 € de cloud consumidos**: artefacto, pipeline, planificador, limitador, A/B y perfiles, todo en GPU local. Lo único que habría gastado —la medición de S-01— es justamente lo que sigue sin hacerse.)*
 
 **Subtareas**
-- [ ] Instrumentar el runner con temporizadores por etapa (scheduling, pull de imagen, descarga de pesos, carga a VRAM, warm-up, inferencia).
-- [ ] Ejecutar 10 inferencias con offloading y 10 sin offloading en GPU local, registrar VRAM pico de cada una.
-- [ ] Medir arranque en frío en 3 escenarios contra el pod de RunPod: imagen cacheada, imagen no cacheada, pesos no cacheados.
+- [x] Instrumentar el runner con temporizadores por etapa (scheduling, pull de imagen, descarga de pesos, carga a VRAM, warm-up, inferencia). *(2026-09-02 — `spikes/_timing.py` más el muestreador de VRAM a 40 ms de `generate_smoke.py`: cada informe trae ventana y pico por etapa. `scheduling` y `pull` existen en el instrumento y salen a cero en local, que es lo correcto: no hay pod que planificar.)*
+- [ ] 🟡 Ejecutar 10 inferencias con offloading y 10 sin offloading en GPU local, registrar VRAM pico de cada una. — **Parcial:** varias corridas con offloading, con pico por etapa registrado. La rama «sin offloading» **no es ejecutable en 8 GB**: o se declara N/A por hardware, o se ejecuta en una GPU mayor.
+- [ ] ⛔ Medir arranque en frío en 3 escenarios contra el pod de RunPod: imagen cacheada, imagen no cacheada, pesos no cacheados. — **Bloqueada:** RunPod **aparcado por presupuesto (2026-09-02)**. Es lo único que separa a esta tarea de estar cerrada.
 - [ ] Documentar el factor de conversión entre la GPU local usada y la L40S objetivo, si difieren.
 - [ ] 🆕 *(opcional, hallazgo HF 2026-08-18)* Considerar también las variantes **XL de ACE-Step** (`xl-base`/`xl-sft`/`xl-turbo`, DiT 4B, ≥12 GB con offload/≥20 GB recomendado) en la medición, si la VRAM local lo permite.
 
@@ -177,22 +224,45 @@ generacion:
 
 | Tipo | Estado | Dependencias | Tiempo estimado (base) | Tokens previstos |
 |---|---|---|---|---|
-| devops | pendiente | T-03 | 3 h | 0,19 M in / 0,03 M out |
+| devops | **en-progreso** (2026-09-02) — mitad local cerrada, falta L40S | T-03 | 3 h | 0,19 M in / 0,03 M out |
 
-**Archivos:** `apps/runner/spikes/concurrency_profile.py`
+**Archivos:** `spikes/concurrencia.md` *(escrito)* · `apps/runner/spikes/concurrency_profile.py` *(no creado — solo hará falta para la medición en L40S, ver abajo)*
+
+**🟡 Cierre parcial (2026-09-02, `implementer`) — `en-progreso`, NO `completado`. La tarea tiene dos mitades y solo una está medida.**
+
+La ficha mezclaba dos preguntas distintas y conviene separarlas:
+
+| | Pregunta | Estado |
+|---|---|---|
+| **P1** | ¿Caben 2 inferencias en la **GPU local de 8 GB**? | ✅ **Medida y cerrada: NO caben** |
+| **P2** | ¿Caben 2 (o más) en la **L40S de 48 GB**, y con qué degradación por pista? — *es lo que `T-39` necesita* | ⛔ **PENDIENTE, bloqueada por presupuesto** |
+
+**P1 — medido en GPU local el 2026-09-02** (GTX 1070, 8.191 MiB, `tier3` con offloading, artefacto `ace_step_1_5_lm.safetensors`, pista de 240 s). Aritmética completa en [`spikes/concurrencia.md`](./spikes/concurrencia.md); resumen:
+
+- **Suelo por proceso, en reposo y sin generar nada: 4.013 MiB** (3.007 de `dit.decoder` residente + 1.007 de contexto CUDA/asignador). Deja 4.178 MiB libres de 8.192.
+- **Pico de una inferencia: 7.606 MiB, en el condicionamiento** (no en la difusión, que son 5.941 MiB). Reproducido a 7.596 MiB en una segunda ejecución de control.
+- **Dos procesos *parados* = 8.026 MiB de 8.191 (98,0 %)**, quedan 165 MiB. El transitorio mínimo de una sola difusión son 1.928 MiB. **Déficit 1.763 MiB, 10,7× el margen.**
+- Los dos en difusión: 11.882 MiB (145,1 %). Los dos en su pico: 15.212 MiB (185,7 %).
+- **No es un problema de sincronización de etapas, es de suelo:** ni escalonando perfectamente las fases cabe, porque el proceso parado no puede soltar sus 4.013 MiB sin descargar el modelo (709 s de `vram_load` entonces; 72,9 s desde la lectura contigua del 2026-09-02, que no cambia la conclusion).
+- **No se lanzaron dos inferencias**, deliberadamente: la aritmética lo desaconsejaba antes de intentarlo y forzarlo tumba el demonio de Docker (ya ocurrió una vez en esta máquina).
+
+**P2 — por qué no se ha medido.** La VRAM local insuficiente **sí es** la causa que esta ficha acepta para ir al pod de RunPod. Pero **el propietario aparcó RunPod por presupuesto (decisión del 2026-09-02)**: la excepción cloud está técnicamente justificada y **no financiada**. La degradación del tiempo por pista con N procesos **no es extrapolable** desde una GTX 1070 `sm_61` a una L40S `sm_89` — hay que medirla. Se desbloquea si se contrata el pod para el arranque en frío de `T-03` y se aprovecha la misma sesión, o con cualquier GPU de ≥ 24 GB.
 
 **Criterios de aceptación**
-- [ ] Se ejecutan 2 inferencias simultáneas (en GPU local si la VRAM lo permite, o en el pod de RunPod si no) y se mide el tiempo por pista de cada una frente a la ejecución en solitario.
-- [ ] Se mide el VRAM pico simultáneo de ambas inferencias.
-- [ ] Resultado (cabe / no cabe, y con qué degradación) documentado y usado como entrada de `T-39` (despacho FIFO+RR).
-- [ ] Se documenta si la medición se ejecutó en GPU local o en el pod de RunPod, y por qué (VRAM local insuficiente es la única causa aceptada para usar cloud en esta tarea).
+- [ ] ⛔ Se ejecutan 2 inferencias simultáneas (en GPU local si la VRAM lo permite, o en el pod de RunPod si no) y se mide el tiempo por pista de cada una frente a la ejecución en solitario. — **NO cumplido.** En local es físicamente imposible (dos procesos en reposo ocupan el 98,0 %); en L40S no se ha ejecutado. **El tiempo por pista concurrente sigue sin medir en ningún hardware.**
+- [ ] 🟡 Se mide el VRAM pico simultáneo de ambas inferencias. — **Parcial:** medido el pico por proceso (7.606 MiB, ±10 MiB entre repeticiones) y derivada la suma. **No es una medida simultánea**, es una suma de dos medidas individuales.
+- [ ] 🟡 Resultado (cabe / no cabe, y con qué degradación) documentado y usado como entrada de `T-39` (despacho FIFO+RR). — **Parcial:** el «no cabe» está cuantificado para 8 GB y el contrato para `T-39` escrito (`concurrencia.md` §8: 1 por GPU por defecto, `max_inferencias_concurrentes` configurable con valor 1, prohibido subirlo sin medición). **Falta la degradación.**
+- [x] ✅ Se documenta si la medición se ejecutó en GPU local o en el pod de RunPod, y por qué (VRAM local insuficiente es la única causa aceptada para usar cloud en esta tarea). — **GPU local**, con la causa cloud justificada pero no financiada (`concurrencia.md` §5).
 
 **Subtareas**
-- [ ] Comprobar la VRAM disponible en la GPU local y decidir si soporta 2 inferencias simultáneas.
-- [ ] Lanzar 2 procesos de inferencia en paralelo (en local o en el pod de RunPod) y cronometrar.
-- [ ] Comparar contra la línea base de `T-03` (una sola inferencia).
+- [x] Comprobar la VRAM disponible en la GPU local y decidir si soporta 2 inferencias simultáneas. — **8.191 MiB; no las soporta.**
+- [ ] Lanzar 2 procesos de inferencia en paralelo (en local o en el pod de RunPod) y cronometrar. — **Bloqueada:** imposible en local, sin pod por presupuesto.
+- [x] Comparar contra la línea base de `T-03` (una sola inferencia). — Perfil por etapas de la pista de 240 s en `concurrencia.md` §3.
+- [ ] 🆕 Escribir `apps/runner/spikes/concurrency_profile.py` (arnés de N procesos) **cuando haya GPU de ≥ 24 GB**. No se ha creado: para P1 no hacía falta código, sumar dos perfiles es aritmética.
 
 **Notas:** 3 h que pueden ahorrar un pod completo (~128 €/mes) si el resultado es favorable. Documentar igualmente si no lo es — es una decisión de arquitectura para `T-39`, no una tarea opcional. Es la tarea de F2 con más probabilidad de necesitar el pod de RunPod, por el propio objeto de la medición (capacidad de la L40S, no de la GPU local).
+
+> **Actualización 2026-09-02.** La previsión de la nota se ha confirmado en la peor forma: es la única tarea de F2 que **necesita** el pod y no lo tiene. **El ahorro de ~128 €/mes no se materializa y no debe darse por ganado** en ninguna proyección de `evaluation.md` §6.3/§12.1: en local el resultado es desfavorable y en L40S sigue sin saberse. Consumidas ~1,5 h de las 3 h estimadas (mitad local); la mitad restante se gasta cuando haya GPU de ≥ 24 GB. **`T-04` no bloquea el gate G1** — G1 es escucha de calidad, no capacidad — pero **sí es prerrequisito de `T-39`** (F6), que hasta entonces despacha 1 trabajo por pod.
 
 ---
 
@@ -202,23 +272,41 @@ generacion:
 
 | Tipo | Estado | Dependencias | Tiempo estimado (base) | Tokens previstos |
 |---|---|---|---|---|
-| devops | **en-progreso** (2026-09-01) | T-02 *(completado)* | 16 h | 0,80 M in / 0,11 M out |
+| devops | **completado** (2026-09-02) | T-02 *(completado)* | 16 h | 0,80 M in / 0,11 M out |
 
 **Avance del 2026-09-01 (orquestador `/dev-cycle`) — 2 de 4 criterios cumplidos y verificados.** `apps/runner/adapters/ace_step/Dockerfile` (+ `apps/runner/.dockerignore`, en la raíz del contexto, que es donde BuildKit lo busca). Imagen `ace-step-runner:t05` construida (11,5 GB) y **ejecutada con `--gpus all`** sobre la GTX 1070. Elección de base dictada por Pascal: CUDA 13.0 eliminó sm_50–sm_72 y las ruedas cu128 (torch 2.7+) dejaron de traer Pascal, así que se fija `pytorch/pytorch:2.13.0-cuda12.6-cudnn9-runtime` **por digest**, con dos aserciones de build sobre `torch.cuda.get_arch_list()` para que una rueda sin Pascal rompa el build en vez de dejar la GPU muerta en silencio. Evidencia medida dentro del contenedor: `torch 2.13.0+cu126` · CUDA 12.6 · **cuDNN 9.10.2** (por debajo de 9.12.0, que retiró CC 6.1) · `arch_list` con `sm_60` (binariamente compatible con `sm_61`) · GPU detectada `GTX 1070 sm_61` · **matmul fp16 en GPU correcto** · `total_memory = 8.589.672.448 B = 8191 MiB`, que confirma el off-by-one de CS-51 dentro del contenedor. Incidencia resuelta: el primer build falló por **PEP 668** (la base ya no trae conda, sino un Python 3.12 de Debian gestionado por el sistema) → `--break-system-packages`, documentado en el fichero; torch **sigue sin instalarse por pip**.
-**Lo que falta para cerrar:** los dos criterios que dependen del **shim `ace_step_shim.py`** (entregable de `T-03`) — que el contenedor exponga `load()/generate()/health()/unload()` y que `health()` responda tras el arranque en frío. Hoy `load()` aborta en `_resolve_pipeline_factory()` con «shim ausente», que es el fallo correcto y esperado.
+**Lo que faltaba para cerrar** *(histórico, resuelto el 2026-09-02)*: los dos criterios que dependían del **shim `ace_step_shim.py`** (entregable de `T-03`) — que el contenedor expusiera `load()/generate()/health()/unload()` y que `health()` respondiera tras el arranque en frío. El 2026-09-01 `load()` abortaba en `_resolve_pipeline_factory()` con «shim ausente», que era el fallo correcto y esperado.
+
+**🟢 Cierre (2026-09-02, `implementer`) — los 4 criterios verificados con ejecución, no por lectura de código.**
+
+El shim existe desde el 2026-09-02 y con él se cerró el ciclo de vida entero. Dos evidencias distintas, porque cubren cosas distintas:
+
+| Qué | Cómo se ejercitó | Evidencia |
+|---|---|---|
+| `load()` + `generate()` | Generación real de 240 s con letra en castellano, planificador de 5 Hz y limitador | `out/libre-informe.json`, `out/libre-canonica-informe.json` (`codigo_salida: 0`, WAV de 48 kHz / estéreo / PCM 16 verificados fuera del contenedor) |
+| `health()` + `unload()` | Sonda del ciclo de vida completo, ejecutada hoy en el contenedor | `out/t05-health-informe.json` |
+
+La sonda de `health()` merece detalle, porque es lo que el criterio 3 pide de verdad — no «devuelve algo» sino «contesta **durante** el arranque en frío», que es cuando el orquestador necesita saber si el pod está vivo:
+
+* **antes de `load()`** → `ready=False` con mensaje accionable («sin cargar: llama a `load(ctx)`») y `vram_total_mb=8191`, `vram_free_mb=8191`;
+* **durante la carga**, sondeada cada 20 s → `ready=False` a los 20 / 40 / 60 / 80 / 100 / 120 s, cada una informando los segundos transcurridos. La corrutina **no se bloquea** mientras `load()` corre en su hilo;
+* **tras el arranque en frío** (140,24 s = `vram_load` 83,34 + warm-up 52,48) → `ready=True`, `vram_free_mb=5149`, con el aviso de tiempos degradados por offloading;
+* **tras `unload()`** → vuelve a `ready=False`. La VRAM se suelta.
+
+Un detalle del contenedor que conviene no perder: el `Dockerfile` fija `pytorch/pytorch:2.13.0-cuda12.6-cudnn9-runtime` **por digest** y rompe el build si `torch.cuda.get_arch_list()` no trae Pascal. Es lo que impide que una actualización de rueda deje esta GPU muerta en silencio — CUDA 13.0 eliminó `sm_50`–`sm_72` y cuDNN 9.12.0 retiró CC 6.1.
 
 **Archivos:** `apps/runner/adapters/ace_step/Dockerfile`, `apps/runner/adapters/ace_step/adapter.py`
 
-**Criterios de aceptación**
-- [ ] El contenedor arranca y expone `load()`, `generate()`, `health()`, `unload()` según el `MusicModelAdapter` de la spec §3.3.
-- [ ] Los pesos se cargan exclusivamente desde `safetensors` (D-14); ningún `pickle`/`torch.load` sobre checkpoints no confiables.
-- [ ] `health()` responde correctamente tras el arranque en frío medido en `T-03`.
-- [ ] El contenedor arranca con `docker run --gpus all` sobre una **GPU local de desarrollo** (≥ 8 GB) sin necesitar la abstracción de proveedor de `T-85`.
+**Criterios de aceptación** *(los 4 verificados el 2026-09-02)*
+- [x] El contenedor arranca y expone `load()`, `generate()`, `health()`, `unload()` según el `MusicModelAdapter` de la spec §3.3. *(2026-09-02 — los cuatro **ejercitados de verdad**, no solo declarados: `load`/`generate` en las generaciones de 240 s, `health`/`unload` en la sonda de ciclo de vida. `apps/runner/contracts.py` define el `Protocol` y `AceStepAdapter` lo satisface.)*
+- [x] Los pesos se cargan exclusivamente desde `safetensors` (D-14); ningún `pickle`/`torch.load` sobre checkpoints no confiables. *(2026-09-02 — `assert_safetensors()` en el camino de carga; el artefacto es un único `.safetensors` construido offline por `tools/build_artifact.py`; el único pickle de upstream, `silence_latent.pt`, se convirtió **sin ejecutarlo** y su original vive en cuarentena fuera del volumen montado.)*
+- [x] `health()` responde correctamente tras el arranque en frío medido en `T-03`. *(2026-09-02 — `out/t05-health-informe.json`: responde antes, **durante** (cada 20 s, sin bloquearse) y después del arranque en frío, y vuelve a `ready=False` tras `unload()`.)*
+- [x] El contenedor arranca con `docker run --gpus all` sobre una **GPU local de desarrollo** (≥ 8 GB) sin necesitar la abstracción de proveedor de `T-85`. *(2026-09-01, reconfirmado el 2026-09-02 en cada corrida: `docker run --rm --gpus all` directo sobre la GTX 1070, sin `GPU_PROVIDER`.)*
 
 **Subtareas**
-- [ ] Escribir el `Dockerfile` con CUDA + torch + dependencias de ACE-Step.
-- [ ] Implementar el adapter mínimo (`load`, `generate`, `health`, `unload`) sin `provenance` completo aún (llega con C-10a en F5).
-- [ ] Verificar arranque en GPU local con `docker run --gpus all` y, para la medición de arranque en frío de `T-03`, también en el pod de pruebas de RunPod.
+- [x] Escribir el `Dockerfile` con CUDA + torch + dependencias de ACE-Step. *(2026-09-01 — base fijada por digest, con aserciones de build sobre `get_arch_list()`.)*
+- [x] Implementar el adapter mínimo (`load`, `generate`, `health`, `unload`) sin `provenance` completo aún (llega con C-10a en F5). *(2026-09-02 — el propio informe declara en `adapter.no_incluye` lo que **no** trae: manifiesto/`provenance` (T-27), loudness y transcode (T-19/T-45), registry (T-30) y la abstracción `GPU_PROVIDER` (T-85). Es contenerización mínima, y lo dice de sí misma.)*
+- [ ] 🟡 Verificar arranque en GPU local con `docker run --gpus all` y, para la medición de arranque en frío de `T-03`, también en el pod de pruebas de RunPod. — **GPU local: hecho.** **RunPod: no**, aparcado por presupuesto (2026-09-02). Esta mitad pertenece al criterio de `T-03`, no a los de esta ficha, y por eso no impide su cierre.
 - [ ] 🆕 *(opcional, hallazgo HF 2026-08-18)* Considerar también las variantes **XL de ACE-Step** (`xl-base`/`xl-sft`/`xl-turbo`) en la contenerización de prueba, si la VRAM local lo permite.
 
 **Notas:** Es contenerización **mínima** — suficiente para generar audio con calidad evaluable en G1, no el adapter de producción completo (que incluye `provenance`, validado contra el esquema firmado por legal en `T-27`). El **mismo contenedor** de esta tarea es el que usan `T-04`, `T-09` y, más adelante, `T-85` (D-29) — en Fase 0 se invoca directo, sin la abstracción de proveedor que añade `T-85` en F6.
@@ -231,19 +319,28 @@ generacion:
 
 | Tipo | Estado | Dependencias | Tiempo estimado (base) | Tokens previstos |
 |---|---|---|---|---|
-| backend | pendiente | T-05 | 8 h | 0,40 M in / 0,06 M out |
+| backend | **completado** (2026-09-02) | T-05 *(completado)* | 8 h | 0,40 M in / 0,06 M out |
 
 **Archivos:** `docs/roadmap/2026-07-27-plataforma-musical-ia/spikes/comparativa-modelos.md`
 
-**Criterios de aceptación**
-- [ ] Comparativa documentada de ACE-Step, HeartMuLa y YuE 7B contra licencia, VRAM mínima/confort y capacidades declaradas.
-- [ ] Confirmación explícita de que ACE-Step es el modelo de G1 y HeartMuLa el segundo adapter (D-06), o documentación de por qué cambia el orden.
+**Entregable creado:** [`spikes/comparativa-modelos.md`](./spikes/comparativa-modelos.md) (2026-09-02, 366 líneas, estado `completado`) — comparativa de ACE-Step 1.5, HeartMuLa y YuE 7B (más MiniMax-Music3 como candidato condicional) con **tres niveles de evidencia marcados en cada afirmación** — `[M]` medido aquí, `[D]` documental de fuente primaria, `[C]` calculado — para que se distinga lo verificado de lo leído. Incluye §8, el eje que de verdad decide: el encaje de cada modelo con la GPU local de 8 GB.
+
+**Criterios de aceptación** *(verificados contra el documento el 2026-09-02; el propio §10 del entregable los recorre)*
+- [x] Comparativa documentada de ACE-Step, HeartMuLa y YuE 7B contra licencia, VRAM mínima/confort y capacidades declaradas. *(§2 tabla maestra, §4 ACE-Step, §8 VRAM contra el hardware real.)*
+- [x] Confirmación explícita de que ACE-Step es el modelo de G1 y HeartMuLa el segundo adapter (D-06), o documentación de por qué cambia el orden. *(§7 — **D-06 se confirma sin cambios**, con cuatro razones y sin apelar a fe; YuE se queda tercero y condicional.)*
 
 **Subtareas**
-- [ ] Revisar documentación oficial de los tres modelos (licencia, requisitos de hardware, arquitectura).
-- [ ] Contrastar contra los resultados preliminares del contenedor de ACE-Step (`T-05`).
+- [x] Revisar documentación oficial de los tres modelos (licencia, requisitos de hardware, arquitectura). *(§11, fuentes primarias con fecha de consulta y, donde aplica, revisión fijada.)*
+- [x] Contrastar contra los resultados preliminares del contenedor de ACE-Step (`T-05`). *(§3, incluida la comprobación cruzada que identifica el checkpoint empaquetado como `acestep-v15-turbo`.)*
 
-**Notas:** Documental en su mayor parte; no requiere contenerizar HeartMuLa ni YuE en esta tarea.
+**🟢 Cierre (2026-09-02) — lo que este spike destapa y no estaba en ningún sitio.** El documento no solo confirma D-06; corrige la ficha del modelo. **`spec.md` §11.1 describe, campo por campo, a ACE-Step v1 3.5B y no a ACE-Step 1.5**: seis inexactitudes, de las cuales la primera importa más allá de la pulcritud — **la licencia es MIT, no Apache 2.0**. El manifiesto de procedencia de cada generación registra la licencia de los pesos, y escribir «Apache 2.0» sobre un modelo MIT sería un dato falso en un artefacto que existe **precisamente para ser auditable**. Corregirlo antes de la primera generación con manifiesto (F5) es acción A-1 del spike, y no la cierra esta tarea porque toca `spec.md`.
+
+Otras dos que sí cambian planificación futura, registradas aquí para que no se pierdan:
+
+* **A-2 — `T-29` y `T-34` (G1-bis) no son ejecutables en GPU local.** HeartMuLa declara 4B en F32 (**15,8 GB** de pesos) más HeartCodec 2B en F32 que upstream desaconseja bajar a bf16: el segundo adapter **vuelve a depender de RunPod**, en contra del criterio de coste cloud cero de D-29. Con RunPod aparcado, eso es un bloqueo real de F5, no un matiz.
+* **A-3 — `HeartCLAP` no está publicado** (comprobado: ninguno de los repos de la organización en HF lo es; hay issue abierto pidéndolo). `gates/g1-protocolo.md` §6.1 lo nombra **candidato principal para medir CLAP**, que es uno de los umbrales de G1. **Hay que designar suplente antes de `T-09`**, o el gate llega a la sala sin instrumento para uno de sus números. Contrapeso: **HeartTranscriptor-oss sí cabe en local** (0,8B) y es independiente del adapter, así que el **WER de G1 no queda bloqueado** por A-2.
+
+**Notas:** Documental en su mayor parte; no requiere contenerizar HeartMuLa ni YuE en esta tarea. *(2026-09-02: se cumplió así — de los tres modelos **solo uno se ha ejecutado**, y el documento lo dice en su cabecera para que nadie lea §2 como una comparación de calidad. La calidad la decide G1, no este spike.)*
 
 ---
 
@@ -253,19 +350,34 @@ generacion:
 
 | Tipo | Estado | Dependencias | Tiempo estimado (base) | Tokens previstos |
 |---|---|---|---|---|
-| test | pendiente | T-05 | 12 h | 0,60 M in / 0,08 M out |
+| test | **completado** (2026-09-02) | T-05 *(completado)* | 12 h | 0,60 M in / 0,08 M out |
 
 **Archivos:** `docs/roadmap/2026-07-27-plataforma-musical-ia/spikes/matriz-capacidades.md`
 
-**Criterios de aceptación**
-- [ ] Cada capacidad (`SECTION_INPAINT`, `AUDIO_TO_AUDIO`, `VOICE_CONDITIONING`, `CONTINUATION`) probada empíricamente en ACE-Step, con resultado sí/no y evidencia (audio de prueba).
-- [ ] Matriz documentada y enlazada como entrada de decisión para una futura Fase 3 (no se planifica aquí, solo se deja el dato).
+**Entregable creado:** [`spikes/matriz-capacidades.md`](./spikes/matriz-capacidades.md) (2026-09-02, 384 líneas, estado `completado`) — las cuatro capacidades sondeadas **sobre los pesos reales y la GPU real**, no leídas del README, con línea de fondo de ruido establecida antes de interpretar nada (repetir la misma generación en otro proceso da −80,49 dBFS de diferencia: sin ese dato ninguna de las cifras de abajo significaría nada).
+
+| Capacidad | ACE-Step 1.5 turbo | HeartMuLa (documental) |
+|---|---|---|
+| `SECTION_INPAINT` | **Sí** — región de 5 s regenerada; fuera de ella **100,0000 % de muestras bit-idénticas** tras el empalme | No |
+| `CONTINUATION` | **Sí** — 30 s → 45 s, cabeza preservada (coseno 0,997), cola nueva no silenciosa | No hoy |
+| `AUDIO_TO_AUDIO` | **Sí, pero degradado** — la fuente dirige la salida (corr. 0,364 frente a 0,022 del control), pero el canal es de **≈ 80 bit/s** | No |
+| `VOICE_CONDITIONING` | **Parcial** — el codificador de timbre está entrenado y mueve la salida, pero ocupa **1 de 125 tokens** y no se ha podido probar con una voz real | No (`NotImplementedError` en el pipeline oficial) |
+
+**Criterios de aceptación** *(verificados contra el documento y su evidencia el 2026-09-02)*
+- [x] Cada capacidad (`SECTION_INPAINT`, `AUDIO_TO_AUDIO`, `VOICE_CONDITIONING`, `CONTINUATION`) probada empíricamente en ACE-Step, con resultado sí/no y evidencia (audio de prueba). *(2026-09-02 — **9 WAV + 2 informes JSON + 2 sondas + 2 registros** en `D:\srv\ace-step\out\`, con SHA-256 y tamaño de cada fichero en §8 del documento y comando de reproducción publicado. Comprobado hoy: los 15 ficheros `t07-*` están en su sitio.)*
+- [x] Matriz documentada y enlazada como entrada de decisión para una futura Fase 3 (no se planifica aquí, solo se deja el dato). *(2026-09-02 — §10 del documento enlaza los tres puntos que la reclaman por nombre: la cabecera del gate de **F11**, `T-70` (C-07) y `T-77` (C-08). El propio documento declara que **no marca tareas ni autoriza gasto**, que es lo correcto.)*
 
 **Subtareas**
-- [ ] Diseñar un caso de prueba mínimo por capacidad.
-- [ ] Ejecutar cada prueba contra el contenedor de `T-05` y registrar el resultado con evidencia de audio.
+- [x] Diseñar un caso de prueba mínimo por capacidad. *(2026-09-02 — §1.2: sin codificador de VAE no hay audio de entrada, así que cada camino se probó con latentes propios del modelo. El límite del método está declarado en §1.4, no escondido.)*
+- [x] Ejecutar cada prueba contra el contenedor de `T-05` y registrar el resultado con evidencia de audio. *(2026-09-02 — dos corridas, `codigo_salida: 0`; el código ejercitado es el **de la imagen** (`/app`), con SHA-256 de cada módulo en el informe, y las sondas montadas de fuera en `/probe` sin tocar el repositorio.)*
 
-**Notas:** 12 h que, según `evaluation.md` §10.3, son la mejor relación información/coste del plan: evitan descubrir en la Fase 3 que 276 h no eran viables.
+**🟢 Cierre (2026-09-02) — tres consecuencias que valen dinero.**
+
+1. **C-07 y C-08 no se caen.** Era la pregunta de las 12 h: `SECTION_INPAINT` y `AUDIO_TO_AUDIO` existen, así que la cabecera del gate de F11 («si la matriz sale vacía, C-07/C-08 se replantean») **no se activa**. Pero `AUDIO_TO_AUDIO` viene con la expectativa recalibrada por escrito: lo que hace es *«genera una pista nueva guiada por un boceto de ~80 bit/s de la tuya»*, que **no es lo mismo** que reinterpretar tu grabación. Son dos productos distintos con el mismo nombre, y conviene decidir cuál es C-08 **antes** de las 80 h.
+2. **Bloqueo común identificado: falta el codificador del VAE.** El artefacto tiene `vae.decoder.*` (182 tensores) y **cero** `vae.encoder.*`; sin él no hay forma de meter audio del usuario en ninguna de las cuatro. No es un muro: los pesos ya están descargados y verificados en la instantánea local (183 tensores `encoder.*`, **licencia MIT**, 160,8 MiB). El documento estima **15–28 h orientativas** de trabajo destapado, **todo en Fase 3** y **sin incorporar a ninguna estimación** — eso lo hará el `evaluator` cuando F11 se desbloquee.
+3. **⚠️ Lo medido es el techo del *checkpoint*, no el del modelo.** La matriz se ejecutó sobre `acestep-v15-turbo`, y el Model Zoo de upstream marca `Extract`/`Lego`/`Complete` como **no soportadas en turbo y sí en `acestep-v15-base`**. Un negativo de esta matriz puede ser propiedad del checkpoint empaquetado y no de ACE-Step. Registrado como **CS-54** en `pre-dev-checklist.md`, con la pista que lo hace caro de ignorar: **`extract` (separación de pistas) está en el vocabulario de tareas del modelo y bajo licencia MIT**, justo el agujero que dejó abierto el hallazgo de los pesos CC-BY-NC de Demucs (I-13b, que hoy bloquea C-06).
+
+**Notas:** 12 h que, según `evaluation.md` §10.3, son la mejor relación información/coste del plan: evitan descubrir en la Fase 3 que 276 h no eran viables. *(2026-09-02: se comportó como se esperaba — no salvó las 276 h de un no-go, pero sí cambió lo que hay dentro de ellas y destapó un prerrequisito de 8–16 h que nadie había visto.)*
 
 ---
 
@@ -293,6 +405,14 @@ generacion:
 - [ ] ⚠️ Obtener la ratificación por escrito del **propietario** sobre los umbrales, los briefs, el loudness de sesión y la decisión de usar o no la línea base de Suno. *(Bloque preparado: `g1-protocolo.md` §9.)*
 
 **Notas:** Escribir el protocolo **antes** de escuchar es la corrección explícita de la revisión 1 (`evaluation.md` §10.2): «un gate sin número lo decide quien esté en la sala». En modo solo esa regla **gana peso**, no lo pierde: es la principal mitigación que queda en pie tras perder la independencia desarrollador/juez (`gobernanza.md` §2.1, mitigación 1).
+
+**Nota del 2026-09-02 (cierre de F2) — sigue `en-revision`, y es correcto que siga.** La tarea **no se cierra hoy**: le falta exactamente lo mismo que el 2026-09-01, la **ratificación firmada del propietario** sobre umbrales, briefs, loudness de sesión y uso o no de la línea base de Suno (bloque vacío en `g1-protocolo.md` §9). Nadie que no sea el propietario puede marcar ese criterio. Con `T-05`, `T-06` y `T-07` cerradas, **`T-08` es el único artefacto de F2 que depende de una firma humana**, y por tanto lo que separa a la iniciativa de la puerta de G1.
+
+Tres entradas nuevas de hoy que el protocolo tiene que absorber **antes** de la primera escucha, ninguna de las cuales toca un umbral:
+
+* **Formato de las etiquetas de sección en los 10 briefs.** Medido hoy que cambiar el formato cambia el resultado con todo lo demás idéntico (CS-52). El protocolo no dice hoy qué formato usan los briefs, y si cada uno usa el suyo, la sesión compara cosas distintas.
+* **Los briefs no pueden pedir reparto de voces por sección** (dúo hombre/mujer, coro): ACE-Step no lo soporta (CS-53). Un brief que lo pida penalizaría al modelo por no hacer algo que nunca pudo hacer — eso no es medir calidad, es medir mal.
+* **`HeartCLAP` no está publicado** y `g1-protocolo.md` §6.1 lo nombra candidato principal para medir CLAP (acción A-3 de `T-06`). Hay que designar suplente **antes de `T-09`**.
 
 **🟡 Cierre parcial (2026-09-01, `implementer`) — `en-revision`, no `completado`.** De los tres criterios de aceptación, **solo el primero está cumplido**: el protocolo existe, con la rúbrica descriptiva, los 10 briefs y los umbrales sin degradar. Los otros dos **no los puede cerrar quien redacta el documento**: el criterio 2 exige la **firma del propietario antes de la primera escucha** y el criterio 3 quedó **trasladado a GC-01 §8c** por la propia acta de gobernanza. Por eso la tarea queda en **`en-revision`** y no en `completado`. **Ningún umbral se ha degradado** (7/10 ≥ 4/5 · ninguna dimensión < 3,0 · CLAP ≥ librería en 7/10 · WER ≤ 15 % medio y ≤ 25 % peor caso · no-go si pierde contra librería en D5 en > 5/10). **Deuda declarada detectada al redactar:** la decisión de **loudness por destino (D-23)** que `gobernanza.md` §2.2.5 exige por escrito **antes de G1** **no tiene tarea propia en F2** (`T-20`, en F4, solo implementa la parametrización); queda registrada como **precondición de `T-09`** en `g1-protocolo.md` §5.5 y §9.1 (ítem 6), con los valores de D-23 propuestos por defecto. **`T-09` sigue bloqueada** por el resto de F2 y, antes que nada, por `pre-dev-checklist.md` ítem 7 / CS-36 (pesos `safetensors` de ACE-Step sin descargar).
 
@@ -324,6 +444,8 @@ generacion:
 - [ ] Aplicar el criterio de decisión y documentar el resultado.
 
 **Notas:** **Bloqueante.** Ninguna tarea de F4 en adelante puede empezar antes de que este checkpoint quede `completado` con resultado favorable. Las pistas de esta tarea viven en la carpeta segregada de evaluación con retención de 12 meses (S-11), no en la biblioteca de trabajo. GPU local preferente decidida el 2026-08-18 (D-29, `spec.md` confirmación 13).
+
+**Nota 2026-09-02 — herramienta de la subtarea 1 lista; la tarea sigue `pendiente` y ningún criterio se marca.** Existe `apps/runner/spikes/g1_generar.py` (documentado en `apps/runner/spikes/README.md` §5.5, 50 tests en `apps/runner/tests/test_g1_generar.py`; suite total 473): lee los 10 briefs de `g1-protocolo.md` §4 en cada arranque —no los copia—, deriva el prompt de estilo de §4.2, valida las letras (etiquetas canónicas, tildes, extensión de §4.1), genera de una en una tras una sola carga con planificador de 5 Hz y metadatos poblados, deja las pistas con nombre ciego y sella el mapa con SHA-256 (§5.4/§5.6), y escribe el árbol de §10.2 con el manifiesto retroactivo simplificado. **Verificado solo hasta el ensayo en seco** (`--dry-run`, exit 0, dentro del contenedor `ace-step-runner:t05`): **no se ha generado ni una pista**, que es decisión del propietario. Estimación medida de la tanda completa (30 pistas, 3 tomas por brief según §5.2): **124-159 min**, carga en frío incluida. **Nivel de GPU detectado en la máquina de desarrollo: `tier3` de 8** (`gpu_tiers.py`) — el script lo escribe en el informe y en cada pista porque un `no-go` medido en tier3 solo dice «no sirve en tier3»; el hardware de referencia de la spec es `tier6b`. **Sigue abierto y no lo cierra ninguna herramienta:** ratificación firmada de §9 (sin ella la sesión no es válida, §8.1), decisión D-23 de loudness por destino, las 10 letras del propietario, las líneas base de librería y la normalización de loudness de sesión de las 30 pistas.
 
 ---
 
@@ -1050,6 +1172,14 @@ generacion:
 - [ ] Redactar el runbook de requisitos (driver, toolkit, VRAM mínima).
 - [ ] Verificar en una máquina con GPU real que el flujo end-to-end genera contratos idénticos al modo cloud (soporta `E2E-GPU-04`).
 
+> ⏩ **Adelanto parcial hecho en F2 (2026-09-02) — la tarea sigue en F6 y sigue `pendiente`.** Existe ya `apps/runner/adapters/ace_step/gpu_tiers.py` con **26 tests propios** (`apps/runner/tests/test_gpu_tiers.py`), en verde dentro de la suite del runner. Cubre **una parte** del tercer criterio de esta ficha: la configuración del runner **por nivel de GPU detectado**, en vez de por valores clavados a mano.
+>
+> **Por qué se adelantó.** Durante `T-03` se fueron fijando a mano decisiones que en realidad dependen de la máquina — si se usa planificador y cuál, qué se descarga a CPU, duración máxima, tamaño de lote — con los valores de una **GTX 1070, que es `tier3` de ocho tramos**. Eso contradice D-29 («detección de GPU/VRAM al arrancar, offloading automático si < 24 GB») y además **falsea cualquier juicio sobre la calidad del modelo**: el hardware de referencia de la spec es `tier6b`, que corre en bf16 sin cuantizar, sin offloading y con el planificador grande. No es el mismo modelo funcionando peor; es otra configuración.
+>
+> **Qué trae y qué no.** La tabla de tramos está **vendorizada de upstream (MIT) con su procedencia escrita**, no inventada, con cuatro desviaciones documentadas y su motivo: INT8 no existe en Pascal (upstream lo da por hecho de `tier1` a `tier6a`), BF16 tampoco, `sm_61` obliga a atención eager (**12,9×** frente a SDPA, medido) y el suelo de VRAM se calcula sobre el nominal redondeado por CS-51. El módulo **no toca la GPU**: recibe VRAM y capacidad de cómputo como argumentos, y por eso se prueba entero sin tarjeta.
+>
+> **Lo que sigue pendiente de `T-85`, que es casi todo:** el proveedor `local` de la interfaz de `T-37`, `docker-compose.gpu-local.yml` con el perfil `gpu-local`, la selección por `GPU_PROVIDER=local|runpod|mock`, el runbook de requisitos y `E2E-GPU-04`. **Ninguno de los seis criterios de aceptación se marca** y **no se descuenta ninguna hora de las 16 h**: lo adelantado es un módulo de decisión por nivel de GPU, no la abstracción de proveedor. Cuando se ejecute `T-85`, `gpu_tiers.py` es la entrada natural de su `gpu_detect.py`, no un duplicado a reescribir.
+
 **Notas:** D-29. El runner es el mismo contenedor en los tres modos (cloud, local, mock), no una reimplementación: hereda D-14 (solo `safetensors`), D-15 (aislamiento de credenciales) y D-20 (manifiesto/ledger idénticos) igual que RunPod. Ampliación de alcance registrada en `spec.md` §13 y `improvement-plan.md` §14 — **ratificada por el usuario el 2026-08-18** (delta +16 h base / +19,2 h con margen / +960 €), integrada en los 39.360 € ratificados de Fase 0+1. Distinta de la decisión, misma fecha, de que **la Fase 0 (F2/F3)** use ya GPU local preferente sin esperar a esta tarea: ahí basta invocar el contenedor de `T-05` directamente (`docker run --gpus all`), sin la abstracción de proveedor que introduce `T-85`.
 
 ---
@@ -1176,6 +1306,10 @@ generacion:
 **Subtareas**
 - [ ] Conectar el resultado de inferencia con el pipeline de post-proceso.
 - [ ] Verificar duración y loudness contra los criterios de C-01.
+
+> ⏩ **Adelanto parcial hecho en F2 (2026-09-02) — la tarea sigue en F7 y sigue `pendiente`.** Al medir `T-03` salió que **la pista de 180 s se salía de escala antes del recorte (pico 1,280)**: sin limitador, el WAV llega recortado por la vía dura y cualquier escucha de G1 estaría juzgando el *clipping*, no el modelo. Se adelantó por eso **solo el limitador de picos** — `apps/runner/adapters/ace_step/ace_step_shim.py`, `TECHO_LIMITADOR_DB = -1,0` dBFS con ventana de 10 ms de anticipación, verificado en `out/con-limitador-informe.json` (`pico_dbfs` exactamente **−1,0**, `pico_dentro_de_escala: true`).
+>
+> **Lo que este adelanto NO es.** Un limitador de picos **no es normalización de loudness**: no hay medición LUFS, ni objetivo por destino (D-23/`T-20`), ni transcode a FLAC/MP3 320, ni WAV de 48 kHz a demanda. **Los dos criterios de aceptación de esta ficha siguen sin cumplirse** y **no se descuenta ninguna hora de las 8 h estimadas**: lo adelantado es un techo de seguridad para que las pistas de G1 sean escuchables, no el post-proceso de C-01. Cuando se ejecute `T-45`, revisar que el limitador y la cadena de loudness **no se pisen** (limitar después de normalizar, no antes).
 
 ---
 
@@ -2061,3 +2195,6 @@ generacion:
 | 2026-09-01 | **Adaptación a proyecto personal en solitario — cierre de `T-02` en modo solo.** Motivo: decisión del propietario (Daycry): proyecto personal de una sola persona, con posible comercialización futura. `T-02` pasa de `en-progreso` a **`completado`** con criterios adaptados y verificados: evaluador único = propietario (protocolo numérico de G1 íntegro — 7/10 ≥ 4/5, WER ≤ 15 % — sin degradar; riesgo de independencia aceptado por escrito), usuario piloto = propietario (G3 reinterpretado: ≥ 100 generaciones propias, ≥ 1 pista en algo real, autoevaluación ≥ 4/5) y construir-vs-comprar documentada («construir»: aprendizaje, control, self-hosting). La versión corporativa de los criterios (3 evaluadores, 3–5 pilotos, ofertas con indemnización) se traslada al nuevo **gate de comercialización GC-01** (`gates/gobernanza.md` §8). §1: F1 pasa a `completado` (completado 1→2, en-progreso 1→0). Ninguna hora ni cifra ratificada cambia (656 h / 39.360 €). | propietario (Daycry) |
 | 2026-09-01 | **`T-08` ejecutada — protocolo escrito del gate G1 (`gates/g1-protocolo.md`), `pendiente` → `en-revision`.** Entregable creado con los umbrales de `evaluation.md` §10.2 y `gobernanza.md` §2.2 **sin degradar ninguno** (7/10 con D5 ≥ 4/5 · ninguna dimensión con media < 3,0 · CLAP ≥ librería en 7/10 · WER ≤ 15 % medio y ≤ 25 % peor caso · no-go si pierde contra librería en D5 en > 5/10), con **regla de inmutabilidad** y precisiones aritméticas (medias a 2 decimales sin redondear, escala entera, empate no es derrota, brief sin línea base cuenta como derrota). **Aportación principal: la rúbrica de las 5 dimensiones con descriptores por nivel** — hasta hoy la escala 1–5 estaba enunciada pero sin definición operativa. Además: **10 briefs propios realistas** redactados y marcados `propuestos — pendientes de ratificación` (adaptación de `gobernanza.md` §2.2.1 al modo solo), procedimiento completo de sesión ciega (3 tomas por serie, reglas anti-sesgo para elegir la línea base de librería antes de generar, mapa ciego por script, condiciones de escucha y fatiga, **loudness de sesión −16 LUFS / ≤ −1 dBTP** distinguido del objetivo por destino D-23, ruptura del ciego con sellado SHA-256 de las hojas), **variante B sin línea base de Suno con los cinco umbrales intactos**, medición reproducible de CLAP y WER (identificadores y SHA-256 de pesos **declarados como dependencia de `T-09`**, no inventados), hoja de puntuaciones vacía, regla de decisión go/no-go/replanteo con tope de 2 repeticiones, y política de retención S-11. **Tres adaptaciones a modo solo declaradas** (evaluador único sin quórum «2 de 3» · briefs propios en vez de producciones de Daycry · **ToS de Suno trasladados a GC-01 §8c**). **`T-08` queda `en-revision` y no `completado`**: de sus tres criterios, solo el primero lo cierra el implementador; el segundo (**ratificación firmada del propietario antes de la primera escucha**) y el tercero (**ToS de Suno**, ahora en GC-01) quedan abiertos con dueño y momento. **Deuda nueva declarada:** la decisión de **loudness por destino (D-23)**, exigida por escrito antes de G1 (`gobernanza.md` §2.2.5), **no tiene tarea propia en F2**; queda como precondición de `T-09`. §1: F2 pasa a `en-progreso`. **Ninguna hora, cifra ratificada ni umbral cambia** (656 h / 39.360 €). | implementer (`T-08`) |
 | 2026-09-01 | **Ampliación PROPUESTA: instalador del runner GPU local (`T-86`, D-30) — pendiente de ratificación económica.** Nueva tarea `T-86` en F6 (C-14): CLI/script de instalación del modo `GPU_PROVIDER=local` en una máquina nueva — **preflight automatizado** (GPU/VRAM/driver NVIDIA/Docker/NVIDIA Container Toolkit con `docker run --rm --gpus all …` y mensaje accionable por carencia), **pesos `safetensors` verificados por SHA-256** (D-14), **escritura de la config local** (`GPU_PROVIDER`, perfil compose `gpu-local`, guardarraíl **G-01** `ACE_STEP_REQUIRE_GPU=1` en los modos de medición) y **desinstalación limpia**; fuera de alcance GUI, auto-update y empaquetado firmado de Windows. Delta: **+32 h base / +38,4 h con margen / +1.920 €** (rango 24–40 h, punto medio por desglose ascendente 4+8+6+5+3+6; tokens 2,00 M in / 0,28 M out con el ratio 0,25 de C-14). **Ninguna cifra ratificada cambia:** F6 sigue en **112 h / 6.720 €**, Fase 0+1 en **656 h / 39.360 €** y el ledger completo en **1.063 h / 63.780 €**; el delta se registra como **fila y nota separadas** en §1 y como aviso destacado en la propia tarea (si se ratificase: F6 144 h/8.640 €, Fase 0+1 688 h/41.280 €, ledger 1.095 h/65.700 €). Nueva incógnita **I-22** en `spec.md` (SO objetivo del instalador y quién lo mantiene tras la entrega) como principal fuente de dispersión del rango. Ningún estado de tarea existente cambia. | evaluator |
+| 2026-09-02 | **F2 avanza a la puerta de G1 — `T-05`, `T-06` y `T-07` cerradas con evidencia ejecutada.** `T-05` → **`completado`**: los 4 criterios verificados ejercitando el ciclo de vida entero del adapter, no leyéndolo — `load()`/`generate()` en generaciones reales de 240 s y **`health()`/`unload()` en una sonda dedicada** (`out/t05-health-informe.json`) que confirma lo que el criterio 3 pide de verdad: `health()` contesta **durante** el arranque en frío (cada 20 s, sin bloquearse), pasa a `ready=True` al terminar (140,24 s = `vram_load` 83,34 + warm-up 52,48) y vuelve a `ready=False` tras `unload()`. `T-06` → **`completado`** (`spikes/comparativa-modelos.md`, D-06 confirmado sin cambios; destapa que **`spec.md` §11.1 describe a ACE-Step v1 3.5B y no a 1.5**, y que **la licencia es MIT, no Apache 2.0** — dato que el manifiesto de procedencia va a registrar). `T-07` → **`completado`** (`spikes/matriz-capacidades.md`, 4 capacidades sondeadas sobre pesos y GPU reales con 9 WAV de evidencia; **C-07 y C-08 no se caen**, y aparece un prerrequisito de 8–16 h que no estaba en ninguna estimación: falta el codificador del VAE). `T-03` sigue **`en-progreso`** con 1 de 6 criterios cumplido: el pipeline genera audio real y está perfilado, pero **el arranque en frío de S-01 contra RunPod no está medido** y RunPod queda **aparcado por presupuesto**. `T-08` sigue **`en-revision`**: le falta la firma del propietario y nadie más puede darla. Corregida la fila de F2 del §1, que seguía diciendo «bloqueadas por CS-36» desde antes de que CS-36 se cerrara. **Ninguna hora ni cifra ratificada cambia** (656 h / 39.360 €). | implementer (cierre de F2) |
+| 2026-09-02 | **Dos adelantos de alcance de fases posteriores, anotados donde nacen y sin cobrar horas.** (a) **`T-45`** (F7): se adelantó **solo el limitador de picos** (techo −1,0 dBFS, verificado) porque la pista de 180 s se salía de escala antes del recorte y, sin él, la escucha de G1 juzgaría el *clipping* en vez del modelo. **No es normalización de loudness**: sin LUFS, sin objetivo por destino, sin transcode. (b) **`T-85`** (F6): existe `gpu_tiers.py` con **26 tests**, que cubre una parte del tercer criterio — configuración por nivel de GPU detectado en vez de valores clavados a los de una GTX 1070 (`tier3` de ocho tramos), tabla vendorizada de upstream con procedencia y cuatro desviaciones documentadas por Pascal. **Ambas tareas siguen `pendiente` en su fase, ningún criterio marcado y ninguna hora descontada** (F7 78 h, F6 112 h). | implementer (cierre de F2) |
+| 2026-09-02 | **Cuatro cabos sueltos nuevos registrados en `pre-dev-checklist.md` — sección D, CS-52 a CS-55** (51 → 55 ítems). **CS-52** etiquetas de sección: ACE-Step espera las canónicas y el formato Suno va **verbatim** al modelo; A/B limpio hoy con misma semilla y mismo cuerpo de letra — afecta al validador de `T-46` y al protocolo de G1. **CS-53** ACE-Step **no reparte voces por sección** (dúo, coro): un único vector de timbre global; es una diferencia de capacidad frente a Suno y acota lo que se le puede prometer al usuario. **CS-54** la matriz de `T-07` puede estar midiendo el techo del **turbo** y no el de ACE-Step (`Extract`/`Lego`/`Complete` marcadas no soportadas en turbo y sí en `base`), con la pista de que **`extract` bajo MIT** sería candidato a desbloquear C-06. **CS-55** el arranque en frío medido contradecía la promesa de 2–6 min de `ui-design.md`: 12,6–13,0 min antes del arreglo de lectura contigua, 1,8–2,3 min después — pero **eso es solo el término de carga local** y el S-01 real sigue sin medir, con la copia «2-6 min» ya escrita en `adapter.health()`. Actualizados además CS-38/CS-39 (RunPod aparcado por presupuesto) y el ítem 44 (entregables de F2: dos de tres escritos). **Ninguna cifra ratificada ni umbral de gate cambia.** | implementer (cierre de F2) |

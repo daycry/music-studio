@@ -4,8 +4,8 @@ Que es esto
 -----------
 `adapter.py` aisla a proposito la construccion del grafo del modelo y su bucle de
 muestreo en **un unico punto de integracion**: resuelve
-`ACE_STEP_PIPELINE_FACTORY` (por defecto `ace_step_shim:build_pipeline`), mapea el
-artefacto con `load_file(ruta, device="cpu")` e invoca
+`ACE_STEP_PIPELINE_FACTORY` (por defecto `ace_step_shim:build_pipeline`), lee el
+artefacto por tramos contiguos (`carga_contigua.cargar_contiguo`) e invoca
 
     build_pipeline(*, state_dict, device, dtype, offload)
 
@@ -79,12 +79,15 @@ de 180 s proyecta 23,1 GiB: no cabe, y ni siquiera se intenta (un OOM de driver
 deja el asignador cacheante de PyTorch inservible). Se llama siempre a
 `decodificar_por_trozos` con los parametros medidos (W=256, S=48, G=16).
 
-**C3 — despacho por componente.** Desde el 2026-09-02 el adapter hace
-`load_file(..., device="cpu")`, o sea que el artefacto llega **mapeado**, no en
-VRAM. Este fichero lo reparte por prefijos, **consume el diccionario
-destructivamente** (`pop`) y **materializa** cada tensor donde le toca (un tensor
-que siguiera respaldado por el fichero se releeria del disco pagina a pagina en
-cada subida a VRAM: 42,91 s frente a 0,43 s medidos):
+**C3 — despacho por componente.** El artefacto NO llega entero en VRAM: llega
+como diccionario de tensores en RAM, salvo `dit.decoder`, que el cargador deja ya
+en la tarjeta porque este fichero declara que es residente
+(`PREFIJOS_RESIDENTES_GPU`). Este fichero lo reparte por prefijos y **consume el
+diccionario destructivamente** (`pop`). Los tensores tienen que quedar
+**materializados** en memoria anonima: uno que siguiera respaldado por un mapeo
+del fichero se releeria del disco pagina a pagina en cada subida a VRAM (42,91 s
+frente a 0,43 s medidos). Con `carga_contigua` ya llegan asi y no se clona nada;
+con el respaldo `load_file` se clona, como antes.
 
     componente            MiB      donde vive          cuando esta en VRAM
     dit.decoder         3.004,9    VRAM permanente     siempre
@@ -265,6 +268,18 @@ _MIB = 1024 * 1024
 #: sin remapeo: comprobado clave a clave contra la cabecera del artefacto.
 CLAVES_DIT = {"decoder": 476, "encoder": 140, "tokenizer": 32, "detokenizer": 28}
 CLAVE_NULL_CONDITION = "dit.null_condition_emb"
+
+#: Componentes que este shim deja RESIDENTES en VRAM durante toda la vida del
+#: pipeline. Todo lo demas vive en RAM y sube solo mientras se usa (`_Residencia`).
+#:
+#: Existe como constante publica porque el adapter se lo pregunta AL SHIM antes de
+#: leer el artefacto: sabiendo que estos bytes acaban en la tarjeta, el cargador
+#: los lee directos a VRAM y se ahorra 3.005 MiB de pico en la RAM del anfitrion
+#: (`carga_contigua.py`). El reparto lo decide este fichero y solo este fichero;
+#: la constante es la forma de contarlo sin duplicar la logica. Si se cambia el
+#: reparto, hay que cambiarla, y `tests/test_carga_contigua.py` lo comprueba
+#: contra las llamadas reales a `_extraer`.
+PREFIJOS_RESIDENTES_GPU = ("dit.decoder.",)
 
 CLAVE_CONFIG_ACESTEP = "aux.config.acestep_json"
 CLAVE_SILENCE_LATENT = "aux.silence_latent"
@@ -479,6 +494,8 @@ def _extraer(
     prefijo: str,
     destino: torch.device,
     esperadas: int | None,
+    *,
+    materializado: bool = False,
 ) -> dict[str, torch.Tensor]:
     """Saca del `state_dict` las claves con `prefijo` y las coloca en `destino`.
 
@@ -486,17 +503,24 @@ def _extraer(
     claves del original mantendria dos referencias vivas al mismo tensor y, con
     ellas, el mapeo entero del artefacto.
 
-    MATERIALIZACION OBLIGATORIA (2026-09-02). Desde que `adapter.py` mapea el
-    artefacto con `load_file(..., device="cpu")`, los tensores que entran aqui
-    estan **respaldados por el fichero**, no por RAM anonima. Un `.to(cuda)`
-    materializa; un destino CPU no haria nada y dejaria el tensor mapeado. Eso es
-    justo la trampa que `text_conditioning.construir_text_encoder` ya evitaba
-    clonando: un peso mapeado se relee del disco pagina a pagina en **cada**
-    subida a VRAM (42,91 s frente a 0,43 s medidos) y ademas es desalojable. Por
-    eso, cuando el destino es CPU, se **clona**.
+    MATERIALIZACION OBLIGATORIA (2026-09-02). Si el artefacto llego **mapeado**
+    (`load_file(..., device="cpu")`), los tensores que entran aqui estan
+    respaldados por el fichero, no por RAM anonima. Un `.to(cuda)` materializa;
+    un destino CPU no haria nada y dejaria el tensor mapeado. Eso es justo la
+    trampa que `text_conditioning.construir_text_encoder` ya evitaba clonando: un
+    peso mapeado se relee del disco pagina a pagina en **cada** subida a VRAM
+    (42,91 s frente a 0,43 s medidos) y ademas es desalojable. Por eso, cuando el
+    destino es CPU, se **clona**.
 
     El clon no duplica el pico: el original se suelta en la misma vuelta del
     bucle, y lo que se suelta son paginas de cache de fichero, no RAM anonima.
+
+    Args:
+        materializado: el artefacto vino de `carga_contigua`, o sea que los
+            tensores YA estan en memoria anonima, cada uno como vista de un buffer
+            propio. Entonces clonar no arregla nada y cuesta: duplicaria el
+            componente entero en RAM y, con `dit.decoder`, **+3.005 MiB de VRAM**
+            que no existen. Con la bandera puesta el tensor se adopta tal cual.
 
     Returns:
         Sub-diccionario con el prefijo ya quitado, listo para
@@ -517,6 +541,9 @@ def _extraer(
         tensor = state_dict.pop(clave)
         if tensor.device != destino:
             colocado = tensor.to(destino)
+        elif materializado:
+            # Ya esta donde toca y en memoria anonima: no hay nada que hacer.
+            colocado = tensor
         else:
             # Mismo dispositivo: `.to()` seria un no-op y dejaria el tensor
             # respaldado por el mapeo del artefacto. `clone()` lo pasa a RAM
@@ -1697,6 +1724,8 @@ class PipelineAceStep:
 def _construir_planificador(
     state_dict: dict[str, torch.Tensor],
     dispositivo: torch.device,
+    *,
+    materializado: bool = False,
 ) -> tuple[Any, Path]:
     """Saca del artefacto el planificador de 5 Hz y lo deja listo en CPU.
 
@@ -1717,7 +1746,9 @@ def _construir_planificador(
        fallaria. Se carga con `strict=False`, se comprueba que la UNICA clave que
        falta es esa y se atan. Si faltara cualquier otra cosa, se aborta.
     3. **Los pesos se clonan** al sacarlos del mapeo (lo hace `_extraer`): un LM
-       mapeado se releeria del disco en cada generacion.
+       mapeado se releeria del disco en cada generacion. Con `materializado=True`
+       (artefacto leido por `carga_contigua`) ya vienen en RAM anonima y el clon
+       se salta: seria 1.264 MiB duplicados a cambio de nada.
     """
     nombre_dtype = os.environ.get(ENV_LM_DTYPE, "bf16").strip().lower()
     if nombre_dtype not in _LM_DTYPES:
@@ -1731,7 +1762,9 @@ def _construir_planificador(
     config_lm = json.loads(_texto_de_blob(state_dict, CLAVE_LM_CONFIG))
     modelo_lm = _instanciar_lm(config_lm, dtype_lm)
 
-    pesos = _extraer(state_dict, PREFIJO_LM, torch.device("cpu"), CLAVES_LM)
+    pesos = _extraer(
+        state_dict, PREFIJO_LM, torch.device("cpu"), CLAVES_LM, materializado=materializado
+    )
     # El dtype de ejecucion manda sobre el de almacenamiento. Se convierte tensor
     # a tensor **sacandolo del diccionario**: hacerlo por comprension mantendria
     # vivas las dos versiones enteras a la vez (1.265 + 2.529 MiB en fp32).
@@ -1809,13 +1842,14 @@ def build_pipeline(
     Es la funcion que resuelve `adapter._resolve_pipeline_factory()`. Recibe
     exactamente estos cuatro argumentos por palabra clave y nada mas.
 
-    El `state_dict` llega **mapeado en CPU** (el adapter hace
-    `load_file(ruta, device="cpu")` desde el 2026-09-02: ver el bloque de
-    comentario de `adapter.py`, etapa 3). Los tensores estan respaldados por el
-    fichero, no por RAM: quien decide que sube a VRAM es esta funcion, componente
-    a componente. Se consume destructivamente —cada componente se saca con `pop`,
-    se **materializa** donde le toca y la entrada del mapeo se libera acto
-    seguido— y al volver el diccionario del llamante esta vacio.
+    El `state_dict` llega **ya materializado** en RAM, y `dit.decoder` ya en VRAM,
+    porque `carga_contigua` lee el artefacto por tramos contiguos y respeta el
+    reparto que declara `PREFIJOS_RESIDENTES_GPU` (ver el bloque de comentario de
+    `adapter.py`, etapa 3). Si el diccionario trae la marca
+    `tensores_materializados`, esta funcion **no clona**; si viene del respaldo
+    `load_file` (mapeo del fichero), clona como siempre. En los dos casos se
+    consume destructivamente —cada componente se saca con `pop` y se coloca donde
+    le toca— y al volver, el diccionario del llamante esta vacio.
 
     Args:
         state_dict: los 1.177 tensores del artefacto, o 1.492 si trae ademas el
@@ -1834,6 +1868,11 @@ def build_pipeline(
     if not isinstance(state_dict, dict):
         raise TypeError(f"Se esperaba un dict de tensores; llego {type(state_dict).__name__}.")
     dispositivo = _normalizar_dispositivo(device)
+    # `carga_contigua.EstadoDelArtefacto` marca su diccionario: los tensores ya
+    # estan en memoria anonima (y `dit.decoder` ya en VRAM), asi que no hay que
+    # clonarlos ni volverlos a copiar. Con `load_file` la marca no esta y se
+    # mantiene el comportamiento de siempre.
+    materializado = bool(getattr(state_dict, "tensores_materializados", False))
     inicio = time.perf_counter()
     if dispositivo.type != "cuda":
         _LOG.warning(
@@ -1846,12 +1885,13 @@ def build_pipeline(
         libre, total = torch.cuda.mem_get_info(dispositivo)
         _LOG.info(
             "Construyendo el pipeline en %s: %.0f MiB libres de %.0f MiB, %d tensores en "
-            "el state_dict, offload=%s.",
+            "el state_dict, offload=%s, tensores ya materializados=%s.",
             dispositivo,
             libre / _MIB,
             total / _MIB,
             len(state_dict),
             offload,
+            materializado,
         )
         if not offload:
             _LOG.warning(
@@ -1903,7 +1943,9 @@ def build_pipeline(
         # cuanto antes da aire a los pasos siguientes. `cargar_decoder` lee las
         # claves sin sacarlas, asi que se le entrega un sub-diccionario ya
         # extraido, mas la referencia (no copia) al config del VAE.
-        pesos_vae = _extraer(state_dict, "vae.decoder.", torch.device("cpu"), 182)
+        pesos_vae = _extraer(
+            state_dict, "vae.decoder.", torch.device("cpu"), 182, materializado=materializado
+        )
         sub_vae: dict[str, Any] = {f"vae.decoder.{k}": v for k, v in pesos_vae.items()}
         sub_vae["aux.config.vae_json"] = state_dict["aux.config.vae_json"]
         vae = cargar_decoder(sub_vae, device="cpu", dtype=dtype_artefacto)
@@ -1912,12 +1954,12 @@ def build_pipeline(
 
         # -- 3. Codificador de texto (Qwen3): 1.136 MiB que bajan a RAM ------ #
         # `construir_text_encoder(consumir=True)` saca las 310 claves del
-        # diccionario del llamante y clona a CPU; el clon no es cosmetico: sin el,
-        # un tensor que venga de `safe_open` mantiene el fichero mapeado y la
-        # primera subida a VRAM lee del disco pagina a pagina (42,91 s medidos
-        # frente a 0,43 s).
+        # diccionario del llamante. Clona a CPU salvo que ya vengan materializadas:
+        # el clon no es cosmetico cuando hace falta, porque un tensor que venga de
+        # `safe_open` mantiene el fichero mapeado y la primera subida a VRAM lee
+        # del disco pagina a pagina (42,91 s medidos frente a 0,43 s).
         text_encoder, _config_qwen, _dtype_qwen = text_conditioning.construir_text_encoder(
-            state_dict, consumir=True
+            state_dict, consumir=True, materializado=materializado
         )
         residencia_texto = _Residencia("text_encoder", text_encoder, dispositivo)
 
@@ -1938,14 +1980,26 @@ def build_pipeline(
 
         # 4a. `dit.decoder` -> se queda en VRAM. Los tensores ya estan ahi, asi que
         #     `assign=True` los adopta sin copiar ni un byte.
-        pesos = _extraer(state_dict, "dit.decoder.", dispositivo, CLAVES_DIT["decoder"])
+        pesos = _extraer(
+            state_dict,
+            "dit.decoder.",
+            dispositivo,
+            CLAVES_DIT["decoder"],
+            materializado=materializado,
+        )
         modelo.decoder.load_state_dict(pesos, strict=True, assign=True)
         del pesos
         movidos = _colocar_buffers_no_persistentes(modelo.decoder, dispositivo)
         _LOG.info("dit.decoder cargado en %s (%d buffers de RoPE movidos).", dispositivo, movidos)
 
         # 4b. `dit.encoder` -> RAM; sube solo mientras se prepara el condicionamiento.
-        pesos = _extraer(state_dict, "dit.encoder.", torch.device("cpu"), CLAVES_DIT["encoder"])
+        pesos = _extraer(
+            state_dict,
+            "dit.encoder.",
+            torch.device("cpu"),
+            CLAVES_DIT["encoder"],
+            materializado=materializado,
+        )
         modelo.encoder.load_state_dict(pesos, strict=True, assign=True)
         del pesos
         # Excepcion medida de C1: el codificador de letra desborda fp16 (1,75e5 de
@@ -1993,7 +2047,13 @@ def build_pipeline(
         # 5,77 (0,053 %), correlacion 0,99999946 y cero valores no finitos. No es
         # el caso del codificador de letra.
         for nombre in ("tokenizer", "detokenizer"):
-            pesos = _extraer(state_dict, f"dit.{nombre}.", torch.device("cpu"), CLAVES_DIT[nombre])
+            pesos = _extraer(
+                state_dict,
+                f"dit.{nombre}.",
+                torch.device("cpu"),
+                CLAVES_DIT[nombre],
+                materializado=materializado,
+            )
             submodulo = getattr(modelo, nombre)
             submodulo.load_state_dict(pesos, strict=True, assign=True)
             del pesos
@@ -2018,7 +2078,9 @@ def build_pipeline(
                        nombre, dtype_artefacto, enteros)
 
         # 4d. `null_condition_emb`: un solo tensor, a VRAM con el decoder.
-        nulo = _extraer(state_dict, CLAVE_NULL_CONDITION, dispositivo, 1)
+        nulo = _extraer(
+            state_dict, CLAVE_NULL_CONDITION, dispositivo, 1, materializado=materializado
+        )
         if set(nulo) != {""}:
             raise RuntimeError(f"Se esperaba una unica clave {CLAVE_NULL_CONDITION!r}.")
         modelo.null_condition_emb = torch.nn.Parameter(nulo[""], requires_grad=False)
@@ -2048,7 +2110,9 @@ def build_pipeline(
         # que dice como reconstruirlo, en vez de degradar en silencio.
         planificador = None
         if any(clave.startswith(PREFIJO_LM) for clave in state_dict):
-            planificador, dir_tokenizer_lm = _construir_planificador(state_dict, dispositivo)
+            planificador, dir_tokenizer_lm = _construir_planificador(
+                state_dict, dispositivo, materializado=materializado
+            )
         else:
             _LOG.warning(
                 "El artefacto NO trae el planificador de 5 Hz (prefijo %r). `src_latents` "

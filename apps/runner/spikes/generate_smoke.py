@@ -178,8 +178,9 @@ class CasoAB:
     SIN no cambia nada mas que `usar_lm`. Pero para saber si la diferencia
     CON-vs-SIN es mayor que el ruido, hace falta ademas variar la semilla, y eso
     obliga a cruzar dos ejes. Esta estructura es ese cruce, y existe para que la
-    matriz se ejecute tras UNA sola carga: el arranque en frio son ~643 s y seis
-    contenedores serian ~64 min de puro cargar el mismo artefacto seis veces.
+    matriz se ejecute tras UNA sola carga: el arranque en frio son ~110 s (eran
+    ~643 s antes de la lectura contigua de pesos) y seis contenedores serian
+    ~11 min de puro cargar el mismo artefacto seis veces.
 
     Que la matriz corra en un unico proceso NO contamina la comparacion, y esto
     esta verificado en el codigo, no supuesto:
@@ -863,7 +864,7 @@ async def ejecutar(args: argparse.Namespace) -> int:
             if not todo_ok:
                 if args.seguir_tras_fallo:
                     # En la matriz A/B una celda mala no invalida las demas, y la
-                    # carga (~643 s) ya esta pagada: se sigue y el codigo de
+                    # carga (~110 s) ya esta pagada: se sigue y el codigo de
                     # salida se queda en 1.
                     print("[aviso] comprobaciones bloqueantes fallidas: se sigue con la matriz.")
                 else:
@@ -921,8 +922,8 @@ def construir_parser() -> argparse.ArgumentParser:
             "Matriz A/B ejecutada tras UNA sola carga: celdas "
             "'etiqueta:duracion_s:semilla:si|no' separadas por comas, donde el ultimo "
             "campo es el planificador. Gana sobre --duraciones/--semilla/--sin-lm. "
-            "Existe porque el arranque en frio son ~643 s: seis pistas en seis "
-            "contenedores serian ~64 min de cargar seis veces el mismo artefacto. "
+            "Existe porque el arranque en frio son ~110 s: seis pistas en seis "
+            "contenedores serian ~11 min de cargar seis veces el mismo artefacto. "
             "No contamina la comparacion (ver CasoAB)."
         ),
     )
@@ -979,17 +980,16 @@ def construir_parser() -> argparse.ArgumentParser:
     parser.add_argument("--dtype", default=None, help="Por defecto, ACE_STEP_DTYPE.")
     parser.add_argument(
         # Sube de 600 a 1800 el 2026-09-02, y no es un aflojamiento gratuito.
-        # D-17 cuenta la CARGA dentro del presupuesto (`gpu_previo`), y el
-        # arranque en frio del artefacto con planificador son 614,1 s MEDIDOS
-        # (vram_load 571,4 + warm-up 42,7, este ultimo con el planificador ya
-        # dentro): con 600 el trabajo se abortaba ANTES de generar nada, con el
-        # mensaje correcto pero inutilizando el spike. Los 600 estaban calibrados
-        # contra el artefacto anterior (394-463 s). El techo sigue existiendo y
-        # sigue siendo un techo: 1800 deja sitio a una pista larga tras un
-        # arranque en frio y aborta igual si algo se queda colgado.
+        # D-17 cuenta la CARGA dentro del presupuesto (`gpu_previo`). Con el
+        # artefacto con planificador leido por `load_file` el arranque en frio era
+        # de 681,1 s MEDIDOS (vram_load 642,0 + warm-up 39,1): con 600 el trabajo
+        # se abortaba ANTES de generar nada. Con la lectura contigua de pesos son
+        # 109,7 s (vram_load 72,9 + warm-up 36,8), pero el techo NO se vuelve a
+        # bajar: 1800 deja sitio a una pista larga tras un arranque en frio y
+        # aborta igual si algo se queda colgado.
         "--max-gpu-seconds", type=int, default=1800,
         help=("Techo de D-17 en segundos, CARGA INCLUIDA. Arranque en frio medido con "
-              "el artefacto con planificador: 614 s."),
+              "el artefacto con planificador: 109,7 s (eran 681,1 s con load_file)."),
     )
     parser.add_argument("--periodo-muestreo", type=float, default=PERIODO_MUESTREO_S)
     parser.add_argument("--etiqueta", default="t03-smoke", help="Prefijo de los ficheros.")

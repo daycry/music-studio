@@ -184,6 +184,11 @@ _MAX_BODY_BYTES = 1 << 20
 _PIPELINE_FACTORY_ENV = "ACE_STEP_PIPELINE_FACTORY"
 _PIPELINE_FACTORY_DEFAULT = "ace_step_shim:build_pipeline"
 
+#: Interruptor de emergencia de la lectura contigua de pesos. Existe para poder
+#: reproducir el comportamiento anterior (`load_file`, ~11 MiB/s sobre el bind
+#: mount) si algun dia un artefacto raro se atraganta, no porque se espere usarlo.
+_CARGA_CONTIGUA_ENV = "ACE_STEP_CARGA_CONTIGUA"
+
 #: Campos aceptados en el cuerpo JSON de `POST /generate`. Lista blanca: un
 #: campo desconocido se rechaza con 400 en lugar de reventar al construir la
 #: dataclass, y evita que un cliente cuele parametros no contemplados.
@@ -305,6 +310,65 @@ def _resolve_pipeline_factory() -> Callable[..., Any]:
             "Revisa ACE_STEP_PIPELINE_FACTORY."
         )
     return factoria
+
+
+def _prefijos_residentes_gpu(factoria: Callable[..., Any]) -> tuple[str, ...]:
+    """Prefijos que el shim deja residentes en VRAM, preguntandoselo AL SHIM.
+
+    El reparto por componente es decision del shim y este adapter no la duplica:
+    solo la consulta para poder leer esos bytes **directos a la tarjeta** en vez
+    de darles la vuelta por RAM (3.005 MiB de pico que no caben con holgura en un
+    contenedor de 7,9 GiB). Si el shim no lo declara se devuelve la tupla vacia:
+    todo va a RAM y el shim lo sube como siempre; se pierde el ahorro de pico,
+    no la correccion.
+    """
+    modulo = sys.modules.get(getattr(factoria, "__module__", "") or "")
+    prefijos = getattr(modulo, "PREFIJOS_RESIDENTES_GPU", ())
+    if not isinstance(prefijos, (tuple, list)) or not all(isinstance(p, str) for p in prefijos):
+        _LOG.warning(
+            "El shim declara PREFIJOS_RESIDENTES_GPU=%r, que no es una tupla de cadenas. "
+            "Se ignora y se carga todo a RAM.",
+            prefijos,
+        )
+        return ()
+    return tuple(prefijos)
+
+
+def _cargar_state_dict(ruta: str, factoria: Callable[..., Any], device: str) -> Any:
+    """Lee el artefacto por tramos contiguos; cae a `load_file` si no puede.
+
+    La lectura contigua es la que baja `vram_load` de 709 s a ~70 s (ver el bloque
+    de comentario de `_load_sync`, etapa 3). El respaldo NO es silencioso: sale
+    por WARNING diciendo cuanto va a costar, porque un arranque de 12 minutos que
+    nadie ha visto venir es peor que un fallo.
+
+    Ninguna de las dos rutas deserializa objetos: `carga_contigua` lee la cabecera
+    JSON y bytes crudos, y `load_file` es el cargador de `safetensors`. La puerta
+    de entrada sigue siendo `assert_safetensors()`, ya ejecutada (D-14).
+    """
+    if _env_flag(_CARGA_CONTIGUA_ENV, True):
+        try:
+            import carga_contigua  # noqa: PLC0415  (perezoso: necesita torch)
+
+            destinos = {}
+            if str(device).startswith("cuda"):
+                destinos = {p: str(device) for p in _prefijos_residentes_gpu(factoria)}
+            return carga_contigua.cargar_contiguo(ruta, destinos=destinos)
+        except Exception as exc:  # noqa: BLE001
+            _LOG.warning(
+                "La lectura contigua de %r fallo (%r). Se vuelve a load_file(), que sobre "
+                "un bind mount ha medido ~11 MiB/s: espera unos 12 minutos de carga.",
+                ruta,
+                exc,
+            )
+    else:
+        _LOG.warning(
+            "%s desactivada por entorno: se usa load_file(), ~11 MiB/s sobre bind mount.",
+            _CARGA_CONTIGUA_ENV,
+        )
+    from safetensors.torch import load_file  # noqa: PLC0415
+
+    return load_file(ruta, device="cpu")
 
 
 # --------------------------------------------------------------------------- #
@@ -640,61 +704,73 @@ class AceStepAdapter:
         #    relanza la excepcion original: un load() fallido deja el adapter
         #    descargado, consistente y reintentable.
         #
-        # POR QUE EL ARTEFACTO SE MAPEA EN CPU Y NO EN `ctx.device` (2026-09-02)
-        # ---------------------------------------------------------------------
-        # Hasta hoy esta linea era `load_file(ruta, device=ctx.device)`, es decir,
-        # el artefacto ENTERO aterrizaba en VRAM antes de que el shim pudiera
-        # opinar sobre donde va cada componente. Con el artefacto de 5.878 MiB eso
-        # daba un pico de 6.178 MiB sobre ~6.988 MiB libres: 810 MiB de holgura. Al
-        # incorporar el planificador de 5 Hz (`lm.*`, +1.264 MiB en bf16) el
-        # artefacto pasa a 7.180 MiB y NO CABE: la carga reventaria antes de
-        # ejecutar una sola linea del shim.
+        # POR QUE EL ARTEFACTO SE LEE POR TRAMOS CONTIGUOS (2026-09-02, segunda vuelta)
+        # -----------------------------------------------------------------------
+        # Historia corta de esta linea, que ha cambiado dos veces el mismo dia:
         #
-        # La alternativa era dejar el LM en un fichero aparte montado en /weights.
-        # Se descarto: rompe el "un solo artefacto" (un `weights_sha256`, un
-        # manifiesto de procedencia, una ruta que verificar) y deja intactos los
-        # 810 MiB de holgura, que es el problema de fondo. Mapear en CPU lo
-        # resuelve de raiz.
+        #   1. `load_file(ruta, device=ctx.device)` — el artefacto ENTERO aterrizaba
+        #      en VRAM antes de que el shim pudiera opinar. Con el planificador de
+        #      5 Hz dentro (7.180 MiB) ya NO CABE en 8 GB: reventaba antes de
+        #      ejecutar una linea del shim.
+        #   2. `load_file(ruta, device="cpu")` — arreglaba el pico de VRAM (el shim
+        #      pasa a decidir componente a componente) pero **no** el tiempo:
+        #      `load_file` mapea el fichero y el coste real se paga despues, cuando
+        #      el shim toca cada tensor. Sobre el bind mount de Docker eso son
+        #      fallos de pagina de 4 KiB a 11 MiB/s MEDIDOS, o sea 709,08 s de
+        #      `vram_load`: 12 minutos que rompen la promesa de arranque en frio de
+        #      2-6 min de `ui-design.md` antes de escribirla en codigo.
+        #   3. Lo de ahora: `carga_contigua.cargar_contiguo()`. Los tensores de un
+        #      safetensors estan uno detras de otro, asi que se lee el rango entero
+        #      de cada tramo de una vez (`readinto`) y los tensores son vistas de
+        #      ese buffer. MEDIDO en el mismo contenedor: 118,8 MiB/s de media, once
+        #      veces la tasa por tensor y ya al nivel del disco fisico (141-144 MiB/s
+        #      leyendo desde Windows fuera de Docker).
         #
-        # Que cambia, medido:
-        #   * `load_file(..., device="cpu")` de safetensors NO copia: mapea el
-        #     fichero. MEDIDO sobre el artefacto de 5.878 MiB: RSS +45 MiB y
-        #     26,1 s (solo cabecera). El coste de leer los bytes se paga despues,
-        #     cuando el shim toca cada tensor, y en total es el MISMO que ya se
-        #     pagaba (los ~455 s de `vram_load` de las corridas del 2026-09-02 son
-        #     esas mismas paginas entrando por el bind mount).
-        #   * El pico de VRAM durante la construccion deja de ser el tamano del
-        #     artefacto y pasa a ser lo que el shim decide residenciar en GPU
-        #     (`dit.decoder`, 3.005 MiB). El pico de una GENERACION no cambia:
-        #     sigue siendo el condicionamiento, 6.190 MiB medidos.
+        # A/B completo, misma orden y misma pista de 25 s (2026-09-02, GTX 1070):
         #
-        # Contrato que esto le impone al shim, y que `ace_step_shim.py` cumple:
-        # tiene que colocar cada componente EL MISMO consumiendo el diccionario
-        # con `pop` (ya lo hacia, C3) y ademas MATERIALIZAR en RAM anonima lo que
-        # se quede en CPU. Un tensor que sigue respaldado por el mapeo del fichero
-        # se relee del disco pagina a pagina en cada subida a VRAM (42,91 s frente
-        # a 0,43 s, medido en `text_conditioning`), y la pagina es ademas
-        # desalojable: en un contenedor de 7,9 GiB eso no es una optimizacion, es
-        # la diferencia entre generar y no generar.
+        #                        load_file    contigua
+        #     vram_load            642,0 s      72,9 s
+        #     warm-up               39,1 s      36,8 s
+        #     ARRANQUE EN FRIO     681,1 s     109,7 s
+        #     generacion 25 s      127,8 s     110,6 s
+        #
+        # La generacion sale mas rapida, y no por casualidad: los buffers de la
+        # lectura contigua los reserva el asignador de PyTorch, alineados a 64
+        # bytes. Con `bytearray` (que devuelve pagina+16) la misma carga daba
+        # 86,7 MiB/s y el warm-up subia a 80,0 s, porque el planificador de 5 Hz
+        # corre en CPU y sus kernels vectorizados pagan la desalineacion.
+        #
+        # Lo que NO cambia, y es deliberado:
+        #   * El reparto por componente lo sigue decidiendo EL SHIM. Aqui solo se
+        #     le dice al cargador que `dit.decoder` acabara en VRAM para leerlo
+        #     directo a la tarjeta y ahorrarse 3.005 MiB de pico en RAM; ese dato
+        #     se toma del propio shim (`PREFIJOS_RESIDENTES_GPU`), no se duplica.
+        #   * El pico de VRAM durante la construccion sigue siendo lo que el shim
+        #     residencia (`dit.decoder`, 3.005 MiB), y el pico de una GENERACION
+        #     sigue siendo el condicionamiento (6.190 MiB medidos).
+        #   * Los tensores llegan MATERIALIZADOS en memoria anonima, que es lo que
+        #     el shim conseguia clonando: un tensor respaldado por el mapeo del
+        #     fichero se relee pagina a pagina en cada subida a VRAM (42,91 s
+        #     frente a 0,43 s). Ahora el shim ve `tensores_materializados` y se
+        #     ahorra tambien esos clones.
+        #
+        # M-5: si cualquiera de las etapas 3-4 falla, se limpia el estado parcial
+        # (pipeline con pesos en VRAM, state_dict huerfano) y se relanza la
+        # excepcion original: un load() fallido deja el adapter descargado,
+        # consistente y reintentable.
         state_dict: Any = None
         try:
             with timer.stage("vram_load"):
                 import torch  # noqa: PLC0415  (perezoso a proposito)
-                from safetensors.torch import load_file  # noqa: PLC0415
 
                 try:
                     torch.cuda.reset_peak_memory_stats()
                 except Exception:  # noqa: BLE001  (una GPU rara no debe tumbar la carga)
                     _LOG.debug("No se pudo reiniciar el contador de pico de VRAM.")
-                # La factoria se resuelve ANTES de mapear ~7 GB de pesos: el fallo
+                # La factoria se resuelve ANTES de leer ~7 GB de pesos: el fallo
                 # tipico (shim ausente) no debe dejar un state_dict huerfano.
                 factoria = _resolve_pipeline_factory()
-                # `load_file` es el cargador de safetensors: mapea tensores, no
-                # deserializa objetos de Python. Es justamente lo que exige D-14.
-                # `device="cpu"` es DELIBERADO y no debe volver a `ctx.device`:
-                # ver el bloque de comentario de arriba. Quien decide que va a la
-                # GPU es el shim, componente a componente.
-                state_dict = load_file(ruta, device="cpu")
+                state_dict = _cargar_state_dict(ruta, factoria, ctx.device)
                 self._pipeline = factoria(
                     state_dict=state_dict,
                     device=ctx.device,

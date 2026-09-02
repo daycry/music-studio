@@ -342,6 +342,7 @@ def construir_text_encoder(
     state_dict: dict[str, Any],
     *,
     consumir: bool = True,
+    materializado: bool = False,
 ) -> tuple[Any, Any, torch.dtype]:
     """Instancia el Qwen3 del artefacto y le carga sus 310 tensores.
 
@@ -359,11 +360,14 @@ def construir_text_encoder(
     Args:
         state_dict: diccionario completo del artefacto.
         consumir: si es `True` (por defecto) **saca** las claves `text_encoder.*`
-            del diccionario del llamante. Es deliberado: el adapter carga el
-            artefacto entero con `load_file(..., device=ctx.device)`, es decir en
-            VRAM, y en una tarjeta de 8 GB esos 1.136 MiB duplicados son la
-            diferencia entre generar y no generar. Con `consumir=False` el
-            llamante se queda la copia en VRAM y es cosa suya liberarla.
+            del diccionario del llamante. Es deliberado: el artefacto llega entero
+            y en una tarjeta de 8 GB esos 1.136 MiB duplicados son la diferencia
+            entre generar y no generar. Con `consumir=False` el llamante se queda
+            la copia y es cosa suya liberarla.
+        materializado: los tensores vienen de `carga_contigua`, o sea que ya estan
+            en RAM anonima. Entonces el clon de mas abajo sobra: son 1.136 MiB
+            copiados para nada. Con `load_file` (mapeo del fichero) la bandera va
+            a `False` y se clona como siempre.
 
     Returns:
         `(modelo_en_cpu, config, dtype_del_artefacto)`.
@@ -392,7 +396,7 @@ def construir_text_encoder(
         # A RAM: los pesos viven en CPU y solo suben a VRAM durante encode().
         origen = tensor.detach()
         destino = origen.to("cpu")
-        if destino.data_ptr() == origen.data_ptr():
+        if destino.data_ptr() == origen.data_ptr() and not materializado:
             # `.to("cpu")` sobre un tensor que ya esta en CPU NO copia: devuelve
             # el mismo almacenamiento. Si venia de `safe_open`, ese almacenamiento
             # es el fichero mapeado en memoria, y la primera subida a VRAM acaba

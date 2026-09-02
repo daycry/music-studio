@@ -40,6 +40,7 @@ progreso es `docs/roadmap/2026-07-27-plataforma-musical-ia/tasks.md`; anota ahí
 | `vram_profile.py` | `T-03` | Tiempos de inferencia, perfil de VRAM, arranque en frío | entregado |
 | `concurrency_profile.py` | `T-04` | Dos inferencias simultáneas | **pendiente** |
 | `capability_probe.py` | `T-07` | Matriz de capacidades verificadas | entregado |
+| `g1_generar.py` | `T-09` (preparación) | Kit de G1: genera la serie propia de los 10 briefs de §4, anonimizada y con mapa sellado. **No ejecuta el gate** | entregado (§5.5) |
 | `requirements.txt` | — | Dependencias de spikes y adapter (el mock no necesita ninguna) | entregado |
 
 Orden de ejecución: **`T-05` (contenedor) → `T-03` (línea base) → `T-04` (concurrencia,
@@ -412,6 +413,228 @@ perder el guiado.
 > **El presupuesto de D-17 incluye la carga.** Por eso `--max-gpu-seconds` pasó de 600 a
 > 1800: con 600 el trabajo se abortaba tras cargar y antes de generar nada. El techo sigue
 > siendo un techo.
+
+---
+
+### 5.5 Kit de ejecución de G1 — `g1_generar.py`
+
+Genera la **serie propia** de las 10 pistas del gate G1 leyendo los briefs directamente de
+`docs/roadmap/2026-07-27-plataforma-musical-ia/gates/g1-protocolo.md` §4.
+
+> **Este script prepara el gate; no lo ejecuta.** No puntúa, no compara, no abre el mapa
+> ciego y no escribe veredicto. Escuchar y puntuar lo hace **el propietario**, y los
+> umbrales de §2 tienen que estar **ratificados y firmados (§9) antes de la primera
+> escucha** — sin eso la sesión no es válida (§8.1) por muy bien que salga el audio.
+> Tampoco genera las líneas base de Suno ni de librería: eso es §5.1 y viene de fuera.
+
+#### Qué hace, en orden
+
+1. **Lee los 10 briefs de §4** del protocolo en cada arranque y anota su SHA-256. No están
+   copiados en el código a propósito: §4 los declara *propuestos, pendientes de
+   ratificación*, y el propietario puede sustituir cualquiera antes de generar. Si
+   estuvieran duplicados, una sustitución en el protocolo no llegaría al audio.
+2. **Deriva el prompt de estilo** de forma mecánica de las columnas (§4.2) — el mismo
+   literal que luego va a Suno, a la búsqueda en librería y a CLAP.
+3. **Valida las letras** que le pases: etiquetas canónicas, tildes, extensión mínima de
+   §4.1. Si alguna falla, **no genera nada** y sale con código `3`.
+4. **Genera de una en una**, tras una sola carga, con el planificador de 5 Hz puesto y los
+   metadatos poblados.
+5. **Anonimiza** cada pista y sella el mapa con SHA-256.
+6. Deja el árbol de carpetas de §10.2 (`01-briefs/`, `02-generado/propio/`, `05-ciego/`,
+   `08-manifiestos/`) fuera del repo.
+
+#### Las letras las escribes tú
+
+`--letras` es obligatorio. §4.1 y la precondición 7 de §9.1 ponen las 10 letras del lado
+del propietario, y el script **no inventa ninguna**: una letra inventada haría que la
+dimensión 4 y el WER midieran otra cosa. Lo único que se da hecho son los esqueletos con
+las etiquetas ya puestas, sin un solo verso dentro:
+
+```bash
+python apps/runner/spikes/g1_generar.py --escribir-plantillas D:/srv/ace-step/letras/g1
+```
+
+Deja `B-01.txt` … `B-10.txt` con `[verse]`/`[chorus]` vacíos y, al lado, `B-NN.BRIEF.txt`
+con el brief delante para escribir sin ir al protocolo. **No pisa ficheros existentes.**
+
+Tres cosas se comprueban y **bloquean**, porque las tres costaron una tanda de GPU el
+2026-09-02:
+
+| Comprobación | Por qué bloquea |
+|---|---|
+| Solo `[intro] [verse] [chorus] [bridge] [outro]`, en minúsculas | Las etiquetas de estilo Suno (`[VERSO 1 - HOMBRE, entra el beat]`) **viajan verbatim al modelo y se cantan**. Con las canónicas el pulso salió un 47 % más marcado. Una pista generada con etiquetas malas no se distingue por el nombre del fichero |
+| Letra en castellano con al menos una tilde o eñe | «soñar» y «sonar» son palabras distintas y secuencias de tokens distintas. Una letra castellana sin ni una tilde casi siempre es una a la que se le han caído, y hundiría el WER por un fallo nuestro. Escape consciente: `--permitir-sin-tildes` |
+| ≥ 1:30 → dos `[verse]` y un `[chorus]`; más corta → dos frases | Es la extensión mínima que fija §4.1 |
+
+#### Ensayo en seco (haz siempre esto primero)
+
+No carga los pesos ni genera audio: lo único que le pide a la GPU es su nombre y su VRAM
+para detectar el nivel.
+
+```bash
+MSYS_NO_PATHCONV=1 docker run --rm --gpus all -e ACE_STEP_REQUIRE_GPU=1 \
+  -v "D:\srv\ace-step\weights:/weights:ro" \
+  -v "D:\srv\ace-step\out:/outputs" \
+  -v "D:\srv\ace-step\letras\g1:/letras-g1:ro" \
+  -v "C:\Users\daycr\OneDrive\Development\claude\suno\apps\runner:/work:ro" \
+  -v "C:\Users\daycr\OneDrive\Development\claude\suno\docs\roadmap\2026-07-27-plataforma-musical-ia\gates:/protocolo:ro" \
+  --entrypoint python ace-step-runner:t05 /work/spikes/g1_generar.py \
+    --dry-run --letras /letras-g1 --raiz-evaluacion /outputs/g1-2026
+```
+
+Fíjate en que hay **un montaje nuevo**: `gates/` en `/protocolo`. Sin él el script no
+encuentra los briefs y aborta diciéndolo (el repo entero no está montado en el contenedor).
+
+El ensayo en seco también corre **fuera del contenedor**, en el portátil, sin GPU ni torch
+con CUDA — ahí el nivel sale «no detectado» y lo dice:
+
+```bash
+python apps/runner/spikes/g1_generar.py --dry-run --letras D:/srv/ace-step/letras/g1
+```
+
+#### Generación real
+
+**Idéntico, quitando `--dry-run` y añadiendo `--si`.** El `--si` es deliberado: sin
+terminal interactiva el script se niega a arrancar una tanda de horas sin que nadie haya
+visto la estimación.
+
+```bash
+MSYS_NO_PATHCONV=1 docker run --rm --gpus all -e ACE_STEP_REQUIRE_GPU=1 \
+  -v "D:\srv\ace-step\weights:/weights:ro" \
+  -v "D:\srv\ace-step\out:/outputs" \
+  -v "D:\srv\ace-step\letras\g1:/letras-g1:ro" \
+  -v "C:\Users\daycr\OneDrive\Development\claude\suno\apps\runner:/work:ro" \
+  -v "C:\Users\daycr\OneDrive\Development\claude\suno\docs\roadmap\2026-07-27-plataforma-musical-ia\gates:/protocolo:ro" \
+  --entrypoint python ace-step-runner:t05 /work/spikes/g1_generar.py \
+    --letras /letras-g1 --raiz-evaluacion /outputs/g1-2026 --si
+```
+
+Si se corta a media tanda, se reanuda por brief y **no se repite lo ya hecho**:
+
+```bash
+    ... /work/spikes/g1_generar.py --letras /letras-g1 --desde B-06 --si
+    ... /work/spikes/g1_generar.py --letras /letras-g1 --solo B-03,B-07 --si
+```
+
+La **semilla maestra manda sobre todo**: con la misma `--semilla-maestra` (20260902 por
+defecto) salen las mismas semillas, las mismas etiquetas ciegas y el mismo barajado. Es lo
+que hace reproducible una repetición de §8.5.
+
+#### Cuánto tarda — está medido, no estimado a ojo
+
+El script imprime la estimación **antes de pedir confirmación**, calibrada con **9
+mediciones reales** de esta misma máquina (`libre-canonica`, `t05-final`, `ab-planificador`,
+`con-limitador`…) y no con un factor inventado. Da un rango porque el planificador de 5 Hz
+es autorregresivo y **su coste varía entre corridas de la misma duración**: cinco pistas de
+25 s costaron entre 42,5 s y 113,1 s.
+
+| Tomas por brief | Pistas | Audio | Optimista | Central | Pesimista |
+|---|---|---|---|---|---|
+| **3** (§5.2) | 30 | 3.000 s | 124 min | **133 min** | 159 min |
+| 1 (`--tomas 1`) | 10 | 1.000 s | 41 min | **46 min** | 56 min |
+
+Carga en frío incluida (~113 s, **una sola vez** para toda la tanda). La pendiente robusta
+son **~2,7 s de cómputo por segundo de audio**; lo que varía es el término fijo.
+
+> **`--tomas` vale 3 por defecto, no 1.** §5.2 fija «3 tomas por brief y por serie
+> (semillas distintas, todas registradas)» y que el propietario elija una comparando solo
+> dentro de la serie, **al menos 24 h antes** de la sesión. Con una sola toma no hay nada
+> que elegir y el material no cumple el protocolo. `--tomas 1` existe para un ensayo, y
+> entonces el informe queda marcado `sesion_no_conforme_5_2`.
+
+#### El ciego empieza aquí, y por qué
+
+§5.4 anonimiza **series** (propia / Suno / librería) y eso pasa después. Pero hay un ciego
+**antes**: §5.2 te obliga a elegir una toma de tres, y si los ficheros se llamaran
+`B01-toma1/2/3` esa elección estaría anclada por el orden. Por eso:
+
+- el nombre es **opaco y no ordenado** — `B01-3f9a2c.wav`, con
+  `sha256(semilla_maestra|brief|toma)[:6]`;
+- el **orden de generación se baraja** dentro de cada brief, para que el `mtime` tampoco
+  reconstruya el índice de toma;
+- **`02-generado/propio/registro-tecnico.json` se puede abrir** sin romper nada: lleva
+  tiempos por etapa, pico de VRAM, duración real y nivel de GPU, pero **ni semillas ni
+  índices de toma**;
+- la semilla y el índice viven **solo** en `05-ciego/mapa-tomas.csv` y en
+  `08-manifiestos/`, sellados con SHA-256 (§5.6).
+
+```bash
+# comprobar el sello antes de abrir el mapa (§5.6)
+cd D:/srv/ace-step/out/g1-2026/05-ciego && sha256sum -c mapa-tomas.sha256
+```
+
+> **Riesgo residual declarado**, en la línea de §5.4.5: con 3 tomas, el barajado deja el
+> orden original **1 de cada 6 veces**, así que ordenar por `mtime` da un acierto ocasional.
+> Y quien lanza el script ve la consola mientras corre. Si eso te importa, redirige la
+> salida a fichero y no la mires. **Lo que no se puede eliminar se escribe.**
+
+#### El nivel de GPU va en el acta, y no es un adorno
+
+El script resuelve el nivel con `adapters/ace_step/gpu_tiers.py` y lo escribe en el informe,
+en el registro técnico **y en cada pista**. En esta máquina sale:
+
+```
+nivel detectado: tier3 de 8 niveles
+nivel=tier3 vram=8191 MiB dtype=float16 atencion=eager
+planificador=acestep-5Hz-lm-0.6B lote<=2 duracion<=480s offload_dit=True cuantizar=False
+```
+
+**tier3 es el tercer nivel por abajo de ocho**: sin BF16, sin INT8, atención `eager` y
+planificador de 0,6B. El hardware de referencia de la spec (RTX 4090/5090) es **tier6b** y
+corre otra configuración — no es el mismo modelo más despacio, es **una configuración
+distinta**. Consecuencia directa para el acta: **un `NO-GO` medido en tier3 dice «no sirve
+en tier3», no «no sirve»**, y una decisión sobre 589 h no se puede tomar sobre una medición
+mal atribuida. Si el nivel no aparece encima del veredicto, esa distinción se pierde.
+
+`--forzar-nivel` existe para pruebas y **grita en el informe**: un acta no puede decir que
+se generó en un nivel que no era.
+
+#### Qué queda escrito
+
+```
+D:\srv\ace-step\out\g1-2026\
+  01-briefs\          brief JSON + prompt literal + letra literal + letra sin marcas (referencia del WER, §4.1)
+  02-generado\propio\ los WAV con nombre ciego + registro-tecnico.json  <- se puede abrir
+  05-ciego\           mapa-tomas.csv + mapa-tomas.sha256 + sello.json + LEEME-NO-ABRIR.txt
+  08-manifiestos\     manifiesto retroactivo simplificado por toma (§10.2)  <- lleva semilla
+  g1-generacion-informe.json
+```
+
+El **manifiesto retroactivo simplificado** de §10.2 (modelo, SHA-256 de pesos, semilla,
+prompt, letra, fecha, hardware, parámetros) se escribe por pista. Es *retroactivo y
+simplificado* porque el manifiesto v1 real llega con C-10a (`T-26`, F5) y estas pistas nacen
+antes de que exista el ledger: una cadena WORM **no admite backfill** (D-20), así que la
+trazabilidad de G1 es documental y no pretende otra cosa.
+
+#### Códigos de salida
+
+| Código | Significado |
+|---|---|
+| `0` | Todo bien (o ensayo en seco correcto, o cancelado en la confirmación) |
+| `1` | Se generó, pero alguna pista falló sus comprobaciones observables |
+| `2` | Excepción durante la tanda — el informe y el mapa se escriben igual |
+| `3` | **Letras inválidas o ausentes. No se generó nada y no se tocó la GPU** |
+
+#### Lo que sigue abierto y no lo cierra este script
+
+- **Ratificación firmada de los umbrales y de los briefs (§9)** — sin ella la sesión no es
+  válida (§8.1). Es del propietario y va **antes** de generar.
+- **Decisión D-23 de loudness por destino**, por escrito antes de la primera escucha
+  (§5.5, deuda declarada).
+- **Líneas base de librería elegidas antes de generar** (§5.1, regla anti-sesgo), y la
+  decisión de usar Suno o ir a la **variante B** (§5.6).
+- **Normalización de loudness de sesión** (−16 LUFS / ≤ −1 dBTP), recodificación uniforme y
+  borrado de metadatos de las 30 pistas (§5.4-§5.5): eso es `ffmpeg` sobre las tres series
+  juntas, y aquí solo existe una.
+- **CLAP y WER** (§6): dependen de identificadores y SHA-256 de pesos que `T-09` fija al
+  ejecutar.
+
+> **La tonalidad no la declara ningún brief.** El script deriva el **modo** del carácter
+> declarado en §4 («melancólico», «oscuro», «solemne» → menor) pero la **tónica es una
+> convención fija** (A menor / C mayor, igual para los diez), no una decisión musical. Se
+> mantiene constante porque §5.2 manda congelar lo que no sea un eje del brief. Para
+> cambiarla en algún brief: `--extra` con
+> `{"B-10": {"keyscale": "F# minor"}}`, y el informe registra que vino de ahí.
 
 ---
 
