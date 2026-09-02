@@ -30,6 +30,11 @@
 #   Copiado el      : 2026-09-01
 #   Licencia        : Apache-2.0 (uso comercial permitido). El aviso de copyright
 #                     original se conserva integro arriba, sin alterar.
+#   Procedencia verificada el 2026-09-02 contra la API de GitHub: el tag v0.34.0
+#   es un tag ANOTADO (objeto a74996a0986d28c02b67f4c08795bc39900968a9) que
+#   apunta al commit 50dea89dc6036e71a00bc3d57ac062a80206d9eb; la ruta declarada
+#   en ese ref devuelve 17.085 bytes, blob SHA-1 a10b616b..., y el contenido
+#   descargado tiene el SHA-256 1d5df4ff... anotado arriba. Los tres coinciden.
 #
 # La version de diffusers no es una eleccion nuestra: el config del VAE que viaja
 # en el artefacto declara `"_diffusers_version": "0.34.0"`, asi que se fija esa.
@@ -97,17 +102,23 @@ El decode monolitico de 180 s **no cabe** en los 8 GB de la GTX 1070 (techo
 medido: 40-46 s). La causa es la piramide de activaciones: cada trama latente se
 convierte en 1920 muestras y el ultimo bloque trabaja con 128 canales sobre esa
 longitud completa, asi que el pico crece de forma estrictamente lineal con la
-duracion. Medido en esta maquina, con linealidad perfecta entre W = 128 y
-W = 512: **5,16 MB de pico de VRAM por trama latente**, o sea ~129 MB por segundo
-de audio. Los 180 s de una sola vez pedirian ~23 GB.
+duracion. Medido en esta maquina, con linealidad practicamente perfecta entre
+W = 128 y W = 512 (4,926 / 4,924 / 4,923 MiB por trama, ya descontados los
+161 MiB de pesos): **4,92 MiB = 5,17 MB de activaciones por trama latente**, o
+sea ~129 MB por segundo de audio. Los 180 s de una sola vez pedirian **23,1 GiB**.
 
 La red es una CNN 1-D **no causal** con relleno simetrico. Eso tiene una
 consecuencia util: lejos de los bordes reales de la senal, una muestra de salida
 depende **solo** de una vecindad finita del latente. Ese campo receptivo se ha
 medido perturbando una unica trama latente y viendo hasta donde se mueve la
-salida: **radio 9,26 tramas latentes** (0,37 s). Es pequeno porque las
-dilataciones grandes viven en los bloques de mayor tasa de muestreo, donde una
-trama latente ya se ha estirado x1920.
+salida: el soporte no nulo se derrama **16.003 muestras** a cada lado de la trama
+tocada, o sea **radio 8,34 tramas latentes (0,333 s)**; en numero entero de
+tramas, la perturbacion de la trama 48 toca exactamente las tramas [39, 57],
+**radio 9**. Fuera de ahi la diferencia es cero exacto, no "pequena": el soporte
+es finito de verdad. Se comprobo con dos amplitudes de perturbacion (delta 3,0 y
+0,3) y da el mismo radio, asi que no es un artefacto del tamano del empujon. Es
+pequeno porque las dilataciones grandes viven en los bloques de mayor tasa de
+muestreo, donde una trama latente ya se ha estirado x1920.
 
 Esa medicion hay que hacerla **en CPU y en fp32**, no en la GPU: en GPU cuDNN
 elige algoritmos de convolucion que mezclan globalmente (FFT / Winograd), y una
@@ -125,17 +136,20 @@ De ahi el esquema, con tres numeros y no dos::
 
 * **W = 256** porque el tiempo de decode es casi plano con W y la VRAM no.
   Medido sobre los 4500 latentes de 180 s (S = 32, G = 8 para aislar el efecto
-  de W): W = 512 tarda 15,9 s con 2682 MiB de pico, W = 256 tarda 17,1 s con
-  1422 MiB y W = 128 tarda 18,4 s con 792 MiB. Duplicar el pico de VRAM para
-  ahorrar 1,2 s de 17 es mal negocio en una tarjeta de 8 GB donde el DiT tiene
+  de W): W = 512 tarda 15,98 s con 2682 MiB de pico, W = 256 tarda 17,26 s con
+  1422 MiB y W = 128 tarda 18,76 s con 792 MiB. Duplicar el pico de VRAM para
+  ahorrar 1,3 s de 17 es mal negocio en una tarjeta de 8 GB donde el DiT tiene
   que seguir residente; y bajar mas multiplica las costuras sin ganar tiempo.
 * **G = 16** porque las primeras y ultimas G tramas de cada ventana estan
   contaminadas por el relleno con CEROS del borde de la ventana, que en mitad de
-  la cancion es una mentira (ahi la senal continua). G = 16 da 1,7x sobre el
-  radio medido de 9,26. Esas muestras **no se mezclan: se tiran**. Medido: con
-  G = 0 el error medio en las costuras (4,0e-4) casi duplica al de fondo
-  (2,3e-4); a partir de G = 4 ya no se distingue del fondo, y G = 16 deja
-  margen de sobra.
+  la cancion es una mentira (ahi la senal continua). G = 16 da 1,9x sobre el
+  radio medido de 8,34 tramas. Esas muestras **no se mezclan: se tiran**.
+  Medido contra el decode monolitico (W = 256, S = 48, 600 tramas): con G = 0 el
+  error medio en las costuras es 3,00e-4 frente a 2,34e-4 de fondo (**1,28x**, la
+  costura se nota); con G = 4, 8 y 16 el ratio baja a **0,93x**, es decir que en
+  las costuras el error es incluso algo MENOR que en el resto, porque el
+  crossfade promedia dos resultados con ruido de convolucion independiente. A
+  partir de G = 4 la costura ya no se distingue; G = 16 deja margen de sobra.
 * **S > 2G** es la condicion dura para que no quede hueco entre ventanas
   consecutivas despues de descartar las guardas. S = 48 deja C = 16 tramas de
   solapamiento LIMPIO donde hacer el crossfade, y cuesta un 25 % de computo
@@ -158,21 +172,30 @@ la misma senal eso es inofensivo.
 
 Verificacion de las costuras y coste (medido, no razonado)
 ----------------------------------------------------------
+Todas las cifras de esta seccion son de la GTX 1070 (sm_61, 8192 MiB) dentro de
+`ace-step-runner:t05` (torch 2.13.0+cu126), con las 182 claves reales del
+artefacto, verificadas el 2026-09-02 en tres ejecuciones independientes.
+
 Decodificando por trozos el latente REAL de silencio del artefacto
-(`aux.silence_latent`, 180 s), el salto muestra a muestra `|x[n+1] - x[n]|` en
-las 21 costuras llega a 1,26e-4 frente a un maximo global de 7,04e-4: en las
-costuras el salto es **0,18 veces** el mayor salto natural de la senal, asi que
-no hay escalon que oir. Sobre un latente aleatorio, la diferencia entre
-decodificar por trozos y hacerlo de una vez es de 2,2e-4 de media con una senal
-de rms 0,22 (-60 dB), repartida por igual dentro y fuera de las costuras: ese
-residuo NO viene de las costuras, sino de que cuDNN elige distinto algoritmo de
-convolucion segun la forma del tensor.
+(`aux.silence_latent[:, :, :4500]`, 180 s), el salto muestra a muestra
+`|x[n+1] - x[n]|` en las 21 costuras llega a 1,45-1,48e-4 frente a un maximo
+global de 7,05-7,30e-4: en las costuras el salto es **0,20-0,21 veces** el mayor
+salto natural de la senal, asi que no hay escalon que oir. Sobre un latente
+aleatorio de 600 tramas —la mayor duracion que permite comparar contra el
+monolitico sin salirse de los 8 GB— la diferencia entre decodificar por trozos y
+hacerlo de una vez es de **2,30e-4 de media** (maximo 9,3e-3 a 1,6e-2) con una
+senal de rms 0,2300, o sea **-60,0 dB**; y dentro de las costuras esa diferencia
+es 2,05-2,08e-4, algo MENOR que la global. Ese residuo NO viene de las costuras,
+sino de que cuDNN elige distinto algoritmo de convolucion segun la forma del
+tensor: es del mismo orden dentro y fuera, y por eso el maximo puntual varia
+tanto de una ejecucion a otra sin que las costuras se muevan.
 
 Con los valores por defecto, 4500 tramas latentes (180 s) se decodifican en 22
-ventanas, en **18,8-23,9 s** (0,10-0,13 s de computo por segundo de audio, entre
-7,5x y 9,6x el tiempo real), con **1422 MiB de pico de VRAM asignada** (161 MiB
-de pesos + 1261 MiB de activaciones) y 1532 MiB reservados. Salida finita, sin
-NaN ni inf.
+ventanas, en **18,6-19,1 s** (0,104-0,106 s de computo por segundo de audio,
+9,4-9,6x el tiempo real), con **1425 MiB de pico de VRAM asignada** (161 MiB de
+pesos + ~1264 MiB de activaciones) y 1552 MiB reservados. Salida
+`(1, 2, 8.640.000)` en fp32, finita, con 0 NaN y 0 inf, y con el numero de
+muestras exacto (4500 x 1920).
 
 fp16: donde si y donde no
 -------------------------
@@ -197,12 +220,18 @@ fp32 en la conv1d FINAL (medido)
 La ultima conv (128 -> 2 canales, kernel 7) se ejecuta **siempre en fp32**, y no
 por precision sino por velocidad. Medida en esta GPU sobre 720.000 muestras, con
 los pesos reales del artefacto y promedio de 10 pasadas, en dos ejecuciones
-distintas: **fp16 31,4-36,5 ms frente a fp32 8,5-8,9 ms**, o sea fp16 es
-**3,5-4,3x MAS LENTA** (la medicion previa del proyecto, 28,5 frente a 9,5 ms,
-daba 3x: mismo sentido y mismo orden de magnitud). cuDNN no encuentra un kernel
-decente con solo 2 canales de salida y cae a una implementacion mala, mientras
-que en fp32 usa un kernel razonable. Es la unica capa del decoder donde esto
-pasa, porque es la unica con un numero de canales de salida ridiculo.
+distintas: **fp16 28,4-33,8 ms frente a fp32 9,0-9,7 ms**, o sea fp16 es
+**3,06-3,74x MAS LENTA**. Notese que la dispersion esta toda en fp16 (28,4 /
+29,5 / 33,8 ms en tres ejecuciones) mientras que fp32 es estable (9,0 / 9,0 /
+9,7 ms): el mal kernel ademas es irregular. Reproduce la medicion previa del
+proyecto (28,5 frente a 9,5 ms, 3x). cuDNN no encuentra un kernel decente con
+solo 2 canales de salida
+y cae a una implementacion mala, mientras que en fp32 usa un kernel razonable. Es
+la unica capa del decoder donde esto pasa, porque es la unica con un numero de
+canales de salida ridiculo.
+
+Ahorra ~20 ms por ventana; sobre las 22 ventanas de una pista de 180 s son ~0,43 s
+de los ~19 s totales.
 
 Como efecto colateral util, la salida ya sale en fp32, que es lo que quiere el
 post-proceso de audio.
@@ -286,11 +315,15 @@ SOLAPE_LATENTE_POR_DEFECTO = 48  # 1,92 s
 GUARDA_LATENTE_POR_DEFECTO = 16  # 0,64 s por lado, descartadas
 
 #: Pico de VRAM por trama latente y elemento de lote. MEDIDO en la GTX 1070 con
-#: pesos fp16: 5,161 MB/trama de pico del asignador y hasta 5,35 MB/trama de
-#: memoria que el driver ve consumida (fragmentacion incluida); se redondea al
-#: alza. Solo se usa para abortar ANTES de asignar, nunca para reservar: un OOM
-#: de driver deja el asignador cacheante de PyTorch corrupto y no se puede
-#: capturar y continuar.
+#: los pesos fp16 reales, descontados los 161 MiB de parametros: 4,92 MiB/trama
+#: (5,17 MB) de pico del ASIGNADOR, con linealidad practicamente perfecta entre
+#: W = 128 y W = 512, y 5,43 MiB/trama (5,70 MB) si se cuenta la memoria
+#: RESERVADA (fragmentacion incluida). Se fija en 5,5 MB y la diferencia contra
+#: lo reservado la absorbe `BYTES_COLCHON_VRAM`: para W = 256 el guardarrail
+#: exige 1726 MiB frente a los 1552 MiB reservados de verdad, o sea que es
+#: conservador, que es como tiene que ser. Solo se usa para abortar ANTES de
+#: asignar, nunca para reservar: un OOM de driver deja el asignador cacheante de
+#: PyTorch corrupto y no se puede capturar y continuar.
 BYTES_PICO_POR_TRAMA = 5_500_000
 
 #: Colchon fijo sobre la estimacion anterior: fragmentacion del asignador,
@@ -493,8 +526,10 @@ class OobleckDecoder(nn.Module):
         hidden_state = self.snake1(hidden_state)
 
         # MODIFICADO: la conv final va en fp32 a proposito. Medido en la GTX 1070
-        # sobre 720.000 muestras: fp16 28,5 ms frente a fp32 9,5 ms (3x mas lenta
-        # en fp16), porque cuDNN no tiene kernel decente con 2 canales de salida.
+        # sobre 720.000 muestras: fp16 28,4-29,5 ms frente a fp32 9,0-9,7 ms
+        # (3,1x mas lenta en fp16), porque cuDNN no tiene kernel decente con solo
+        # 2 canales de salida. Ademas la salida ya sale en fp32, que es lo que
+        # quiere el post-proceso de audio.
         return F.conv1d(
             hidden_state.float(),
             self._peso_conv2_fp32(),
