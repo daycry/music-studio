@@ -110,6 +110,24 @@ Y, aguas abajo, las **407 h / 24.420 €** de F10 y F11 (Fases 2 y 3, hoy `bloqu
 | Pistas propias evaluadas | **Una por brief** (la seleccionada según §5.2). Las tomas descartadas se archivan pero **no puntúan** |
 | Empates o dudas al puntuar | Se puntúa **a la baja**. Si el propietario duda entre 3 y 4, es **3** |
 
+### 2.1-bis Antes de firmar: cuenta las líneas base (A-13)
+
+> ⚠️ **La regla de la fila «un brief sin línea base cuenta como derrota» puede decidir el gate sola, y en contra, sin que nadie escuche nada.**
+>
+> **Seis** de los diez briefs piden voz cantada **en castellano** (B-01, B-02, B-03, B-05, B-06, B-08). Si esos seis se quedan sin línea base utilizable, son **seis derrotas**, y el criterio 5 dispara `NO-GO` con más de cinco. El motivo real no sería la calidad del modelo: sería el catálogo de una librería.
+>
+> Por eso el recuento va **antes de la firma de §9 y antes de generar nada**, no después. La hoja está en [`g1-lineas-base.md`](./g1-lineas-base.md): tres candidatos por brief, y en la última columna si tiene voz cantada en el idioma pedido, solo instrumental, o nada.
+>
+> **El número resultante decide qué se firma:**
+>
+> | Líneas base utilizables | Qué se firma |
+> |---|---|
+> | 8-10 | Opción **(0)** de A-13 y adelante: el riesgo no se materializó |
+> | 6-7 | Opción **(0)** con **instrumental declarada** para las que falten, puntuada con la pregunta real del protocolo |
+> | ≤ 5 | **Para.** Aquí el veredicto lo decidiría el catálogo. Se decide A-13 explícitamente antes de generar |
+>
+> La salida de la opción (0) —línea base instrumental declarada como tal, con su D5 puntuado honestamente bajo porque el brief pide voz y ella no la tiene— **no toca ningún umbral ni su denominador**, y por eso es la única que no tiene que justificarse ante la regla de inmutabilidad de arriba.
+
 ### 2.2 Nota sobre el quórum desaparecido
 
 `evaluation.md` §10.2 escribía el umbral de aprobado como «7 de las 10 pistas con ≥ 4/5 en la dimensión 5, **por al menos 2 de 3 evaluadores**». En modo solo **no hay 2 de 3**: hay **1 de 1**. Conviene ser explícito sobre qué se pierde y qué no:
