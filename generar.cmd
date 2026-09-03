@@ -19,6 +19,17 @@ rem
 rem  ACE_STEP_REQUIRE_GPU=1 es el guardarrail G-01: si el entorno esta mal
 rem  configurado, el runner se niega a arrancar en vez de degradar al mock y
 rem  darte audio simulado sin avisarte.
+rem
+rem  Aislamiento en tiempo de ejecucion (revision 2026-09-03): el contenedor corre
+rem  SIN red, con el sistema de ficheros de solo lectura (salvo /outputs y un /tmp
+rem  efimero), sin capacidades de Linux y sin poder ganar privilegios. Las
+rem  variables *_OFFLINE de la imagen son una peticion a la libreria; esto es la
+rem  barrera. El codigo vendorizado que se ejecuta no ha pasado aun revision
+rem  linea a linea, asi que no tiene por que poder salir a ningun sitio.
+rem
+rem  Integridad de los pesos: el adapter compara el SHA-256 del artefacto con el
+rem  `.provenance.json` hermano que dejo el fusor (mismo directorio). No hace
+rem  falta exportar nada; si el fichero de procedencia falta, el runner lo dice.
 rem ===========================================================================
 
 set "PESOS=D:\srv\ace-step\weights"
@@ -44,6 +55,10 @@ echo Salida: %SALIDA%
 echo.
 
 docker run --rm --gpus all ^
+  --network none ^
+  --read-only --tmpfs /tmp:rw,size=512m ^
+  --cap-drop ALL --security-opt no-new-privileges ^
+  --pids-limit 256 ^
   -e ACE_STEP_REQUIRE_GPU=1 ^
   -v "%PESOS%:/weights:ro" ^
   -v "%SALIDA%:/outputs" ^

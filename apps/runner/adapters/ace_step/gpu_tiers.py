@@ -1,5 +1,17 @@
 """Configuracion del runner por **nivel de GPU**, detectada en arranque (D-29, T-85).
 
+Estado del cableado (revision 2026-09-03)
+-----------------------------------------
+**Este modulo NO esta conectado todavia al camino que genera.** Ni `adapter.py` ni
+`ace_step_shim.py` lo importan; solo `spikes/g1_generar.py` lo usa para anotar el
+nivel en el informe. El shim sigue con las decisiones clavadas para tier3
+(atencion eager incondicional, techo de 420 s, planificador por presencia de
+`lm.*`). Para la GTX 1070 da igual; para cualquier otra GPU, D-29 sigue sin
+cumplirse en el codigo que genera. El cableado se difiere a `T-85` (proveedor
+local de produccion, F6). Divergencia conocida con upstream: aqui se redondea al
+GB antes de comparar y upstream compara el valor crudo con tolerancias; en 20 GB
+nominales (~19,5 GB reales) upstream da tier6a y esto tier6b.
+
 Por que existe este modulo
 --------------------------
 Durante el desarrollo de la Fase 0 se fueron clavando a mano decisiones que en

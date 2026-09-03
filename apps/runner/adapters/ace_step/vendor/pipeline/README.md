@@ -77,13 +77,14 @@ Y, del directorio padre (revision de HuggingFace, hash ya registrado en `vendor/
 | `__init__.py` | 3372 | `a9df70b724d578686a1183b8f9bcf4212827e99a0602147175c06b8414f8cb2f` | nada (fachada nuestra, imports perezosos) |
 | `constants.py` | 10240 | `2470ce0af5d0dae7581383996425d4821e9103589f73d2b380b46fec0f137594` | `constants.py`, `prompt_utils.py`, `metadata_utils.py` |
 | `scheduler.py` | 21346 | `379bc1e1506b3dc38519b2aad957096d9a04635466aadd116ccaea4a3af191b2` | `generate_audio` del turbo (`VALID_SHIFTS`, `SHIFT_TIMESTEPS`) **y del base** (`linspace` + desplazamiento) |
-| `conditioning.py` | 22269 | `7d9052eff12b657d0da875e4b58afc21d8800c5f79c6207e45665ca8dd8e46a0` | los cinco `conditioning_*.py`, `task_utils.py`, `prepare_condition` |
+| `conditioning.py` | 25357 | `6990193812435794d7848d675c33f3d93e18959d783d77bd0abb813725845ef6` | los cinco `conditioning_*.py`, `task_utils.py`, `prepare_condition` — **fila actualizada el 2026-09-03**: el fichero cambio el 2026-09-02 (argumento `lm_hints_25Hz`, commit `555ea42`) y la tabla se quedo con el hash anterior (22269 bytes, `7d9052ef…`) hasta que la revision lo destapo |
 | `diffusion.py` | 26100 | `fd4fe9b0b2832d0f89d3d8bcd63f3383694426648e41c71ef33053bc4eaf0ed6` | `generate_audio` (bucle del turbo **y del base, con guia**), `generate_music_decode.py` (validacion). La guia APG **se importa** de `../sft/apg_guidance.py`, no se copia |
 | `decode.py` | 7763 | `ba859a2ee185d48caaf80e0a98115ebb1737ebb2db9b0b205c66fdc4083846d4` | `generate_music_decode.py` (transposicion y dtype) |
 
 ## El VAE NO esta duplicado aqui
 
-`decode.py` **importa** `../oobleck_decoder.py`, que ya estaba vendorizado y verificado en la GPU.
+`decode.py` **importa** `../oobleck_decoder.py`, que ya estaba vendorizado y verificado en la GPU
+(su hash esta en la tabla de `../README.md`, no aqui).
 No hay una segunda implementacion del decoder: dos implementaciones del mismo decoder serian una
 deuda, no una red de seguridad. Un intento anterior dejo aqui `vae_oobleck.py` y `vae_decode.py`;
 **estan borrados**.

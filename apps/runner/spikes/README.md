@@ -11,8 +11,14 @@ progreso es `docs/roadmap/2026-07-27-plataforma-musical-ia/tasks.md`; anota ahí
 
 ## 0. Aviso de honestidad, antes de nada
 
-**En la máquina donde se escribió este código no había GPU.** `nvidia-smi` no existe ahí y
-`torch` no está instalado. Consecuencias, todas deliberadas:
+**Actualización del 2026-09-03.** Lo que sigue en esta sección describe la situación del
+2026-08-18, cuando se escribieron los tres primeros scripts. Desde el 2026-09-01 hay **GPU
+local** (GTX 1070, 8 GB, Pascal sm_61), `torch` está instalado en el host y en la imagen, y
+todos los números de `tasks.md` T-03/T-05/T-06/T-07 están **medidos** en ella. Los puntos 1–4
+se conservan como registro de cómo se validó el arnés antes de tener GPU, no como estado.
+
+**En la máquina donde se escribió este código no había GPU** (2026-08-18). `nvidia-smi` no
+existía ahí y `torch` no estaba instalado. Consecuencias, todas deliberadas:
 
 1. Los scripts se han verificado **solo en modo `--mock`**, que recorre el camino completo
    (carga → generación → telemetría → informe) con **la biblioteca estándar únicamente**.
@@ -46,6 +52,33 @@ progreso es `docs/roadmap/2026-07-27-plataforma-musical-ia/tasks.md`; anota ahí
 Orden de ejecución: **`T-05` (contenedor) → `T-03` (línea base) → `T-04` (concurrencia,
 usa la línea base de `T-03`) → `T-07` (capacidades)**. Los cuatro son requisito de `T-09`,
 el gate **G1**.
+
+**Estado a 2026-09-03 — los 16 ficheros del directorio.** La tabla de arriba es la de la
+entrega inicial; esta es la real. Para las banderas exactas de cada uno, `python <script> --help`.
+
+| Fichero | Tarea | Qué hace | Dónde escribe |
+|---|---|---|---|
+| `_timing.py` | cimiento | Cronómetro por etapas, muestreo de VRAM, estadísticas, informes JSON atómicos | — |
+| `_mock.py` | cimiento | Adapter mock determinista (`--mock`), mismo contrato M-3 que el real | — |
+| `generate_smoke.py` | `T-03` | Generación real de extremo a extremo; `--matriz` para el A/B 2×2 del planificador; `verificar_wav` de contratos observables. Es lo que lanza `generar.cmd` | `/outputs` (= `D:\srv\ace-step\out`) |
+| `vram_profile.py` | `T-03` | Arnés de tiempos de inferencia, perfil de VRAM y arranque en frío; protección C1 | `--out` |
+| `medir_carga.py` | `T-03`/`T-05` | Dónde se va el tiempo al cargar el artefacto (defecto `vram_load`) | stdout / JSON |
+| `probe_io.py` | `T-05` | Sonda de E/S: qué estrategia de lectura saca más MiB/s del bind mount | stdout |
+| `pascal_speed_probe.py` | `T-03` | Microbenchmark de torch puro (fp16/fp32, SDPA, formas reales del DiT) para decidir dtype y atención en Pascal | JSON |
+| `dit_forward_bench.py` | `T-03` | Cronometra un forward del DiT real con los pesos reales, por longitud | JSON |
+| `diag_conditioning.py` | diagnóstico | H3: qué condicionamiento de texto ve el DiT (tildes, metadatos) | JSON |
+| `diag_pasos.py` | diagnóstico | D-PASOS: cuánto de la falta de finura es el precio de la destilación del turbo | JSON |
+| `medir_ab.py` | `T-03` | Análisis de señal sin GPU del A/B del planificador: descriptores, contrastes 2×2, `efecto_relativo_pct`, bloque de ritmo | `--salida` |
+| `comparar_variantes.py` | `T-06` | Compara dos pistas del A/B de variante de pesos (turbo/sft). n = 1 por rama: ver `tasks.md` T-06 | JSON |
+| `capability_probe.py` | `T-07` | Sonda empírica de capacidades: matriz verificada | JSON |
+| `g1_generar.py` | `T-09` (prep.) | Kit de G1: serie propia de las 10 pistas, cegado por testigo, mapa sellado. **No ejecuta el gate** | carpeta de sesión |
+| `requirements.txt` | — | Dependencias de referencia para correr en el host; **la fuente de verdad de versiones es el `Dockerfile`** | — |
+| `README.md` | — | Este runbook | — |
+
+Regla operativa desde el 2026-09-02, tras tumbar Docker Desktop con cuatro procesos GPU en
+paralelo: **un solo contenedor con GPU a la vez** en esta máquina. Las pistas dentro de un
+proceso van en serie y no son el problema; los procesos concurrentes sí. No hay lock que lo
+imponga: es una regla de quien lanza.
 
 > Este runbook se escribió **en paralelo** a los tres scripts. Para cualquier bandera, la
 > fuente de verdad es `python <script> --help`; si un comando de aquí no cuadra con la
@@ -132,8 +165,9 @@ Eso es el resultado **correcto** en mock, no un fallo: ver §5.3.
 
 ## 4. El contenedor de `T-05`
 
-El `Dockerfile` **todavía no está en el árbol** (lo entrega `T-05`). Cuando esté, el
-contexto de construcción es la **raíz del repo**, porque la imagen necesita
+El `Dockerfile` está en `../adapters/ace_step/Dockerfile` (`T-05`, completado el 2026-09-02).
+El contexto de construcción es **`apps/runner`** (así lo invoca `generar.cmd`: `docker build -t
+ace-step-runner:t05 -f apps\runner\adapters\ace_step\Dockerfile apps\runner`), porque la imagen necesita
 `apps/runner/contracts.py` y `apps/runner/spikes/` además del adapter:
 
 ```bash
@@ -230,9 +264,11 @@ cacheada, imagen no cacheada, pesos no cacheados).
 
 **Sin GPU:** `python apps/runner/spikes/vram_profile.py --mock --runs 2 --both`
 
-**Dónde caen los resultados:** informe JSON en `apps/runner/spikes/results/` (relativo al
-script, no al directorio de trabajo), o donde diga `--out`. Las conclusiones se redactan a
-mano en `apps/runner/spikes/inference_timing.md`.
+**Dónde caen los resultados (estado real a 2026-09-03):** los informes JSON de todas las
+corridas viven en `D:\srv\ace-step\out\` (montado como `/outputs` en el contenedor), fuera del
+repo, o donde diga `--out`. `apps/runner/spikes/results/` **no existe**. Las conclusiones están
+hoy en las fichas de `tasks.md` (T-03, T-05, T-06, T-07); `apps/runner/spikes/inference_timing.md`
+**todavía no existe** (lo dice la propia ficha de T-03).
 
 > **Contrato de telemetría (cambio M-3).** `gpu_seconds` y `stage_timings` de cada
 > generación cubren **solo esa generación** (la etapa `inference`). El coste del arranque
@@ -711,7 +747,8 @@ sonda de `T-07` en modo mock no puede concluir nada, y lo dice.
 
 Ninguno de estos spikes juzga si la música es buena. Eso es **G1** (`T-08`/`T-09`):
 escucha ciega humana con protocolo numérico (7/10 ≥ 4/5, WER ≤ 15 %), y **la juzga el
-supervisor musical, nunca el desarrollador**.
+propietario en modo solo** (`gates/gobernanza.md` §2, desde el 2026-09-01), con los umbrales
+fijados antes de escuchar y el riesgo de independencia aceptado por escrito.
 
 ---
 
@@ -743,7 +780,7 @@ una persona real (la clonación de voz es **no-go vigente**).
 | **D-15** sin credenciales | Nada de secretos en el `Dockerfile`, en `-e` ni en ficheros montados. El runner no persiste credenciales |
 | **D-17** presupuesto de GPU | Todo trabajo lleva `max_gpu_seconds` y se aborta al excederlo. `capability_probe.py` añade además un tope **agregado** (`--max-gpu-seconds-total`) |
 | **D-06 / D-29** hardware | Por debajo de 24 GB, offloading automático con aviso de tiempos degradados; por debajo de 8 GB, **abortar con mensaje claro** |
-| Gates | **Ningún umbral se degrada para «pasar».** G1 lo juzga el supervisor musical |
+| Gates | **Ningún umbral se degrada para «pasar».** G1 lo juzga el propietario en modo solo (`gates/gobernanza.md` §2) |
 
 ---
 

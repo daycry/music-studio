@@ -9,6 +9,8 @@ dos vias: el mock directo y el adapter delegando en el.
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import json
 import re
 
 import pytest
@@ -177,3 +179,79 @@ class TestContratoGpuSecondsAdapter:
 
         resultado = _correr(flujo())
         assert resultado.artifacts
+
+
+# --------------------------------------------------------------------------- #
+# Integridad de los pesos (revision 2026-09-03, hallazgo I-1)
+# --------------------------------------------------------------------------- #
+
+class TestIntegridadDePesos:
+    """`_verificar_integridad` no puede depender de que el lanzador se acuerde de
+    exportar `ACE_STEP_WEIGHTS_SHA256`: `generar.cmd` no lo hacia y las pistas
+    salian sin contrastar el artefacto con el hash que el fusor escribio en el
+    `.provenance.json` hermano. Ahora ese fichero es la fuente por defecto, la
+    variable manda si esta, y saltarse la comprobacion exige decirlo y avisa.
+    """
+
+    @staticmethod
+    def _pesos(tmp_path, contenido: bytes = b"pesos de juguete"):
+        ruta = tmp_path / "juguete.safetensors"
+        ruta.write_bytes(contenido)
+        return ruta, hashlib.sha256(contenido).hexdigest()
+
+    @staticmethod
+    def _provenance(ruta, sha: str) -> None:
+        ruta.with_suffix(".provenance.json").write_text(
+            json.dumps({"artifact": {"sha256": sha}}), encoding="utf-8"
+        )
+
+    @staticmethod
+    def _adapter():
+        return AceStepAdapter(mock=None, require_gpu=False)
+
+    @pytest.fixture(autouse=True)
+    def _entorno_limpio(self, monkeypatch):
+        monkeypatch.delenv("ACE_STEP_WEIGHTS_SHA256", raising=False)
+        monkeypatch.delenv("ACE_STEP_SKIP_INTEGRITY", raising=False)
+
+    def test_sin_variable_usa_el_provenance_hermano(self, tmp_path, caplog):
+        ruta, sha = self._pesos(tmp_path)
+        self._provenance(ruta, sha)
+        with caplog.at_level("INFO"):
+            self._adapter()._verificar_integridad(str(ruta))
+        assert "verificada" in caplog.text
+        assert "provenance" in caplog.text
+
+    def test_provenance_hermano_con_hash_distinto_aborta(self, tmp_path):
+        ruta, _ = self._pesos(tmp_path)
+        self._provenance(ruta, "0" * 64)
+        with pytest.raises(RuntimeError, match="Integridad de pesos fallida"):
+            self._adapter()._verificar_integridad(str(ruta))
+
+    def test_sin_variable_ni_provenance_avisa_de_que_no_verifica(self, tmp_path, caplog):
+        ruta, _ = self._pesos(tmp_path)
+        with caplog.at_level("WARNING"):
+            self._adapter()._verificar_integridad(str(ruta))
+        assert "NO verificada" in caplog.text
+
+    def test_un_provenance_ilegible_no_se_confunde_con_ausente(self, tmp_path):
+        ruta, _ = self._pesos(tmp_path)
+        ruta.with_suffix(".provenance.json").write_text("{esto no es json", encoding="utf-8")
+        with pytest.raises(RuntimeError, match="provenance"):
+            self._adapter()._verificar_integridad(str(ruta))
+
+    def test_la_variable_de_entorno_manda_sobre_el_provenance(self, tmp_path, monkeypatch):
+        ruta, sha = self._pesos(tmp_path)
+        self._provenance(ruta, sha)
+        monkeypatch.setenv("ACE_STEP_WEIGHTS_SHA256", "1" * 64)
+        with pytest.raises(RuntimeError, match="Integridad de pesos fallida"):
+            self._adapter()._verificar_integridad(str(ruta))
+
+    def test_saltarse_la_comprobacion_exige_decirlo_y_avisa(self, tmp_path, monkeypatch, caplog):
+        ruta, _ = self._pesos(tmp_path)
+        self._provenance(ruta, "0" * 64)
+        monkeypatch.setenv("ACE_STEP_SKIP_INTEGRITY", "1")
+        with caplog.at_level("WARNING"):
+            self._adapter()._verificar_integridad(str(ruta))  # no aborta
+        assert "NO verificada" in caplog.text
+        assert "ACE_STEP_SKIP_INTEGRITY" in caplog.text

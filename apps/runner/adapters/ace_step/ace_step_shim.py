@@ -209,6 +209,7 @@ import os
 import shutil
 import sys
 import tempfile
+import threading
 import time
 from collections.abc import Callable
 from contextlib import contextmanager
@@ -560,6 +561,20 @@ def _extraer(
         )
     if not claves:
         raise RuntimeError(f"El artefacto no trae ninguna clave con prefijo {prefijo!r}.")
+
+    # Guardarrail ANTES de sacar nada del diccionario. En el camino de respaldo
+    # (load_file a CPU) este es el unico sitio del shim que sube pesos a la GPU
+    # con `.to()`, y sin comprobar antes seria el unico sitio donde un OOM de
+    # driver puede ocurrir (revision 2026-09-03).
+    if destino.type == "cuda":
+        necesarios = sum(
+            state_dict[k].numel() * state_dict[k].element_size()
+            for k in claves
+            if state_dict[k].device != destino
+        )
+        _exigir_vram(
+            destino, necesarios, f"subir {len(claves)} tensores {prefijo!r} a {destino}"
+        )
 
     fuera: dict[str, torch.Tensor] = {}
     for clave in claves:
@@ -1402,6 +1417,12 @@ def _limitar_picos(onda: torch.Tensor) -> tuple[torch.Tensor, dict[str, float]]:
     destino) y no se adelanta aqui: una pista floja sigue saliendo floja. Esto
     solo impide que se pase de fondo de escala.
     """
+    if onda.dim() != 2:
+        raise RuntimeError(
+            f"El limitador espera una onda [C, N] y llego {tuple(onda.shape)}. "
+            "Aceptar otra forma en silencio es como nacio el defecto de la ganancia "
+            "constante (revision 2026-09-03)."
+        )
     techo = 10.0 ** (TECHO_LIMITADOR_DB / 20.0)
     pico_entrada = float(onda.abs().max())
     informe = {
@@ -1417,10 +1438,11 @@ def _limitar_picos(onda: torch.Tensor) -> tuple[torch.Tensor, dict[str, float]]:
 
     # Envolvente de pico: el maximo entre canales, porque la ganancia tiene que
     # ser la MISMA en todos o la imagen estereo se moveria al limitar.
-    # OJO al eje: la onda llega como [1, C, N], asi que hay que reducir el lote Y
-    # los canales para quedarse con [N]. Un `amax(dim=0)` a secas solo quita el
-    # lote y deja [C, N], que luego se aplana a 2N y no casa con la senal.
-    envolvente = onda.abs().amax(dim=(0, 1))
+    # La onda llega como [C, N] (`_a_pcm16` ya quito el lote), asi que se reduce
+    # SOLO el eje de canales para quedarse con [N]. Reducir tambien el otro eje
+    # colapsa la envolvente a un escalar y convierte el limitador en una
+    # ganancia constante sobre toda la pista; paso, y `test_limitador.py` lo vigila.
+    envolvente = onda.abs().amax(dim=0)
 
     # Pico local con anticipacion. `max_pool1d` sobre la envolvente da, para cada
     # muestra, el pico mas alto de su vecindario: asi la ganancia empieza a bajar
@@ -1438,19 +1460,21 @@ def _limitar_picos(onda: torch.Tensor) -> tuple[torch.Tensor, dict[str, float]]:
     # Suavizado de la relajacion: sin el, la ganancia salta y eso se oye como
     # distorsion de intermodulacion. Media movil sobre la ventana de relajacion.
     if _RELAJACION_MUESTRAS > 1:
+        # Se suaviza la REDUCCION (1 - ganancia), no la ganancia. Dos motivos:
+        # (a) el valor neutro de una reduccion es 0, que es justo lo que
+        # `conv1d(padding=...)` rellena en los bordes, asi que no hay fundido de
+        # entrada ni de salida (promediar la ganancia con relleno a ceros la
+        # hundia a ~0,5 en la primera muestra: -6 dB en TODAS las pistas);
+        # (b) donde no hay reduccion en toda la ventana, la media de ceros es
+        # exactamente 0 y la ganancia queda exactamente 1: la senal sale
+        # bit a bit identica, que es lo que promete el docstring y lo que
+        # `test_limitador.py` exige con `torch.equal`.
         nucleo = torch.ones(1, 1, _RELAJACION_MUESTRAS) / _RELAJACION_MUESTRAS
-        # RELLENO CON 1,0, NO CON CEROS. `conv1d(padding=...)` rellena con ceros,
-        # y como aqui se promedia una GANANCIA, esos ceros la hunden en los
-        # bordes: medido, la ganancia caia a ~0,5 en la primera muestra, o sea un
-        # fundido de entrada de -6 dB en TODAS las pistas. El valor neutro de una
-        # ganancia es 1, no 0, asi que se rellena a mano y se convoluciona sin
-        # padding.
         borde = _RELAJACION_MUESTRAS // 2
-        acolchada = torch.nn.functional.pad(
-            ganancia.view(1, 1, -1), (borde, borde), mode="constant", value=1.0
-        )
-        ganancia = torch.nn.functional.conv1d(acolchada, nucleo).view(-1)
-        ganancia = ganancia[: envolvente.numel()]
+        reduccion = torch.nn.functional.conv1d(
+            (1.0 - ganancia).view(1, 1, -1), nucleo, padding=borde
+        ).view(-1)[: envolvente.numel()]
+        ganancia = 1.0 - reduccion
         # El suavizado puede dejar la ganancia por encima de lo necesario en el
         # borde de un transitorio, asi que se vuelve a acotar por el minimo:
         # suavizar nunca debe deshacer la proteccion.
@@ -1548,6 +1572,9 @@ class PipelineAceStep:
         self._dtype = dtype
         self._offload = offload
         self._liberado = False
+        # `render()` no es reentrante (residencias, ganchos fp32 y `empty_cache`
+        # compartidos): ver `render`.
+        self._render_lock = threading.Lock()
         # -- planificador de 5 Hz (puede no existir: artefacto sin `lm.*`) --- #
         self._planificador = planificador
         self._audio_tokenizer = residencia_audio_tokenizer
@@ -1641,11 +1668,52 @@ class PipelineAceStep:
     ) -> AudioRenderizado:
         """Genera una pista completa: condicionamiento, difusion y decode.
 
+        **No es reentrante.** Dos renders a la vez sobre el mismo pipeline
+        comparten las residencias (una baja pesos mientras la otra esta en el
+        forward), los ganchos de `_ResidualDitFp32` y los `empty_cache()`; el
+        resultado seria un error de dispositivo o audio incorrecto en silencio.
+        Por eso se serializa con un lock y, si hay espera, se avisa: el adapter
+        admite `--max-concurrency` > 1 y la concurrencia real de `T-04` exige
+        procesos separados, no hilos sobre este objeto.
+
         `on_step(paso, total)` se invoca en **cada** paso de difusion y en cada
         ventana del decode, con un contador unico y monotono sobre el total de
         pasos reales. Es el punto de control de D-17: si levanta `GpuBudgetExceeded`
         la excepcion **se deja propagar** intacta; aqui no se captura nunca.
         """
+        if not self._render_lock.acquire(blocking=False):
+            _LOG.warning(
+                "render() en espera: PipelineAceStep no es reentrante y hay otra "
+                "generacion en curso. Se serializa; la espera cuenta para el "
+                "presupuesto D-17 de esta peticion. Para dos inferencias de verdad "
+                "a la vez (T-04) hacen falta dos procesos."
+            )
+            self._render_lock.acquire()
+        try:
+            return self._render_exclusivo(
+                style_prompt=style_prompt,
+                lyrics=lyrics,
+                duration_s=duration_s,
+                instrumental=instrumental,
+                seed=seed,
+                params=params,
+                on_step=on_step,
+            )
+        finally:
+            self._render_lock.release()
+
+    def _render_exclusivo(
+        self,
+        *,
+        style_prompt: str,
+        lyrics: str | None,
+        duration_s: int,
+        instrumental: bool,
+        seed: int | None,
+        params: dict[str, Any],
+        on_step: Callable[[int, int], None],
+    ) -> AudioRenderizado:
+        """Cuerpo de `render()`, ya con el lock en la mano."""
         self._comprobar_vivo()
         opciones = self._validar_params(params)
 

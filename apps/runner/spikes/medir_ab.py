@@ -510,6 +510,60 @@ def distancias(a: dict[str, Any], b: dict[str, Any]) -> dict[str, float]:
     }
 
 
+#: Metricas escalares que entran en los contrastes del A/B. El bloque de ritmo
+#: (`pulso_fuerza`, tempos, coherencia voz-base) entra desde el 2026-09-03: hasta
+#: entonces se calculaba pero no se contrastaba, asi que la metrica que decidio
+#: el descarte del sft nunca tuvo linea base de semilla (revision, hallazgo I-2).
+METRICAS_CONTRASTE: tuple[str, ...] = (
+    "rms_dbfs", "pico_dbfs", "factor_cresta_db", "centroide_hz", "rolloff95_hz",
+    "energia_sobre_4k_pct", "planitud_espectral", "flujo_espectral",
+    "acf_env_pico", "std_rms_1s_db", "rango_rms_1s_db",
+    "novedad_media", "novedad_std", "cambios_seccion",
+    "pulso_fuerza", "bpm_acf_plegado", "pulso_fuerza_grave", "bpm_grave_plegado",
+    "pulso_fuerza_voz", "bpm_voz_plegado", "desfase_voz_beat_ms", "coherencia_voz_beat",
+)
+
+_CUATRO_25S = ("lm-si-s1", "lm-no-s1", "lm-si-s2", "lm-no-s2")
+
+
+def contrastes_25s(pistas: dict[str, dict[str, Any]], metricas: list[str] | tuple[str, ...]) -> dict[str, dict[str, float]]:
+    """Contrastes del bloque 2x2 (planificador si/no x semilla s1/s2), por metrica.
+
+    Por cada metrica `m`:
+
+    - `d_lm`: media, sobre las dos semillas, de |con - sin|. Efecto del planificador.
+    - `d_semilla`: media, sobre las dos ramas, de |s1 - s2|. Ruido de semilla.
+    - `d_cruzado`: media de las dos diagonales (todo distinto).
+    - `ratio_lm_semilla`: `d_lm / d_semilla`. Cuantas veces el efecto supera al ruido.
+    - `efecto_relativo_pct`: media, sobre las dos semillas, de `(con - sin) / con`,
+      en tanto por ciento. **Esta es la formula del «60,7 %»** que citan
+      `g1_generar.py` y el commit 555ea42 para el centroide: hasta el 2026-09-03
+      solo existia a mano, y un lector del JSON no podia reconstruirlo.
+
+    Devuelve `{}` si faltan pistas del 2x2: sin las cuatro no hay contraste.
+    """
+    if not all(k in pistas for k in _CUATRO_25S):
+        return {}
+    filas: dict[str, dict[str, float]] = {}
+    for m in metricas:
+        v = {k: float(pistas[k][m]) for k in _CUATRO_25S}
+        d_lm = np.mean([abs(v["lm-si-s1"] - v["lm-no-s1"]), abs(v["lm-si-s2"] - v["lm-no-s2"])])
+        d_se = np.mean([abs(v["lm-si-s1"] - v["lm-si-s2"]), abs(v["lm-no-s1"] - v["lm-no-s2"])])
+        d_cr = np.mean([abs(v["lm-si-s1"] - v["lm-no-s2"]), abs(v["lm-no-s1"] - v["lm-si-s2"])])
+        relativos = [
+            (v["lm-si-s1"] - v["lm-no-s1"]) / v["lm-si-s1"] if abs(v["lm-si-s1"]) > 1e-12 else float("nan"),
+            (v["lm-si-s2"] - v["lm-no-s2"]) / v["lm-si-s2"] if abs(v["lm-si-s2"]) > 1e-12 else float("nan"),
+        ]
+        filas[m] = {
+            "con_s1": v["lm-si-s1"], "sin_s1": v["lm-no-s1"],
+            "con_s2": v["lm-si-s2"], "sin_s2": v["lm-no-s2"],
+            "d_lm": float(d_lm), "d_semilla": float(d_se), "d_cruzado": float(d_cr),
+            "ratio_lm_semilla": float(d_lm / d_se) if d_se > 1e-12 else float("nan"),
+            "efecto_relativo_pct": float(np.mean(relativos) * 100.0),
+        }
+    return filas
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description="Mide y compara el A/B del planificador de 5 Hz.")
     p.add_argument("--directorio", default="D:/srv/ace-step/out")
@@ -533,12 +587,7 @@ def main() -> int:
         pistas[et] = {**d, "mono": mono, "tasa": tasa}
         print(f"[medido] {et:10s} {ruta.name}  {d['duracion_s']} s")
 
-    metricas = [
-        "rms_dbfs", "pico_dbfs", "factor_cresta_db", "centroide_hz", "rolloff95_hz",
-        "energia_sobre_4k_pct", "planitud_espectral", "flujo_espectral",
-        "acf_env_pico", "std_rms_1s_db", "rango_rms_1s_db",
-        "novedad_media", "novedad_std", "cambios_seccion",
-    ]
+    metricas = list(METRICAS_CONTRASTE)
 
     informe: dict[str, Any] = {
         "pistas": {
@@ -550,20 +599,8 @@ def main() -> int:
     }
 
     # --- Contrastes escalares (solo el bloque de 25 s, que tiene los dos ejes) #
-    cuatro = ["lm-si-s1", "lm-no-s1", "lm-si-s2", "lm-no-s2"]
-    if all(k in pistas for k in cuatro):
-        filas = {}
-        for m in metricas:
-            v = {k: pistas[k][m] for k in cuatro}
-            d_lm = np.mean([abs(v["lm-si-s1"] - v["lm-no-s1"]), abs(v["lm-si-s2"] - v["lm-no-s2"])])
-            d_se = np.mean([abs(v["lm-si-s1"] - v["lm-si-s2"]), abs(v["lm-no-s1"] - v["lm-no-s2"])])
-            d_cr = np.mean([abs(v["lm-si-s1"] - v["lm-no-s2"]), abs(v["lm-no-s1"] - v["lm-si-s2"])])
-            filas[m] = {
-                "con_s1": v["lm-si-s1"], "sin_s1": v["lm-no-s1"],
-                "con_s2": v["lm-si-s2"], "sin_s2": v["lm-no-s2"],
-                "d_lm": float(d_lm), "d_semilla": float(d_se), "d_cruzado": float(d_cr),
-                "ratio_lm_semilla": float(d_lm / d_se) if d_se > 1e-12 else float("nan"),
-            }
+    filas = contrastes_25s(pistas, metricas)
+    if filas:
         informe["contrastes"]["25s"] = filas
 
     # --- Distancias de audio ------------------------------------------------- #
@@ -612,13 +649,17 @@ def main() -> int:
     # --- Impresion legible --------------------------------------------------- #
     if "25s" in informe["contrastes"]:
         print("\n=== 25 s: efecto del planificador frente al efecto de la semilla ===")
-        cab = f"{'metrica':22s} {'CON s1':>10s} {'SIN s1':>10s} {'CON s2':>10s} {'SIN s2':>10s} {'d_LM':>9s} {'d_semilla':>9s} {'ratio':>7s}"
+        cab = (
+            f"{'metrica':22s} {'CON s1':>10s} {'SIN s1':>10s} {'CON s2':>10s} {'SIN s2':>10s} "
+            f"{'d_LM':>9s} {'d_semilla':>9s} {'ratio':>7s} {'efecto%':>8s}"
+        )
         print(cab)
         print("-" * len(cab))
         for m, f in informe["contrastes"]["25s"].items():
             print(
                 f"{m:22s} {f['con_s1']:10.4g} {f['sin_s1']:10.4g} {f['con_s2']:10.4g} "
-                f"{f['sin_s2']:10.4g} {f['d_lm']:9.4g} {f['d_semilla']:9.4g} {f['ratio_lm_semilla']:7.2f}"
+                f"{f['sin_s2']:10.4g} {f['d_lm']:9.4g} {f['d_semilla']:9.4g} "
+                f"{f['ratio_lm_semilla']:7.2f} {f['efecto_relativo_pct']:8.1f}"
             )
     print("\n=== Distancias de audio directas ===")
     for nombre, lista in informe["distancias_audio"].items():

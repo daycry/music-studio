@@ -214,6 +214,16 @@ El reparto por componente **no cambia** (`dit.decoder` residente en VRAM, 3.007 
 - [ ] Documentar el factor de conversión entre la GPU local usada y la L40S objetivo, si difieren.
 - [ ] 🆕 *(opcional, hallazgo HF 2026-08-18)* Considerar también las variantes **XL de ACE-Step** (`xl-base`/`xl-sft`/`xl-turbo`, DiT 4B, ≥12 GB con offload/≥20 GB recomendado) en la medición, si la VRAM local lo permite.
 
+**Revisión de código (2026-09-03) — arreglos aplicados con test antes de generar las pistas de G1.** Tres revisiones independientes (núcleo del adapter; fusor, contenedor y vendor; spikes y tests) sobre `3739d20..9236b06`, con 580 tests en verde de partida. Cerrado en el commit de esta nota, cada punto con su test rojo primero:
+1. **Limitador de picos** (`ace_step_shim._limitar_picos`): reducía dos ejes sobre una onda `[C, N]` y aplicaba una **ganancia constante a toda la pista**; el pico de salida daba exactamente −1 dBFS, así que la verificación por pico no lo veía. Corregido; `tests/test_limitador.py` (10 tests, incluido el punto de llamada real `_a_pcm16`).
+2. **Hashes del vendor**: `pipeline/conditioning.py` cambió en `555ea42` sin actualizar su fila; `oobleck_decoder.py` no tenía fila. Corregidos; `tests/test_vendor_hashes.py` recalcula todos y exige que ningún fichero se ejecute sin fila.
+3. **Respaldo de carga** (`adapter._cargar_state_dict`): capturaba cualquier excepción, incluida «VRAM insuficiente», y caía a `load_file` + subida sin guardarraíl. Ahora solo ante `ArtefactoIlegible`, y `_extraer` pasa por `_exigir_vram` antes de subir.
+4. **Integridad de pesos apagada por defecto**: `generar.cmd` no exportaba `ACE_STEP_WEIGHTS_SHA256`. El adapter lee ahora el `.provenance.json` hermano, avisa si no puede verificar y solo se salta con `ACE_STEP_SKIP_INTEGRITY=1` (reservado a la medición de arranque en frío de esta tarea, donde recorrer 7 GB contaminaría el número).
+5. **`render()` no reentrante**: serializado con lock y aviso; la concurrencia real de `T-04` exige procesos separados.
+
+**Señalado por la revisión y NO cerrado aquí** (queda como deuda visible): `gpu_tiers.py` no está conectado al shim (se difiere a `T-85`; dicho en su docstring) y diverge de upstream en 20 GB nominales; faltan tests de buffers no persistentes y de `bpm`/`keyscale` hasta el shim; el fusor no tiene tests en la suite (solo su `--selftest`); no hay `LICENSE`/`NOTICE` en el repo; `sources[].path` graba rutas del host en el artefacto.
+- [ ] 🆕 *(revisión 2026-09-03)* **Revisión de seguridad escrita del código vendorizado** (`adapters/ace_step/vendor/**`): alcance declarado (ejecución en tiempo de importación, red, escritura en disco, `eval`/`exec`), evidencia por fichero y firma. Los cuatro README la delegan en esta tarea y ninguna casilla la exigía; hoy solo existe la verificación mecánica (hashes, grep, AST) de la revisión.
+
 **Notas:** Los valores medidos aquí recalibran linealmente todo el §6 de `evaluation.md` (coste de GPU). Si difieren de forma material, documentarlo como entrada para una futura revisión de la evaluación, no corregir la evaluación desde esta tarea. GPU local preferente decidida el 2026-08-18 (D-29, `spec.md` confirmación 13); no requiere `T-85` (que añade la abstracción de proveedor en F6) — aquí basta invocar el contenedor de `T-05` directamente.
 
 ---
@@ -309,6 +319,8 @@ Un detalle del contenedor que conviene no perder: el `Dockerfile` fija `pytorch/
 - [ ] 🟡 Verificar arranque en GPU local con `docker run --gpus all` y, para la medición de arranque en frío de `T-03`, también en el pod de pruebas de RunPod. — **GPU local: hecho.** **RunPod: no**, aparcado por presupuesto (2026-09-02). Esta mitad pertenece al criterio de `T-03`, no a los de esta ficha, y por eso no impide su cierre.
 - [ ] 🆕 *(opcional, hallazgo HF 2026-08-18)* Considerar también las variantes **XL de ACE-Step** (`xl-base`/`xl-sft`/`xl-turbo`) en la contenerización de prueba, si la VRAM local lo permite.
 
+**Endurecimiento en tiempo de ejecución (2026-09-03, revisión, hallazgo I-3).** `generar.cmd` lanza ahora el contenedor con `--network none --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges --pids-limit 256`. Las variables `*_OFFLINE=1` de la imagen eran una petición a la librería, no una barrera, y el código vendorizado corría con salida a red. Pendiente de la misma revisión: pines de pip sin `--require-hashes` y `pyyaml` (usado por el prompt del planificador) sin fijar.
+
 **Notas:** Es contenerización **mínima** — suficiente para generar audio con calidad evaluable en G1, no el adapter de producción completo (que incluye `provenance`, validado contra el esquema firmado por legal en `T-27`). El **mismo contenedor** de esta tarea es el que usan `T-04`, `T-09` y, más adelante, `T-85` (D-29) — en Fase 0 se invoca directo, sin la abstracción de proveedor que añade `T-85` en F6.
 
 ---
@@ -339,6 +351,12 @@ Otras dos que sí cambian planificación futura, registradas aquí para que no s
 
 * **A-2 — `T-29` y `T-34` (G1-bis) no son ejecutables en GPU local.** HeartMuLa declara 4B en F32 (**15,8 GB** de pesos) más HeartCodec 2B en F32 que upstream desaconseja bajar a bf16: el segundo adapter **vuelve a depender de RunPod**, en contra del criterio de coste cloud cero de D-29. Con RunPod aparcado, eso es un bloqueo real de F5, no un matiz.
 * **A-3 — `HeartCLAP` no está publicado** (comprobado: ninguno de los repos de la organización en HF lo es; hay issue abierto pidéndolo). `gates/g1-protocolo.md` §6.1 lo nombra **candidato principal para medir CLAP**, que es uno de los umbrales de G1. **Hay que designar suplente antes de `T-09`**, o el gate llega a la sala sin instrumento para uno de sus números. Contrapeso: **HeartTranscriptor-oss sí cabe en local** (0,8B) y es independiente del adapter, así que el **WER de G1 no queda bloqueado** por A-2.
+
+**A/B de variantes de pesos `turbo`/`sft` (2026-09-02 y 03) — registrado aquí porque el commit `9236b06` («la variante sft descartada con evidencia») lo dejó fuera del ledger.** Decisión: **la variante `turbo` (destilada, 8 pasos) es la que va a G1; `sft` (modelo base, 50 pasos, guía 7) queda descartada para esta fase.** Fundamentos, con sus límites escritos:
+- **Coste (medido):** la difusión del `sft` cuesta ~12× la del turbo en la GPU local (`D:\srv\ace-step\out\sft-120-informe.json`, `sft-120-g3-informe.json`, `turbo-120-informe.json`).
+- **Oído del propietario:** «con sft se oye fatal» (2026-09-03, sobre `sft-120-g3-120s-…`). En modo solo esta es la base real de la decisión (`gates/gobernanza.md` §2).
+- **Métrica de ritmo — NO concluyente, y así hay que citarla:** `pulso_fuerza` 0,230 (sft) frente a 0,519 (turbo), con **n = 1 por rama** y **sin línea base de ruido de semilla** (el bloque de ritmo no entraba en los contrastes de `medir_ab.py` hasta hoy). La revisión del 2026-09-03 demostró además que la métrica **confunde pulso débil con textura densa**: un tren de golpes perfecto a 94 BPM con ruido rosa a −26 dBFS cae de 0,911 a ~0,22 y el tempo estimado salta al armónico, que son exactamente los «síntomas» atribuidos al sft. Queda escrito como test de limitación en `tests/test_pulso.py`. El título del commit sobrevende este punto.
+- **Datos:** [`spikes/ab-variantes-120s.json`](./spikes/ab-variantes-120s.json) (copiado de `D:\srv\ace-step\out\`, sin rutas ni letras). Desde el 2026-09-03 `medir_ab.py` contrasta también el bloque de ritmo y emite `efecto_relativo_pct`, la fórmula del «60,7 %» del planificador que hasta entonces solo existía a mano.
 
 **Notas:** Documental en su mayor parte; no requiere contenerizar HeartMuLa ni YuE en esta tarea. *(2026-09-02: se cumplió así — de los tres modelos **solo uno se ha ejecutado**, y el documento lo dice en su cabecera para que nadie lea §2 como una comparación de calidad. La calidad la decide G1, no este spike.)*
 
@@ -1296,6 +1314,8 @@ Tres entradas nuevas de hoy que el protocolo tiene que absorber **antes** de la 
 | Tipo | Estado | Dependencias | Tiempo estimado (base) | Tokens previstos |
 |---|---|---|---|---|
 | backend | pendiente | T-44, T-19, T-20 | 8 h | 0,50 M in / 0,07 M out |
+
+**Adelanto parcial (2026-09-02, corregido el 2026-09-03):** el limitador de picos previo a la cuantización a 16 bits vive en `ace_step_shim._limitar_picos` (techo −1 dBFS, anticipación de 10 ms, relajación de 100 ms, ganancia común a los canales). Nació con un defecto de eje que lo convertía en una ganancia constante sobre toda la pista; corregido con `tests/test_limitador.py`. **No es la normalización de loudness de esta tarea**, que sigue pendiente: una pista floja sigue saliendo floja.
 
 **Archivos:** `apps/runner/postprocess/pipeline.py`
 

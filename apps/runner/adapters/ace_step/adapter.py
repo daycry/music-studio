@@ -335,29 +335,37 @@ def _prefijos_residentes_gpu(factoria: Callable[..., Any]) -> tuple[str, ...]:
 
 
 def _cargar_state_dict(ruta: str, factoria: Callable[..., Any], device: str) -> Any:
-    """Lee el artefacto por tramos contiguos; cae a `load_file` si no puede.
+    """Lee el artefacto por tramos contiguos; cae a `load_file` SOLO si no sabe leerlo.
 
     La lectura contigua es la que baja `vram_load` de 709 s a ~70 s (ver el bloque
     de comentario de `_load_sync`, etapa 3). El respaldo NO es silencioso: sale
     por WARNING diciendo cuanto va a costar, porque un arranque de 12 minutos que
     nadie ha visto venir es peor que un fallo.
 
+    El respaldo se toma unicamente ante `ArtefactoIlegible` (una disposicion del
+    fichero que la lectura por tramos no contempla). Cualquier otro fallo se
+    propaga: en particular el de «VRAM insuficiente», que el cargador lanza ANTES
+    de asignar. Caer entonces a `load_file` y subir tensor a tensor seria ir al
+    OOM de driver que el diseno prohibe, y esconder la causa real tras 12 minutos
+    (revision 2026-09-03).
+
     Ninguna de las dos rutas deserializa objetos: `carga_contigua` lee la cabecera
     JSON y bytes crudos, y `load_file` es el cargador de `safetensors`. La puerta
     de entrada sigue siendo `assert_safetensors()`, ya ejecutada (D-14).
     """
     if _env_flag(_CARGA_CONTIGUA_ENV, True):
-        try:
-            import carga_contigua  # noqa: PLC0415  (perezoso: necesita torch)
+        import carga_contigua  # noqa: PLC0415  (perezoso: necesita torch)
 
-            destinos = {}
-            if str(device).startswith("cuda"):
-                destinos = {p: str(device) for p in _prefijos_residentes_gpu(factoria)}
+        destinos = {}
+        if str(device).startswith("cuda"):
+            destinos = {p: str(device) for p in _prefijos_residentes_gpu(factoria)}
+        try:
             return carga_contigua.cargar_contiguo(ruta, destinos=destinos)
-        except Exception as exc:  # noqa: BLE001
+        except carga_contigua.ArtefactoIlegible as exc:
             _LOG.warning(
-                "La lectura contigua de %r fallo (%r). Se vuelve a load_file(), que sobre "
-                "un bind mount ha medido ~11 MiB/s: espera unos 12 minutos de carga.",
+                "La lectura contigua de %r no sabe leer este artefacto (%r). Se vuelve a "
+                "load_file(), que sobre un bind mount ha medido ~11 MiB/s: espera unos "
+                "12 minutos de carga.",
                 ruta,
                 exc,
             )
@@ -374,6 +382,36 @@ def _cargar_state_dict(ruta: str, factoria: Callable[..., Any], device: str) -> 
 # --------------------------------------------------------------------------- #
 # Utilidades de entorno (D-15: nada de ficheros de secretos)
 # --------------------------------------------------------------------------- #
+
+def _sha256_de_procedencia(ruta_pesos: str) -> tuple[str, str]:
+    """(sha256 esperado, origen) leidos del `.provenance.json` hermano del artefacto.
+
+    El fusor (`tools/build_artifact.py`) deja junto a `X.safetensors` un
+    `X.provenance.json` con `artifact.sha256`. Si no existe, devuelve ("", ruta)
+    para que quien llame avise. Si existe pero no se puede leer o no trae un
+    SHA-256 valido, es un error: un fichero de procedencia roto no es lo mismo
+    que no tener ninguno, y confundirlos dejaria pasar un artefacto sin
+    verificar con aspecto de verificado.
+    """
+    ruta_prov = Path(ruta_pesos).with_suffix(".provenance.json")
+    if not ruta_prov.is_file():
+        return "", str(ruta_prov)
+    try:
+        documento = json.loads(ruta_prov.read_text(encoding="utf-8"))
+        esperado = str(documento["artifact"]["sha256"]).strip().lower()
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        raise RuntimeError(
+            f"El fichero de provenance {str(ruta_prov)!r} existe pero no se puede leer "
+            f"o no trae artifact.sha256 ({exc!r}). No se carga un artefacto cuya "
+            "procedencia esta rota."
+        ) from exc
+    if len(esperado) != 64 or any(c not in "0123456789abcdef" for c in esperado):
+        raise RuntimeError(
+            f"artifact.sha256 en {str(ruta_prov)!r} no es un SHA-256 hexadecimal: "
+            f"{esperado!r}. Fichero de provenance roto."
+        )
+    return esperado, str(ruta_prov)
+
 
 def _env_flag(nombre: str, defecto: bool = False) -> bool:
     """Lee una variable de entorno booleana ('1', 'true', 'yes', 'on')."""
@@ -471,8 +509,9 @@ class AceStepAdapter:
 
     MODEL_ID = "ace-step"
     #: Version del modelo, no de este adapter. El descriptor completo (con
-    #: `weights_sha256`, licencia Apache 2.0 y declaracion de datos de
-    #: entrenamiento "no divulgada") lo construye `T-30` en la F5.
+    #: `weights_sha256`, licencia **MIT** —no Apache 2.0, como decia la
+    #: planificacion; corregido en T-06— y la declaracion de datos de
+    #: entrenamiento de la model card) lo construye `T-30` en la F5.
     MODEL_VERSION = "1.5"
 
     def __init__(
@@ -805,17 +844,43 @@ class AceStepAdapter:
         )
 
     def _verificar_integridad(self, ruta: str) -> None:
-        """Compara el SHA-256 de los pesos con `ACE_STEP_WEIGHTS_SHA256`, si se dio.
+        """Compara el SHA-256 de los pesos con el hash esperado, si hay alguno.
+
+        De donde sale el hash esperado, por orden:
+
+        1. `ACE_STEP_WEIGHTS_SHA256`, si esta definida (manda siempre).
+        2. El `<artefacto>.provenance.json` hermano que escribe el fusor
+           (`artifact.sha256`). Es el caso normal: el lanzador no tiene que
+           acordarse de nada (revision 2026-09-03, hallazgo I-1: `generar.cmd`
+           no exportaba la variable y las pistas salian sin verificar).
+        3. Ninguno: se AVISA de que la integridad no se ha verificado.
+
+        `ACE_STEP_SKIP_INTEGRITY=1` salta la comprobacion avisando; existe solo
+        para la medicion de arranque en frio de `T-03`, a la que recorrer ~7 GB
+        le contaminaria el numero.
 
         Verifica **integridad, no inocuidad**: un fichero manipulado con hash
         correcto sigue siendo el fichero que alguien puso ahi. Lo que hace segura
-        la carga es el formato (`safetensors`, D-14), no el hash. Opcional porque
-        recorrer ~7 GB cuesta decenas de segundos y contaminaria la medicion de
-        arranque en frio de `T-03` si estuviera siempre activo.
+        la carga es el formato (`safetensors`, D-14), no el hash.
         """
-        esperado = os.environ.get("ACE_STEP_WEIGHTS_SHA256", "").strip().lower()
-        if not esperado:
+        if _env_flag("ACE_STEP_SKIP_INTEGRITY"):
+            _LOG.warning(
+                "Integridad de pesos NO verificada: ACE_STEP_SKIP_INTEGRITY esta activo. "
+                "Solo es legitimo para medir el arranque en frio (T-03)."
+            )
             return
+        esperado = os.environ.get("ACE_STEP_WEIGHTS_SHA256", "").strip().lower()
+        origen = "ACE_STEP_WEIGHTS_SHA256"
+        if not esperado:
+            esperado, origen = _sha256_de_procedencia(ruta)
+        if not esperado:
+            _LOG.warning(
+                "Integridad de pesos NO verificada: ni ACE_STEP_WEIGHTS_SHA256 ni %s. "
+                "El artefacto se carga tal cual esta en disco.",
+                origen,
+            )
+            return
+        inicio = time.perf_counter()
         digestor = hashlib.sha256()
         with open(ruta, "rb") as fichero:
             for bloque in iter(lambda: fichero.read(8 * 1024 * 1024), b""):
@@ -824,9 +889,14 @@ class AceStepAdapter:
         if obtenido != esperado:
             raise RuntimeError(
                 f"Integridad de pesos fallida en {ruta!r}: SHA-256 {obtenido} frente al "
-                f"esperado {esperado}. El arranque se aborta."
+                f"esperado {esperado} (segun {origen}). El arranque se aborta."
             )
-        _LOG.info("Integridad de pesos verificada (SHA-256 %s...).", obtenido[:16])
+        _LOG.info(
+            "Integridad de pesos verificada (SHA-256 %s..., segun %s, %.1f s).",
+            obtenido[:16],
+            origen,
+            time.perf_counter() - inicio,
+        )
 
     def _limpiar_carga_fallida(self) -> None:
         """Deja el adapter descargado y sin VRAM retenida tras un `load()` fallido (M-5).

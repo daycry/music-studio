@@ -22,9 +22,20 @@ bajo nuestros pies.
 | `configuration_acestep_v15.py` | 13130 | `b89870c5c7a7ce060eb0bcdbb5ffc86b0b1a324ca325a26be552ea1b42496dc5` |
 | `modeling_acestep_v15_turbo.py` | 96036 | `c1ab0dd547124fee7ada449b2b86eae8201dc7d15889932643bbb67e3c982444` |
 | `config.json` | 1968 | `74745ff704ea49164c3d2d1c99fc0670f3fc635a869f0aec2d1311e6a52d400a` |
+| `oobleck_decoder.py` | 39936 | `dcb80f5fac9960dec56398c98ce99258edb652654abca6dab32f6d868c1a5c3f` |
 
-Verificados idénticos a la copia upstream, que a su vez se verificó contra la atestación del
-publicador (`lfs.oid` para los ficheros LFS, blob SHA-1 de git para el resto).
+Los tres primeros están verificados idénticos a la copia upstream, que a su vez se verificó
+contra la atestación del publicador (`lfs.oid` para los ficheros LFS, blob SHA-1 de git para el
+resto). `oobleck_decoder.py` es distinto: es una **obra derivada modificada** de `diffusers`
+v0.34.0 (Apache-2.0), y el hash de arriba es el del fichero **modificado** que se ejecuta; la
+atestación del original (SHA-256 y blob SHA-1 de upstream) y la lista de cambios están en la
+cabecera del propio fichero. Hasta el 2026-09-03 no tenía fila en ninguna tabla.
+
+**Esta tabla la vigila `apps/runner/tests/test_vendor_hashes.py`**: recalcula el SHA-256 de cada
+fichero `.py`/`.json` de `vendor/` y exige que coincida con la fila de su README, y que ningún
+fichero se ejecute sin fila. Si cambias un fichero vendorizado a propósito, actualiza su fila en
+el mismo commit; el test es el «criterio que exija un diff contra los hashes» que estos README
+reclamaban desde el principio.
 
 ## Estado de revisión — léase antes de confiar
 

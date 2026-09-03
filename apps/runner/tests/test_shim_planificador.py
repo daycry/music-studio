@@ -15,6 +15,9 @@ no esta instalado estos tests se saltan en vez de romper la suite.
 
 from __future__ import annotations
 
+import threading
+import time
+
 import pytest
 
 torch = pytest.importorskip("torch", reason="el shim necesita torch")
@@ -119,6 +122,7 @@ def _pipeline(con_planificador: bool):
     """PipelineAceStep hueco: solo lo que `render()` toca antes de condicionar."""
     pipe = shim.PipelineAceStep.__new__(shim.PipelineAceStep)
     pipe._liberado = False
+    pipe._render_lock = threading.Lock()
     pipe._planificador = object() if con_planificador else None
     pipe._dispositivo = torch.device("cpu")
     pipe._dtype = torch.float16
@@ -174,6 +178,63 @@ class TestPerillaUsarLm:
 
     def test_sin_planificador_y_usar_lm_false_no_se_planifica(self, monkeypatch):
         assert _render(_pipeline(False), {"usar_lm": False}, monkeypatch) == "condiciono SIN plan"
+
+
+# --------------------------------------------------------------------------- #
+# render() no es reentrante
+# --------------------------------------------------------------------------- #
+
+class TestRenderNoReentrante:
+    """Dos `render()` a la vez sobre el mismo pipeline comparten residencias,
+    ganchos fp32 y `empty_cache()`: el resultado es un error de dispositivo o,
+    peor, audio incorrecto en silencio. El adapter permite `--max-concurrency`
+    > 1 (T-04 lo mide en la L40S), asi que el shim tiene que serializar y decirlo.
+    """
+
+    @staticmethod
+    def _dos_renders_solapados(pipe, monkeypatch):
+        dentro = threading.Event()
+        suelta = threading.Event()
+        en_curso = [0]
+        vistos: list[int] = []
+
+        def cond(**kw):
+            en_curso[0] += 1
+            vistos.append(en_curso[0])
+            dentro.set()
+            suelta.wait(5)
+            en_curso[0] -= 1
+            raise _Corte("fin")
+
+        monkeypatch.setattr(shim, "preparar_condicionamiento_text2music", cond)
+
+        def llamar():
+            try:
+                pipe.render(style_prompt="x", lyrics="y", duration_s=25, instrumental=False,
+                            seed=1, params={"usar_lm": False}, on_step=lambda *a: None)
+            except _Corte:
+                pass
+
+        h1 = threading.Thread(target=llamar)
+        h1.start()
+        assert dentro.wait(5), "el primer render no llego a condicionar"
+        h2 = threading.Thread(target=llamar)
+        h2.start()
+        time.sleep(0.3)  # tiempo de sobra para que h2 entre si nadie lo frena
+        suelta.set()
+        h1.join(5)
+        h2.join(5)
+        assert not h1.is_alive() and not h2.is_alive()
+        return vistos
+
+    def test_dos_renders_a_la_vez_se_serializan(self, monkeypatch):
+        vistos = self._dos_renders_solapados(_pipeline(False), monkeypatch)
+        assert vistos == [1, 1], f"hubo {max(vistos)} render(s) dentro a la vez: {vistos}"
+
+    def test_la_serializacion_no_es_silenciosa(self, monkeypatch, caplog):
+        with caplog.at_level("WARNING"):
+            self._dos_renders_solapados(_pipeline(False), monkeypatch)
+        assert "no es reentrante" in caplog.text
 
 
 # --------------------------------------------------------------------------- #

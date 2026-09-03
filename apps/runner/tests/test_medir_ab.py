@@ -188,3 +188,34 @@ def test_lectura_de_wav_rechaza_lo_que_no_sea_pcm16(tmp_path) -> None:
         w.writeframes(b"\x00" * 100)
     with pytest.raises(ValueError, match="16 bits"):
         medir_ab.leer_wav(ruta)
+
+
+# --------------------------------------------------------------------------- #
+# Contrastes del A/B (revision 2026-09-03, hallazgos I-1 e I-2)
+# --------------------------------------------------------------------------- #
+
+class TestContrastes:
+    def test_el_bloque_de_ritmo_entra_en_los_contrastes(self):
+        # Las metricas que decidieron el descarte del sft no tenian linea base de
+        # semilla porque no entraban en los contrastes. Ahora si.
+        assert {"pulso_fuerza", "bpm_acf_plegado", "coherencia_voz_beat"} <= set(
+            medir_ab.METRICAS_CONTRASTE
+        )
+
+    def test_efecto_relativo_es_la_media_por_semilla_de_con_menos_sin_sobre_con(self):
+        # La formula del «60,7 %» citado en g1_generar.py, escrita en el codigo:
+        # media sobre semillas de (con - sin) / con, en tanto por ciento.
+        pistas = {
+            "lm-si-s1": {"centroide_hz": 100.0},
+            "lm-no-s1": {"centroide_hz": 41.0},
+            "lm-si-s2": {"centroide_hz": 200.0},
+            "lm-no-s2": {"centroide_hz": 75.4},
+        }
+        filas = medir_ab.contrastes_25s(pistas, ["centroide_hz"])
+        fila = filas["centroide_hz"]
+        assert fila["efecto_relativo_pct"] == pytest.approx((59.0 + 62.3) / 2)
+        assert fila["d_lm"] == pytest.approx((59.0 + 124.6) / 2)
+        assert fila["d_semilla"] == pytest.approx((100.0 + 34.4) / 2)
+
+    def test_sin_las_cuatro_pistas_no_hay_contraste(self):
+        assert medir_ab.contrastes_25s({"lm-si-s1": {"x": 1.0}}, ["x"]) == {}

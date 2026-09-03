@@ -209,3 +209,35 @@ def test_limitacion_conocida_un_transitorio_ancho_deja_rastro_en_las_dos_bandas(
     ref = float(np.max(m**2))
     e_voz = medir_ab.envolvente_ataques(m, SR, medir_ab.BANDA_VOZ_HZ, ref)
     assert e_voz.max() > 0.0, "sin nada de fuga, este test no describe la realidad"
+
+
+def _ruido_rosa(n: int, rms_dbfs: float, semilla: int = 7) -> np.ndarray:
+    """Ruido 1/f al RMS pedido: la «textura densa» mas simple que existe."""
+    rng = np.random.default_rng(semilla)
+    espectro = np.fft.rfft(rng.standard_normal(n))
+    f = np.fft.rfftfreq(n, d=1.0 / SR)
+    f[0] = f[1]
+    rosa = np.fft.irfft(espectro / np.sqrt(f), n)
+    return rosa / np.sqrt(np.mean(rosa**2)) * 10.0 ** (rms_dbfs / 20.0)
+
+
+def test_limitacion_conocida_el_ruido_de_fondo_hunde_la_fuerza_aunque_el_pulso_sea_perfecto() -> None:
+    """Queda ESCRITO (revision 2026-09-03) lo que `pulso_fuerza` NO distingue.
+
+    La fuerza es ACF(lag)/ACF(0), y ACF(0) absorbe la varianza de todo flujo no
+    periodico. Un tren de golpes PERFECTO con ruido rosa de fondo pierde mas de la
+    mitad de su fuerza sin que el pulso sea peor. Una textura mas densa (sft: 50
+    pasos y guia 7, frente a 8 pasos destilados del turbo) produce exactamente
+    este efecto, asi que la metrica no vale como veredicto de ritmo entre pistas
+    de textura distinta. El descarte del sft se sostiene por coste y por oido, no
+    por este numero (ver `tasks.md`, T-06).
+    """
+    limpio = _tren(BPM_OBJETIVO, frecuencia=80.0)
+    ruidoso = limpio + _ruido_rosa(len(limpio), -26.0)
+    f_limpio = medir_ab.pulso(_mag(limpio), SR)["pulso_fuerza"]
+    f_ruidoso = medir_ab.pulso(_mag(ruidoso), SR)["pulso_fuerza"]
+    assert f_limpio > 0.8, "el tren limpio deberia dar un pulso fuerte"
+    assert f_ruidoso < 0.5 * f_limpio, (
+        f"limpio {f_limpio:.3f} vs con ruido {f_ruidoso:.3f}: si la metrica ya no se "
+        "hunde con la textura, revisa si esta limitacion sigue escrita en tasks.md"
+    )

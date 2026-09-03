@@ -441,11 +441,13 @@ class TestAdapter:
         modulo_adapter._cargar_state_dict(str(ruta), shim.build_pipeline, "cuda:0")
         assert vistos["destinos"] == {"dit.decoder.": "cuda:0"}
 
-    def test_si_la_lectura_contigua_falla_se_cae_a_load_file(self, artefacto, monkeypatch, caplog):
+    def test_si_el_artefacto_no_se_puede_leer_por_tramos_se_cae_a_load_file(
+        self, artefacto, monkeypatch, caplog
+    ):
         ruta, esperados = artefacto
 
         def revienta(*_a, **_k):
-            raise RuntimeError("disco poseido")
+            raise carga_contigua.ArtefactoIlegible("disposicion inesperada")
 
         monkeypatch.setattr(carga_contigua, "cargar_contiguo", revienta)
         with caplog.at_level("WARNING"):
@@ -453,8 +455,49 @@ class TestAdapter:
         # El respaldo funciona...
         assert set(estado) == set(esperados)
         # ...pero NO en silencio: un arranque de 12 minutos tiene que avisar.
-        assert "disco poseido" in caplog.text
+        assert "disposicion inesperada" in caplog.text
         assert getattr(estado, "tensores_materializados", False) is False
+
+    def test_un_fallo_que_no_es_de_disposicion_se_propaga_sin_respaldo(
+        self, artefacto, monkeypatch
+    ):
+        # Regresion (revision 2026-09-03): el respaldo capturaba CUALQUIER
+        # excepcion, incluida la de «VRAM insuficiente» que el propio cargador
+        # lanza ANTES de asignar. Caer entonces a load_file() + subida tensor a
+        # tensor sin guardarrail era ir derecho al OOM de driver que todo el
+        # diseno prohibe, y ademas escondia la causa real tras 12 minutos.
+        ruta, _ = artefacto
+
+        def sin_vram(*_a, **_k):
+            raise RuntimeError("VRAM insuficiente para cargar los pesos residentes")
+
+        def respaldo_prohibido(*_a, **_k):
+            raise AssertionError("load_file() no debe llamarse: el fallo no era de disposicion")
+
+        monkeypatch.setattr(carga_contigua, "cargar_contiguo", sin_vram)
+        monkeypatch.setattr(safetensors_torch, "load_file", respaldo_prohibido)
+        with pytest.raises(RuntimeError, match="VRAM insuficiente"):
+            modulo_adapter._cargar_state_dict(str(ruta), shim.build_pipeline, "cuda:0")
+
+
+class TestGuardarrailDeSubida:
+    def test_extraer_pasa_por_el_guardarrail_antes_de_tocar_nada(self, monkeypatch):
+        # En el camino de respaldo (load_file a CPU) es `_extraer` quien sube
+        # `dit.decoder` a la GPU con `.to()`. Sin guardarrail, ese `.to()` es el
+        # unico sitio del shim donde un OOM de driver puede ocurrir.
+        def no_cabe(dispositivo, necesarios, motivo):
+            raise RuntimeError(f"no cabe: {necesarios} bytes para {motivo}")
+
+        monkeypatch.setattr(shim, "_exigir_vram", no_cabe)
+        estado = {
+            "dit.decoder.a": torch.zeros(1024),
+            "dit.decoder.b": torch.zeros(1024),
+            "otro.c": torch.zeros(2),
+        }
+        with pytest.raises(RuntimeError, match="no cabe: 8192 bytes"):
+            shim._extraer(estado, "dit.decoder.", torch.device("cuda:0"), None)
+        # Se aborta ANTES de sacar nada del diccionario.
+        assert set(estado) == {"dit.decoder.a", "dit.decoder.b", "otro.c"}
 
     def test_el_interruptor_de_entorno_vuelve_a_load_file(self, artefacto, monkeypatch):
         ruta, esperados = artefacto

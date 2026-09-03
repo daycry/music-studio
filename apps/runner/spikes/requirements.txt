@@ -37,20 +37,25 @@
 # (CC BY-NC, prohibido para uso comercial): no lo anadas.
 # =============================================================================
 
-torch==2.5.1
+# NOTA (2026-09-03): la fuente de verdad de versiones es
+# `apps/runner/adapters/ace_step/Dockerfile` (base pytorch/pytorch 2.13.0-cuda12.6
+# fijada por digest, transformers 5.16.1, safetensors 0.8.0, ...). Este fichero
+# sirve para correr en el host y se mantiene alineado con la imagen a mano.
+
+torch==2.13.0
 # Motor de inferencia. Es lo que aporta CUDA, la deteccion de VRAM
 # (`_timing.vram_snapshot_mb`, `_timing.gpu_info` -> `torch.cuda`) y el
 # offloading por debajo de los 24 GB de confort (D-06/D-29). Instalalo desde el
-# indice cu124; la rueda de PyPI viene sin CUDA y dejaria el adapter cayendo al
+# indice cu126; la rueda de PyPI viene sin CUDA y dejaria el adapter cayendo al
 # mock en silencio, que es justo el fallo que los spikes vigilan.
 
-torchaudio==2.5.1
+torchaudio==2.13.0
 # Lectura y escritura de audio del pipeline del modelo. Version acoplada a la de
-# torch (2.5.x con 2.5.x): un desparejo aqui rompe la carga de extensiones
+# torch (2.13.x con 2.13.x): un desparejo aqui rompe la carga de extensiones
 # nativas con un error que no menciona la causa. No se usa para el resample de
 # exportacion a 48 kHz, que va con soxr y es T-19/T-45, no Fase 0.
 
-safetensors==0.4.5
+safetensors==0.8.0
 # **La unica puerta de entrada de pesos permitida (D-14).** Formato sin
 # ejecucion de codigo al deserializar. Prohibido `torch.load`, `pickle`,
 # `joblib`, `dill` o `np.load(allow_pickle=True)` sobre un checkpoint: cargar un
@@ -78,7 +83,8 @@ soundfile==0.12.1
 # -----------------------------------------------------------------------------
 # ACE-Step 1.5 (el modelo) — SIN PIN TODAVIA, A PROPOSITO
 # -----------------------------------------------------------------------------
-# El paquete del proyecto upstream (3,5B parametros, Apache 2.0) no se puede
+# El paquete del proyecto upstream (3,7B parametros en 1.5; licencia **MIT**, no
+# Apache 2.0 como decia la planificacion — comprobado en T-06) no se puede
 # fijar desde aqui de forma honesta: su release y su API **no se han verificado
 # en esta maquina** (no hay GPU ni release descargada). El adapter de `T-05` no
 # lo importa a ciegas: aisla toda la integracion en un unico punto
@@ -86,7 +92,7 @@ soundfile==0.12.1
 # el shim no esta, el modo real **falla con mensaje explicito en vez de fingir**.
 #
 # Quien monte la maquina con GPU, como parte de T-03/T-05:
-#   1. descarga la release, comprueba que la licencia sigue siendo Apache 2.0 con
+#   1. descarga la release, comprueba que la licencia sigue siendo MIT con
 #      uso comercial permitido y anota la ficha de licencia (I-13b);
 #   2. escribe `apps/runner/adapters/ace_step/ace_step_shim.py` contra la API
 #      real, no contra la supuesta;

@@ -40,6 +40,19 @@ class TestEsAdapterDegradadoAMock:
         assert vram_profile.es_adapter_degradado_a_mock(meta) is False
 
 
+def _hay_cuda() -> bool:
+    try:
+        import torch  # noqa: PLC0415
+    except ImportError:
+        return False
+    return bool(torch.cuda.is_available())
+
+
+@pytest.mark.skipif(
+    _hay_cuda(),
+    reason="estos tests dependen de que NO haya CUDA: sin ella el adapter cae al mock, "
+    "que es el escenario C1; dentro del contenedor con --gpus all no aplican",
+)
 class TestMetaBackendAdapter:
     def test_lee_backend_y_source_de_un_adapter_real_degradado(self):
         # En esta maquina no hay CUDA: AceStepAdapter sin require_gpu cae al
