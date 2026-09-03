@@ -147,7 +147,13 @@ Escala **entera de 1 a 5** en las cinco dimensiones. Los descriptores de abajo s
 
 **Cómo se usan:** se sube por la escala hasta encontrar el primer descriptor que **deja de cumplirse**; se puntúa el anterior. Los niveles **2** y **4** son intermedios y se definen por contraste con sus vecinos. Ante la duda, **se puntúa a la baja** (§2.1).
 
-**Regla anti-inflación (obligatoria):** todo **5** exige escribir, en la casilla de notas, **una frase que explique por qué no es un 4**. Todo **4 o 5 en la dimensión 5** exige nombrar **el uso concreto** (qué pieza, qué brief) en el que se usaría. Sin esa frase, la puntuación **se rebaja en un punto** al consolidar la hoja.
+**Regla anti-inflación (obligatoria):** todo **5** exige escribir, en la casilla de notas, **una frase que explique por qué no es un 4**. Todo **4 o 5 en la dimensión 5** exige nombrar **el uso concreto** (qué pieza, qué brief) en el que se usaría. Sin esa frase, la puntuación **se rebaja en un punto**.
+
+> ⚠️ **CUÁNDO se aplica la rebaja — corregido el 2026-09-03 (A-10).** **En el momento de puntuar la pista, con el ciego intacto**, no al consolidar.
+>
+> La redacción anterior decía «al consolidar la hoja», y eso hacía el protocolo **incompatible consigo mismo**: §7.3 se rellena *después* de romper el ciego, y §8.1 anula la sesión si «alguna puntuación se modificó después de romper el ciego». Ejecutarlo con fidelidad producía una sesión **inválida**.
+>
+> En la práctica: si al puntuar una pista escribes un 5 y no eres capaz de escribir la frase que explica por qué no es un 4, **ese 5 pasa a 4 ahí mismo**, antes de pasar a la pista siguiente y mucho antes de sellar la hoja. La rebaja forma parte de puntuar, no de contar.
 
 ### 3.1 D1 · Adecuación al brief
 
@@ -219,7 +225,7 @@ Por cada pista — las **tres** de cada brief (propia, Suno y librería), sin sa
 
 1. Escucha completa **sin puntuar** (primera pasada del brief, §5.3).
 2. Segunda pasada: se puntúan **D1 → D2 → D3 → D4 → D5** en ese orden, **sin volver atrás** a corregir puntuaciones de la misma pista una vez escrita la siguiente dimensión.
-3. Se escribe la nota de D5 (obligatoria) y, si hay algún 5, su frase justificativa.
+3. Se escribe la nota de D5 (obligatoria) y, si hay algún 5, su frase justificativa. **Si la frase no sale, el 5 se rebaja a 4 en ese mismo momento** (regla anti-inflación de §3): con el ciego intacto y antes de pasar a la pista siguiente. Rebajar aquí es puntuar; rebajar al consolidar sería modificar una puntuación después de romper el ciego, y eso anula la sesión (§8.1).
 4. **No se comparan las tres pistas del brief entre sí mientras se puntúan.** La comparación la hace la aritmética de §8 al final, no el evaluador en caliente.
 
 ---
