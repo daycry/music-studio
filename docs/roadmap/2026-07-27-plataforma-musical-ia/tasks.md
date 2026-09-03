@@ -1316,6 +1316,43 @@ Tres entradas nuevas de hoy que el protocolo tiene que absorber **antes** de la 
 
 ---
 
+### T-89 · Adapter mock canónico del runner (`MOCK_GPU=1`) · 🟡 PROPUESTA
+
+> ⚠️ **Propuesta del 2026-09-03. DOS bloqueos, no uno.** (1) **`G1`** más sus propias dependencias, que están en el mismo bloque vetado: el mock que `test-plan.md` §2 especifica necesita el esquema del manifiesto v1 (`T-27`, F5), los eventos SSE (`T-16`, F4) y la métrica de coste (`T-24`, F4) para ser lo que ahí se describe. (2) **Ratificación económica**: delta **+12 h base / +14,4 h con margen / +720 €**.
+
+| Tipo | Estado | Dependencias | Tiempo estimado (base) | Tokens previstos |
+|---|---|---|---|---|
+| backend | **propuesta (no ratificada)** | T-16, T-24, T-27 | 12 h | 0,50 M in / 0,07 M out |
+
+**Descripción:** `test-plan.md` §2 especifica `apps/runner/adapters/mock/adapter.py` con siete comportamientos concretos —WAV sintético determinista de la duración exacta pedida, `provenance` completo y válido contra el esquema v1, etapas de progreso con retardo configurable por SSE, `simulate_failure` que falla una vez y acierta al reintentar, coste simulado imputado a la métrica, arranque instantáneo— y **toda** la suite `E2E-xx` de las fases 0/1, 2 y 3 corre con `MOCK_GPU=1`. Pero **ninguna ficha del ledger lo entrega**: `grep MOCK_GPU tasks.md` devolvía 0 y `apps/runner/adapters/` solo contiene `ace_step`. Es la pieza de la que depende toda la validación automática, y no tenía dueño, ni horas, ni tarea.
+
+**Lo que NO es:** `apps/runner/spikes/_mock.py` (482 líneas) existe y cubre el contrato de cuatro métodos, el determinismo y la telemetría M-3 — su propio docstring declara que **no** es el canónico y que **no** emite procedencia. Sirve para los spikes de Fase 0, no para los E2E.
+
+**Aviso que corrige una lectura optimista.** Se dijo (crítica de completitud del 2026-09-03) que las ~334 h «que no tocan la GPU» dependen de este mock y que estimarlo desbloquea camino. **Lo primero es cierto; lo segundo no.** El mock tal como está especificado depende de `T-16`, `T-24` y `T-27`, que viven en el mismo bloque que veta `G1`, así que no es una palanca para adelantar trabajo: es una pieza que hay que presupuestar para que las 334 h sean *verificables* cuando llegue su turno. Si alguna vez hiciera falta antes, lo construible por adelantado es el núcleo (contrato, WAV determinista, `simulate_failure`) sin procedencia ni SSE ni coste: unas 5 h de las 12, y quedaría a medias por definición.
+
+**Criterios de aceptación**
+- [ ] Implementa el mismo `MusicModelAdapter` que `ace_step`, con los siete comportamientos de `test-plan.md` §2.
+- [ ] Su `provenance` valida contra el esquema del manifiesto v1 firmado en `T-27`. Sin eso, los E2E que comprueban el certificado de procedencia validan un formato inventado.
+- [ ] Un test demuestra que mock y adapter real satisfacen el **mismo** contrato, de modo que el mock no pueda esconder un cambio de contrato.
+- [ ] Ninguna generación del mock reserva GPU ni imputa coste real.
+
+---
+
+> ## 🟠 PREGUNTAS ABIERTAS del 2026-09-03 — hay que decidirlas, no se resuelven solas
+>
+> Salen de la evaluación del 2026-09-03 sobre instalar y elegir modelos. Ninguna bloquea hoy; todas bloquean algo el día que se toque lo que nombran, y ninguna tiene dueño asignado todavía.
+>
+> | # | Pregunta | Por qué importa | Cuándo, como muy tarde |
+> |---|---|---|---|
+> | **P-01** | ¿El veredicto de `G1`, medido en `tier3` y con el artefacto convertido a **fp16 por Pascal**, se transfiere al servidor, donde lo correcto es refundir en **bf16** (otro SHA-256, otra versión)? | `gates/g1-protocolo.md` obliga a repetir el protocolo «en cada cambio de versión de adapter». Si eso incluye el cambio de dtype del artefacto, migrar al servidor **reabre el gate** y esas ~9 h vuelven | Antes de generar la serie de `T-09`: pactarlo con el resultado delante es peor |
+> | **P-02** | ¿Qué servidor? ¿GPU propia o alquilada? | Cambia si `T-41` (tope de gasto agregado + kill switch, 10 h) es opcional o **prerrequisito**: `D-29` exime del tope agregado cuando no hay facturación por hora | Antes de ratificar `T-85`/`T-86` |
+> | **P-03** | El tope `max_gpu_seconds` es **global del runner**, no por modelo (`min(peticion, contexto)`). Un modelo más lento instalado mañana no falla al detectarse: falla con `GpuBudgetExceeded` en **cada** generación hasta que alguien suba el techo a mano. El campo que lo arreglaría (`hardware`, `spec.md` §11.1) no lo consume nadie | Es exactamente el modo de fallo que el inventario de modelos pretende evitar, un nivel más abajo | Dentro de `T-30`, con el descriptor |
+> | **P-04** | ¿`.model.json` es la semilla del `ModelDescriptor` de `T-30`, o muere cuando `T-30` llegue? | Ya conviven tres formatos de metadatos (`.provenance.json` de build-time, `aux.manifest_json` empotrado que nadie lee, y el `ModelDescriptor` de 16 campos). Un cuarto sin destino declarado es deuda | Al abrir `T-30`. Si es semilla, se diseña ya contra `spec.md` §11.1 y con **licencias por componente**, no una licencia escalar |
+> | **P-05** | ¿Se cierra `T-03` con excepción documentada, o se paga un pod para el arranque en frío de S-01? | La precondición 1 de `g1-protocolo.md` §9.1 exige `T-03`…`T-07` completadas, y `T-03` tiene dos criterios abiertos: el arranque en frío contra RunPod (aparcado por presupuesto) y la revisión de seguridad escrita del código vendorizado, que se añadió como criterio el 2026-09-03 | Antes de convocar `G1` |
+> | **P-06** | El segundo adapter no tiene por qué ser HeartMuLa (15,8 GB, no cabe). Tres salidas con precio distinto: (a) pagar RunPod ≥24 GB para `T-29`/`T-31`/`T-34`; (b) replantear `T-31` a un modelo que quepa en 8 GB; (c) cerrar F5 con ACE-Step solo, que `T-31` ya contempla | `T-31` y `T-32` tienen criterios conjuntivos («ambos adapters»), así que bloquean el cierre de F5. Es la única de las 58 h bloqueadas por hardware que se puede desbloquear **sin comprar nada** | Antes de planificar F5 |
+
+---
+
 ## F7 · Generación letra + estilo end-to-end — C-01 (78 h)
 
 > **Orden interno deliberado:** primero backend completo (`T-42`–`T-45`) para alcanzar el hito de la canción end-to-end por CLI, después frontend (`T-46`–`T-48`).

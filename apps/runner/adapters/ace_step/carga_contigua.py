@@ -126,6 +126,14 @@ PREFIJOS_RESIDENTES_GPU_ESPERADOS = ("dit.decoder.",)
 #: Nombres de dtype de la especificacion de `safetensors` -> dtype de torch.
 #: Se resuelven perezosamente porque este modulo tiene que poder importarse en
 #: una maquina de desarrollo sin `torch`.
+#: Tope de la cabecera JSON. Es el MISMO que aplica `contracts.assert_safetensors_header()`
+#: —el de la implementacion de referencia de safetensors, 100 MB—, y no un valor
+#: propio: dos lectores del mismo formato con dos topes distintos acaban en «aqui
+#: pasa y alli no». Sobra de largo: la cabecera del artefacto real, con 1.492
+#: tensores, no llega a 200 KB. Sirve para no intentar leer a memoria una cifra
+#: disparatada cuando los 8 primeros bytes no son una longitud, sino opcodes.
+MAX_CABECERA_BYTES = 100 * 1024 * 1024
+
 _NOMBRES_DTYPE = {
     "F64": "float64",
     "F32": "float32",
@@ -186,7 +194,7 @@ def leer_cabecera(ruta: str) -> tuple[dict[str, Any], int]:
         if len(crudo) != 8:
             raise ArtefactoIlegible(f"{ruta!r} no tiene ni la longitud de cabecera.")
         n = int.from_bytes(crudo, "little")
-        if not 0 < n < 512 * _MIB:
+        if not 0 < n < MAX_CABECERA_BYTES:
             raise ArtefactoIlegible(
                 f"Longitud de cabecera absurda en {ruta!r}: {n} bytes. No es un safetensors."
             )
@@ -285,6 +293,46 @@ def _vista_escritura(buf: Any) -> memoryview:
     return memoryview(buf.numpy())
 
 
+def _nombre_dtype(meta: dict[str, Any]) -> str:
+    """Nombre de dtype de torch para lo que declara la cabecera.
+
+    Levanta `ArtefactoIlegible` y no `KeyError`, y eso NO es cosmetico: desde la
+    revision del 2026-09-03 el adapter cae al respaldo de `load_file` **solo**
+    ante `ArtefactoIlegible`. Un `KeyError` desnudo se propagaria como fallo
+    interno y ademas se saltaria el respaldo, cuando lo que pasa es justo lo que
+    el respaldo cubre: este cargador no sabe leer esa disposicion.
+    """
+    declarado = meta.get("dtype")
+    if declarado is None:
+        raise ArtefactoIlegible(
+            f"Entrada de cabecera sin 'dtype': {meta!r}. No es una cabecera de safetensors."
+        )
+    nombre = _NOMBRES_DTYPE.get(declarado)
+    if nombre is None:
+        raise ArtefactoIlegible(
+            f"dtype {declarado!r} no soportado por este cargador. Conocidos: "
+            f"{sorted(_NOMBRES_DTYPE)}. El formato safetensors admite mas (los de 8 bits "
+            "de coma flotante, por ejemplo), asi que esto es una limitacion nuestra y no "
+            "un artefacto corrupto: se cae al cargador de safetensors, que si los conoce."
+        )
+    return nombre
+
+
+def _forma(meta: dict[str, Any]) -> list[int]:
+    """Forma declarada, validada como lista de enteros no negativos."""
+    declarada = meta.get("shape")
+    if declarada is None:
+        raise ArtefactoIlegible(f"Entrada de cabecera sin 'shape': {meta!r}.")
+    if not isinstance(declarada, list) or not all(
+        isinstance(d, int) and not isinstance(d, bool) and d >= 0 for d in declarada
+    ):
+        raise ArtefactoIlegible(
+            f"'shape' invalida en la cabecera: {declarada!r}. Se espera una lista de "
+            "enteros no negativos."
+        )
+    return list(declarada)
+
+
 def _tensor_desde_buffer(buf: Any, rel: int, meta: dict[str, Any], torch: Any) -> Any:
     """Reinterpreta `buf[rel:rel+tam]` como el tensor que declara la cabecera.
 
@@ -293,8 +341,8 @@ def _tensor_desde_buffer(buf: Any, rel: int, meta: dict[str, Any], torch: Any) -
     elemento. En el artefacto real le pasa a UNO de los 1.492 tensores
     (`aux.silence_latent`, F32 de 3,84 MB detras de blobs U8 de longitud impar).
     """
-    dtype = getattr(torch, _NOMBRES_DTYPE[meta["dtype"]])
-    forma = list(meta["shape"])
+    dtype = getattr(torch, _nombre_dtype(meta))
+    forma = _forma(meta)
     n = _numel(forma)
     tam = meta["data_offsets"][1] - meta["data_offsets"][0]
     if n == 0 or tam == 0:
@@ -442,8 +490,19 @@ def cargar_contiguo(
                 _digerir_rango(fichero, digestor, digerido, tam_fichero - digerido, bloque, ruta)
                 digerido = tam_fichero
     except BaseException:
-        # Un fallo a mitad no puede dejar buffers de VRAM huerfanos: el adapter
-        # relanza y `_limpiar_carga_fallida()` cuenta con que aqui no queda nada.
+        # Un fallo a mitad no puede dejar tensores a medias en el diccionario que
+        # se devuelve: se sueltan aqui y el adapter relanza.
+        #
+        # OJO CON LO QUE ESTE `empty_cache()` HACE Y NO HACE (revision
+        # 2026-09-03): suelta al sistema los bloques que el asignador de PyTorch
+        # ya tiene libres, o sea los tensores de `estado` que acaba de descartar
+        # el `clear()`. Lo que NO libera es el buffer del tramo que se estaba
+        # leyendo cuando salto el fallo: `buf` y `escala` son variables locales de
+        # esta funcion y siguen vivas hasta que el marco muere, asi que su memoria
+        # aun tiene referencia. Se recupera al volver, cuando el marco se
+        # destruye, y el `_limpiar_carga_fallida()` del adapter vuelve a vaciar la
+        # cache justo despues. Este `empty_cache()` no es inutil —adelanta la
+        # devolucion de todo lo demas— pero no es la red que parecia.
         estado.clear()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()

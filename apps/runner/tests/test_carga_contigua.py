@@ -643,3 +643,68 @@ def estado_sha(ruta) -> str:
     import hashlib
 
     return hashlib.sha256(ruta.read_bytes()).hexdigest()
+
+
+class TestErroresDeCabeceraInesperada:
+    """La CLASE de excepcion decide el comportamiento, no solo el mensaje.
+
+    Desde la revision del 2026-09-03 el adapter cae al respaldo de `load_file`
+    **solo** ante `ArtefactoIlegible`, y ante cualquier otra excepcion propaga. Un
+    `KeyError` desnudo por un dtype que la tabla no conoce se leeria como fallo
+    interno del runner en vez de como «este artefacto no lo se leer», que es lo
+    que es.
+    """
+
+    @staticmethod
+    def _cabecera(tmp_path, entradas: dict) -> str:
+        import struct
+
+        cuerpo = json.dumps(entradas).encode("utf-8")
+        ruta = tmp_path / "raro.safetensors"
+        ruta.write_bytes(struct.pack("<Q", len(cuerpo)) + cuerpo + b"\x00" * 64)
+        return str(ruta)
+
+    def test_un_dtype_desconocido_es_artefacto_ilegible(self, tmp_path):
+        # F8_E4M3 existe en safetensors y esta tabla no lo tiene. Es un artefacto
+        # que este cargador no sabe leer, no un fallo del runner.
+        ruta = self._cabecera(
+            tmp_path, {"x": {"dtype": "F8_E4M3", "shape": [4], "data_offsets": [0, 4]}}
+        )
+        with pytest.raises(carga_contigua.ArtefactoIlegible, match="F8_E4M3"):
+            carga_contigua.cargar_contiguo(ruta)
+
+    def test_una_entrada_sin_shape_es_artefacto_ilegible(self, tmp_path):
+        ruta = self._cabecera(tmp_path, {"x": {"dtype": "U8", "data_offsets": [0, 4]}})
+        with pytest.raises(carga_contigua.ArtefactoIlegible, match="shape"):
+            carga_contigua.cargar_contiguo(ruta)
+
+    def test_una_entrada_sin_dtype_es_artefacto_ilegible(self, tmp_path):
+        ruta = self._cabecera(tmp_path, {"x": {"shape": [4], "data_offsets": [0, 4]}})
+        with pytest.raises(carga_contigua.ArtefactoIlegible, match="dtype"):
+            carga_contigua.cargar_contiguo(ruta)
+
+    def test_una_forma_que_no_es_lista_de_enteros_es_artefacto_ilegible(self, tmp_path):
+        ruta = self._cabecera(
+            tmp_path, {"x": {"dtype": "U8", "shape": "cuatro", "data_offsets": [0, 4]}}
+        )
+        with pytest.raises(carga_contigua.ArtefactoIlegible, match="shape"):
+            carga_contigua.cargar_contiguo(ruta)
+
+    def test_ninguno_de_estos_casos_escapa_como_keyerror(self, tmp_path):
+        # Guardarrail del motivo por el que existe esta clase: si vuelve a salir
+        # un KeyError, el adapter dejara de caer al respaldo y nadie sabra por que.
+        casos = [
+            {"x": {"dtype": "F8_E4M3", "shape": [4], "data_offsets": [0, 4]}},
+            {"x": {"dtype": "U8", "data_offsets": [0, 4]}},
+            {"x": {"shape": [4], "data_offsets": [0, 4]}},
+        ]
+        for entradas in casos:
+            with pytest.raises(carga_contigua.ArtefactoIlegible):
+                carga_contigua.cargar_contiguo(self._cabecera(tmp_path, entradas))
+
+    def test_el_tope_de_cabecera_es_el_mismo_que_el_de_contracts(self):
+        # Dos lectores con dos topes distintos para el mismo formato es una
+        # incoherencia que acaba en «aqui pasa y alli no».
+        import contracts
+
+        assert carga_contigua.MAX_CABECERA_BYTES == contracts._SAFETENSORS_HEADER_MAX_BYTES
