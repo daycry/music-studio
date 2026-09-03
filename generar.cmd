@@ -21,11 +21,18 @@ rem  configurado, el runner se niega a arrancar en vez de degradar al mock y
 rem  darte audio simulado sin avisarte.
 rem
 rem  Aislamiento en tiempo de ejecucion (revision 2026-09-03): el contenedor corre
-rem  SIN red, con el sistema de ficheros de solo lectura (salvo /outputs y un /tmp
-rem  efimero), sin capacidades de Linux y sin poder ganar privilegios. Las
-rem  variables *_OFFLINE de la imagen son una peticion a la libreria; esto es la
-rem  barrera. El codigo vendorizado que se ejecuta no ha pasado aun revision
-rem  linea a linea, asi que no tiene por que poder salir a ningun sitio.
+rem  SIN red, con el sistema de ficheros de solo lectura (salvo /outputs, un /tmp
+rem  efimero y un directorio personal efimero), sin capacidades de Linux y sin
+rem  poder ganar privilegios. Las variables *_OFFLINE de la imagen son una
+rem  peticion a la libreria; esto es la barrera. El codigo vendorizado que se
+rem  ejecuta no ha pasado aun revision linea a linea, asi que no tiene por que
+rem  poder salir a ningun sitio.
+rem
+rem  Por que el directorio personal lleva `exec`: Triton (lo trae torch 2.13 para
+rem  algunos nucleos, y lo usa el detokenizer del planificador) compila en
+rem  ~/.triton/cache un `cuda_utils.so` y lo carga con dlopen. Un tmpfs de Docker
+rem  se monta `noexec` por defecto y eso lo rompe (medido el 2026-09-03). /tmp
+rem  sigue siendo noexec.
 rem
 rem  Integridad de los pesos: el adapter compara el SHA-256 del artefacto con el
 rem  `.provenance.json` hermano que dejo el fusor (mismo directorio). No hace
@@ -57,6 +64,7 @@ echo.
 docker run --rm --gpus all ^
   --network none ^
   --read-only --tmpfs /tmp:rw,size=512m ^
+  --tmpfs /home/runner:rw,exec,size=256m,uid=10001,gid=10001 ^
   --cap-drop ALL --security-opt no-new-privileges ^
   --pids-limit 256 ^
   -e ACE_STEP_REQUIRE_GPU=1 ^

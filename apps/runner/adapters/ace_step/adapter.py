@@ -334,7 +334,9 @@ def _prefijos_residentes_gpu(factoria: Callable[..., Any]) -> tuple[str, ...]:
     return tuple(prefijos)
 
 
-def _cargar_state_dict(ruta: str, factoria: Callable[..., Any], device: str) -> Any:
+def _cargar_state_dict(
+    ruta: str, factoria: Callable[..., Any], device: str, digestor: Any = None
+) -> Any:
     """Lee el artefacto por tramos contiguos; cae a `load_file` SOLO si no sabe leerlo.
 
     La lectura contigua es la que baja `vram_load` de 709 s a ~70 s (ver el bloque
@@ -360,7 +362,9 @@ def _cargar_state_dict(ruta: str, factoria: Callable[..., Any], device: str) -> 
         if str(device).startswith("cuda"):
             destinos = {p: str(device) for p in _prefijos_residentes_gpu(factoria)}
         try:
-            return carga_contigua.cargar_contiguo(ruta, destinos=destinos)
+            # `digestor` (hashlib) recibe todos los bytes de paso: la integridad
+            # sale gratis de la misma lectura en vez de costar un segundo recorrido.
+            return carga_contigua.cargar_contiguo(ruta, destinos=destinos, digestor=digestor)
         except carga_contigua.ArtefactoIlegible as exc:
             _LOG.warning(
                 "La lectura contigua de %r no sabe leer este artefacto (%r). Se vuelve a "
@@ -734,7 +738,9 @@ class AceStepAdapter:
                     f"'-v /ruta/host/pesos:{DEFAULT_WEIGHTS_DIR}:ro'): la imagen no los "
                     "incluye a proposito."
                 )
-            self._verificar_integridad(ruta)
+            # Solo se RESUELVE que hash se espera; el calculo va de paso en la
+            # lectura contigua de la etapa 3 y se compara alli.
+            hash_esperado = self._hash_esperado(ruta)
 
         # 3) Carga del artefacto. Imports perezosos: en la maquina de desarrollo
         #    no hay torch, y este fichero tiene que poder importarse igualmente.
@@ -809,7 +815,16 @@ class AceStepAdapter:
                 # La factoria se resuelve ANTES de leer ~7 GB de pesos: el fallo
                 # tipico (shim ausente) no debe dejar un state_dict huerfano.
                 factoria = _resolve_pipeline_factory()
-                state_dict = _cargar_state_dict(ruta, factoria, ctx.device)
+                digestor = hashlib.sha256() if hash_esperado else None
+                state_dict = _cargar_state_dict(ruta, factoria, ctx.device, digestor=digestor)
+                if hash_esperado:
+                    # Si la carga fue por el respaldo (`load_file`), no hay hash de
+                    # paso y `_verificar_integridad` recorre el fichero.
+                    self._verificar_integridad(
+                        ruta,
+                        obtenido=getattr(state_dict, "sha256", None),
+                        esperado=hash_esperado,
+                    )
                 self._pipeline = factoria(
                     state_dict=state_dict,
                     device=ctx.device,
@@ -843,10 +858,11 @@ class AceStepAdapter:
             {k: round(v, 2) for k, v in self._load_timings.items()},
         )
 
-    def _verificar_integridad(self, ruta: str) -> None:
-        """Compara el SHA-256 de los pesos con el hash esperado, si hay alguno.
+    def _hash_esperado(self, ruta: str) -> tuple[str, str] | None:
+        """(sha256 esperado, origen), o `None` si no hay nada que comparar.
 
-        De donde sale el hash esperado, por orden:
+        Cuando devuelve `None` ya ha avisado por el log del motivo (salto
+        explicito o ausencia de fuente). De donde sale el hash esperado, por orden:
 
         1. `ACE_STEP_WEIGHTS_SHA256`, si esta definida (manda siempre).
         2. El `<artefacto>.provenance.json` hermano que escribe el fusor
@@ -868,7 +884,7 @@ class AceStepAdapter:
                 "Integridad de pesos NO verificada: ACE_STEP_SKIP_INTEGRITY esta activo. "
                 "Solo es legitimo para medir el arranque en frio (T-03)."
             )
-            return
+            return None
         esperado = os.environ.get("ACE_STEP_WEIGHTS_SHA256", "").strip().lower()
         origen = "ACE_STEP_WEIGHTS_SHA256"
         if not esperado:
@@ -879,22 +895,48 @@ class AceStepAdapter:
                 "El artefacto se carga tal cual esta en disco.",
                 origen,
             )
-            return
+            return None
+        return esperado, origen
+
+    def _verificar_integridad(
+        self,
+        ruta: str,
+        obtenido: str | None = None,
+        esperado: tuple[str, str] | None = None,
+    ) -> None:
+        """Compara el SHA-256 de los pesos con el esperado y aborta si difieren.
+
+        `obtenido`: hash ya calculado (normalmente de paso en la lectura contigua,
+        `EstadoDelArtefacto.sha256`). Si es `None`, se recorre el fichero entero,
+        que sobre el bind mount son ~217 s por 7,5 GB: es el camino de respaldo,
+        no el normal. `esperado`: lo que devolvio `_hash_esperado`; si es `None`
+        se resuelve aqui, y si no hay nada que comparar se sale sin error.
+        """
+        if esperado is None:
+            esperado = self._hash_esperado(ruta)
+            if esperado is None:
+                return
+        valor, origen = esperado
         inicio = time.perf_counter()
-        digestor = hashlib.sha256()
-        with open(ruta, "rb") as fichero:
-            for bloque in iter(lambda: fichero.read(8 * 1024 * 1024), b""):
-                digestor.update(bloque)
-        obtenido = digestor.hexdigest()
-        if obtenido != esperado:
+        if obtenido is None:
+            digestor = hashlib.sha256()
+            with open(ruta, "rb") as fichero:
+                for bloque in iter(lambda: fichero.read(8 * 1024 * 1024), b""):
+                    digestor.update(bloque)
+            obtenido = digestor.hexdigest()
+            como = "recorriendo el fichero"
+        else:
+            como = "calculado de paso en la carga"
+        if obtenido != valor:
             raise RuntimeError(
                 f"Integridad de pesos fallida en {ruta!r}: SHA-256 {obtenido} frente al "
-                f"esperado {esperado} (segun {origen}). El arranque se aborta."
+                f"esperado {valor} (segun {origen}). El arranque se aborta."
             )
         _LOG.info(
-            "Integridad de pesos verificada (SHA-256 %s..., segun %s, %.1f s).",
+            "Integridad de pesos verificada (SHA-256 %s..., segun %s, %s, %.1f s).",
             obtenido[:16],
             origen,
+            como,
             time.perf_counter() - inicio,
         )
 

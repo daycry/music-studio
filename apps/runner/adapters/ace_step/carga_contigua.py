@@ -155,6 +155,9 @@ class EstadoDelArtefacto(dict):
 
     #: Los tensores viven en RAM/VRAM anonima, no en un mapeo del fichero.
     tensores_materializados = True
+    #: SHA-256 hexadecimal del fichero ENTERO, calculado de paso durante la
+    #: lectura si se pidio un `digestor`; `None` si no se pidio.
+    sha256: str | None = None
 
 
 @dataclass
@@ -335,6 +338,7 @@ def cargar_contiguo(
     destinos: dict[str, str] | None = None,
     tope_tramo: int = TOPE_TRAMO_BYTES,
     bloque: int = BLOQUE_BYTES,
+    digestor: Any = None,
 ) -> EstadoDelArtefacto:
     """Carga el artefacto leyendo cada tramo contiguo de una sola vez.
 
@@ -344,6 +348,12 @@ def cargar_contiguo(
             es `{"dit.decoder.": "cuda:0"}`, que el adapter toma del propio shim.
         tope_tramo: tope de bytes por tramo (ver `TOPE_TRAMO_BYTES`).
         bloque: tamano de cada `readinto`.
+        digestor: objeto tipo `hashlib.sha256()`. Si se da, se le pasan TODOS los
+            bytes del fichero en orden (cabecera, tramos y cualquier hueco o cola
+            que la cabecera no declare) y el resultado queda en `estado.sha256`.
+            Es la verificacion de integridad a coste casi cero: recorrer 7,5 GB
+            por el bind mount solo para hashearlos costaba 217 s por arranque
+            (revision 2026-09-03), y esta lectura ya pasa por cada byte.
 
     Returns:
         `EstadoDelArtefacto`: un `dict` de tensores **ya materializados**.
@@ -386,18 +396,28 @@ def cargar_contiguo(
     escala: Any = None
     inicio = time.perf_counter()
     leidos = 0
+    digerido = 0  # bytes del fichero ya pasados al digestor, en orden
     try:
         with open(ruta, "rb", buffering=0) as fichero:
+            if digestor is not None:
+                # La cabecera (longitud + JSON) tambien forma parte del hash.
+                _digerir_rango(fichero, digestor, 0, base, bloque, ruta)
+                digerido = base
             for tramo in tramos:
                 t0 = time.perf_counter()
+                if digestor is not None and tramo.ini > digerido:
+                    # Hueco que la cabecera no cubre: no se carga, pero se hashea.
+                    _digerir_rango(fichero, digestor, digerido, tramo.ini - digerido, bloque, ruta)
                 fichero.seek(tramo.ini)
                 buf = _buffer(tramo.bytes, tramo.destino, torch)
                 if buf.device.type == "cpu":
-                    _leer_en(fichero, _vista_escritura(buf), tramo.bytes, bloque, ruta)
+                    _leer_en(fichero, _vista_escritura(buf), tramo.bytes, bloque, ruta, digestor)
                 else:
                     if escala is None:
                         escala = _buffer(min(bloque, tramo.bytes), "cpu", torch)
-                    _leer_a_dispositivo(fichero, buf, tramo.bytes, escala, ruta)
+                    _leer_a_dispositivo(fichero, buf, tramo.bytes, escala, ruta, digestor)
+                if digestor is not None:
+                    digerido = tramo.fin
                 for clave in tramo.claves:
                     meta = cabecera[clave]
                     rel = base + meta["data_offsets"][0] - tramo.ini
@@ -417,6 +437,10 @@ def cargar_contiguo(
                     len(tramo.claves),
                     tramo.claves[0],
                 )
+            if digestor is not None and digerido < tam_fichero:
+                # Cola tras el ultimo tensor: tampoco se carga, pero cuenta.
+                _digerir_rango(fichero, digestor, digerido, tam_fichero - digerido, bloque, ruta)
+                digerido = tam_fichero
     except BaseException:
         # Un fallo a mitad no puede dejar buffers de VRAM huerfanos: el adapter
         # relanza y `_limpiar_carga_fallida()` cuenta con que aqui no queda nada.
@@ -425,6 +449,8 @@ def cargar_contiguo(
             torch.cuda.empty_cache()
         raise
 
+    if digestor is not None:
+        estado.sha256 = digestor.hexdigest()
     total = time.perf_counter() - inicio
     _LOG.info(
         "Artefacto cargado: %.0f MiB en %.2f s -> %.1f MiB/s de media, %d tensores.%s",
@@ -460,7 +486,23 @@ def _memoria_del_anfitrion() -> str:
     )
 
 
-def _leer_en(fichero: Any, vista: memoryview, n: int, bloque: int, ruta: str) -> None:
+def _digerir_rango(fichero: Any, digestor: Any, ini: int, n: int, bloque: int, ruta: str) -> None:
+    """Pasa al digestor los `n` bytes desde `ini`, sin conservarlos."""
+    fichero.seek(ini)
+    hechos = 0
+    while hechos < n:
+        trozo = fichero.read(min(bloque, n - hechos))
+        if not trozo:
+            raise ArtefactoIlegible(
+                f"{ruta!r} termino antes de tiempo: faltan {n - hechos} bytes por hashear."
+            )
+        digestor.update(trozo)
+        hechos += len(trozo)
+
+
+def _leer_en(
+    fichero: Any, vista: memoryview, n: int, bloque: int, ruta: str, digestor: Any = None
+) -> None:
     """`readinto` secuencial del rango completo sobre un buffer propio."""
     hechos = 0
     while hechos < n:
@@ -470,10 +512,14 @@ def _leer_en(fichero: Any, vista: memoryview, n: int, bloque: int, ruta: str) ->
             raise ArtefactoIlegible(
                 f"{ruta!r} termino antes de tiempo: faltan {n - hechos} bytes del tramo."
             )
+        if digestor is not None:
+            digestor.update(vista[hechos : hechos + k])
         hechos += k
 
 
-def _leer_a_dispositivo(fichero: Any, destino: Any, n: int, escala: Any, ruta: str) -> None:
+def _leer_a_dispositivo(
+    fichero: Any, destino: Any, n: int, escala: Any, ruta: str, digestor: Any = None
+) -> None:
     """Escalera disco -> buffer de escala en RAM -> copia H2D, sin picos en RAM.
 
     El buffer de escala se reutiliza en todas las vueltas: el anfitrion nunca
@@ -490,5 +536,7 @@ def _leer_a_dispositivo(fichero: Any, destino: Any, n: int, escala: Any, ruta: s
             raise ArtefactoIlegible(
                 f"{ruta!r} termino antes de tiempo: faltan {n - hechos} bytes del tramo."
             )
+        if digestor is not None:
+            digestor.update(vista[:k])
         destino.narrow(0, hechos, k).copy_(escala.narrow(0, 0, k))
         hechos += k

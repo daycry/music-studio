@@ -433,7 +433,7 @@ class TestAdapter:
         ruta, _ = artefacto
         vistos = {}
 
-        def espia(ruta_, *, destinos):
+        def espia(ruta_, *, destinos, digestor=None):
             vistos["destinos"] = destinos
             return carga_contigua.EstadoDelArtefacto()
 
@@ -590,3 +590,56 @@ def test_build_pipeline_propaga_la_marca_al_text_encoder(monkeypatch, marcado):
             offload=False,
         )
     assert visto == {"consumir": True, "materializado": marcado}
+
+
+class TestHashDuranteLaCarga:
+    """Integridad a coste casi cero (revision 2026-09-03): recorrer 7,5 GB por el
+    bind mount solo para hashearlos costo 217 s por arranque. La lectura contigua
+    ya pasa por todos los bytes del fichero, en orden y sin huecos (el formato
+    safetensors lo garantiza): que los digiera de paso.
+    """
+
+    def test_el_hash_calculado_durante_la_carga_es_el_del_fichero(self, artefacto):
+        import hashlib
+
+        ruta, _ = artefacto
+        estado = carga_contigua.cargar_contiguo(str(ruta), digestor=hashlib.sha256())
+        assert estado.sha256 == hashlib.sha256(ruta.read_bytes()).hexdigest()
+
+    def test_el_hash_no_depende_de_como_se_troceen_los_tramos(self, artefacto):
+        import hashlib
+
+        ruta, _ = artefacto
+        estado = carga_contigua.cargar_contiguo(
+            str(ruta), digestor=hashlib.sha256(), tope_tramo=64, bloque=7
+        )
+        assert estado.sha256 == hashlib.sha256(ruta.read_bytes()).hexdigest()
+
+    def test_sin_digestor_no_hay_hash(self, artefacto):
+        ruta, _ = artefacto
+        estado = carga_contigua.cargar_contiguo(str(ruta))
+        assert estado.sha256 is None
+
+    def test_el_adapter_reutiliza_el_hash_de_la_carga_sin_releer(self, artefacto, monkeypatch):
+        # Si el adapter recibe un hash ya calculado, lo compara y NO vuelve a
+        # recorrer el fichero: un valor falso tiene que abortar aunque el fichero
+        # en disco sea correcto.
+        import hashlib
+
+        ruta, _ = artefacto
+        ruta.with_suffix(".provenance.json").write_text(
+            '{"artifact": {"sha256": "%s"}}' % hashlib.sha256(ruta.read_bytes()).hexdigest(),
+            encoding="utf-8",
+        )
+        monkeypatch.delenv("ACE_STEP_WEIGHTS_SHA256", raising=False)
+        monkeypatch.delenv("ACE_STEP_SKIP_INTEGRITY", raising=False)
+        adapter = modulo_adapter.AceStepAdapter(mock=None, require_gpu=False)
+        adapter._verificar_integridad(str(ruta), obtenido=estado_sha(ruta))  # correcto: pasa
+        with pytest.raises(RuntimeError, match="Integridad de pesos fallida"):
+            adapter._verificar_integridad(str(ruta), obtenido="0" * 64)
+
+
+def estado_sha(ruta) -> str:
+    import hashlib
+
+    return hashlib.sha256(ruta.read_bytes()).hexdigest()
