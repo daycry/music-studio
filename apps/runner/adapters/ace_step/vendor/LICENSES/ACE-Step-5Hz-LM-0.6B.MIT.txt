@@ -1,0 +1,59 @@
+================================================================================
+EVIDENCIA DE LICENCIA - ACE-Step/acestep-5Hz-lm-0.6B (planificador 5 Hz)
+================================================================================
+Componente      : acestep-5Hz-lm-0.6B (Qwen3ForCausalLM, 662.884.352 par., BF16)
+Repo HuggingFace: https://huggingface.co/ACE-Step/acestep-5Hz-lm-0.6B
+Revision fijada : 148d8ea0225bdab342ee1ae3a354275ccd60ca80
+SPDX            : MIT
+gated           : false      private: false
+Capturado el    : 2026-09-02
+
+PROCEDENCIA DEL TEXTO DE LA LICENCIA (leer, importa):
+  El repo de HuggingFace NO publica fichero de licencia. Comprobado en la
+  revision fijada, no en main:
+      GET /ACE-Step/acestep-5Hz-lm-0.6B/resolve/148d8ea0.../LICENSE      -> HTTP 404
+      GET /ACE-Step/acestep-5Hz-lm-0.6B/resolve/148d8ea0.../LICENSE.txt  -> HTTP 404
+      GET /ACE-Step/acestep-5Hz-lm-0.6B/resolve/148d8ea0.../LICENSE.md   -> HTTP 404
+  La declaracion MIT en HuggingFace existe SOLO como metadato, por dos vias
+  coincidentes:
+      api/models/.../revision/148d8ea0... -> cardData.license = "mit"
+                                          -> tags contiene "license:mit"
+      README.md de la revision fijada, frontmatter YAML: license: mit
+  El TEXTO INTEGRO que sigue NO procede de HuggingFace, sino del repo de codigo
+  del mismo proveedor:
+      https://raw.githubusercontent.com/ace-step/ACE-Step-1.5/main/LICENSE  (HTTP 200)
+  Es el MISMO texto ya archivado como LICENSE.acestep.mit.txt para los pesos de
+  ACE-Step 1.5 (mismos bytes, mismo sha256).
+
+LIMITACION QUE HAY QUE DECIR EN VOZ ALTA:
+  Emparejar el texto MIT de un repo de GitHub (codigo, rama main, movil) con unos
+  PESOS publicados en otro repo (HuggingFace, revision inmutable) es una
+  inferencia razonable, no una atestacion del proveedor sobre esos pesos. Lo unico
+  que el proveedor afirma sobre ESTOS pesos en ESTA revision es la cadena "mit".
+  Suficiente para el invariante de CLAUDE.md (licencia comercial verificada antes
+  de integrar: MIT lo es), pero queda registrado como tal.
+
+================================================================================
+TEXTO INTEGRO (github.com/ace-step/ACE-Step-1.5, fichero LICENSE)
+================================================================================
+MIT License
+
+Copyright (c) 2026 ACEStep
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

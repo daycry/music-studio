@@ -167,10 +167,31 @@ _LOG = logging.getLogger("ace_step.adapter")
 DEFAULT_WEIGHTS_DIR = "/weights"
 DEFAULT_WEIGHTS_FILE = "ace_step_1_5.safetensors"
 DEFAULT_OUTPUT_DIR = "/outputs"
-#: 600 s: holgado frente a los 150 s por pista de S-02, y suficiente para que un
-#: caso con offloading (que degrada de forma material) no salte el presupuesto
-#: por accidente. Es un techo de seguridad (D-17), no un objetivo.
-DEFAULT_MAX_GPU_SECONDS = 600
+#: Techo de seguridad de D-17, en segundos de GPU por trabajo. **Atado a lo
+#: MEDIDO, no a una cifra redonda.**
+#:
+#: Historia, porque el numero anterior estaba mal: eran 600 s, elegidos frente a
+#: los 150 s por pista de S-02. Pero S-02 describe una GPU de la clase objetivo
+#: (>= 24 GB), y la medicion de `T-03` en la tarjeta real (tier3, con offloading
+#: obligatorio) dice otra cosa: una pista de 240 s cuesta **623-690 s en total**,
+#: de los cuales la **planificacion sola son 615,320 s** (ver la tabla de `T-03`
+#: en `tasks.md`). O sea que arrancar `serve` con los valores de fabrica abortaba
+#: por presupuesto cualquier pista larga con planificador **antes incluso de
+#: empezar a difundir**.
+#:
+#: 1800 s cubre con margen la pista mas larga que el shim admite (420 s, techo
+#: medido): extrapolando linealmente el coste de planificacion, ~1.208 s. Es el
+#: mismo valor que los spikes ya venian pasando a mano (`--max-gpu-seconds 1800`)
+#: precisamente porque el defecto no les servia.
+#:
+#: Un presupuesto que aborta el caso NORMAL no protege de nada: ensena a subirlo
+#: a ciegas, y entonces deja de cortar el caso desbocado, que es lo unico que
+#: D-17 quiere cortar.
+#:
+#: **Esto es un suelo pesimista atado a `tier3`, no una constante universal.** En
+#: una GPU de la clase objetivo sobra por un factor grande. No se lea como «lo
+#: que cuesta generar»: se lea como «por encima de esto, algo va mal».
+DEFAULT_MAX_GPU_SECONDS = 1800
 #: La superficie HTTP de `serve` es una **consola de control de la Fase 0**, no
 #: la API de plataforma (`T-11`): no tiene autenticacion. Por eso escucha en
 #: loopback por defecto y el `Dockerfile` documenta publicar el puerto solo en

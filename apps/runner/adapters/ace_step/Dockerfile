@@ -232,7 +232,20 @@ RUN pip install --no-cache-dir --disable-pip-version-check --break-system-packag
         vector-quantize-pytorch==1.31.1 \
         einx==0.4.3 \
         torch-einops-utils==0.1.22 \
-        "numpy>=2.1,<2.5"
+        "numpy>=2.1,<2.5" \
+        pyyaml==6.0.3
+# pyyaml va FIJADO aunque nadie lo pida directamente: `vendor/lm/prompt.py` lo
+# importa, o sea que su codigo se EJECUTA en el camino del planificador de 5 Hz.
+# Hasta el 2026-09-03 llegaba solo como dependencia transitiva y sin version, y
+# una dependencia que se ejecuta y no esta fijada es una puerta abierta en la
+# cadena de suministro. 6.0.3 es la que la imagen ya resolvia (verificado dentro
+# del contenedor), asi que fijarla no cambia nada de lo medido.
+#
+# DEUDA CONOCIDA, no cerrada aqui: estos pines son por version, no por hash. Sin
+# `--require-hashes` un indice comprometido o un reemplazo de artefacto en PyPI
+# entraria igual. Cerrarlo bien exige resolver el arbol transitivo completo con
+# `pip-compile --generate-hashes` a un requirements.lock, y eso cambia la forma de
+# construir la imagen: es una tarea aparte, no una linea mas.
 
 
 # -----------------------------------------------------------------------------

@@ -17,7 +17,7 @@ import pytest
 
 import _timing
 from _mock import MockMusicModelAdapter, make_request
-from adapter import AceStepAdapter, _slug
+from adapter import DEFAULT_MAX_GPU_SECONDS, AceStepAdapter, _slug
 from contracts import RunnerContext
 
 
@@ -328,3 +328,46 @@ class TestIdentidadDePesosEnDescribe:
         info = adapter.describe()
         assert info["weights_sha256"] == sha
         assert info["weights_sha256_origen"] == "ACE_STEP_WEIGHTS_SHA256"
+
+
+# --------------------------------------------------------------------------- #
+# Presupuesto por defecto frente a lo MEDIDO (revision 2026-09-03)
+# --------------------------------------------------------------------------- #
+
+class TestPresupuestoPorDefecto:
+    """Un presupuesto que aborta el caso normal no protege: ensena a subirlo a ciegas.
+
+    D-17 existe para cortar trabajos DESBOCADOS. El defecto era 600 s, y la
+    medicion de T-03 en esta tarjeta dice que una pista de 240 s cuesta 623-690 s
+    en total, de los cuales la planificacion sola son 615,320 s. O sea que arrancar
+    el servidor con los valores de fabrica abortaba cualquier pista larga antes
+    incluso de empezar a difundir.
+    """
+
+    #: Coste total medido de una pista de 240 s en tier3 con planificador
+    #: (tasks.md, tabla de T-03: 615,320 s de planificacion + difusion + decode).
+    COSTE_MEDIDO_240S = 690.348
+    #: Techo de duracion que admite el shim en esta tarjeta.
+    DURACION_MAX_SHIM_S = 420
+
+    def test_el_defecto_cubre_la_pista_mas_larga_que_el_shim_admite(self):
+        # La planificacion escala con la duracion, asi que se extrapola linealmente
+        # desde lo medido. No es una cota fina: es la comprobacion de que el
+        # defecto no aborta el caso normal.
+        estimado = self.COSTE_MEDIDO_240S * (self.DURACION_MAX_SHIM_S / 240.0)
+        assert DEFAULT_MAX_GPU_SECONDS >= estimado, (
+            f"el defecto {DEFAULT_MAX_GPU_SECONDS} s no cubre los "
+            f"~{estimado:.0f} s que cuesta una pista de {self.DURACION_MAX_SHIM_S} s "
+            "segun la medicion de T-03"
+        )
+
+    def test_el_defecto_no_es_ilimitado(self):
+        # D-17 sigue siendo innegociable: hay techo, y es finito.
+        assert 0 < DEFAULT_MAX_GPU_SECONDS < 100_000
+
+    def test_el_presupuesto_efectivo_sigue_siendo_el_menor_de_los_dos(self):
+        # La regla de D-17 no cambia por subir el defecto: una peticion no puede
+        # pedir mas GPU de la que el runner concede, ni al reves.
+        assert min(300, DEFAULT_MAX_GPU_SECONDS) == 300
+        ctx = _ctx(max_gpu_seconds=120)
+        assert min(600, ctx.max_gpu_seconds) == 120

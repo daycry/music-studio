@@ -42,6 +42,11 @@
 # fijada por digest, transformers 5.16.1, safetensors 0.8.0, ...). Este fichero
 # sirve para correr en el host y se mantiene alineado con la imagen a mano.
 
+pyyaml==6.0.3
+# Lo importa `adapters/ace_step/vendor/lm/prompt.py`, o sea que su codigo se
+# EJECUTA en el camino del planificador de 5 Hz. Hasta el 2026-09-03 llegaba
+# transitivo y sin version en los dos sitios.
+
 torch==2.13.0
 # Motor de inferencia. Es lo que aporta CUDA, la deteccion de VRAM
 # (`_timing.vram_snapshot_mb`, `_timing.gpu_info` -> `torch.cuda`) y el

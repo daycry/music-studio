@@ -206,6 +206,7 @@ import json
 import logging
 import math
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -380,6 +381,85 @@ _MARGEN_BYTES = 256 * _MIB
 #: Perillas admitidas en `model_params`. Lista blanca: un parametro desconocido
 #: se rechaza en vez de ignorarse en silencio (no hay `params_schema` hasta T-30,
 #: pero eso no autoriza a tragarse lo que el llamante pida).
+#: Compas: dos enteros positivos separados por barra. No se valida que sea una
+#: metrica *sensata* (7/8 lo es, 13/16 tambien): solo que tenga esa forma, porque
+#: lo que el modelo entiende lo decide el modelo.
+_RE_COMPAS = re.compile(r"^\s*\d{1,2}\s*/\s*\d{1,2}\s*$")
+
+
+def _validar_texto_musical(campo: str, valor: Any) -> str | None:
+    """Un metadato de texto que el condicionamiento va a tratar como cadena.
+
+    No se valida el CONTENIDO —que `keyscale` sea una tonalidad que el modelo
+    conozca es asunto del modelo, no nuestro—, solo que sea texto. Inventar aqui
+    un vocabulario cerrado de tonalidades seria decidir por el modelo y romper
+    peticiones legitimas.
+    """
+    if valor is None:
+        return None
+    if not isinstance(valor, str) or isinstance(valor, bool):
+        raise ValueError(
+            f"model_params[{campo!r}] tiene que ser texto y llego "
+            f"{type(valor).__name__} ({valor!r}). El condicionamiento lo trata como "
+            "cadena, asi que un valor de otro tipo revienta dentro del modelo en vez "
+            "de rechazarse aqui."
+        )
+    limpio = valor.strip()
+    if not limpio:
+        raise ValueError(f"model_params[{campo!r}] esta vacio: omitelo en vez de mandarlo vacio.")
+    return limpio
+
+
+def _validar_compas(valor: Any) -> str | None:
+    """`timesignature` con forma de compas: '4/4', '7/8'."""
+    if valor is None:
+        return None
+    texto = _validar_texto_musical("timesignature", valor)
+    if texto is not None and not _RE_COMPAS.match(texto):
+        raise ValueError(
+            f"model_params['timesignature']={valor!r} no tiene forma de compas. Se "
+            "espera dos enteros separados por barra, como '4/4' o '7/8'."
+        )
+    return texto
+
+
+def _validar_bpm(valor: Any) -> Any:
+    """`bpm` numerico, aceptado como numero o como texto numerico.
+
+    Se devuelve TAL CUAL se recibio (numero o cadena) y no normalizado: el
+    condicionamiento vendorizado lo formatea a su manera, y convertirlo aqui
+    cambiaria lo que ve el modelo. Lo que se comprueba es que sea interpretable
+    como numero, para no colarle un 'rapido' que acabe en un error dentro del
+    vendor.
+    """
+    if valor is None:
+        return None
+    if isinstance(valor, bool):
+        raise ValueError("model_params['bpm'] no puede ser un booleano.")
+    if isinstance(valor, (int, float)):
+        numero = float(valor)
+    elif isinstance(valor, str):
+        try:
+            numero = float(valor.strip())
+        except ValueError as exc:
+            raise ValueError(
+                f"model_params['bpm']={valor!r} no es un numero. Se espera algo como "
+                "120 o '120'."
+            ) from exc
+    else:
+        raise ValueError(
+            f"model_params['bpm'] tiene que ser un numero o un texto numerico y llego "
+            f"{type(valor).__name__} ({valor!r})."
+        )
+    # Cota de cordura, no musical: 300 BPM es rapidisimo pero existe; 0 y los
+    # negativos no son tempos.
+    if not 20.0 <= numero <= 400.0:
+        raise ValueError(
+            f"model_params['bpm']={valor!r} esta fuera del rango de cordura 20-400."
+        )
+    return valor
+
+
 _PARAMS_ADMITIDOS = frozenset(
     {
         # -- variante de pesos ---------------------------------------------- #
@@ -665,10 +745,15 @@ def _exigir_esquema_compatible(state_dict: dict[str, torch.Tensor]) -> int | Non
             f"El artefacto declara artifact_schema_version={declarada!r} y este shim "
             f"entiende la {ARTIFACT_SCHEMA_VERSION_SOPORTADA}. La disposicion de los "
             "tensores puede haber cambiado, asi que cargarlo no daria un error claro: "
-            "daria un fallo raro mas adelante, o audio incorrecto. Actualiza el shim a "
-            "ese esquema, o regenera el artefacto con un fusor de "
-            f"ARTIFACT_SCHEMA_VERSION={ARTIFACT_SCHEMA_VERSION_SOPORTADA} "
-            "(apps/runner/tools/build_artifact.py)."
+            "daria un fallo raro mas adelante, o audio incorrecto.\n"
+            "  Salida correcta: adapta la carga de este shim al layout nuevo y SOLO "
+            f"entonces sube ARTIFACT_SCHEMA_VERSION_SOPORTADA (el numero no arregla "
+            "nada por si solo).\n"
+            "  Salida rapida, si el artefacto se puede reconstruir: regeneralo con el "
+            "fusor de ESTE arbol (apps/runner/tools/build_artifact.py), que escribe el "
+            f"esquema {ARTIFACT_SCHEMA_VERSION_SOPORTADA} por construccion. NO busques "
+            "un fusor antiguo: bajar la version del fusor para que encaje con un shim "
+            "viejo es ir en la direccion contraria."
         )
 
     if CLAVE_MANIFIESTO not in state_dict:
@@ -2282,9 +2367,14 @@ class PipelineAceStep:
                 else float(params["guidance_scale"])
             ),
             "vocal_language": str(params.get("vocal_language", "es")),
-            "bpm": params.get("bpm"),
-            "keyscale": params.get("keyscale"),
-            "timesignature": params.get("timesignature"),
+            # Los tres metadatos, TIPADOS. Sin esto llegaban crudos al
+            # condicionamiento vendorizado, que les hace `.strip()`: un
+            # `keyscale=5` daba un AttributeError dentro del vendor, o sea un 500
+            # del runner donde correspondia un 400 de peticion mal formada
+            # (revision 2026-09-03).
+            "bpm": _validar_bpm(params.get("bpm")),
+            "keyscale": _validar_texto_musical("keyscale", params.get("keyscale")),
+            "timesignature": _validar_compas(params.get("timesignature")),
             "ventana_vae": int(params.get("ventana_vae", VENTANA_LATENTE_POR_DEFECTO)),
             "solape_vae": int(params.get("solape_vae", SOLAPE_LATENTE_POR_DEFECTO)),
             "guarda_vae": int(params.get("guarda_vae", GUARDA_LATENTE_POR_DEFECTO)),
@@ -2473,10 +2563,6 @@ def build_pipeline(
     """
     if not isinstance(state_dict, dict):
         raise TypeError(f"Se esperaba un dict de tensores; llego {type(state_dict).__name__}.")
-    # Lo primero, antes de mirar un solo tensor: si el artefacto es de un esquema
-    # que este shim no entiende, se aborta aqui con un mensaje que lo diga, en vez
-    # de colocar mal los pesos y descubrirlo por el audio.
-    _exigir_esquema_compatible(state_dict)
     dispositivo = _normalizar_dispositivo(device)
     # `carga_contigua.EstadoDelArtefacto` marca su diccionario: los tensores ya
     # estan en memoria anonima (y `dit.decoder` ya en VRAM), asi que no hay que
@@ -2519,6 +2605,17 @@ def build_pipeline(
     residencia_detok: _Residencia | None = None
     dir_tokenizer_lm: Path | None = None
     try:
+        # -- 0a. Esquema del artefacto, antes de mirar un solo tensor -------- #
+        # Va DENTRO del try, y no antes, porque el bloque de limpieza de abajo es
+        # lo que cumple la promesa del docstring de dejar vacio el diccionario del
+        # llamante. Con la llamada fuera, este era el unico fallo de
+        # `build_pipeline` que se escapaba de esa limpieza y devolvia al adapter
+        # un diccionario con los 7,5 GB dentro (revision 2026-09-03). Sigue siendo
+        # la primera comprobacion: si el artefacto es de un esquema que este shim
+        # no entiende, se aborta con un mensaje que lo diga, en vez de colocar mal
+        # los pesos y descubrirlo por el audio.
+        _exigir_esquema_compatible(state_dict)
+
         # -- 0. dtype: manda el artefacto (C1) ------------------------------- #
         muestra = state_dict.get("dit.decoder.layers.0.mlp.up_proj.weight")
         if muestra is None:

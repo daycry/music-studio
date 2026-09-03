@@ -150,3 +150,63 @@ def test_sin_capacidad_conocida_no_asume_pascal():
     cfg = gpu_tiers.resolver_configuracion(24576, None)
     assert cfg.atencion == "sdpa"
     assert cfg.cuantizar is False, "tier6b no cuantiza de todos modos"
+
+
+# --------------------------------------------------------------------------- #
+# Fidelidad a upstream en los bordes (revision 2026-09-03)
+# --------------------------------------------------------------------------- #
+
+@pytest.mark.parametrize(
+    "vram_mb, esperado, porque",
+    [
+        # Cadena de upstream sobre GB CRUDOS (gpu_config.py, get_gpu_tier):
+        #   <= 4 t1 | <= 6 t2 | <= 8 t3 | <= 12 t4 | < 15,5 t5 | < 20 t6a
+        #   | <= 24 t6b | resto unlimited
+        # con VRAM_16GB_MIN_GB = 16,0 - 0,5 y VRAM_AUTO_OFFLOAD_THRESHOLD_GB = 20,0.
+        (8191, "tier3", "7,999 GB entra en '<= 8' sin necesidad de redondear nada"),
+        (12287, "tier4", "11,999 GB entra en '<= 12': upstream tambien da tier4 aqui"),
+        (15770, "tier5", "15,4 GB queda por debajo de la tolerancia de 15,5"),
+        (15974, "tier6a", "15,6 GB alcanza la tolerancia: clase de 16 GB, con offload"),
+        (19968, "tier6a", "19,5 GB: 20 GB nominales reportan menos, y siguen bajo el umbral"),
+        (20378, "tier6a", "19,9 GB: el caso que el redondeo mandaba a tier6b y revienta"),
+        (20480, "tier6b", "20,0 GB exactos ya NO estan por debajo del umbral"),
+        (24564, "tier6b", "23,99 GB de una tarjeta de 24 GB entran en '<= 24'"),
+        (32768, "unlimited", "32 GB pasa de 24"),
+    ],
+)
+def test_los_bordes_coinciden_con_la_cadena_de_upstream(vram_mb, esperado, porque):
+    assert gpu_tiers.detectar_nivel(vram_mb) == esperado, porque
+
+
+def test_una_tarjeta_de_20gb_nominales_no_se_promociona_de_nivel():
+    """El defecto concreto: 20 GB nominales acababan en tier6b y darian OOM.
+
+    Una RTX 4000 Ada o una A4500 de 20 GB informa ~19,5-19,9 GB. Redondeando al
+    GB, eso daba 20, el corte 'menor que 20' era falso y la tarjeta caia en
+    tier6b: sin offload, sin cuantizar, lote 8 y planificador de 4B. Upstream la
+    pone en tier6a, que es la configuracion que si le cabe.
+    """
+    for vram_mb in (19968, 20070, 20275, 20378):
+        nivel = gpu_tiers.detectar_nivel(vram_mb)
+        assert nivel == "tier6a", f"{vram_mb} MiB dio {nivel}"
+        cfg = gpu_tiers._TABLA[nivel]
+        assert cfg["offload_todo"] or cfg["offload_dit"], (
+            "tier6a tiene que descargar algo: es la razon de que exista"
+        )
+
+
+def test_el_docstring_no_promete_una_fidelidad_que_no_tiene():
+    """Guardarrail de honestidad, no de comportamiento.
+
+    El docstring afirmaba ser la 'cadena identica a upstream' mientras redondeaba
+    antes de comparar, y justificaba el redondeo con un ejemplo falso (decia que
+    12287 MiB caeria a tier4 'en vez de tier5', cuando upstream tambien da tier4).
+    Si vuelve a aparecer un redondeo, que no venga acompanado de esa promesa.
+    """
+    import inspect
+
+    fuente = inspect.getsource(gpu_tiers.detectar_nivel)
+    assert "round(" not in fuente, (
+        "si se reintroduce el redondeo, hay que revisar el tramo de 19,5-19,9 GB "
+        "y quitar la promesa de fidelidad del docstring"
+    )

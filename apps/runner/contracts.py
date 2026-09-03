@@ -87,6 +87,7 @@ __all__ = [
     "assert_safetensors",
     "assert_safetensors_header",
     "assert_within_gpu_budget",
+    "MAX_DURATION_SANITY_S",
 ]
 
 #: Unica extension de pesos aceptada (D-14).
@@ -355,6 +356,49 @@ class AudioArtifact:
             raise ValueError("size_bytes no puede ser negativo.")
 
 
+#: Techo ABSOLUTO de duracion de este contrato, en segundos. Una hora.
+#:
+#: NO es el limite de ningun modelo: el de ACE-Step en la tarjeta de referencia
+#: son 420 s y lo aplica su propio adapter, que es donde corresponde. Este modulo
+#: es agnostico del modelo a proposito (ver el docstring de arriba), asi que
+#: bajar el techo aqui acoplaria el contrato a un modelo concreto y obligaria a
+#: tocarlo cada vez que entre otro.
+#:
+#: Lo que si es: la linea a partir de la cual el valor no puede venir de un uso
+#: legitimo. Una peticion de 10**9 segundos es un error de quien llama o un
+#: intento de agotar la GPU, y conviene rechazarla en la puerta y no despues de
+#: recorrer media plataforma.
+MAX_DURATION_SANITY_S = 3600
+
+
+def _exigir_tipo(campo: str, valor: object, esperado: type, *, opcional: bool = False) -> None:
+    """Levanta `ValueError` —no `TypeError`— si `valor` no es del tipo esperado.
+
+    `ValueError` y no `TypeError` porque quien consume esto lo traduce a un 400:
+    el error esta en los DATOS de la peticion, no en la forma de llamar a Python.
+    """
+    if opcional and valor is None:
+        return
+    # `bool` hereda de `int`, asi que se comprueba antes de dar por bueno un int.
+    if esperado is not bool and isinstance(valor, bool):
+        raise ValueError(
+            f"{campo} tiene que ser {esperado.__name__} y llego un booleano "
+            f"({valor!r}). Un booleano cuenta como entero en Python, asi que "
+            "colarlo daria 0 o 1 en silencio."
+        )
+    if not isinstance(valor, esperado):
+        admitido = esperado.__name__ + (" o None" if opcional else "")
+        raise ValueError(
+            f"{campo} tiene que ser {admitido} y llego {type(valor).__name__} "
+            f"({valor!r})."
+        )
+
+
+def _exigir_entero(campo: str, valor: object, *, opcional: bool = False) -> None:
+    """Entero de verdad: ni booleano, ni float, ni cadena con digitos dentro."""
+    _exigir_tipo(campo, valor, int, opcional=opcional)
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class GenerationRequest:
     """Peticion de generacion — version minima de Fase 0.
@@ -377,10 +421,34 @@ class GenerationRequest:
     model_params: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
+        # Los tipos PRIMERO. Antes solo se comprobaban vacios y positividad, asi
+        # que un `lyrics=123` pasaba y reventaba mucho despues con un
+        # `AttributeError` dentro del codigo del modelo: un 500 del runner (fallo
+        # nuestro) donde correspondia un 400 (peticion mal formada). La diferencia
+        # no es cosmetica: un 500 manda a mirar nuestros logs, un 400 manda a
+        # corregir la peticion.
+        _exigir_tipo("style_prompt", self.style_prompt, str)
+        _exigir_entero("duration_s", self.duration_s)
+        _exigir_entero("max_gpu_seconds", self.max_gpu_seconds)
+        _exigir_tipo("idempotency_key", self.idempotency_key, str)
+        _exigir_tipo("lyrics", self.lyrics, str, opcional=True)
+        _exigir_tipo("instrumental", self.instrumental, bool)
+        _exigir_entero("seed", self.seed, opcional=True)
+        _exigir_tipo("model_params", self.model_params, dict)
+
         if not self.style_prompt.strip():
             raise ValueError("style_prompt no puede estar vacio.")
         if self.duration_s <= 0:
             raise ValueError("duration_s debe ser > 0.")
+        if self.duration_s > MAX_DURATION_SANITY_S:
+            raise ValueError(
+                f"duration_s={self.duration_s} supera el techo de cordura de este contrato "
+                f"({MAX_DURATION_SANITY_S} s). NO es el limite del modelo —ese lo aplica su "
+                "adapter y hoy es bastante menor—: es la linea a partir de la cual el valor "
+                "solo puede venir de un error de quien llama o de un intento de agotar la "
+                "GPU, y no tiene sentido arrastrarlo por medio sistema para descubrirlo al "
+                "final."
+            )
         if self.max_gpu_seconds <= 0:
             raise ValueError(
                 "max_gpu_seconds debe ser > 0: todo trabajo lleva presupuesto de GPU (D-17)."

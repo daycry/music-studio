@@ -225,3 +225,41 @@ class TestArtefactosEnDisco:
                 f"{ruta.name} declara el esquema {declarada!r} y este shim soporta "
                 f"{shim.ARTIFACT_SCHEMA_VERSION_SOPORTADA}"
             )
+
+
+# --------------------------------------------------------------------------- #
+# El aborto por esquema tambien tiene que limpiar (revision 2026-09-03)
+# --------------------------------------------------------------------------- #
+
+def test_el_aborto_por_esquema_deja_el_dict_del_llamante_vacio():
+    """`build_pipeline` promete en su docstring dejar el dict vacio al volver.
+
+    Lo cumplia con un `state_dict.clear()` dentro del `try/except`, pero la puerta
+    de esquema se llamaba ANTES del try: era la unica via de fallo que se escapaba
+    del bloque de limpieza, y dejaba los tensores del artefacto en el diccionario
+    del adapter, que cuenta con lo contrario.
+    """
+    sd = {
+        **_manifiesto(shim.ARTIFACT_SCHEMA_VERSION_SOPORTADA + 1),
+        "dit.decoder.layers.0.mlp.up_proj.weight": torch.zeros(2, 2),
+    }
+    with pytest.raises(RuntimeError, match="esquema"):
+        shim.build_pipeline(state_dict=sd, device="cpu", dtype="float32", offload=False)
+    assert sd == {}, (
+        "el aborto por esquema no limpio el dict del llamante: build_pipeline "
+        "promete lo contrario en su docstring"
+    )
+
+
+def test_la_puerta_sigue_siendo_lo_primero_que_se_comprueba():
+    """Mover la puerta dentro del try no puede colarla DESPUES de tocar tensores.
+
+    Con un esquema incompatible, el mensaje tiene que ser el del esquema y no el
+    de «no es el checkpoint que este shim sabe cargar»: si sale el segundo,
+    alguien miro los tensores antes de comprobar la version.
+    """
+    sd = _manifiesto(shim.ARTIFACT_SCHEMA_VERSION_SOPORTADA + 1)  # sin ningun tensor
+    with pytest.raises(RuntimeError) as info:
+        shim.build_pipeline(state_dict=sd, device="cpu", dtype="float32", offload=False)
+    assert "esquema" in str(info.value)
+    assert "no trae" not in str(info.value)

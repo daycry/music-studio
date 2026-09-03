@@ -31,6 +31,20 @@ v0.34.0 (Apache-2.0), y el hash de arriba es el del fichero **modificado** que s
 atestación del original (SHA-256 y blob SHA-1 de upstream) y la lista de cambios están en la
 cabecera del propio fichero. Hasta el 2026-09-03 no tenía fila en ninguna tabla.
 
+### Textos de licencia
+
+Están en [`LICENSES/`](./LICENSES/), junto a este README, desde el 2026-09-03:
+`ACE-Step-1.5.MIT.txt`, `ACE-Step-5Hz-LM-0.6B.MIT.txt` (que además documenta de dónde sale ese
+texto y la limitación de emparejarlo con unos pesos publicados en otro repositorio) y
+`Apache-2.0.txt`, que cubre tanto a `oobleck_decoder.py` (obra derivada de diffusers, modificada
+— el aviso de modificación que exige §4(b) está en la cabecera del propio fichero) como a los
+pesos del codificador de texto Qwen3-Embedding.
+
+El inventario completo, con qué licencia cubre qué y qué se descartó por licencia, está en el
+[`NOTICE`](../../../../../NOTICE) de la raíz del repositorio. Antes de esa fecha los avisos por
+fichero estaban, pero los textos íntegros no viajaban en el repositorio: faltaba la mitad formal
+de lo que exigen MIT y Apache-2.0 §4(a).
+
 **Esta tabla la vigila `apps/runner/tests/test_vendor_hashes.py`**: recalcula el SHA-256 de cada
 fichero `.py`/`.json` de `vendor/` y exige que coincida con la fila de su README, y que ningún
 fichero se ejecute sin fila. Si cambias un fichero vendorizado a propósito, actualiza su fila en

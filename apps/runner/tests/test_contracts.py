@@ -14,6 +14,7 @@ import struct
 import pytest
 
 from contracts import (
+    MAX_DURATION_SANITY_S,
     GenerationRequest,
     GpuBudgetExceeded,
     UnsafeWeightsFormat,
@@ -246,3 +247,76 @@ class TestGenerationRequest:
     def test_instrumental_con_letra_es_contradiccion(self):
         with pytest.raises(ValueError):
             _req(instrumental=True, lyrics="no deberia cantarse")
+
+
+# --------------------------------------------------------------------------- #
+# Tipos de la peticion: 400 de peticion mal formada, no 500 nuestro
+# --------------------------------------------------------------------------- #
+
+class TestTiposDeGenerationRequest:
+    """Una peticion mal formada tiene que fallar AQUI, con un error de validacion.
+
+    Antes solo se comprobaban vacios y positividad. Un `lyrics=123` pasaba la
+    validacion y reventaba mucho despues con un `AttributeError` dentro del codigo
+    del modelo, o sea un 500 del runner (fallo nuestro) donde correspondia un 400
+    (peticion mal formada). La diferencia importa: un 500 manda a mirar nuestros
+    logs, un 400 manda a corregir la peticion.
+    """
+
+    @staticmethod
+    def _valida(**cambios):
+        base = dict(
+            style_prompt="bolero triste",
+            duration_s=30,
+            max_gpu_seconds=600,
+            idempotency_key="k-1",
+        )
+        base.update(cambios)
+        return GenerationRequest(**base)
+
+    def test_la_peticion_bien_formada_sigue_pasando(self):
+        peticion = self._valida(lyrics="una letra", seed=7, model_params={"variante": "turbo"})
+        assert peticion.duration_s == 30
+
+    @pytest.mark.parametrize(
+        "cambio",
+        [
+            {"style_prompt": 123},
+            {"idempotency_key": 5},
+            {"lyrics": 123},
+            {"seed": "siete"},
+            {"instrumental": "si"},
+            {"model_params": [("variante", "turbo")]},
+            {"duration_s": "30"},
+            {"duration_s": 30.5},
+            {"max_gpu_seconds": "600"},
+        ],
+        ids=lambda c: next(iter(c)) + "=" + type(next(iter(c.values()))).__name__,
+    )
+    def test_un_tipo_equivocado_es_error_de_validacion(self, cambio):
+        with pytest.raises(ValueError) as info:
+            self._valida(**cambio)
+        # Y el mensaje nombra el campo, para que se pueda corregir sin adivinar.
+        assert next(iter(cambio)) in str(info.value)
+
+    @pytest.mark.parametrize("campo", ["duration_s", "max_gpu_seconds"])
+    def test_un_booleano_no_cuenta_como_entero(self, campo):
+        # `bool` hereda de `int`, asi que `duration_s=True` valdria 1 segundo sin
+        # protestar. Es un error de quien llama, no una duracion.
+        with pytest.raises(ValueError):
+            self._valida(**{campo: True})
+
+    def test_una_duracion_absurda_se_rechaza(self):
+        with pytest.raises(ValueError, match="cordura|absurd"):
+            self._valida(duration_s=10**9)
+
+    def test_una_duracion_larga_pero_legitima_se_acepta(self):
+        # ESTA es la parte delicada del encargo: el contrato es agnostico del
+        # modelo. El techo de 420 s es de ACE-Step en esta tarjeta y lo aplica el
+        # shim; bajarlo aqui acoplaria el contrato a un modelo concreto.
+        assert self._valida(duration_s=600).duration_s == 600
+
+    def test_el_techo_de_cordura_no_es_el_techo_del_modelo(self):
+        assert MAX_DURATION_SANITY_S > 420, (
+            "si este techo baja al del modelo, el contrato deja de ser agnostico"
+        )

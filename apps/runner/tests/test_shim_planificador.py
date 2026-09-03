@@ -310,3 +310,51 @@ class TestSustitucionDeSrcLatents:
     def test_falta_el_eje_de_lote(self):
         with pytest.raises(ValueError, match=r"\[1, T', 64\]"):
             self._llamar(torch.zeros(625, 64))
+
+
+class TestTipadoDeLosMetadatos:
+    """bpm, keyscale y timesignature pasaban sin tipar hasta el codigo vendorizado.
+
+    Ahi el condicionamiento hace `.strip()` sobre el valor, asi que un
+    `keyscale=5` daba un AttributeError dentro del vendor: un 500 del runner
+    (fallo nuestro) donde correspondia un 400 de peticion mal formada. Es el mismo
+    patron que ya se arreglo en `contracts.GenerationRequest`, un nivel mas abajo.
+    """
+
+    @staticmethod
+    def _validar(**params):
+        pipe = _pipeline(False)
+        return pipe._validar_params(params)
+
+    def test_los_valores_bien_formados_pasan(self):
+        opciones = self._validar(bpm="120", keyscale="A minor", timesignature="4/4")
+        assert opciones["keyscale"] == "A minor"
+        assert opciones["timesignature"] == "4/4"
+
+    def test_los_tres_pueden_faltar(self):
+        # Son opcionales: el modelo tiene sus propios defectos.
+        opciones = self._validar()
+        assert opciones["bpm"] is None
+        assert opciones["keyscale"] is None
+
+    @pytest.mark.parametrize("clave", ["keyscale", "timesignature"])
+    def test_un_texto_esperado_que_llega_como_numero_es_error_de_validacion(self, clave):
+        with pytest.raises(ValueError, match=clave):
+            self._validar(**{clave: 5})
+
+    def test_un_compas_con_forma_imposible_se_rechaza(self):
+        with pytest.raises(ValueError, match="timesignature"):
+            self._validar(timesignature="cuatro por cuatro")
+
+    def test_no_se_inventa_un_vocabulario_de_tonalidades(self):
+        # Que sea una cadena es nuestro asunto; QUE tonalidades entiende el modelo
+        # es del modelo. Rechazar aqui una tonalidad rara seria decidir por el.
+        assert self._validar(keyscale="F# dorian")["keyscale"] == "F# dorian"
+
+    def test_un_bpm_que_no_es_numero_ni_texto_numerico_se_rechaza(self):
+        with pytest.raises(ValueError, match="bpm"):
+            self._validar(bpm="rapido")
+
+    def test_un_bpm_numerico_se_acepta_en_las_dos_formas(self):
+        assert self._validar(bpm=120)["bpm"] is not None
+        assert self._validar(bpm="120")["bpm"] is not None

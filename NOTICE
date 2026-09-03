@@ -1,0 +1,93 @@
+NOTICE — componentes de terceros redistribuidos en este repositorio
+===================================================================
+
+Este proyecto vendoriza código de terceros y carga pesos de modelos de terceros.
+Ambas cosas llegan con obligaciones de atribución que se cumplen aquí. Los textos
+íntegros de las licencias están en:
+
+    apps/runner/adapters/ace_step/vendor/LICENSES/
+
+Escrito el 2026-09-03. Antes de esta fecha el repositorio no incluía ningún
+NOTICE ni los textos de licencia, aunque los headers por fichero sí conservaban
+los avisos de copyright: MIT exige incluir el aviso en las copias y Apache-2.0
+§4(a) exige entregar la licencia, así que faltaba la mitad formal del requisito.
+
+
+1. Código vendorizado
+---------------------
+
+ACE-Step 1.5 — MIT — Copyright (c) 2026 ACEStep
+  Repositorio  : huggingface.co/ACE-Step/Ace-Step1.5
+  Revisión fija: 19671f406d603126926c1b7e2adc169acbcade22
+  Texto        : vendor/LICENSES/ACE-Step-1.5.MIT.txt
+  Ficheros     : vendor/modeling_acestep_v15_turbo.py, vendor/configuration_acestep_v15.py,
+                 vendor/config.json (copias fieles, verificadas por hash);
+                 vendor/pipeline/*, vendor/lm/*, vendor/sft/* (obras derivadas,
+                 modificadas — cada fichero declara de qué deriva y qué cambió).
+  Nota         : el repositorio de HuggingFace NO publica fichero LICENSE (HTTP 404).
+                 El texto procede del repositorio de código del mismo proveedor,
+                 github.com/ace-step/ACE-Step-1.5. Emparejar ambos es una inferencia
+                 razonable, no una atestación del proveedor sobre esos pesos.
+
+diffusers — Apache-2.0 — Copyright 2025 The HuggingFace Team
+  Repositorio  : github.com/huggingface/diffusers
+  Revisión fija: tag v0.34.0 -> commit 50dea89dc6036e71a00bc3d57ac062a80206d9eb
+  Texto        : vendor/LICENSES/Apache-2.0.txt
+  Fichero      : vendor/oobleck_decoder.py, obra derivada de
+                 src/diffusers/models/autoencoders/autoencoder_oobleck.py
+
+  AVISO DE MODIFICACIÓN (Apache License 2.0, §4(b)): vendor/oobleck_decoder.py
+  HA SIDO MODIFICADO respecto del original. Se suprimió todo lo que no hace falta
+  para decodificar y se adaptó a la tarjeta objetivo. El aviso de copyright
+  original se conserva íntegro en la cabecera del fichero, junto con la lista de
+  cambios y la atestación de procedencia. La versión de diffusers no es una
+  elección propia: la fija el config del VAE que viaja en el artefacto de pesos.
+
+
+2. Pesos de modelo
+------------------
+
+Los pesos NO están en este repositorio (.gitignore excluye *.safetensors). Se
+fusionan en un artefacto local y su procedencia queda registrada por componente
+en el fichero <artefacto>.provenance.json que escribe apps/runner/tools/build_artifact.py.
+
+  ACE-Step 1.5 (DiT, VAE)                MIT           vendor/LICENSES/ACE-Step-1.5.MIT.txt
+  acestep-5Hz-lm-0.6B (planificador)     MIT           vendor/LICENSES/ACE-Step-5Hz-LM-0.6B.MIT.txt
+  Qwen3-Embedding-0.6B (texto)           Apache-2.0    vendor/LICENSES/Apache-2.0.txt
+
+ATENCIÓN si alguna vez se redistribuye el artefacto fusionado: contiene pesos de
+dos licencias distintas a la vez, y ambos avisos tienen que viajar con él. El
+.provenance.json los lleva por componente, con el SHA-256 del texto de cada
+licencia archivado.
+
+Corrección registrada: hasta el 2026-09-03 la documentación del proyecto declaraba
+ACE-Step 1.5 como Apache 2.0. Es MIT. Ambas son permisivas y admiten uso comercial,
+así que no cambió ninguna decisión, pero el dato erróneo llegó a estar en el texto
+que se puso delante de la consulta legal (ver gates/g2-matriz-resultados.md §0-bis,
+donde se conserva tachado a propósito).
+
+
+3. Herramientas descartadas por licencia, para que no vuelvan por descuido
+--------------------------------------------------------------------------
+
+  MusicGen           CC BY-NC        prohibido el uso comercial. Descartado.
+  Demucs (pesos)     CC-BY-NC        confirmado el 2026-08-18. Hay que buscar
+                                     alternativa con pesos permisivos o licenciar.
+  MiniMax-Music3     Community       licencia propia con atribución en interfaz y
+                                     obligaciones continuas. Candidato condicional,
+                                     no integrado (ver spikes/comparativa-modelos.md §12).
+
+
+4. La licencia de ESTE proyecto no está declarada
+-------------------------------------------------
+
+No hay fichero LICENSE en la raíz, y no lo añade este NOTICE **a propósito**:
+elegir bajo qué licencia se publica el código propio es una decisión del
+propietario de la iniciativa, no una consecuencia técnica. Es un proyecto personal
+con posible comercialización futura (gate GC-01 en gates/gobernanza.md), así que la
+elección tiene consecuencias que no corresponde presuponer aquí.
+
+Sin fichero LICENSE, y por defecto, el código propio queda "todos los derechos
+reservados": nadie más puede usarlo, copiarlo ni modificarlo legalmente. Para un
+repositorio privado de un solo autor eso puede ser exactamente lo que se quiere.
+Si el repositorio es público o llega a serlo, conviene decidirlo.

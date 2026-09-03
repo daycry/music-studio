@@ -75,14 +75,19 @@ __all__ = [
 
 #: Umbrales en GB, verbatim de `constants.py::GPU_TIER_THRESHOLDS` mas los dos
 #: cortes que `get_gpu_tier` aplica dentro del antiguo "tier6".
+#: Techo de cada nivel en GB, para informes y recuentos. **El corte de tier5 es
+#: 15,5 y no 16**: upstream aplica ahi una tolerancia de 0,5 GB porque una tarjeta
+#: de 16 GB reales informa 15,7-15,9. Quien lea esta tabla como si los cortes
+#: fueran redondos se equivocara justo en ese borde, asi que va escrito.
+#: La cadena de verdad es `detectar_nivel()`; esto es su resumen, no su fuente.
 TIER_THRESHOLDS_GB: dict[str, float] = {
     "tier1": 4.0,     # <= 4 GB
     "tier2": 6.0,     # 4-6 GB
     "tier3": 8.0,     # 6-8 GB   <- GTX 1070, maquina de desarrollo
     "tier4": 12.0,    # 8-12 GB
-    "tier5": 16.0,    # 12-16 GB
-    "tier6a": 20.0,   # 16-20 GB
-    "tier6b": 24.0,   # 20-24 GB <- RTX 3090 / 4090, referencia de la spec
+    "tier5": 15.5,    # 12-15,5 GB  (tolerancia de 0,5 sobre los 16 nominales)
+    "tier6a": 20.0,   # 15,5-20 GB  <- aqui caen los 20 GB nominales (informan ~19,5)
+    "tier6b": 24.0,   # 20-24 GB    <- RTX 3090 / 4090, referencia de la spec
     # por encima de 24 GB: "unlimited" (p. ej. L40S de 48 GB)
 }
 
@@ -129,26 +134,53 @@ _TABLA: dict[str, dict] = {
 }
 
 
+#: Tolerancia de la clase de 16 GB, en GB. Upstream la introduce porque una
+#: tarjeta de 16 GB reales informa 15,7-15,9 GB (reserva del sistema y del
+#: driver), y sin ella caeria a tier5. Es su `VRAM_16GB_TOLERANCE_GB`.
+_TOLERANCIA_16GB = 0.5
+
+#: Por debajo de esto se trata como clase de 16 GB (tier6a, con offload). Es su
+#: `VRAM_16GB_MIN_GB`.
+_MIN_CLASE_16GB = 16.0 - _TOLERANCIA_16GB
+
+#: Umbral por debajo del cual el offload automatico esta activado: una tarjeta de
+#: 16 GB no aguanta DiT + VAE + codificador de texto + LM a la vez. Es su
+#: `VRAM_AUTO_OFFLOAD_THRESHOLD_GB`.
+_UMBRAL_OFFLOAD_GB = 20.0
+
+
 def detectar_nivel(vram_mb: int) -> str:
     """Devuelve el nivel para una VRAM dada, en MiB tal y como la reporta CUDA.
 
-    Se redondea al GB nominal **hacia arriba** antes de comparar. Sin eso, toda
-    tarjeta caeria un nivel por debajo del suyo: CUDA informa 8191 MiB en una de
-    8 GB (el driver se reserva ~132 MiB), y 8191/1024 = 7,999 GB entraria en
-    "6-8 GB" por los pelos pero una de 12 GB reportando 12287 MiB caeria a
-    tier4 en vez de tier5. Es el mismo problema que CS-51 y se resuelve igual:
-    comparando contra el envase, no contra el dato crudo.
+    Replica la cadena de `get_gpu_tier` de upstream **sobre los GB crudos**, que
+    es como la alimenta el (su `get_gpu_memory_gb()` divide por 1024**3 y no
+    redondea). Los cortes NO son homogeneos, asi que se escribe explicita y no
+    como bucle sobre la tabla: `tier4` cierra con `<= 12` pero `tier5` con
+    `< 15,5`, de modo que una tarjeta de 16 GB cae en tier6a y no en tier5.
+
+    Por que ya NO se redondea al GB de envase, que es lo que hacia antes
+    ---------------------------------------------------------------------
+    El redondeo se introdujo para que una tarjeta no cayera un nivel por debajo
+    del suyo, y **resolvia un problema que no existe**: los cortes de upstream ya
+    son `<=`, asi que 8191 MiB (7,999 GB, la GTX 1070 real) entra en `<= 8` sin
+    ayuda, y 12287 MiB entra en `<= 12`. El ejemplo con el que se justificaba
+    —que 12287 MiB caeria «a tier4 en vez de tier5»— era falso: upstream tambien
+    da tier4 ahi.
+
+    Lo que si hacia el redondeo era **divergir en un borde real**: una tarjeta de
+    20 GB nominales (RTX 4000 Ada, A4500) informa ~19,5-19,9 GB. Redondeando daba
+    20, el corte `< 20` resultaba falso y la tarjeta acababa en **tier6b** —sin
+    offload, sin cuantizar, lote 8, planificador de 4B— cuando upstream la pone
+    en tier6a. Eso es un OOM en cuanto exista esa tarjeta. Para la GTX 1070 de la
+    maquina de referencia da igual, y por eso no se habia notado.
+
+    El suelo de VRAM con su tolerancia (CS-51) es un asunto DISTINTO y sigue
+    donde estaba: ahi la tolerancia si hace falta, porque se compara contra un
+    minimo absoluto y no contra una cadena de clases.
     """
     if vram_mb <= 0:
         return "tier1"  # modo CPU: se usan los limites mas conservadores
-    # Redondeo al GB de envase. Las tarjetas se venden en GB enteros y CUDA
-    # informa algo menos (una de 8 GB dice 8191 MiB), asi que redondear al entero
-    # mas cercano recupera la cifra comercial sin inventarse memoria.
-    gb = round(vram_mb / 1024.0)
-    # Cadena identica a `get_gpu_tier` de upstream. Se escribe explicita, y no
-    # como bucle sobre la tabla, porque sus cortes NO son homogeneos: tier4 se
-    # cierra con `<= 12` pero tier5 con `< 16`, de modo que una tarjeta de 16 GB
-    # cae en tier6a y no en tier5. Un bucle con `<=` se equivocaria justo ahi.
+    gb = vram_mb / 1024.0
     if gb <= 4:
         return "tier1"
     if gb <= 6:
@@ -157,9 +189,10 @@ def detectar_nivel(vram_mb: int) -> str:
         return "tier3"
     if gb <= 12:
         return "tier4"
-    if gb < 16:
+    if gb < _MIN_CLASE_16GB:
         return "tier5"
-    if gb < 20:
+    if gb < _UMBRAL_OFFLOAD_GB:
+        # Tramo de 15,5 a 20 GB: clase de 16 GB, necesita descargar componentes.
         return "tier6a"
     if gb <= 24:
         return "tier6b"
