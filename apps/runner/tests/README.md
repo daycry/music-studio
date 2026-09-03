@@ -33,7 +33,9 @@ python -m pytest apps/runner/tests -q -rs
 | `test_gpu_tiers.py` | stdlib | Tabla de niveles por VRAM |
 | `test_vram_floor.py` | stdlib | Suelo de 8 GB con tolerancia de 64 MB (CS-51) |
 | `test_g1_generar.py` | stdlib | Kit de G1: briefs del protocolo real, cegado, mapa sellado, `--sin-lm` ausente |
-| `test_vendor_hashes.py` | stdlib | Cada fichero de `vendor/**` coincide con la fila de su README y ninguno se ejecuta sin fila |
+| `test_vendor_hashes.py` | stdlib | Cada fichero de `adapters/*/vendor/**` coincide con la fila de su README y ninguno se ejecuta sin fila. Descubre los adapters, no los lleva escritos |
+| `test_model_cards.py` | stdlib | Inventario de fichas `.model.json`: la ficha es evidencia y nunca autoridad, lista blanca de variables de entorno, estados y encaje de VRAM |
+| `test_esquema_artefacto.py` | torch | Puerta de `artifact_schema_version`: versión mayor aborta, ausente avisa y sigue, y los artefactos en disco declaran la soportada |
 | `test_matriz_ab.py` | stdlib | La matriz 2×2 del A/B está cruzada de verdad y cada par comparte semilla |
 | `test_limitador.py` | torch, numpy | Limitador de picos: señal intacta lejos del transitorio, sin fundido, ganancia común a los canales, sin saltos de ganancia, coste lineal, punto de llamada `_a_pcm16` |
 | `test_carga_contigua.py` | torch, safetensors | Lectura contigua contra `load_file`, cabeceras, respaldo solo ante `ArtefactoIlegible`, guardarraíl de subida, SHA-256 de paso en la carga |
@@ -44,6 +46,13 @@ python -m pytest apps/runner/tests -q -rs
 | `test_medir_ab.py` | numpy, scipy | Descriptores contra valores teóricos; contrastes 2×2 con `efecto_relativo_pct` |
 | `test_pulso.py` | numpy, scipy | Métrica de ritmo contra señales de tempo conocido, **y sus limitaciones escritas** (transitorio ancho, ruido de fondo) |
 
-Recuento a 2026-09-03: 631 tests, unos 19 s en CPU. Unos 200 son una sola propiedad parametrizada sobre
+Recuento a 2026-09-03: 695 tests, unos 19 s en CPU.
+
+## Fuera de la suite: qué hay instalado
+
+`python apps/runner/model_cards.py <directorio-de-pesos> --vram-mb N` lista los modelos
+instalados y su estado. No es un test, pero responde a la pregunta que ningún test responde:
+cuál de los `.safetensors` que hay en disco es el de producción. Turbo y sft traen las mismas
+claves con las mismas formas, así que el artefacto no lo dice; la ficha `.model.json` sí. Unos 200 son una sola propiedad parametrizada sobre
 `range(1, 200)` en `test_shim_planificador.py`; el número de comportamientos distintos es
 bastante menor que el de tests recogidos.

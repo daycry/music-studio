@@ -2116,7 +2116,8 @@ class PipelineAceStep:
         duracion_real = muestras / float(SAMPLE_RATE)
         _LOG.info(
             "Decode en %.2f s (%d ventanas). Pista: %.2f s, %d canales, %d muestras. "
-            "Totales: condicionamiento %.2f s + difusion %.2f s + decode %.2f s.",
+            "Totales: condicionamiento %.2f s + difusion %.2f s + decode %.2f s + "
+            "limitador y PCM %.3f s.",
             tiempos["decode_s"],
             len(plan.inicios),
             duracion_real,
@@ -2125,6 +2126,7 @@ class PipelineAceStep:
             tiempos["conditioning_s"],
             tiempos["diffusion_s"],
             tiempos["decode_s"],
+            tiempos["limiter_s"],
         )
         return AudioRenderizado(
             sample_rate=SAMPLE_RATE,
