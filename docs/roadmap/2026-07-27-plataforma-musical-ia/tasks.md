@@ -1338,6 +1338,41 @@ Tres entradas nuevas de hoy que el protocolo tiene que absorber **antes** de la 
 
 ---
 
+### T-90 · Instrumentos de puntuación de G1 — sonoridad y ciego, WER, CLAP · 🟠 EN CURSO, autorizada de viva voz
+
+> ⚠️ **Autorizada por el propietario el 2026-09-03** («prepara lo que falta»), y **declarada aquí antes de que el trabajo aterrice**, con su delta, porque `T-09` está presupuestada con **0 h de desarrollo** y estos tres scripts son alcance nuevo. Delta: **+16 h base / +19,2 h con margen / +960 €**. **No suma** a las 656 h / 39.360 € ratificadas. Si el propietario prefiere no contarlo, se revierte sin coste: son ficheros nuevos y aislados.
+
+| Tipo | Estado | Dependencias | Tiempo estimado (base) | Tokens previstos |
+|---|---|---|---|---|
+| backend | **en-progreso** (2026-09-03) | T-08, `g1_generar.py` | 16 h | 1,20 M in / 0,17 M out |
+
+**Descripción:** el kit de **generación** de G1 existe y funciona; el de **puntuar** no existía. Sin estos tres, la sesión de escucha no se puede celebrar aunque las diez pistas estén generadas.
+
+| Script | Qué resuelve | Horas |
+|---|---|---|
+| `spikes/g1_sonoridad.py` + `spikes/g1_anonimizar.py` | Sonoridad de sesión (−16 LUFS / ≤ −1 dBTP, §5.5) y el **ciego entre series** de §5.4, que hoy no existe: `g1_generar.py` ciega las tomas dentro de la serie propia, pero nada impide saber **qué serie** estás puntuando | 8 h |
+| `spikes/medir_wer.py` | Criterio 4 (WER ≤ 15 % de media, ≤ 25 % el peor) | 4 h |
+| `spikes/medir_clap.py` | Criterio 3 (CLAP propia ≥ librería en ≥ 7 de 10) | 4 h |
+
+**Decisión de diseño que conviene conocer: no se usa `ffmpeg loudnorm`.** El protocolo exige normalizar **solo con ganancia**, y ese filtro en dos pasadas **puede revertir a modo dinámico y comprimir**. Comprimir alteraría la **dimensión 2** del gate («calidad de mezcla y ausencia de artefactos»), que es una de las cinco que se puntúan: normalizar la muestra alterando lo que se mide invalida la medida. Se implementa ITU-R BS.1770 en numpy puro, lo que además elimina la dependencia de `ffmpeg`, que no está instalado ni en el anfitrión ni en la imagen.
+
+**Lo que estos scripts NO traen, y es deliberado.** Los dos instrumentos objetivos necesitan un **modelo de terceros**, y `CLAUDE.md` exige licencia comercial verificada **antes** de integrar. Así que se entrega el arnés con la **puerta de licencia** puesta —el modelo llega de fuera declarado, con ruta local, identificador, licencia SPDX y hash, y sin ficha el script se niega a medir— y **no se descarga nada**.
+
+- **CLAP:** el protocolo propone **HeartCLAP**, que **no está publicado** (hallazgo A-3 de `T-06`). Sin suplente designado, el criterio 3 no tiene instrumento.
+- **WER:** el protocolo propone **HeartTranscriptor-oss**. Pendiente de verificar licencia y de medir el **suelo del transcriptor**: sin ese número, el umbral del 15 % no es interpretable (§6.2).
+
+**Criterios de aceptación**
+- [ ] La sonoridad medida coincide con la definición de BS.1770 comprobada contra señales de valor conocido, no contra otra implementación.
+- [ ] La normalización aplica **solo ganancia**; si llegar a −16 LUFS haría pasar el pico real de −1 dBTP, se aplica la menor y **se reporta** que esa pista no llegó al objetivo.
+- [ ] El ciego entre series resiste las tres vías de fuga: nombre de fichero, orden alfabético y fecha de modificación.
+- [ ] El WER se calcula sobre distancia de edición por palabras con normalización **declarada** (en particular, qué se hace con las tildes) y devuelve el desglose, no solo el porcentaje.
+- [ ] Ningún modelo se descarga en tiempo de ejecución; sin ficha de licencia válida, los medidores se niegan a medir.
+- [ ] El informe de CLAP lleva escrita la advertencia de A-14: el criterio favorece estructuralmente a la serie propia, porque se generó condicionada al mismo texto contra el que se mide.
+
+**Notas:** No cubre la **elección** de los dos modelos ni su verificación de licencia, que son decisión del propietario y no se pueden estimar hasta saber cuáles son.
+
+---
+
 > ## 🟠 PREGUNTAS ABIERTAS del 2026-09-03 — hay que decidirlas, no se resuelven solas
 >
 > Salen de la evaluación del 2026-09-03 sobre instalar y elegir modelos. Ninguna bloquea hoy; todas bloquean algo el día que se toque lo que nombran, y ninguna tiene dueño asignado todavía.
