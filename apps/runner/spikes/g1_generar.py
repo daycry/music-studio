@@ -109,6 +109,7 @@ import json
 import logging
 import os
 import random
+import secrets
 import re
 import sys
 import time
@@ -568,6 +569,21 @@ def _semilla_toma(semilla_maestra: int, brief_id: str, indice: int) -> int:
     return int.from_bytes(hashlib.sha256(material).digest()[:4], "big") & 0x7FFFFFFF
 
 
+def nueva_semilla_maestra() -> int:
+    """Semilla maestra ALEATORIA, para que el ciego no dependa del codigo fuente.
+
+    De ella salen los testigos (`sha256(semilla|brief|toma)[:6]`), las semillas de
+    cada toma y el barajado del orden. Con un valor por defecto clavado en el
+    fichero, cualquiera que lo lea reconstruye el indice de toma y el orden **sin
+    abrir el mapa sellado**, que es justo lo que §5.4 quiere impedir: el ciego
+    descansaba en que nadie ejecutara tres lineas (revision 2026-09-03).
+
+    Se acota a 31 bits sin signo porque el `torch.Generator` de `prepare_noise`
+    toma un entero con signo, y `_semilla_toma` deriva de ella con la misma cota.
+    """
+    return secrets.randbelow(0x7FFFFFFF) + 1
+
+
 def construir_plan(briefs: list[Brief], tomas: int, semilla_maestra: int) -> list[Toma]:
     """Lista de tomas en el orden EN QUE SE VAN A GENERAR, ya barajado.
 
@@ -922,7 +938,7 @@ def escribir_briefs(raiz: Path, briefs: list[Brief], prompts: dict[str, str],
 
 _CABECERA_MAPA = (
     "brief", "etiqueta_ciega", "indice_toma", "orden_generacion", "semilla",
-    "fichero", "duracion_pedida_s", "duracion_real_s", "generada",
+    "fichero", "sha256", "duracion_pedida_s", "duracion_real_s", "generada",
 )
 
 
@@ -1268,8 +1284,17 @@ async def generar(args: argparse.Namespace, briefs: list[Brief], plan: list[Toma
                 [d["vram"]["usado_pico_mb"] for d in ventanas.values()
                  if d.get("vram", {}).get("usado_pico_mb") is not None] or [0]
             )
+            # SHA-256 del WAV ya escrito en su destino final (no del temporal de
+            # staging): lo que hay que poder verificar despues es exactamente el
+            # fichero que se escucha. Sin esto, el manifiesto lleva semilla,
+            # prompt, letra y pesos, pero no queda ATADO al audio: una pista
+            # sustituida entre la generacion y la eleccion de la toma de §5.2 no
+            # se detectaria, y el acta citaria una trazabilidad que ya no
+            # corresponde a ese fichero (revision 2026-09-03).
+            sha_audio = gs.sha256_fichero(destino_audio)
             registro[toma.etiqueta_ciega] = {
                 "brief": brief.id,
+                "sha256": sha_audio,
                 "duracion_pedida_s": toma.duracion_s,
                 "duracion_real_s": verificacion.get("cabecera", {}).get("duracion_real_s"),
                 "desviacion_pct": verificacion.get("cabecera", {}).get("desviacion_pct"),
@@ -1293,6 +1318,7 @@ async def generar(args: argparse.Namespace, briefs: list[Brief], plan: list[Toma
                     "orden_generacion": orden,
                     "semilla": toma.semilla,
                     "fichero": destino_audio.name,
+                    "sha256": sha_audio,
                     "duracion_pedida_s": toma.duracion_s,
                     "duracion_real_s": verificacion.get("cabecera", {}).get("duracion_real_s"),
                     "generada": "si",
@@ -1314,6 +1340,7 @@ async def generar(args: argparse.Namespace, briefs: list[Brief], plan: list[Toma
                             "contiene la semilla: no abrir antes de elegir la toma (§5.2)"
                         ),
                         **_descripcion_modelo(adaptador.describe(), params),
+                        "audio_sha256": sha_audio,
                         "pesos_fichero": args.fichero_pesos,
                         "pesos_sha256": informe.get("pesos_sha256"),
                         "semilla": toma.semilla,
@@ -1468,11 +1495,15 @@ def construir_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
-        "--semilla-maestra", type=int, default=20260902, dest="semilla_maestra",
+        "--semilla-maestra", type=int, default=None, dest="semilla_maestra",
         help=(
             "De ella salen, de forma reproducible, las semillas de cada toma, los "
-            "testigos ciegos y el barajado del orden. La misma semilla maestra "
-            "reproduce la serie entera (util para las repeticiones de §8.5)."
+            "testigos ciegos y el barajado del orden. POR DEFECTO SE SORTEA UNA "
+            "NUEVA: si fuera un valor fijo del codigo, cualquiera que lo leyera "
+            "reconstruiria el indice de toma y el orden sin abrir el mapa sellado, "
+            "y el ciego de §5.4 dependeria de que nadie ejecutase tres lineas. "
+            "Darla explicitamente es para REPETIR una tanda (§8.5), no para el uso "
+            "normal. La que se use queda en el mapa sellado de 05-ciego/."
         ),
     )
     parser.add_argument(
@@ -1781,6 +1812,16 @@ def main(argv: list[str] | None = None) -> int:
     est = estimar(briefs, args.tomas)
     print(texto_estimacion(est, args.tomas))
 
+    # Sin --semilla-maestra se sortea una: ver nueva_semilla_maestra(). Se fija en
+    # `args` para que el resto del flujo (el plan y el sello) use exactamente la
+    # misma, y se imprime SOLO su procedencia, nunca el valor: la consola la ve
+    # quien ejecuta, que es el mismo que luego puntua.
+    if args.semilla_maestra is None:
+        args.semilla_maestra = nueva_semilla_maestra()
+        print("[ciego]   semilla maestra sorteada; queda en 05-ciego/sello.json")
+    else:
+        print("[ciego]   semilla maestra dada a mano: solo para repetir una tanda (§8.5)")
+
     plan = construir_plan(briefs, args.tomas, args.semilla_maestra)
 
     informe: dict[str, Any] = {
@@ -1802,7 +1843,15 @@ def main(argv: list[str] | None = None) -> int:
             for b in briefs
         },
         "tomas_por_brief": args.tomas,
-        "semilla_maestra": args.semilla_maestra,
+        # La SEMILLA MAESTRA NO VA AQUI, y es deliberado. Este informe se escribe
+        # en la RAIZ de la carpeta de evaluacion, donde trabaja el propietario, y
+        # de la semilla maestra salen TODOS los testigos ciegos
+        # (`sha256(semilla|brief|toma)[:6]`), las semillas de cada toma y el
+        # barajado del orden. Publicarla aqui equivale a publicar el mapa: con ese
+        # dato, reconstruir el indice de toma de cada pista son tres lineas, y el
+        # ciego de §5.4 deja de existir (revision 2026-09-03). Vive en la zona
+        # sellada, junto al mapa que ya no se abre hasta despues de elegir.
+        "semilla_maestra": "no se publica aqui: esta en 05-ciego/ con el mapa sellado",
         "estimacion": est,
         "gpu": gpu,
         "planificador_5hz": {"usar_lm": True, "lm_cfg": args.lm_cfg,

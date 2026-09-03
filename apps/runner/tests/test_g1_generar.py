@@ -718,3 +718,111 @@ class TestVarianteDeclarada:
         bloque = g1._descripcion_modelo(informe, params)
         assert bloque["modelo_variante"] == "turbo"
         assert "desconocido" not in bloque["modelo"]
+
+
+# --------------------------------------------------------------------------- #
+# Integridad de la evidencia del gate (revision 2026-09-03)
+# --------------------------------------------------------------------------- #
+
+class TestHashPorPista:
+    """Sin el hash del WAV, el manifiesto no queda ligado al fichero.
+
+    El manifiesto lleva semilla, prompt, letra y pesos; el registro tecnico lleva
+    tiempos y VRAM. Ninguno llevaba el SHA-256 del audio, asi que una pista
+    sustituida entre la generacion y la eleccion de la toma de §5.2 no se
+    detectaria: el acta citaria una trazabilidad que ya no corresponde a ese
+    fichero. `gs.sha256_fichero` existe y ya se usa para los pesos.
+    """
+
+    def test_la_cabecera_del_mapa_incluye_el_hash(self):
+        assert "sha256" in g1._CABECERA_MAPA, (
+            "el mapa sellado es donde vive la correspondencia toma-fichero: sin "
+            "hash, sellarlo no ata el fichero"
+        )
+
+    def test_el_bucle_de_generacion_calcula_el_hash_del_audio(self):
+        fuente = inspect.getsource(g1.generar)
+        assert "sha256_fichero" in fuente
+        # Y lo mete en los tres sitios que lo necesitan.
+        assert fuente.count("sha256") >= 3, (
+            "el hash tiene que ir al registro tecnico, al mapa y al manifiesto"
+        )
+
+    def test_el_hash_se_calcula_del_fichero_ya_escrito(self):
+        # Del destino final, no del temporal de staging: lo que hay que poder
+        # verificar despues es el fichero que se escucha.
+        fuente = inspect.getsource(g1.generar)
+        assert "sha256_fichero(destino_audio)" in fuente.replace(" ", "")
+
+
+class TestSemillaMaestraAleatoria:
+    """El ciego no puede descansar en que nadie ejecute tres lineas.
+
+    El testigo de cada toma es `sha256(semilla_maestra|brief|toma)[:6]`. Con la
+    semilla maestra fija en el codigo, cualquiera que lo lea reconstruye el
+    indice de toma y el barajado **sin abrir el mapa sellado**, que es justo lo
+    que §5.4 quiere impedir.
+    """
+
+    def test_no_hay_semilla_maestra_clavada_como_defecto(self):
+        fuente = inspect.getsource(g1.construir_parser)
+        assert "20260902" not in fuente, (
+            "la semilla maestra por defecto estaba clavada: el testigo del ciego "
+            "se derivaba de un valor publico en el repositorio"
+        )
+
+    def test_sin_indicarla_sale_una_semilla_distinta_cada_vez(self):
+        primera = g1.nueva_semilla_maestra()
+        segunda = g1.nueva_semilla_maestra()
+        assert primera != segunda
+        # 31 bits con signo, como exige el generador de torch de prepare_noise.
+        for valor in (primera, segunda):
+            assert isinstance(valor, int)
+            assert 0 < valor <= 0x7FFFFFFF
+
+    def test_darla_explicitamente_sigue_reproduciendo_la_misma_serie(self, briefs):
+        # Las repeticiones de §8.5 lo necesitan: misma semilla, misma serie.
+        a = g1.construir_plan(briefs, g1.TOMAS_PROTOCOLO, 12345)
+        b = g1.construir_plan(briefs, g1.TOMAS_PROTOCOLO, 12345)
+        assert [t.etiqueta_ciega for t in a] == [t.etiqueta_ciega for t in b]
+        assert [t.semilla for t in a] == [t.semilla for t in b]
+
+    def test_dos_semillas_maestras_dan_testigos_distintos(self, briefs):
+        a = g1.construir_plan(briefs, g1.TOMAS_PROTOCOLO, 111)
+        b = g1.construir_plan(briefs, g1.TOMAS_PROTOCOLO, 222)
+        assert [t.etiqueta_ciega for t in a] != [t.etiqueta_ciega for t in b]
+
+
+class TestElInformeNoRompeElCiego:
+    """El informe se escribe en la RAIZ de la carpeta de evaluacion.
+
+    Ahi es donde trabaja el evaluador, asi que lo que ponga ese fichero es
+    visible sin abrir nada sellado. Y llevaba `semilla_maestra`: de ella salen
+    TODOS los testigos (`sha256(semilla|brief|toma)[:6]`), las semillas de cada
+    toma y el barajado. Con ese dato a la vista, reconstruir el indice de toma de
+    cada pista son tres lineas, y el ciego de §5.4 no existe.
+
+    Es un fallo independiente del defecto de la semilla: pasaba igual con una
+    semilla aleatoria, porque el problema no es de donde sale, es donde acaba.
+    """
+
+    @staticmethod
+    def _claves_del_informe() -> str:
+        return inspect.getsource(g1.generar) + inspect.getsource(g1.main)
+
+    def test_la_semilla_maestra_no_viaja_en_el_informe(self):
+        fuente = self._claves_del_informe()
+        assert '"semilla_maestra": args.semilla_maestra' not in fuente, (
+            "la semilla maestra en el informe de la raiz permite derivar todos "
+            "los testigos sin abrir el mapa sellado"
+        )
+
+    def test_el_informe_declara_donde_esta_lo_que_no_lleva(self):
+        # No basta con quitarlo: quien lea el informe tiene que saber que ese
+        # dato existe, donde esta y por que no esta aqui.
+        fuente = self._claves_del_informe()
+        assert "05-ciego" in fuente
+
+    def test_la_semilla_se_persiste_en_la_zona_sellada(self):
+        fuente = self._claves_del_informe()
+        assert "sello" in fuente.lower()
