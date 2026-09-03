@@ -345,11 +345,18 @@ def _cargar_state_dict(
     nadie ha visto venir es peor que un fallo.
 
     El respaldo se toma unicamente ante `ArtefactoIlegible` (una disposicion del
-    fichero que la lectura por tramos no contempla). Cualquier otro fallo se
-    propaga: en particular el de «VRAM insuficiente», que el cargador lanza ANTES
-    de asignar. Caer entonces a `load_file` y subir tensor a tensor seria ir al
-    OOM de driver que el diseno prohibe, y esconder la causa real tras 12 minutos
-    (revision 2026-09-03).
+    fichero que la lectura por tramos no contempla, o un fichero truncado: en ese
+    caso `load_file` lo rechazara al instante y el aviso de «12 minutos» sera
+    pesimista). Cualquier otro fallo se propaga: en particular el de «VRAM
+    insuficiente», que el cargador lanza ANTES de asignar. Caer entonces a
+    `load_file` y subir tensor a tensor seria ir al OOM de driver que el diseno
+    prohibe, y esconder la causa real tras 12 minutos (revision 2026-09-03).
+    Cambio de comportamiento respecto a la version anterior, dicho sin rodeos:
+    un fallo de RAM al reservar un tramo (`torch.empty`) o un `OSError` de E/S
+    tambien se propagan ahora; antes caian a `load_file`, que mapea el fichero
+    sin reservar RAM por adelantado. Se acepta porque el shim materializa cada
+    componente igualmente y habria reventado en el mismo sitio unos minutos mas
+    tarde.
 
     Ninguna de las dos rutas deserializa objetos: `carga_contigua` lee la cabecera
     JSON y bytes crudos, y `load_file` es el cargador de `safetensors`. La puerta

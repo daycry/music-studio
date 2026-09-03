@@ -139,3 +139,38 @@ class TestAPcm16:
         datos, canales, muestras = shim._a_pcm16(onda)
         pcm = self._decodificar(datos, canales, muestras)
         assert (pcm == round(0.25 * 32767.0)).all()
+
+
+class TestFormaYCoste:
+    """Lo que destapo la segunda revision (2026-09-03): al corregir el eje, el
+    limitador paso de operar sobre un escalar a convoluciones O(N*K) sobre la
+    pista entera (205 s de CPU para 180 s de audio, contados como gpu_seconds), y
+    el `minimum` con la ganancia cruda reinstauraba un escalon de ~3 dB en una
+    sola muestra a +-10 ms del pico: un clic que G1 atribuiria al modelo.
+    """
+
+    def test_la_ganancia_no_da_saltos(self):
+        # La pendiente de la ganancia esta acotada por la rampa de ataque: la
+        # reduccion completa se reparte, como minimo, en _ANTICIPACION_MUESTRAS.
+        # Base constante: sin cruces por cero, `salida / onda` ES la ganancia.
+        onda, i = _con_transitorio(torch.full((2, 3 * SR), 0.25), valor=1.4)
+        salida, _ = shim._limitar_picos(onda)
+        ganancia = salida[0] / onda[0]
+        salto = (ganancia[1:] - ganancia[:-1]).abs()
+        techo_salto = (1.0 - TECHO / 1.4) / shim._ANTICIPACION_MUESTRAS * 1.05
+        assert float(salto.max()) <= techo_salto, (
+            f"salto maximo {float(salto.max()):.4f} por muestra; el maximo admisible "
+            f"para una rampa de {shim._ANTICIPACION_MUESTRAS} muestras es {techo_salto:.4f}"
+        )
+
+    def test_el_coste_es_lineal_y_pequeno(self):
+        import time
+
+        onda, _ = _con_transitorio(_base(segundos=60.0), en_s=30.0)
+        inicio = time.perf_counter()
+        shim._limitar_picos(onda)
+        coste = time.perf_counter() - inicio
+        assert coste < 3.0, (
+            f"{coste:.1f} s para limitar 60 s de audio en CPU: esto se contabiliza como "
+            "gpu_seconds y contamina D-17 y T-03"
+        )

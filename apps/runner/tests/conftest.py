@@ -7,13 +7,14 @@ anaden sus directorios a `sys.path` a mano, igual que hacen los propios scripts.
 
 Dependencias, dicho sin adornos (revision 2026-09-03)
 ----------------------------------------------------
-**La suite NO corre entera sin torch.** Unos 260 tests son biblioteca estandar
-pura (contratos, D-14, D-17, `_timing`, hashes del vendor); los otros ~350
-necesitan `torch`, `numpy` y `scipy` (limitador, carga contigua, planificador,
-difusion, metricas del A/B, pulso) y se saltan con `importorskip` si faltan.
+**La suite NO corre entera sin torch.** Unos 200 tests son biblioteca estandar
+pura (contratos, D-14, D-17, `_timing`, suelo de VRAM, G1, hashes del vendor);
+los otros ~430 (un 68 %) necesitan `torch`, `numpy` y `scipy` (limitador, carga
+contigua, planificador, difusion, metricas del A/B, pulso) y se saltan con
+`importorskip` si faltan.
 
-Un `-q` sin `-rs` esconderia esos saltos, y «614 en verde» con la mitad saltada
-seria una mentira. Por eso, si faltan las dependencias numericas, **la sesion
+Un `-q` sin `-rs` esconderia esos saltos, y «630 en verde» con dos tercios
+saltados seria una mentira. Por eso, si faltan las dependencias numericas, **la sesion
 aborta** con un mensaje claro, salvo que se pida explicitamente
 `--permitir-saltos` (util en una maquina sin torch para correr solo la parte
 pura). Ninguna dependencia de GPU es necesaria: todo corre en CPU.
@@ -65,7 +66,7 @@ def pytest_sessionstart(session: pytest.Session) -> None:
     faltan = [m for m in _DEPENDENCIAS_NUMERICAS if not _disponible(m)]
     if faltan:
         pytest.exit(
-            f"Faltan {', '.join(faltan)}: sin ellas se saltarian ~350 de los tests en "
+            f"Faltan {', '.join(faltan)}: sin ellas se saltarian ~430 de los tests en "
             "silencio. Instala las dependencias numericas (torch en CPU basta) o pasa "
             "--permitir-saltos a proposito.",
             returncode=3,

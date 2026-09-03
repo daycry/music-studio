@@ -572,9 +572,10 @@ def _extraer(
             for k in claves
             if state_dict[k].device != destino
         )
-        _exigir_vram(
-            destino, necesarios, f"subir {len(claves)} tensores {prefijo!r} a {destino}"
-        )
+        if necesarios:
+            _exigir_vram(
+                destino, necesarios, f"subir {len(claves)} tensores {prefijo!r} a {destino}"
+            )
 
     fuera: dict[str, torch.Tensor] = {}
     for clave in claves:
@@ -1382,12 +1383,75 @@ class AudioRenderizado:
 #: *reconstruido* de una senal puede superar al pico de sus muestras.
 TECHO_LIMITADOR_DB = -1.0
 
-#: Ventana del limitador, en muestras a 48 kHz. 10 ms de anticipacion y 100 ms de
-#: relajacion: lo bastante lentos para que la reduccion de ganancia no module la
-#: senal audiblemente (eso sonaria a "bombeo"), y lo bastante rapidos para no
-#: aplastar un tema entero por un unico transitorio.
+#: Ventanas del limitador, en muestras a 48 kHz. 10 ms de anticipacion (rampa de
+#: ataque que TERMINA en el pico, y misma longitud para la rampa de salida) y
+#: 100 ms de retencion (la ganancia se queda baja tras el pico antes de subir):
+#: lo bastante lentos para que la reduccion de ganancia no module la senal
+#: audiblemente (eso sonaria a "bombeo"), y lo bastante rapidos para no aplastar
+#: un tema entero por un unico transitorio.
 _ANTICIPACION_MUESTRAS = 480
-_RELAJACION_MUESTRAS = 4800
+_RETENCION_MUESTRAS = 4800
+
+
+def _minimo_deslizante(x: torch.Tensor, atras: int, adelante: int, neutro: float) -> torch.Tensor:
+    """`y[i] = min(x[i - atras .. i + adelante])`, con `neutro` fuera de los bordes.
+
+    O(N log W) por duplicacion: el minimo sobre 2^k muestras se obtiene del de
+    2^(k-1) desplazado, y la ventana completa es el minimo de dos ventanas de
+    2^k solapadas. `max_pool1d` daba lo mismo en O(N * W): 4 s por cada 25 s de
+    audio en CPU, y contados como gpu_seconds (revision 2026-09-03).
+    """
+    ancho = atras + adelante + 1
+    n = x.numel()
+    y = torch.nn.functional.pad(x, (atras, adelante), value=neutro)
+    m = y
+    largo = 1
+    while largo * 2 <= ancho:
+        m = torch.minimum(m[:-largo], m[largo:])  # m[i] = min(y[i : i + 2*largo])
+        largo *= 2
+    resto = ancho - largo  # 0 <= resto < largo: la segunda ventana solapa a la primera
+    return torch.minimum(m[:n], m[resto : resto + n])
+
+
+def _media_movil_causal(x: torch.Tensor, ancho: int, neutro: float) -> torch.Tensor:
+    """`y[i] = mean(x[i - ancho + 1 .. i])`, con `x[0]` repetido antes del inicio.
+
+    O(N) por suma acumulada en float64 de la DESVIACION respecto a `neutro`:
+    donde no hay nada que hacer la suma es exactamente 0 y la salida exactamente
+    `neutro`, sin el ruido de redondeo que daria acumular la ganancia entera.
+    Repetir `x[0]` al principio (y no `neutro`) es lo que mantiene la garantia
+    de `_ganancia_suave` en las primeras `ancho` muestras: ver alli.
+    """
+    n = x.numel()
+    desviacion = x.double() - neutro
+    acolchada = torch.cat([desviacion[:1].expand(ancho - 1), desviacion])
+    acumulada = torch.cat([acolchada.new_zeros(1), torch.cumsum(acolchada, dim=0)])
+    media = (acumulada[ancho : ancho + n] - acumulada[:n]) / ancho
+    return (neutro + media).to(x.dtype)
+
+
+def _ganancia_suave(necesaria: torch.Tensor, anticipacion: int, retencion: int) -> torch.Tensor:
+    """Convierte la ganancia necesaria muestra a muestra en una curva sin saltos.
+
+    1. **Retener**: `retenida[i] = min(necesaria[i - retencion .. i + anticipacion])`.
+       La ganancia ya es la del pico `anticipacion` muestras ANTES de que llegue
+       y se queda ahi `retencion` muestras despues.
+    2. **Rampas**: media movil causal de `anticipacion + 1` muestras sobre lo
+       retenido. Da una rampa lineal de ataque que termina justo en el pico, una
+       meseta durante la retencion y una rampa lineal de salida de la misma
+       longitud. Nada de escalones: la version anterior acotaba el suavizado con
+       un `minimum` contra la ganancia cruda y eso reinstauraba un salto de ~3 dB
+       en una sola muestra a +-10 ms del pico (un clic).
+
+    Garantia, sin `minimum`: para cada `j` en la ventana de la media de `i`
+    (`i - anticipacion <= j <= i`), `retenida[j]` es el minimo sobre un rango que
+    contiene a `i`, asi que `retenida[j] <= necesaria[i]` y la media tambien.
+    En las primeras `anticipacion` muestras la media rellena con `retenida[0]`,
+    que es `min(necesaria[0 .. anticipacion])`, tambien acotado. Por tanto
+    `ganancia[i] <= necesaria[i]` en toda muestra y el techo se respeta siempre.
+    """
+    retenida = _minimo_deslizante(necesaria, atras=retencion, adelante=anticipacion, neutro=1.0)
+    return _media_movil_causal(retenida, anticipacion + 1, neutro=1.0)
 
 
 def _limitar_picos(onda: torch.Tensor) -> tuple[torch.Tensor, dict[str, float]]:
@@ -1444,43 +1508,12 @@ def _limitar_picos(onda: torch.Tensor) -> tuple[torch.Tensor, dict[str, float]]:
     # ganancia constante sobre toda la pista; paso, y `test_limitador.py` lo vigila.
     envolvente = onda.abs().amax(dim=0)
 
-    # Pico local con anticipacion. `max_pool1d` sobre la envolvente da, para cada
-    # muestra, el pico mas alto de su vecindario: asi la ganancia empieza a bajar
-    # ANTES de que llegue el transitorio, en vez de reaccionar tarde.
-    ventana = 2 * _ANTICIPACION_MUESTRAS + 1
-    pico_local = torch.nn.functional.max_pool1d(
-        envolvente.view(1, 1, -1),
-        kernel_size=ventana,
-        stride=1,
-        padding=_ANTICIPACION_MUESTRAS,
-    ).view(-1)
-
-    ganancia = torch.clamp(techo / pico_local.clamp_min(1e-9), max=1.0)
-
-    # Suavizado de la relajacion: sin el, la ganancia salta y eso se oye como
-    # distorsion de intermodulacion. Media movil sobre la ventana de relajacion.
-    if _RELAJACION_MUESTRAS > 1:
-        # Se suaviza la REDUCCION (1 - ganancia), no la ganancia. Dos motivos:
-        # (a) el valor neutro de una reduccion es 0, que es justo lo que
-        # `conv1d(padding=...)` rellena en los bordes, asi que no hay fundido de
-        # entrada ni de salida (promediar la ganancia con relleno a ceros la
-        # hundia a ~0,5 en la primera muestra: -6 dB en TODAS las pistas);
-        # (b) donde no hay reduccion en toda la ventana, la media de ceros es
-        # exactamente 0 y la ganancia queda exactamente 1: la senal sale
-        # bit a bit identica, que es lo que promete el docstring y lo que
-        # `test_limitador.py` exige con `torch.equal`.
-        nucleo = torch.ones(1, 1, _RELAJACION_MUESTRAS) / _RELAJACION_MUESTRAS
-        borde = _RELAJACION_MUESTRAS // 2
-        reduccion = torch.nn.functional.conv1d(
-            (1.0 - ganancia).view(1, 1, -1), nucleo, padding=borde
-        ).view(-1)[: envolvente.numel()]
-        ganancia = 1.0 - reduccion
-        # El suavizado puede dejar la ganancia por encima de lo necesario en el
-        # borde de un transitorio, asi que se vuelve a acotar por el minimo:
-        # suavizar nunca debe deshacer la proteccion.
-        ganancia = torch.minimum(
-            ganancia, torch.clamp(techo / pico_local.clamp_min(1e-9), max=1.0)
-        )
+    # Ganancia necesaria muestra a muestra (1 donde no hay pico) y su version
+    # con anticipacion, retencion y rampas. Todo en O(N log W): la version con
+    # `max_pool1d` + `conv1d` costaba 205 s de CPU por 180 s de audio, contados
+    # como gpu_seconds (revision 2026-09-03).
+    necesaria = torch.clamp(techo / envolvente.clamp_min(1e-9), max=1.0)
+    ganancia = _ganancia_suave(necesaria, _ANTICIPACION_MUESTRAS, _RETENCION_MUESTRAS)
 
     salida = onda * ganancia.unsqueeze(0)
     informe["reduccion_db"] = float(-20.0 * math.log10(max(float(ganancia.min()), 1e-9)))
@@ -1496,9 +1529,9 @@ def _a_pcm16(onda: torch.Tensor) -> tuple[bytes, int, int]:
     tiene torch a mano.
 
     No se normaliza el loudness: eso es `T-19`/`T-45` (EBU R128 por destino). Aqui
-    solo se recorta a [-1, 1] para no envolver la senal, y se avisa si hubo
-    recorte, porque un recorte silencioso se oye en G1 y nadie sabria de donde
-    salio.
+    se pasa por `_limitar_picos` (techo -1 dBFS, sin recortar) y se cuantiza; el
+    `clamp` final es solo una red de seguridad que, tras el limitador, no deberia
+    tocar ninguna muestra.
     """
     if onda.dim() != 3 or onda.shape[0] != 1:
         raise RuntimeError(
@@ -1620,7 +1653,17 @@ class PipelineAceStep:
         )
 
     def release(self) -> None:
-        """Suelta pesos y VRAM. Idempotente; segura tras un fallo de construccion."""
+        """Suelta pesos y VRAM. Idempotente; segura tras un fallo de construccion.
+
+        Toma el lock de `render()`: soltar residencias mientras un forward las
+        usa daria un error de dispositivo o audio corrupto. El adapter ya espera a
+        las generaciones en vuelo antes de `unload()` (M-1); esto cierra la
+        carrera tambien para quien llame a `release()` directamente.
+        """
+        with self._render_lock:
+            self._release_exclusivo()
+
+    def _release_exclusivo(self) -> None:
         if self._liberado:
             return
         self._liberado = True
@@ -1963,7 +2006,11 @@ class PipelineAceStep:
             torch.cuda.empty_cache()
         tiempos["decode_s"] = time.perf_counter() - marca
 
+        # Con cronometro propio: va dentro de la etapa `inference` del adapter y
+        # por tanto cuenta como gpu_seconds, asi que tiene que verse si engorda.
+        marca = time.perf_counter()
         pcm16, canales, muestras = _a_pcm16(onda)
+        tiempos["limiter_s"] = time.perf_counter() - marca
         del onda
         duracion_real = muestras / float(SAMPLE_RATE)
         _LOG.info(

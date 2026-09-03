@@ -2,8 +2,8 @@
 
 Suite pytest del runner. Corre **sin GPU** (todo en CPU), pero **no corre entera sin torch**:
 la revisión del 2026-09-03 destapó que el README anterior decía «sin torch» mientras el
-61 % de los tests dependían de `torch`, `numpy` y `scipy` vía `importorskip`, y un `-q` sin
-`-rs` lo escondía. Ahora `conftest.py` aborta la sesión si faltan esas dependencias, salvo
+68 % de los tests (423 de 624 en aquel momento, contados con `--collect-only`) dependían de
+`torch`, `numpy` y `scipy` vía `importorskip`, y un `-q` sin `-rs` lo escondía. Ahora `conftest.py` aborta la sesión si faltan esas dependencias, salvo
 que se pida `--permitir-saltos` a propósito.
 
 ## Ejecución
@@ -30,19 +30,20 @@ python -m pytest apps/runner/tests -q -rs
 | `test_adapter.py` | stdlib | Camino mock del adapter, `_slug`, contrato M-3 de `gpu_seconds`, **integridad de pesos** (provenance hermano, variable, salto explícito) |
 | `test_timing.py` | stdlib | Estadísticas e informes atómicos de `_timing.py` |
 | `test_vram_profile.py` | stdlib | Protección C1 contra degradación silenciosa al mock (se salta si hay CUDA) |
-| `test_gpu_tiers.py` | stdlib | Tabla de niveles por VRAM y suelo de 8 GB con tolerancia (CS-51) |
+| `test_gpu_tiers.py` | stdlib | Tabla de niveles por VRAM |
+| `test_vram_floor.py` | stdlib | Suelo de 8 GB con tolerancia de 64 MB (CS-51) |
 | `test_g1_generar.py` | stdlib | Kit de G1: briefs del protocolo real, cegado, mapa sellado, `--sin-lm` ausente |
 | `test_vendor_hashes.py` | stdlib | Cada fichero de `vendor/**` coincide con la fila de su README y ninguno se ejecuta sin fila |
 | `test_matriz_ab.py` | stdlib | La matriz 2×2 del A/B está cruzada de verdad y cada par comparte semilla |
-| `test_limitador.py` | torch, numpy | Limitador de picos: señal intacta lejos del transitorio, sin fundido, ganancia común a los canales, punto de llamada `_a_pcm16` |
-| `test_carga_contigua.py` | torch, safetensors | Lectura contigua contra `load_file`, cabeceras, respaldo solo ante `ArtefactoIlegible`, guardarraíl de subida |
-| `test_shim_planificador.py` | torch | Perilla `usar_lm` en sus seis casos, aritmética 25 Hz/5 Hz, `render()` no reentrante |
+| `test_limitador.py` | torch, numpy | Limitador de picos: señal intacta lejos del transitorio, sin fundido, ganancia común a los canales, sin saltos de ganancia, coste lineal, punto de llamada `_a_pcm16` |
+| `test_carga_contigua.py` | torch, safetensors | Lectura contigua contra `load_file`, cabeceras, respaldo solo ante `ArtefactoIlegible`, guardarraíl de subida, SHA-256 de paso en la carga |
+| `test_shim_planificador.py` | torch | Perilla `usar_lm` en sus seis casos, aritmética 25 Hz/5 Hz, `render()` no reentrante y `release()` que espera al render |
 | `test_residual_fp32.py` | torch | Promoción fp32 del residual: reproduce el desbordamiento y la cura |
 | `test_diffusion_guia.py` | torch | Guía APG contra el bucle de upstream, drift documentado |
 | `test_scheduler_variantes.py` | torch | Planificador de pasos por variante (`turbo`/`sft`) |
 | `test_medir_ab.py` | numpy, scipy | Descriptores contra valores teóricos; contrastes 2×2 con `efecto_relativo_pct` |
 | `test_pulso.py` | numpy, scipy | Métrica de ritmo contra señales de tempo conocido, **y sus limitaciones escritas** (transitorio ancho, ruido de fondo) |
 
-Recuento a 2026-09-03: 624 tests. Unos 200 son una sola propiedad parametrizada sobre
+Recuento a 2026-09-03: 631 tests, unos 19 s en CPU. Unos 200 son una sola propiedad parametrizada sobre
 `range(1, 200)` en `test_shim_planificador.py`; el número de comportamientos distintos es
 bastante menor que el de tests recogidos.

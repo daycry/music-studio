@@ -123,6 +123,7 @@ def _pipeline(con_planificador: bool):
     pipe = shim.PipelineAceStep.__new__(shim.PipelineAceStep)
     pipe._liberado = False
     pipe._render_lock = threading.Lock()
+    pipe._dir_tokenizer_lm = None
     pipe._planificador = object() if con_planificador else None
     pipe._dispositivo = torch.device("cpu")
     pipe._dtype = torch.float16
@@ -235,6 +236,40 @@ class TestRenderNoReentrante:
         with caplog.at_level("WARNING"):
             self._dos_renders_solapados(_pipeline(False), monkeypatch)
         assert "no es reentrante" in caplog.text
+
+    def test_release_espera_a_que_termine_el_render_en_curso(self, monkeypatch):
+        # Soltar residencias bajo un forward en curso daria audio corrupto o un
+        # error de dispositivo: release() tiene que esperar al lock del render.
+        pipe = _pipeline(False)
+        dentro = threading.Event()
+        suelta = threading.Event()
+
+        def cond(**kw):
+            dentro.set()
+            suelta.wait(5)
+            raise _Corte("fin")
+
+        monkeypatch.setattr(shim, "preparar_condicionamiento_text2music", cond)
+
+        def renderizar():
+            try:
+                pipe.render(style_prompt="x", lyrics="y", duration_s=25, instrumental=False,
+                            seed=1, params={"usar_lm": False}, on_step=lambda *a: None)
+            except _Corte:
+                pass
+
+        h_render = threading.Thread(target=renderizar)
+        h_render.start()
+        assert dentro.wait(5)
+        h_release = threading.Thread(target=pipe.release)
+        h_release.start()
+        time.sleep(0.3)
+        assert h_release.is_alive(), "release() no ha esperado al render en curso"
+        assert pipe._liberado is False
+        suelta.set()
+        h_render.join(5)
+        h_release.join(5)
+        assert pipe._liberado is True
 
 
 # --------------------------------------------------------------------------- #
