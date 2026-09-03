@@ -408,6 +408,46 @@ Son los **criterios 3 y 4**: números medidos, no opinados. Se calculan **despu�
 
 > **Dependencia declarada de `T-09`:** igual que en CLAP, la **versión concreta y el SHA-256 de los pesos** de HeartTranscriptor se anotan al ejecutar, no hoy. Y **una advertencia honesta que conviene tener escrita antes de ver el número**: un WER medido con un transcriptor sobre **voz cantada** no es un WER de voz hablada; el transcriptor **también se equivoca**. Los umbrales del **15 %/25 %** vienen de `evaluation.md` §10.2 y **se aplican tal cual**; si `T-09` observa que el transcriptor falla sobre pistas cuya letra el propietario entiende perfectamente al oírlas, eso **se documenta como observación en `g1-resultado.md`** —y como entrada para calibrar G1-bis— pero **no altera el umbral de esta sesión** (§2, regla de inmutabilidad).
 
+### 6.2-bis Suelo del transcriptor: medido a medias, y por qué eso importa
+
+> **Estado a 2026-09-03: instrumento listo, calibración a medias.** El transcriptor
+> (`HeartTranscriptor-oss`, Whisper *medium* ajustado a música, Apache-2.0 verificada contra el
+> repositorio de código del proveedor, cuyo README dice «this repo **and all related model
+> weights**») está descargado, cableado y cronometrado: diez pistas de tres minutos son unos
+> **27 minutos de CPU**, así que la tanda cabe sin GPU.
+
+**Lo medido:** **7,74 % de WER** (intervalo 6,73–8,74), N = 80 enunciados, tres ejecuciones
+idénticas hasta el decimal con decodificación voraz. **Sobre voz HABLADA clara.**
+
+**Lo que A-15 pide y esto no es.** A-15 pide el suelo sobre **voz cantada** y **en los dos idiomas
+de los briefs**. Cantar es sustancialmente más difícil de transcribir que hablar —melisma, notas
+sostenidas, dicción sacrificada a la melodía, instrumentación encima—, así que **7,74 % es una cota
+INFERIOR del suelo real**, no el suelo. Restarlo del resultado sin decirlo sería hacer trampa a
+favor del modelo.
+
+**Por qué esto puede decidir el gate, y no por la calidad del modelo.** El umbral del criterio 4 es
+**≤ 15 % de media**. Si el suelo sobre canto resultara estar en el entorno del 15 %, el criterio
+sería **inalcanzable por construcción** y el gate entraría en `replanteo` por una propiedad del
+medidor. §8.5 solo permite **dos** repeticiones antes del `NO-GO` obligatorio: quemar una
+persiguiendo esto equivale a la mitad del margen de recuperación.
+
+> ### La salida, que no cuesta material nuevo
+>
+> A-15 propone medir sobre «3 a 5 grabaciones comerciales publicadas cuya letra sea conocida y
+> perfectamente inteligible». **Eso ya lo vas a tener**: son las **líneas base de librería** de §5.1,
+> que hay que elegir de todos modos, están cantadas por profesionales, vienen en los géneros y los
+> dos idiomas de los briefs, y su licencia se verifica igualmente para el gate.
+>
+> Así que el suelo sobre canto se mide **sobre la propia serie de librería**, con la letra que
+> publique su catálogo, y sin añadir ni una gestión de derechos nueva. Se hace **después** de elegir
+> las líneas base y **antes** de la sesión, y su número se anota junto al de habla.
+>
+> Si al medirlo el suelo sobre canto se acerca al umbral, eso **no se resuelve bajando el umbral**
+> —la regla de inmutabilidad de §2 no admite excepciones— sino declarándolo en el acta y decidiendo
+> con ese dato delante si el criterio 4 es interpretable en esta configuración.
+
+---
+
 ### 6.3 Invariante de seguridad
 
 Todo peso que se descargue para estas mediciones (HeartTranscriptor, CLAP) se carga **exclusivamente desde `safetensors`**, **nunca** vía `pickle`/`torch.load` sobre checkpoints no confiables (D-14, invariante innegociable del proyecto). El **SHA-256 se anota** — verifica integridad, no inocuidad. La regla vale para las herramientas de medición **exactamente igual** que para los generadores.

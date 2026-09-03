@@ -1361,6 +1361,21 @@ Tres entradas nuevas de hoy que el protocolo tiene que absorber **antes** de la 
 - **CLAP:** el protocolo propone **HeartCLAP**, que **no está publicado** (hallazgo A-3 de `T-06`). Sin suplente designado, el criterio 3 no tiene instrumento.
 - **WER:** el protocolo propone **HeartTranscriptor-oss**. Pendiente de verificar licencia y de medir el **suelo del transcriptor**: sin ese número, el umbral del 15 % no es interpretable (§6.2).
 
+**🟢 Avance del 2026-09-03 — los dos modelos, verificados y cableados.** Los criterios objetivos pasan de «no hay instrumento» a medibles. **Ambas fichas están SIN RATIFICAR**: I-13b reserva ese cierre al propietario, y dicen literalmente «pendiente de ratificación».
+
+| | Modelo | Licencia | Tamaño |
+|---|---|---|---|
+| **CLAP** | `laion/clap-htsat-fused`, revisión fijada | Apache-2.0 | 586 MB |
+| **Transcriptor** | `HeartMuLa/HeartTranscriptor-oss` (Whisper *medium* ajustado a música) | Apache-2.0 | 3.055 MB |
+
+**Tres cosas que salieron de hacerlo y que conviene no perder:**
+
+1. **El invariante de solo-`safetensors` costó poder discriminante, y hay que saberlo.** Cuatro de los cinco candidatos de CLAP publican únicamente `pytorch_model.bin`, o sea pickle — y **los dos entrenados específicamente con música están entre los descartados**, que es justo lo que el gate mide. El elegido es el generalista. No es un tecnicismo: es menos capacidad de distinguir canciones, y va anotado en la ficha para que viaje con el número.
+2. **`HeartCLAP` reconfirmado inexistente hoy** (la organización tiene 6 repos y ninguno es ese), no heredado de A-3. En cambio **`HeartTranscriptor-oss` sí existe**, y su licencia cierra el agujero que tuvo Demucs: el README del repositorio de código dice «this repo **and all related model weights**», o sea que nombra los pesos y no solo el código.
+3. **El suelo del transcriptor está medido a medias, y eso puede decidir el gate.** 7,74 % de WER sobre voz **hablada**; A-15 pide el suelo sobre **canto** y en los dos idiomas. Cantar es más difícil de transcribir, así que 7,74 % es una **cota inferior**. Con el umbral en 15 %, si el suelo sobre canto se acercara a esa cifra el criterio 4 sería inalcanzable **por una propiedad del medidor**, y quemaría una de las dos repeticiones que permite §8.5. La salida está escrita en `gates/g1-protocolo.md` **§6.2-bis**: medirlo sobre las **líneas base de librería**, que hay que elegir igualmente, están cantadas por profesionales y en los dos idiomas, y no añaden ninguna gestión de derechos nueva.
+
+**Cronómetro de la tanda, medido:** diez pistas de tres minutos son unos **27 minutos de CPU** para transcribir. Cabe sin GPU.
+
 **Criterios de aceptación**
 - [ ] La sonoridad medida coincide con la definición de BS.1770 comprobada contra señales de valor conocido, no contra otra implementación.
 - [ ] La normalización aplica **solo ganancia**; si llegar a −16 LUFS haría pasar el pico real de −1 dBTP, se aplica la menor y **se reporta** que esa pista no llegó al objetivo.
