@@ -569,6 +569,61 @@ def _semilla_toma(semilla_maestra: int, brief_id: str, indice: int) -> int:
     return int.from_bytes(hashlib.sha256(material).digest()[:4], "big") & 0x7FFFFFFF
 
 
+#: Version del esquema del manifiesto que escribe ESTE script. NO es el v1.
+#:
+#: El manifiesto v1 de verdad llega con `T-27` (F5) y **lo firma legal antes de
+#: implementarse** (D-20). Marcarlo aqui como "1" haria pasar por firmado un
+#: formato que legal no ha visto, que es peor que no marcarlo. Se declara lo que
+#: es: un manifiesto retroactivo y simplificado, escrito porque `CLAUDE.md` exige
+#: manifiesto **desde la primera pista** y una cadena append-only no admite
+#: relleno hacia atras: o esta cuando se genera, o esas pistas quedan fuera del
+#: invariante para siempre.
+MANIFEST_SCHEMA_VERSION_G1 = "g1-retroactivo-0"
+
+
+def comprobar_planificador_en_pesos(ruta_pesos: Path) -> None:
+    """Aborta si el artefacto no trae el planificador de 5 Hz, sin cargarlo.
+
+    G1 se genera con `usar_lm=True` sin excepcion (efecto medido del 60,7 %
+    frente al 1-7 % del ruido de semilla), y el shim aborta duro si se pide el
+    plan y el artefacto no lo trae. Sin esta guardia ese aborto llega **despues**
+    de leer 7,5 GB: dos minutos tirados por un defecto de entorno.
+
+    Y el defecto de entorno existe de verdad: el `Dockerfile` fija
+    `ACE_STEP_WEIGHTS_FILE=ace_step_1_5.safetensors`, que es el artefacto de
+    6,16 GB SIN `lm.*`, y este script toma esa variable como valor por defecto de
+    `--fichero-pesos`. Dentro del contenedor, no pasar la bandera lleva
+    justamente al artefacto equivocado.
+
+    Se lee solo la cabecera: los 8 primeros bytes son la longitud del JSON y ahi
+    ya estan los nombres de todos los tensores.
+    """
+    try:
+        with open(ruta_pesos, "rb") as fichero:
+            longitud = int.from_bytes(fichero.read(8), "little")
+            if not 0 < longitud <= 100 * 1024 * 1024:
+                raise ValueError(f"longitud de cabecera absurda: {longitud}")
+            cabecera = json.loads(fichero.read(longitud))
+    except Exception as exc:  # noqa: BLE001
+        raise SystemExit(
+            f"No se pudo leer la cabecera de {ruta_pesos} ({exc}). Ante la duda se para: "
+            "comprobar aqui cuesta milisegundos y descubrirlo tras cargar 7,5 GB cuesta "
+            "dos minutos y una tanda a medias."
+        ) from exc
+
+    if not any(clave.startswith("lm.") for clave in cabecera):
+        raise SystemExit(
+            f"El artefacto {ruta_pesos.name} NO trae el planificador de 5 Hz (ninguna clave "
+            "'lm.*'), y este script genera siempre con el: su efecto medido es del 60,7 % "
+            "frente al 1-7 % del ruido de semilla, asi que sin el la serie no es la que el "
+            "gate quiere juzgar.\n"
+            "  Usa el artefacto que si lo lleva (ace_step_1_5_lm.safetensors).\n"
+            "  OJO si estas dentro del contenedor: su ACE_STEP_WEIGHTS_FILE por defecto es "
+            "el artefacto SIN planificador, asi que hay que pasar --fichero-pesos a mano."
+        )
+    return None
+
+
 def nueva_semilla_maestra() -> int:
     """Semilla maestra ALEATORIA, para que el ciego no dependa del codigo fuente.
 
@@ -1161,6 +1216,8 @@ async def generar(args: argparse.Namespace, briefs: list[Brief], plan: list[Toma
     # El SHA-256 de los pesos es la casilla «SHA-256 de los pesos» de la cabecera
     # de la hoja (§7.1) y la precondicion 2 de §9.1. Se calcula una vez.
     ruta_pesos = Path(ctx.weights_dir) / args.fichero_pesos
+    # Antes de leer 7,5 GB: que el artefacto traiga de verdad el planificador.
+    comprobar_planificador_en_pesos(ruta_pesos)
     if args.hash_pesos and ruta_pesos.is_file():
         print(f"[pesos] SHA-256 de {ruta_pesos} (7,5 GB, ~1 min)...")
         t0 = time.perf_counter()
@@ -1338,6 +1395,26 @@ async def generar(args: argparse.Namespace, briefs: list[Brief], plan: list[Toma
                     {
                         "aviso_ciego": (
                             "contiene la semilla: no abrir antes de elegir la toma (§5.2)"
+                        ),
+                        # Los tres campos que CLAUDE.md exige DESDE LA PRIMERA
+                        # PISTA. No se pueden anadir despues: D-20 hace la cadena
+                        # append-only y no admite relleno hacia atras.
+                        "manifest_schema_version": MANIFEST_SCHEMA_VERSION_G1,
+                        "lyrics_declaration": {
+                            "titularidad": "propia",
+                            "declarada_por": "propietario de la iniciativa",
+                            "nota": (
+                                "Las 10 letras las escribe el propietario (§4.1) y el script se "
+                                "niega a generar sin ellas. No hay obra de tercero implicada, ni "
+                                "cover, ni adaptacion. La declaracion formal con bloqueo duro en "
+                                "la API es D-21 / T-11, que no existe en Fase 0."
+                            ),
+                        },
+                        "training_data_declaration": (
+                            "declarada-por-el-proveedor-sin-auditar: la model card de ACE-Step 1.5 "
+                            "declara audio licenciado, de dominio publico o royalty-free, y "
+                            "sintetico MIDI-a-audio, y reivindica uso comercial del output. Es una "
+                            "afirmacion del proveedor, sin auditoria ni nombres de datasets."
                         ),
                         **_descripcion_modelo(adaptador.describe(), params),
                         "audio_sha256": sha_audio,

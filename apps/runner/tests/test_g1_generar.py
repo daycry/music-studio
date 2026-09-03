@@ -826,3 +826,77 @@ class TestElInformeNoRompeElCiego:
     def test_la_semilla_se_persiste_en_la_zona_sellada(self):
         fuente = self._claves_del_informe()
         assert "sello" in fuente.lower()
+
+
+class TestManifiestoConLosCamposInnegociables:
+    """`CLAUDE.md` exige el manifiesto «desde la primera pista», con tres cosas.
+
+    Y D-20 no admite backfill: una cadena append-only no se rellena hacia atras.
+    O estan cuando se genera la primera pista de G1, o esas pistas quedan fuera
+    del invariante para siempre. El esquema v1 de verdad llega con T-27 en F5, asi
+    que este manifiesto es explicitamente el retroactivo simplificado de §10.2 —
+    pero eso no exime de declarar QUE esquema es, ni de llevar la declaracion de
+    derechos de la letra, que es bloqueo duro del proyecto.
+    """
+
+    @staticmethod
+    def _campos() -> str:
+        return inspect.getsource(g1.generar)
+
+    def test_declara_la_version_de_esquema_del_manifiesto(self):
+        assert "manifest_schema_version" in self._campos()
+
+    def test_lleva_la_declaracion_de_derechos_de_la_letra(self):
+        assert "lyrics_declaration" in self._campos()
+
+    def test_lleva_la_declaracion_de_datos_de_entrenamiento(self):
+        assert "training_data_declaration" in self._campos()
+
+    def test_el_esquema_se_declara_como_lo_que_es_y_no_como_el_v1(self):
+        # Marcarlo como v1 seria peor que no marcarlo: haria pasar por firmado un
+        # formato que legal no ha visto (D-20).
+        fuente = self._campos()
+        assert "g1-retroactivo" in fuente or "retroactivo" in fuente
+
+
+class TestGuardiaDelPlanificador:
+    """El artefacto por defecto DENTRO del contenedor no lleva planificador.
+
+    `Dockerfile` fija `ACE_STEP_WEIGHTS_FILE=ace_step_1_5.safetensors` (el de
+    6,16 GB, sin `lm.*`) y el script toma esa variable como su valor por defecto.
+    Como G1 se genera con `usar_lm=True` sin excepcion, eso aborta... despues de
+    cargar 7,5 GB, o sea dos minutos tirados por un defecto de entorno. Se
+    comprueba antes, leyendo solo la cabecera.
+    """
+
+    @staticmethod
+    def _artefacto(tmp_path, claves, nombre="pesos.safetensors"):
+        import struct
+
+        cuerpo = json.dumps({k: {"dtype": "U8", "shape": [4], "data_offsets": [0, 4]}
+                             for k in claves}).encode("utf-8")
+        ruta = tmp_path / nombre
+        ruta.write_bytes(struct.pack("<Q", len(cuerpo)) + cuerpo + b"\x00" * 8)
+        return ruta
+
+    def test_un_artefacto_con_planificador_pasa(self, tmp_path):
+        ruta = self._artefacto(tmp_path, ["dit.decoder.w", "lm.model.embed.weight"])
+        assert g1.comprobar_planificador_en_pesos(ruta) is None
+
+    def test_un_artefacto_sin_planificador_se_rechaza_antes_de_cargar(self, tmp_path):
+        ruta = self._artefacto(tmp_path, ["dit.decoder.w", "vae.decoder.w"])
+        with pytest.raises(SystemExit) as info:
+            g1.comprobar_planificador_en_pesos(ruta)
+        mensaje = str(info.value).lower()
+        assert "planificador" in mensaje
+        assert "lm" in mensaje
+
+    def test_un_artefacto_ilegible_no_se_da_por_bueno(self, tmp_path):
+        # Ante la duda, parar: es mas barato que descubrirlo tras cargar 7,5 GB.
+        basura = tmp_path / "basura.safetensors"
+        basura.write_bytes(b"no soy un safetensors")
+        with pytest.raises(SystemExit):
+            g1.comprobar_planificador_en_pesos(basura)
+
+    def test_el_bucle_de_generacion_llama_a_la_guardia(self):
+        assert "comprobar_planificador_en_pesos" in inspect.getsource(g1.generar)
