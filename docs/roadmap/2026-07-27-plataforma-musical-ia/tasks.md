@@ -1237,6 +1237,66 @@ Tres entradas nuevas de hoy que el protocolo tiene que absorber **antes** de la 
 
 ---
 
+### T-87 · Catálogo consultable de modelos instalados (`GET /models`) · 🟡 PROPUESTA
+
+> ⚠️ **Propuesta del 2026-09-03, PENDIENTE de ratificación económica — no ejecutar sin ella.** Delta: **+8 h base / +9,6 h con margen / +480 €**. **No suma** a las 656 h / 39.360 € ratificadas. Mismo tratamiento que `T-86`: no pasa a `en-progreso` sin ratificación.
+
+| Tipo | Estado | Dependencias | Tiempo estimado (base) | Tokens previstos |
+|---|---|---|---|---|
+| backend | **propuesta (no ratificada)** | T-10, T-30, `model_cards.py` | 8 h | 0,30 M in / 0,05 M out |
+
+**Descripción:** Exponer el inventario de modelos por HTTP. `GET /models` aparece **desde el primer día** en el contrato OpenAPI de `T-10` (línea de subtareas de esa ficha) y en los diagramas de `spec.md`, pero **ninguna ficha del ledger lo implementaba**: era un endpoint declarado y sin dueño. Esta tarea le pone dueño.
+
+**Criterios de aceptación**
+- [ ] `GET /models` devuelve cada modelo con `id@version`, estado (`disponible`/`no_seleccionable`/`rechazada`/`sin_ficha`) y **motivo legible** cuando no es elegible.
+- [ ] Un modelo `deprecado` o que no cabe en la VRAM detectada **aparece** en la lista y **no** es seleccionable. Ocultarlo no lo borra del disco.
+- [ ] La respuesta no expone rutas absolutas del anfitrión.
+
+---
+
+### T-88 · Detección de modelos instalados en el arranque · 🟡 PROPUESTA
+
+> ⚠️ **Propuesta del 2026-09-03, PENDIENTE de ratificación económica — no ejecutar sin ella.** Delta: **+6 h base / +7,2 h con margen / +360 €** (bajado de las 10 h estimadas inicialmente: `apps/runner/model_cards.py` ya resuelve la lectura y validación de fichas, ver la nota de alcance de abajo).
+
+| Tipo | Estado | Dependencias | Tiempo estimado (base) | Tokens previstos |
+|---|---|---|---|---|
+| backend | **propuesta (no ratificada)** | T-85, `model_cards.py` | 6 h | 0,25 M in / 0,04 M out |
+
+**Descripción:** Que el runner, al arrancar, inventaríe el directorio de pesos y cruce lo que cada modelo declara necesitar con la GPU detectada, en vez de descubrirlo al reventar cargando. Hoy `hardware.min_vram_gb` solo existe en `spec.md` §11.1 y **no lo consume nadie**: un modelo de 15,8 GB pasaría el suelo global en una tarjeta de 8 GB y fallaría al cargar pesos.
+
+**Criterios de aceptación**
+- [ ] El arranque publica el inventario y el veredicto de encaje por modelo, con la VRAM real detectada.
+- [ ] Un modelo que no cabe se marca no seleccionable **antes** de intentar cargarlo.
+- [ ] Ningún dato de una ficha decide qué código se importa (ver la regla de abajo).
+
+---
+
+> ## 🔴 DECISIÓN PENDIENTE DEL PROPIETARIO — solape entre `T-86` y `T-87`/`T-88`
+>
+> **No se deben ratificar las dos vías: se pagaría dos veces el mismo trabajo.** `T-86` (instalador, +32 h) ya incluye «colocación de pesos con verificación SHA-256 y cuarentena» (6 h) y «escritura de la config local» (5 h). `T-88` cruza con esas dos subtareas; `T-87` no cruza con nada de `T-86`.
+>
+> | Opción | Alcance | Delta base | Delta con margen |
+> |---|---|---|---|
+> | **A — Ampliar `T-86`** | El instalador escribe la ficha `.model.json` al colocar los pesos y expone el inventario; `T-88` desaparece y `T-87` se mantiene aparte | +32 h (`T-86`) +2 h (ficha) +8 h (`T-87`) = **+42 h** | +50,4 h / **+2.520 €** |
+> | **B — Sin instalador** | Se dejan `T-87` + `T-88` y `T-86` sigue sin ratificar; instalar sigue siendo un runbook manual | +14 h | +16,8 h / **+840 €** |
+> | **C — Nada** | Se queda lo que ya hay: `model_cards.py` y su CLI. Suficiente para un usuario y una máquina | 0 h | 0 € |
+>
+> **Recomendación: C hoy, B cuando exista el servidor, A solo si se instala en más de una máquina.** Con un modelo activo y un usuario, un catálogo HTTP y un selector de interfaz no tienen a quién servir; y todo esto se diseña mejor cuando se conozcan las restricciones reales del servidor. Es la doctrina D-16 que este proyecto ya aplicó al router de capacidades: abstraer en la segunda instancia, no en la primera.
+
+---
+
+> ## ⚠️ Alcance ejecutado sin ratificar, declarado — `apps/runner/model_cards.py` (2026-09-03)
+>
+> **Qué es:** inventario y validador de fichas `<pesos>.model.json`, biblioteca estándar pura, con 17 tests, más las tres fichas reales en `D:\srvce-step\weights\` (fuera del repo). Aproximadamente **4 h**, **no ratificadas** y **no imputadas** a ninguna tarea del presupuesto.
+>
+> **Por qué se hizo ahora y no tras la ratificación:** resuelve un riesgo de la **fase en curso**, no una funcionalidad futura. En ese directorio hay tres artefactos del mismo modelo y **turbo y sft son indistinguibles mirando el fichero** (mismas 677 claves, mismas formas): generar la serie de G1 con el descartado no da ningún error, da audio peor, y el acta lo recogería como veredicto del modelo. La ficha es lo que hace visible esa diferencia.
+>
+> **La regla de diseño, que sí es una decisión y conviene ratificar:** *la ficha es **evidencia**, nunca **autoridad***. Describe unos pesos; no decide qué código se importa. El campo `adapter` es un nombre validado contra un `frozenset` del repositorio, y el módulo no importa nada por nombre (comprobado sobre el árbol sintáctico, no por texto). El campo `env` tiene lista blanca y excluye `ACE_STEP_SKIP_INTEGRITY` y `ACE_STEP_MOCK`: una ficha configura, jamás desactiva una salvaguarda. Sin `.provenance.json` hermano, se rechaza.
+>
+> **Qué NO es:** ni el registry de `T-30`, ni un catálogo HTTP, ni un instalador. Cuando llegue `T-30` habrá que decidir si es la semilla de `ModelDescriptor` o se tira; hoy es coste hundido asumible (4 h).
+
+---
+
 ## F7 · Generación letra + estilo end-to-end — C-01 (78 h)
 
 > **Orden interno deliberado:** primero backend completo (`T-42`–`T-45`) para alcanzar el hito de la canción end-to-end por CLI, después frontend (`T-46`–`T-48`).
@@ -2219,3 +2279,4 @@ Tres entradas nuevas de hoy que el protocolo tiene que absorber **antes** de la 
 | 2026-09-02 | **F2 avanza a la puerta de G1 — `T-05`, `T-06` y `T-07` cerradas con evidencia ejecutada.** `T-05` → **`completado`**: los 4 criterios verificados ejercitando el ciclo de vida entero del adapter, no leyéndolo — `load()`/`generate()` en generaciones reales de 240 s y **`health()`/`unload()` en una sonda dedicada** (`out/t05-health-informe.json`) que confirma lo que el criterio 3 pide de verdad: `health()` contesta **durante** el arranque en frío (cada 20 s, sin bloquearse), pasa a `ready=True` al terminar (140,24 s = `vram_load` 83,34 + warm-up 52,48) y vuelve a `ready=False` tras `unload()`. `T-06` → **`completado`** (`spikes/comparativa-modelos.md`, D-06 confirmado sin cambios; destapa que **`spec.md` §11.1 describe a ACE-Step v1 3.5B y no a 1.5**, y que **la licencia es MIT, no Apache 2.0** — dato que el manifiesto de procedencia va a registrar). `T-07` → **`completado`** (`spikes/matriz-capacidades.md`, 4 capacidades sondeadas sobre pesos y GPU reales con 9 WAV de evidencia; **C-07 y C-08 no se caen**, y aparece un prerrequisito de 8–16 h que no estaba en ninguna estimación: falta el codificador del VAE). `T-03` sigue **`en-progreso`** con 1 de 6 criterios cumplido: el pipeline genera audio real y está perfilado, pero **el arranque en frío de S-01 contra RunPod no está medido** y RunPod queda **aparcado por presupuesto**. `T-08` sigue **`en-revision`**: le falta la firma del propietario y nadie más puede darla. Corregida la fila de F2 del §1, que seguía diciendo «bloqueadas por CS-36» desde antes de que CS-36 se cerrara. **Ninguna hora ni cifra ratificada cambia** (656 h / 39.360 €). | implementer (cierre de F2) |
 | 2026-09-02 | **Dos adelantos de alcance de fases posteriores, anotados donde nacen y sin cobrar horas.** (a) **`T-45`** (F7): se adelantó **solo el limitador de picos** (techo −1,0 dBFS, verificado) porque la pista de 180 s se salía de escala antes del recorte y, sin él, la escucha de G1 juzgaría el *clipping* en vez del modelo. **No es normalización de loudness**: sin LUFS, sin objetivo por destino, sin transcode. (b) **`T-85`** (F6): existe `gpu_tiers.py` con **26 tests**, que cubre una parte del tercer criterio — configuración por nivel de GPU detectado en vez de valores clavados a los de una GTX 1070 (`tier3` de ocho tramos), tabla vendorizada de upstream con procedencia y cuatro desviaciones documentadas por Pascal. **Ambas tareas siguen `pendiente` en su fase, ningún criterio marcado y ninguna hora descontada** (F7 78 h, F6 112 h). | implementer (cierre de F2) |
 | 2026-09-02 | **Cuatro cabos sueltos nuevos registrados en `pre-dev-checklist.md` — sección D, CS-52 a CS-55** (51 → 55 ítems). **CS-52** etiquetas de sección: ACE-Step espera las canónicas y el formato Suno va **verbatim** al modelo; A/B limpio hoy con misma semilla y mismo cuerpo de letra — afecta al validador de `T-46` y al protocolo de G1. **CS-53** ACE-Step **no reparte voces por sección** (dúo, coro): un único vector de timbre global; es una diferencia de capacidad frente a Suno y acota lo que se le puede prometer al usuario. **CS-54** la matriz de `T-07` puede estar midiendo el techo del **turbo** y no el de ACE-Step (`Extract`/`Lego`/`Complete` marcadas no soportadas en turbo y sí en `base`), con la pista de que **`extract` bajo MIT** sería candidato a desbloquear C-06. **CS-55** el arranque en frío medido contradecía la promesa de 2–6 min de `ui-design.md`: 12,6–13,0 min antes del arreglo de lectura contigua, 1,8–2,3 min después — pero **eso es solo el término de carga local** y el S-01 real sigue sin medir, con la copia «2-6 min» ya escrita en `adapter.health()`. Actualizados además CS-38/CS-39 (RunPod aparcado por presupuesto) y el ítem 44 (entregables de F2: dos de tres escritos). **Ninguna cifra ratificada ni umbral de gate cambia.** | implementer (cierre de F2) |
+| 2026-09-03 | **Higiene de Fase 0 tras revisión de código, y dos tareas nuevas PROPUESTAS.** (a) **Tanda A ejecutada** (commit `8ea0470`, 669 → 678 tests): manifiesto de G1 derivado en vez de literal; **variante de difusión declarada** en `g1_generar.py` con guardia que rechaza antes de cargar un artefacto que la contradiga — hasta hoy el shim corría programación turbo aunque se cargaran pesos `sft`, sin error y con audio peor; `describe()` publica `weights_sha256`; nueva `assert_safetensors_header()` que valida la cabecera al abrir; **puerta de `artifact_schema_version`** (el fusor la escribía y el shim no la leía en ningún sitio); candado de hashes del vendor generalizado a N adapters. (b) **Licencia de ACE-Step corregida de Apache 2.0 a MIT** en `spec.md`, `evaluation.md`, `ui-design.md` y `gates/g2-matriz-resultados.md`, este último conservando el texto erróneo tachado porque es literalmente lo que se puso delante de legal el 2026-08-18. (c) **MiniMax-Music3 reevaluado** (`spikes/comparativa-modelos.md` §12): la premisa «G2 cerró, luego se desbloquea» era falsa por partida doble — G2 nunca preguntó por esa licencia **y** se cerró sin dictamen jurídico, con 1 de 3 criterios; la recomendación A-4 no está pendiente sino que es **inejecutable**, y se sustituye por **A-4′** dirigida a **GC-01**. (d) **`T-87` y `T-88` propuestas** (+14 h base / +840 €, no ratificadas) con la **decisión de solape frente a `T-86`** planteada como excluyente. (e) **`apps/runner/model_cards.py`** (~4 h, no ratificadas) declarado como alcance ejecutado sin ratificar. | orquestador `/dev-cycle` |
