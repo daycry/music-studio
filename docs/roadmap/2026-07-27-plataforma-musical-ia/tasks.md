@@ -1239,7 +1239,7 @@ Tres entradas nuevas de hoy que el protocolo tiene que absorber **antes** de la 
 
 ### T-87 · Catálogo consultable de modelos instalados (`GET /models`) · 🟡 PROPUESTA
 
-> ⚠️ **Propuesta del 2026-09-03, PENDIENTE de ratificación económica — no ejecutar sin ella.** Delta: **+8 h base / +9,6 h con margen / +480 €**. **No suma** a las 656 h / 39.360 € ratificadas. Mismo tratamiento que `T-86`: no pasa a `en-progreso` sin ratificación.
+> ⚠️ **Propuesta del 2026-09-03. DOS bloqueos, no uno.** (1) **`G1`**: depende de `T-10` (F4) y `T-30` (F5), así que §1 del protocolo la veta hasta que `T-09` se cierre con resultado favorable — **esto no lo levanta ningún presupuesto**. (2) **Ratificación económica**: delta **+8 h base / +9,6 h con margen / +480 €**, que **no suma** a las 656 h / 39.360 € ratificadas. Mismo tratamiento que `T-86`: no pasa a `en-progreso` sin ambas cosas.
 
 | Tipo | Estado | Dependencias | Tiempo estimado (base) | Tokens previstos |
 |---|---|---|---|---|
@@ -1256,7 +1256,7 @@ Tres entradas nuevas de hoy que el protocolo tiene que absorber **antes** de la 
 
 ### T-88 · Detección de modelos instalados en el arranque · 🟡 PROPUESTA
 
-> ⚠️ **Propuesta del 2026-09-03, PENDIENTE de ratificación económica — no ejecutar sin ella.** Delta: **+6 h base / +7,2 h con margen / +360 €** (bajado de las 10 h estimadas inicialmente: `apps/runner/model_cards.py` ya resuelve la lectura y validación de fichas, ver la nota de alcance de abajo).
+> ⚠️ **Propuesta del 2026-09-03. DOS bloqueos, no uno.** (1) **`G1`**: depende de `T-85` (F6), así que §1 del protocolo la veta hasta que `T-09` se cierre con resultado favorable — **esto no lo levanta ningún presupuesto**. (2) **Ratificación económica**: delta **+6 h base / +7,2 h con margen / +360 €**, bajado de las 10 h estimadas inicialmente porque `apps/runner/model_cards.py` ya resuelve la lectura y validación de fichas (ver la nota de alcance de abajo).
 
 | Tipo | Estado | Dependencias | Tiempo estimado (base) | Tokens previstos |
 |---|---|---|---|---|
@@ -1271,17 +1271,36 @@ Tres entradas nuevas de hoy que el protocolo tiene que absorber **antes** de la 
 
 ---
 
-> ## 🔴 DECISIÓN PENDIENTE DEL PROPIETARIO — solape entre `T-86` y `T-87`/`T-88`
+> ## 🔴 DECISIÓN DIFERIDA — solape entre `T-86` y `T-87`/`T-88`
 >
-> **No se deben ratificar las dos vías: se pagaría dos veces el mismo trabajo.** `T-86` (instalador, +32 h) ya incluye «colocación de pesos con verificación SHA-256 y cuarentena» (6 h) y «escritura de la config local» (5 h). `T-88` cruza con esas dos subtareas; `T-87` no cruza con nada de `T-86`.
+> > ⚠️ **Corregido el 2026-09-03.** La primera versión de este bloque presentaba tres opciones como si fueran elegibles hoy. **No lo son.** Dos de las tres están detrás de `G1`, y ratificar su presupuesto no las desbloquearía: el bloqueo no es económico. Se conserva la corrección a la vista porque la versión anterior invitaba a tomar una decisión de gasto que no habría podido ejecutarse.
+>
+> **Qué se puede pedir hoy, de verdad**
+>
+> | Opción | Ejecutable hoy | Por qué |
+> |---|---|---|
+> | **A — Ampliar `T-86`** | ❌ **No** | Cadena `T-86` → `T-85` → `T-35` → `T-25` (F4) / `T-32` (F5). Toda ella en F4-F6 |
+> | **B — Sin instalador** | ❌ **No** | `T-87` depende de `T-10` (F4) y `T-30` (F5); `T-88` depende de `T-85` (F6) |
+> | **C — Lo que ya hay** | ✅ **Sí** | `model_cards.py` y su CLI son higiene de la fase en curso: no dependen de nada de F4 en adelante |
+>
+> La regla que lo impone es `gates/g1-protocolo.md` §1: *«ninguna tarea de `F4` en adelante puede empezar antes de que `T-09` quede `completado` con resultado favorable»*. **La única decisión viva hoy es si se acepta `C` o se revierte** (ver el bloque siguiente).
+>
+> **Y cuando `G1` abra, entonces sí: alcance y precio**
 >
 > | Opción | Alcance | Delta base | Delta con margen |
 > |---|---|---|---|
 > | **A — Ampliar `T-86`** | El instalador escribe la ficha `.model.json` al colocar los pesos y expone el inventario; `T-88` desaparece y `T-87` se mantiene aparte | +32 h (`T-86`) +2 h (ficha) +8 h (`T-87`) = **+42 h** | +50,4 h / **+2.520 €** |
 > | **B — Sin instalador** | Se dejan `T-87` + `T-88` y `T-86` sigue sin ratificar; instalar sigue siendo un runbook manual | +14 h | +16,8 h / **+840 €** |
-> | **C — Nada** | Se queda lo que ya hay: `model_cards.py` y su CLI. Suficiente para un usuario y una máquina | 0 h | 0 € |
 >
-> **Recomendación: C hoy, B cuando exista el servidor, A solo si se instala en más de una máquina.** Con un modelo activo y un usuario, un catálogo HTTP y un selector de interfaz no tienen a quién servir; y todo esto se diseña mejor cuando se conozcan las restricciones reales del servidor. Es la doctrina D-16 que este proyecto ya aplicó al router de capacidades: abstraer en la segunda instancia, no en la primera.
+> **No se deben ratificar las dos vías: se pagaría dos veces el mismo trabajo.** `T-86` ya incluye «colocación de pesos con verificación SHA-256 y cuarentena» (6 h) y «escritura de la config local» (5 h). `T-88` cruza con esas dos subtareas; `T-87` no cruza con nada de `T-86`.
+>
+> **Recomendación cuando la puerta abra: `B` primero, y `A` solo cuando se cumpla una condición observable.** Las 28 h que `A` cuesta por encima de `B` compran **una sola cosa** —instalación repetible en máquinas nuevas— y su rentabilidad escala con el número de máquinas, que hoy es cero. Además, 6 de esas 32 h son «pruebas manuales de instalación en máquina limpia en 1-2 SO objetivo»: no hay máquina limpia ni se sabe qué SO tendrá el servidor, así que se pagarían contra un entorno hipotético. Y el trabajo de un instalador es **adaptarse a un entorno**; el único que se conoce es esta máquina, que es justo la que no se va a instalar porque ya lo está.
+>
+> **`A` pasa a ser la recomendada el día que se cumpla cualquiera de estas tres**, y conviene dejarlas escritas para no discutirlo entonces: (1) hay una **segunda máquina**; (2) instala **alguien que no sea el propietario**; (3) el servidor es **alquilado** y la instalación se rehará al cambiar de proveedor. Con RunPod aparcado y un servidor único en el horizonte, hoy no se cumple ninguna.
+>
+> Lo que `A` sí aporta y no aporta ninguna otra vía, para que la comparación sea justa: preflight con mensaje accionable por cada carencia (driver, Docker, NVIDIA Container Toolkit), **cuarentena del fichero de pesos que no cuadra** —relevante: ya hay un pickle en cuarentena en `D:\srv\ace-step\quarantine\`— y desinstalación limpia con inventario antes y después.
+>
+> Es la doctrina **D-16** que este proyecto ya aplicó al router de capacidades: abstraer en la segunda instancia, no en la primera.
 
 ---
 
@@ -2280,3 +2299,4 @@ Tres entradas nuevas de hoy que el protocolo tiene que absorber **antes** de la 
 | 2026-09-02 | **Dos adelantos de alcance de fases posteriores, anotados donde nacen y sin cobrar horas.** (a) **`T-45`** (F7): se adelantó **solo el limitador de picos** (techo −1,0 dBFS, verificado) porque la pista de 180 s se salía de escala antes del recorte y, sin él, la escucha de G1 juzgaría el *clipping* en vez del modelo. **No es normalización de loudness**: sin LUFS, sin objetivo por destino, sin transcode. (b) **`T-85`** (F6): existe `gpu_tiers.py` con **26 tests**, que cubre una parte del tercer criterio — configuración por nivel de GPU detectado en vez de valores clavados a los de una GTX 1070 (`tier3` de ocho tramos), tabla vendorizada de upstream con procedencia y cuatro desviaciones documentadas por Pascal. **Ambas tareas siguen `pendiente` en su fase, ningún criterio marcado y ninguna hora descontada** (F7 78 h, F6 112 h). | implementer (cierre de F2) |
 | 2026-09-02 | **Cuatro cabos sueltos nuevos registrados en `pre-dev-checklist.md` — sección D, CS-52 a CS-55** (51 → 55 ítems). **CS-52** etiquetas de sección: ACE-Step espera las canónicas y el formato Suno va **verbatim** al modelo; A/B limpio hoy con misma semilla y mismo cuerpo de letra — afecta al validador de `T-46` y al protocolo de G1. **CS-53** ACE-Step **no reparte voces por sección** (dúo, coro): un único vector de timbre global; es una diferencia de capacidad frente a Suno y acota lo que se le puede prometer al usuario. **CS-54** la matriz de `T-07` puede estar midiendo el techo del **turbo** y no el de ACE-Step (`Extract`/`Lego`/`Complete` marcadas no soportadas en turbo y sí en `base`), con la pista de que **`extract` bajo MIT** sería candidato a desbloquear C-06. **CS-55** el arranque en frío medido contradecía la promesa de 2–6 min de `ui-design.md`: 12,6–13,0 min antes del arreglo de lectura contigua, 1,8–2,3 min después — pero **eso es solo el término de carga local** y el S-01 real sigue sin medir, con la copia «2-6 min» ya escrita en `adapter.health()`. Actualizados además CS-38/CS-39 (RunPod aparcado por presupuesto) y el ítem 44 (entregables de F2: dos de tres escritos). **Ninguna cifra ratificada ni umbral de gate cambia.** | implementer (cierre de F2) |
 | 2026-09-03 | **Higiene de Fase 0 tras revisión de código, y dos tareas nuevas PROPUESTAS.** (a) **Tanda A ejecutada** (commit `8ea0470`, 669 → 678 tests): manifiesto de G1 derivado en vez de literal; **variante de difusión declarada** en `g1_generar.py` con guardia que rechaza antes de cargar un artefacto que la contradiga — hasta hoy el shim corría programación turbo aunque se cargaran pesos `sft`, sin error y con audio peor; `describe()` publica `weights_sha256`; nueva `assert_safetensors_header()` que valida la cabecera al abrir; **puerta de `artifact_schema_version`** (el fusor la escribía y el shim no la leía en ningún sitio); candado de hashes del vendor generalizado a N adapters. (b) **Licencia de ACE-Step corregida de Apache 2.0 a MIT** en `spec.md`, `evaluation.md`, `ui-design.md` y `gates/g2-matriz-resultados.md`, este último conservando el texto erróneo tachado porque es literalmente lo que se puso delante de legal el 2026-08-18. (c) **MiniMax-Music3 reevaluado** (`spikes/comparativa-modelos.md` §12): la premisa «G2 cerró, luego se desbloquea» era falsa por partida doble — G2 nunca preguntó por esa licencia **y** se cerró sin dictamen jurídico, con 1 de 3 criterios; la recomendación A-4 no está pendiente sino que es **inejecutable**, y se sustituye por **A-4′** dirigida a **GC-01**. (d) **`T-87` y `T-88` propuestas** (+14 h base / +840 €, no ratificadas) con la **decisión de solape frente a `T-86`** planteada como excluyente. (e) **`apps/runner/model_cards.py`** (~4 h, no ratificadas) declarado como alcance ejecutado sin ratificar. | orquestador `/dev-cycle` |
+| 2026-09-03 | **Corrección del bloque de decisión de `T-87`/`T-88` — la versión anterior invitaba a un gasto no ejecutable.** La primera redacción presentaba tres opciones (ampliar `T-86` / solo catálogo y detección / nada) como si fueran elegibles hoy. **Dos de las tres están detrás de `G1`** y ratificar su presupuesto no las desbloquea: `T-86` arrastra `T-85` → `T-35` → `T-25` (F4) / `T-32` (F5), y `T-87`/`T-88` dependen de `T-10` (F4), `T-30` (F5) y `T-85` (F6). Por §1 del protocolo de G1, ninguna tarea de F4 en adelante puede empezar antes de `T-09`. **La única opción viva hoy es dejar lo que ya hay** (`model_cards.py`, higiene de la fase en curso). El bloque se reescribe separando «qué se puede pedir hoy» de «alcance y precio cuando la puerta abra», se conserva la advertencia de corrección a la vista, y se añaden a las fichas de `T-87` y `T-88` los **dos** bloqueos (gate + ratificación) en vez de solo el económico. Se dejan escritas las tres condiciones observables que harían recomendable la opción del instalador — segunda máquina, instala otra persona, o servidor alquilado — para no rediscutirlo cuando llegue el momento. | orquestador `/dev-cycle` |
