@@ -9,30 +9,44 @@ objetivas** del gate: el WER de la letra cantada (`g1-protocolo.md` §6.2), que
 el §2 somete a dos umbrales — **media <= 15 %** sobre las 10 pistas propias
 **y** **peor caso <= 25 %**.
 
-**No transcribe.** No trae ningun modelo, no descarga nada y no sabe leer audio.
-Eso es deliberado y es la mitad del encargo: ver la capa 2, abajo.
-
-Tampoco puntua las cinco dimensiones de la rubrica (§3) — eso es escucha
+**No puntua** las cinco dimensiones de la rubrica (§3) — eso es escucha
 humana —, ni calcula CLAP (§6.1), ni emite veredicto.
 
-Las dos capas, y por que estan separadas
-========================================
+Las tres capas, y por que estan separadas
+=========================================
 **Capa 1 — la aritmetica.** Distancia de edicion sobre palabras, biblioteca
 estandar pura, sin dependencias y sin modelos. Es la parte que se puede probar
 con verdad conocida ("10 palabras, una mal, 10 %") y que por tanto **se puede
 creer**. Corre en cualquier interprete, hoy, sin GPU y sin descargar nada.
 
-**Capa 2 — el transcriptor, que aqui NO se integra.** El protocolo propone
-`HeartTranscriptor-oss` (§6.2), pero CLAUDE.md exige **licencia comercial
-verificada ANTES de integrar** cualquier herramienta del pipeline, y esa
-verificacion es la precondicion 9 de §9.1, abierta y del propietario. Asi que
-este modulo define **la interfaz** (ruta de audio + idioma -> texto) y **la
-puerta**: sin una ficha de licencia comprobada que llegue **de fuera**, se niega
-a medir y dice exactamente que le falta.
+**Capa 2 — la puerta.** CLAUDE.md exige **licencia comercial verificada ANTES
+de integrar** cualquier herramienta del pipeline, y §9.1 precondicion 9 pone esa
+verificacion del lado del propietario. Sin una ficha comprobada que llegue **de
+fuera**, este modulo se niega a medir y dice exactamente que le falta.
 
-Separar las dos capas es lo que permite que la capa 1 este terminada y probada
-hoy, con el gate aun bloqueado por una verificacion legal que no depende de
-ningun programa.
+**Capa 3 — el transcriptor real** (`TranscriptorLocal`). Carga con
+`transformers` unos pesos que **ya estan en disco**, puestos ahi por quien
+verifico su licencia. Se cargo `HeartMuLa/HeartTranscriptor-oss` (Apache-2.0,
+Whisper medium ajustado a musica), pero la clase no lo nombra ni lo presupone:
+lo que sabe es cargar un directorio local de la familia Whisper.
+
+Lo que la capa 3 **no** hace, y son invariantes, no preferencias:
+
+* **no descarga nada** — `local_files_only=True` en cada `from_pretrained`, y la
+  ruta es un directorio de disco, jamas un identificador de hub;
+* **no ejecuta codigo de terceros** — `trust_remote_code=False` explicito, y
+  antes de cargar nada `auditar_directorio_modelo()` rechaza el directorio si
+  trae un `.py`, un `auto_map` o un `custom_pipelines`;
+* **no toca un pickle** — `use_safetensors=True`, y la misma auditoria rechaza el
+  directorio si convive un `.bin`/`.pt`/`.ckpt` con los pesos buenos, porque un
+  formato alternativo al lado es un cargador esperando equivocarse (D-14);
+* **no se importa sola** — `torch` y `transformers` se importan **dentro** del
+  metodo de carga. Importar este modulo sigue costando lo que costaba: la capa 1
+  y la puerta siguen siendo biblioteca estandar y siguen corriendo sin modelo.
+
+Separar las capas es lo que permite que la 1 y la 2 esten probadas sin pesos, y
+que la suite siga verde en una maquina que no los tenga (los tests que los
+necesitan se saltan con `skipif`).
 
 La decision de las TILDES, que este proyecto ya pago cara
 ========================================================
@@ -74,14 +88,31 @@ voz clara de referencia** cuya transcripcion se conoce, con la misma
 normalizacion y el mismo idioma forzado, y `resumir()` **se declara
 `interpretable=False` mientras no se le pase ese suelo**.
 
-Dos avisos sobre el suelo, para que no se use de mas:
+Tres avisos sobre el suelo, para que no se use de mas:
 
 * **No se resta al numero del gate.** §2 es inequivoco: los umbrales «se aplican
   tal cual». `media_menos_suelo` es **informativo** y no toca `cumple_media`.
   Restarlo para pasar seria degradar un umbral con aritmetica.
-* **Es un suelo de voz hablada clara**, no de canto. Acota por abajo, no explica
-  la diferencia entera. Un WER de canto siempre tendra una parte que no es ni
-  del generador ni del transcriptor, sino del hecho de cantar.
+* **Es un suelo de voz HABLADA clara, y por tanto una COTA INFERIOR del suelo
+  que el mismo transcriptor tendria sobre CANTO**, que es mas dificil: melodia,
+  vocales alargadas, notas sostenidas, instrumentos de fondo. Es la limitacion
+  que hay que decir en voz alta, y tiene dos consecuencias de signo contrario
+  que conviene no confundir:
+
+  1. **Presentado como «el error del transcriptor», FAVORECE AL TRANSCRIPTOR.**
+     El numero que sale aqui es el que comete en su caso facil, no en el del
+     gate. Publicarlo sin la etiqueta lo hace parecer mas fiable de lo que es
+     sobre el material que de verdad se mide.
+  2. **Restado de la media, PERJUDICA AL GENERADOR.** `media - suelo_habla` deja
+     un residuo mayor que `media - suelo_canto`, asi que atribuye al modelo
+     musical mas error del que le toca. Por eso `media_menos_suelo` **no es «el
+     error del generador»** y no se puede leer asi.
+
+  La trampa que esto impide es la tercera lectura, la que si haria pasar un gate
+  que no pasa: **estimar** un suelo de canto (mayor) y restarlo. Ese numero no
+  esta medido, §2 no lo admite y este modulo no lo calcula.
+* **Es del transcriptor concreto que lo midio.** Un suelo no viaja: cambiar de
+  transcriptor obliga a medirlo otra vez, como obliga a repetir G1-bis.
 
 Uso
 ===
@@ -93,6 +124,16 @@ Comprobar que una ficha de transcriptor pasa la puerta (sin medir nada)::
 
     python apps/runner/spikes/medir_wer.py ficha D:/srv/transcriptor/ficha.json
 
+Transcribir de verdad una pista, con su cronometro (necesita torch y
+transformers, y los pesos que declare la ficha)::
+
+    python apps/runner/spikes/medir_wer.py transcribir D:/srv/whisper/ficha.json pista.wav --idioma es
+
+Medir el SUELO del transcriptor sobre un corpus de voz clara con licencia
+declarada::
+
+    python apps/runner/spikes/medir_wer.py suelo D:/srv/whisper/ficha.json D:/srv/whisper/suelo/corpus.json
+
 Comprobar que los umbrales de aqui siguen siendo los del protocolo::
 
     python apps/runner/spikes/medir_wer.py umbrales
@@ -103,10 +144,13 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import re
 import sys
+import time
 import unicodedata
+import wave
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable, NamedTuple, Protocol, Sequence, runtime_checkable
@@ -155,7 +199,29 @@ __all__ = [
     "exigir_apto_para_acta",
     "MedicionPista",
     "medir_pista",
+    # Capa 3 — el transcriptor real
+    "SR_TRANSCRIPTOR",
+    "SUFIJOS_PESOS_NO_SAFETENSORS",
+    "SUFIJOS_CODIGO",
+    "CLAVES_CODIGO_REMOTO",
+    "AudioNoSoportado",
+    "DependenciaAusente",
+    "ModeloNoAuditable",
+    "ModeloConCodigoRemoto",
+    "ModeloConPesosInseguros",
+    "AuditoriaModelo",
+    "auditar_directorio_modelo",
+    "leer_wav_mono_16k",
+    "TranscriptorLocal",
+    "transcriptor_desde_ficha",
     # Suelo y resumen
+    "AVISO_SUELO_ES_COTA_INFERIOR",
+    "SCHEMA_CORPUS_SUELO",
+    "LICENCIAS_CORPUS_SUELO",
+    "CorpusInvalido",
+    "MuestraSuelo",
+    "CorpusSuelo",
+    "cargar_corpus_suelo",
     "Suelo",
     "medir_suelo",
     "ResumenG1",
@@ -216,6 +282,23 @@ _RE_CORCHETES = re.compile(r"\[[^\]]*\]")
 _APOSTROFOS = frozenset("'\u2018\u2019\u02bc\u00b4")
 
 _RE_DIGITO = re.compile(r"\d")
+
+
+def _escrituras(palabra: str) -> frozenset[str]:
+    """Las escrituras (latina, cirilica, han...) que aparecen en una palabra.
+
+    Se saca del nombre Unicode de cada letra («CYRILLIC SMALL LETTER IE» ->
+    CYRILLIC), que es la forma barata de hacerlo sin tabla propia. Los
+    diacriticos latinos no cuentan como otra escritura: «á» sigue siendo LATIN.
+    """
+    nombres = set()
+    for caracter in palabra:
+        if caracter.isalpha():
+            try:
+                nombres.add(unicodedata.name(caracter).split()[0])
+            except ValueError:  # sin nombre en la base de datos Unicode
+                nombres.add("DESCONOCIDA")
+    return frozenset(nombres)
 
 
 def _quitar_diacriticos(texto: str) -> str:
@@ -418,6 +501,34 @@ def medir_wer(
             "en la cifra del gate. Reescribelos a mano en los dos textos, o el «3» frente a "
             "«tres» contara como sustitucion sin que el cantante se haya equivocado."
         )
+
+    # Escrituras mezcladas. Esto no es teorico: medido el 2026-09-03 sobre el
+    # corpus del suelo, el transcriptor escribio «conflatеd» con una «е» CIRILICA
+    # dentro de una palabra por lo demas latina. A la vista es la misma palabra;
+    # para el WER es una sustitucion, y quien mire la alineacion no vera por que.
+    # Se AVISA y no se arregla, por lo mismo que con los digitos: normalizar
+    # homoglifos aqui cambiaria la definicion del numero despues de fijar el
+    # umbral (§2). La resolucion es a mano, en la transcripcion.
+    escrituras_ref = frozenset().union(*(_escrituras(p) for p in ref)) if ref else frozenset()
+    mezcladas = [p for p in hip if len(_escrituras(p)) > 1]
+    ajenas = sorted(
+        (frozenset().union(*(_escrituras(p) for p in hip)) if hip else frozenset())
+        - escrituras_ref
+    )
+    if mezcladas:
+        avisos.append(
+            f"Palabras con escrituras MEZCLADAS en la transcripcion: {mezcladas}. Un "
+            "homoglifo (una «е» cirilica dentro de una palabra latina, por ejemplo) se ve "
+            "igual pero no es la misma letra, y cuenta como sustitucion sin que se pueda "
+            "ver por que en la alineacion. Corrigelo a mano en la transcripcion."
+        )
+    elif ajenas:
+        avisos.append(
+            f"La transcripcion trae letras de escrituras que la referencia no usa: {ajenas}. "
+            "Suele ser el transcriptor derivando de idioma en un tramo (§6.2 fuerza el "
+            "idioma justamente para evitarlo). Mira ese tramo antes de dar la cifra por buena."
+        )
+
     if not norma.apta_para_acta:
         avisos.append(
             f"Normalizacion {norma.nombre!r}: cifra de DIAGNOSTICO. No es la del §6.2 y no "
@@ -662,19 +773,18 @@ def cargar_ficha(ruta: str | os.PathLike[str], verificar_hash: bool = True) -> F
 
 
 # --------------------------------------------------------------------------- #
-# La interfaz minima. Aqui NO se implementa ningun transcriptor real.
+# La interfaz minima que cumplen el doble de pruebas y el transcriptor real
 # --------------------------------------------------------------------------- #
 
 @runtime_checkable
 class Transcriptor(Protocol):
     """Lo minimo que tiene que ofrecer un transcriptor para servir a §6.2.
 
-    Deliberadamente diminuto — ruta de audio e idioma, devuelve texto — porque
-    **el modulo no integra ninguno**. Cuando el propietario cierre la
-    precondicion 9 de §9.1 (ficha de licencia de HeartTranscriptor-oss
-    verificada), la implementacion real vivira **fuera de aqui**, cargara sus
-    pesos con `safetensors` y satisfara este protocolo. Este fichero no la
-    importa, no la nombra y no la descarga.
+    Deliberadamente diminuto — ruta de audio e idioma, devuelve texto — para que
+    la aritmetica del WER no dependa de con que se transcribio. Lo cumplen el
+    doble de pruebas (`TranscriptorDePrueba`, que no escucha nada) y el real
+    (`TranscriptorLocal`, capa 3), y **la puerta los distingue por la marca
+    `es_de_prueba`, no por el tipo**.
 
     `idioma` es obligatorio y no opcional: §6.2 exige **forzar** el idioma
     declarado del brief, porque dejar que el modelo lo detecte «introduce una
@@ -776,6 +886,466 @@ def exigir_apto_para_acta(transcriptor: Any) -> FichaTranscriptor:
 
 
 # =========================================================================== #
+# CAPA 3 — el transcriptor real: pesos de disco, sin red y sin codigo ajeno
+# =========================================================================== #
+
+#: Whisper trabaja a 16 kHz. No es un parametro: es la tasa a la que se entreno
+#: su extractor de rasgos, y darle otra no falla, deforma.
+SR_TRANSCRIPTOR = 16000
+
+#: Formatos de pesos que NO son safetensors. Si uno de estos convive con los
+#: buenos, el directorio se rechaza entero. `use_safetensors=True` protege la
+#: carga de HOY; un fichero asi al lado es un cargador futuro esperando
+#: equivocarse, y los cinco primeros son pickle — ejecucion de codigo (D-14).
+SUFIJOS_PESOS_NO_SAFETENSORS = frozenset({
+    ".bin", ".pt", ".pth", ".ckpt", ".pkl", ".pickle", ".msgpack", ".h5",
+})
+
+#: Sufijos de codigo ejecutable. Un modelo son datos; si trae programa, el
+#: programa viaja con el, y eso es exactamente lo que CLAUDE.md prohibe.
+SUFIJOS_CODIGO = frozenset({".py", ".pyc", ".pyd", ".pyo", ".so", ".dll", ".dylib"})
+
+#: Claves con las que una ficha de modelo pide que se ejecute codigo suyo.
+#: Encontrarlas es motivo de RECHAZO, no de aviso: `auto_map` existe justamente
+#: para que `Auto*.from_pretrained` importe un `.py` del repositorio del modelo.
+CLAVES_CODIGO_REMOTO = ("auto_map", "custom_pipelines", "custom_code", "trust_remote_code")
+
+
+class AudioNoSoportado(ValueError):
+    """El audio no es un WAV PCM de 16 bits, que es lo unico que se lee aqui."""
+
+
+class DependenciaAusente(ErrorDePuerta):
+    """Falta `torch`, `transformers`, `numpy` o `scipy`: no se puede transcribir."""
+
+
+class ModeloNoAuditable(ErrorDePuerta):
+    """El directorio de pesos no esta donde se dijo, o no contiene safetensors."""
+
+
+class ModeloConCodigoRemoto(ErrorDePuerta):
+    """El directorio trae codigo, o pide que se ejecute codigo suyo. No se carga."""
+
+
+class ModeloConPesosInseguros(ErrorDePuerta):
+    """Junto a los safetensors hay pesos en un formato basado en pickle (D-14)."""
+
+
+class AuditoriaModelo(NamedTuple):
+    """Lo que se comprobo del directorio ANTES de dejar que transformers lo abra."""
+
+    directorio: Path
+    pesos: tuple[Path, ...]
+    configuraciones: tuple[Path, ...]
+    n_ficheros: int
+
+
+def _claves_en_json(documento: Any, claves: Sequence[str]) -> list[str]:
+    """Busca `claves` en un JSON ya parseado, a cualquier profundidad.
+
+    Iterativo y no recursivo a proposito: `tokenizer.json` anida mucho, y un
+    error de recursion aqui se leeria como «este modelo es raro» cuando en
+    realidad seria un limite del interprete.
+
+    `trust_remote_code: false` NO cuenta: declararlo apagado es lo correcto. Lo
+    que se rechaza es pedirlo encendido, y la mera presencia de las otras tres.
+    """
+    encontradas: list[str] = []
+    pila = [documento]
+    while pila:
+        nodo = pila.pop()
+        if isinstance(nodo, dict):
+            for clave, valor in nodo.items():
+                if clave in claves and not (clave == "trust_remote_code" and not valor):
+                    encontradas.append(clave)
+                pila.append(valor)
+        elif isinstance(nodo, list):
+            pila.extend(nodo)
+    return sorted(set(encontradas))
+
+
+def auditar_directorio_modelo(directorio: str | os.PathLike[str]) -> AuditoriaModelo:
+    """Mira el directorio de pesos ANTES de cargarlo y lo rechaza si trae sorpresas.
+
+    Tres invariantes de CLAUDE.md, comprobados aqui porque es el ultimo sitio
+    donde comprobarlos sirve de algo — despues ya se ha cargado:
+
+    1. **Nada de codigo.** Ningun `.py`, `.so`, `.dll`... en el arbol.
+    2. **Nada de codigo remoto pedido por configuracion.** Ningun `auto_map`,
+       `custom_pipelines`, `custom_code` ni `trust_remote_code: true` en los JSON.
+    3. **Solo safetensors.** Ni un `.bin`/`.pt`/`.ckpt` conviviendo con ellos, y
+       al menos un `.safetensors` de verdad.
+
+    Lo que **no** comprueba: que los pesos sean inocuos. Eso no lo comprueba
+    nadie (D-14). Comprueba que cargarlos no ejecute codigo elegido por otro.
+
+    Los JSON se leen con `json.loads` sobre texto: aqui no se deserializa nada.
+    """
+    d = Path(directorio)
+    if not d.is_dir():
+        raise ModeloNoAuditable(
+            f"No hay directorio de modelo en {d}. Este modulo NO descarga pesos: llegan "
+            "de fuera, puestos por quien verifico su licencia (§9.1, precondicion 9)."
+        )
+
+    ficheros = sorted(p for p in d.rglob("*") if p.is_file())
+    codigo = [p for p in ficheros if p.suffix.lower() in SUFIJOS_CODIGO]
+    if codigo:
+        raise ModeloConCodigoRemoto(
+            f"El directorio {d} trae codigo ejecutable: {[p.name for p in codigo]}. Un "
+            "modelo son datos; si trae programa, cargarlo puede ejecutarlo. CLAUDE.md no "
+            "admite `trust_remote_code` ni codigo de terceros en el pipeline."
+        )
+
+    inseguros = [p for p in ficheros if p.suffix.lower() in SUFIJOS_PESOS_NO_SAFETENSORS]
+    if inseguros:
+        raise ModeloConPesosInseguros(
+            f"Junto a los pesos de {d} hay ficheros en formatos que no son safetensors: "
+            f"{[p.name for p in inseguros]}. Se rechaza el directorio ENTERO aunque hoy se "
+            "cargue con use_safetensors=True: un formato alternativo al lado es un cargador "
+            "esperando equivocarse, y .bin/.pt/.pth/.ckpt/.pkl son pickle, es decir "
+            "ejecucion de codigo al deserializar (D-14). Quita el fichero o usa otro directorio."
+        )
+
+    configuraciones = tuple(p for p in ficheros if p.suffix.lower() == ".json")
+    for config in configuraciones:
+        try:
+            documento = json.loads(config.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            raise ModeloNoAuditable(f"No se puede auditar {config}: {exc}") from exc
+        claves = _claves_en_json(documento, CLAVES_CODIGO_REMOTO)
+        if claves:
+            raise ModeloConCodigoRemoto(
+                f"{config.name} pide codigo remoto: {claves}. `auto_map` es justo el "
+                "mecanismo por el que Auto*.from_pretrained importa un .py del repositorio "
+                "del modelo. No se carga."
+            )
+
+    pesos = tuple(p for p in ficheros if p.suffix.lower() == ".safetensors")
+    if not pesos:
+        raise ModeloNoAuditable(
+            f"En {d} no hay ni un .safetensors. Sin pesos no hay transcriptor, y no se "
+            "buscan en otro formato a proposito (D-14)."
+        )
+
+    return AuditoriaModelo(
+        directorio=d,
+        pesos=pesos,
+        configuraciones=configuraciones,
+        n_ficheros=len(ficheros),
+    )
+
+
+def leer_wav_mono_16k(ruta: str | os.PathLike[str]) -> tuple[Any, float, int]:
+    """WAV PCM de 16 bits -> `(muestras float32 mono a 16 kHz, duracion_s, sr_original)`.
+
+    Solo WAV, y a proposito: es lo que produce `g1_generar.py` y lo que trae el
+    corpus del suelo. Aceptar formatos comprimidos meteria un decodificador de
+    terceros en el camino de una cifra del gate, y esa es justo la clase de
+    dependencia que este proyecto exige justificar ANTES de tenerla.
+
+    La duracion que devuelve es la del audio **original**, no la del remuestreo:
+    es el denominador del RTF y tiene que ser la de verdad.
+    """
+    ruta = Path(ruta)
+    if ruta.suffix.lower() != ".wav":
+        raise AudioNoSoportado(
+            f"{ruta.name}: aqui solo se lee WAV PCM. Convierte el audio fuera, con la "
+            "herramienta que ya use el pipeline, y pasa el WAV."
+        )
+    if not ruta.is_file():
+        raise AudioNoSoportado(f"No existe el audio {ruta}.")
+
+    try:
+        import numpy as np
+    except ImportError as exc:  # pragma: no cover - depende del entorno
+        raise DependenciaAusente(f"Leer audio necesita numpy: {exc}") from exc
+
+    with wave.open(str(ruta), "rb") as w:
+        canales = w.getnchannels()
+        ancho = w.getsampwidth()
+        sr = w.getframerate()
+        n = w.getnframes()
+        if ancho != 2:
+            raise AudioNoSoportado(
+                f"{ruta.name}: se esperaban 16 bits por muestra y hay {ancho * 8}. No se "
+                "convierte por las bravas: interpretar mal la profundidad mete ruido en la "
+                "entrada del transcriptor, y ese ruido acabaria contado como error del cantante."
+            )
+        if n == 0:
+            raise AudioNoSoportado(f"{ruta.name}: no tiene ni una muestra.")
+        crudo = w.readframes(n)
+
+    x = np.frombuffer(crudo, dtype="<i2").astype(np.float32) / 32768.0
+    if canales > 1:
+        x = x.reshape(-1, canales).mean(axis=1)
+    duracion = len(x) / sr
+
+    if sr != SR_TRANSCRIPTOR:
+        try:
+            from scipy.signal import resample_poly
+        except ImportError as exc:  # pragma: no cover - depende del entorno
+            raise DependenciaAusente(
+                f"Remuestrear de {sr} Hz a {SR_TRANSCRIPTOR} Hz necesita scipy: {exc}"
+            ) from exc
+        g = math.gcd(sr, SR_TRANSCRIPTOR)
+        x = resample_poly(x, SR_TRANSCRIPTOR // g, sr // g).astype(np.float32)
+
+    return x, duracion, sr
+
+
+class TranscriptorLocal:
+    """Transcriptor de VERDAD: pesos locales, `transformers`, sin red ni codigo ajeno.
+
+    Satisface el protocolo `Transcriptor` y **no** lleva `es_de_prueba`, asi que
+    cruza `exigir_apto_para_acta()` si —y solo si— su ficha lo merece. De hecho la
+    puerta se cruza en el propio constructor: un transcriptor real que no pudiera
+    producir una cifra del acta no deberia ni llegar a existir.
+
+    Por que las clases concretas y no `AutoModel`
+    ---------------------------------------------
+    `WhisperForConditionalGeneration` y `WhisperProcessor` son clases concretas.
+    `Auto*` es lo que consulta `auto_map` para importar codigo del repositorio del
+    modelo; usar la concreta cierra esa via **por construccion**, no por bandera.
+    Aun asi se pasa `trust_remote_code=False` explicito y se audita el directorio
+    antes: tres cierres para el mismo agujero, porque el agujero es ejecucion
+    remota de codigo.
+
+    Por que `local_files_only=True`
+    -------------------------------
+    Sin esa bandera, un identificador mal escrito o un fichero que falte hacen que
+    `transformers` se vaya al hub a buscarlo. Eso traeria pesos que **nadie ha
+    verificado**, por un camino que no pasa por `cargar_ficha()`, y ademas
+    convertiria una cifra del gate en algo que depende de la red.
+
+    Los pesos se cargan en la PRIMERA transcripcion, no al construir: la puerta,
+    la auditoria y los tests de contrato tienen que poder correr sin gastar 3 GB de
+    RAM ni el segundo de carga.
+    """
+
+    #: Lo mira la puerta antes que nada. Aqui es `False` porque este si escucha.
+    es_de_prueba = False
+
+    def __init__(
+        self,
+        ficha: FichaTranscriptor,
+        *,
+        directorio: str | os.PathLike[str] | None = None,
+        hilos: int | None = None,
+    ) -> None:
+        if not isinstance(ficha, FichaTranscriptor):
+            raise TypeError(
+                "TranscriptorLocal exige una ficha salida de cargar_ficha(): es lo que "
+                f"acredita licencia e integridad, y ha llegado un {type(ficha).__name__}."
+            )
+        self.ficha = ficha
+        # La puerta, en el constructor: revalida el CONTENIDO de la ficha
+        # (licencia en la lista blanca, pesos .safetensors, sha256 bien formado).
+        exigir_apto_para_acta(self)
+
+        self.directorio = (
+            Path(directorio) if directorio is not None else Path(ficha.ruta_pesos).parent
+        )
+        self.auditoria = auditar_directorio_modelo(self.directorio)
+
+        declarados = Path(ficha.ruta_pesos).resolve()
+        if declarados not in {p.resolve() for p in self.auditoria.pesos}:
+            raise ModeloNoAuditable(
+                f"Los pesos que declara la ficha ({declarados}) no estan entre los "
+                f"safetensors auditados de {self.directorio}: "
+                f"{[p.name for p in self.auditoria.pesos]}. La ficha acredita UN fichero "
+                "concreto por su sha256; cargar otro dejaria el acta declarando un hash que "
+                "no es el de los pesos que midieron."
+            )
+
+        self.hilos = hilos
+        self.segundos_carga: float | None = None
+        self.segundos_inferencia = 0.0
+        self.segundos_audio = 0.0
+        self.historial: list[dict[str, Any]] = []
+        """Una entrada por transcripcion. El cronometro no es curiosidad: el RTF
+        de este modelo depende de la LONGITUD de la pista (Whisper rellena hasta
+        30 s, asi que un enunciado de 4 s cuesta casi lo mismo que uno de 30), y
+        sin el detalle por pista esa dependencia no se ve en la media."""
+        self._modelo: Any = None
+        self._procesador: Any = None
+
+    # -- carga --------------------------------------------------------------- #
+
+    def cargar(self) -> float:
+        """Carga pesos y procesador (idempotente). Devuelve los segundos que tardo.
+
+        `torch` y `transformers` se importan **aqui dentro**, no arriba: la capa 1
+        y la puerta tienen que seguir siendo biblioteca estandar, y buena parte de
+        la suite corre en maquinas donde no hay nada de esto instalado.
+        """
+        if self._modelo is not None:
+            return self.segundos_carga or 0.0
+
+        try:
+            import torch
+            from transformers import WhisperForConditionalGeneration, WhisperProcessor
+        except ImportError as exc:
+            raise DependenciaAusente(
+                "Transcribir de verdad necesita torch y transformers instalados "
+                f"({exc}). La capa 1 (la aritmetica del WER) y la puerta de licencia no "
+                "los necesitan y siguen funcionando sin ellos."
+            ) from exc
+
+        if self.hilos:
+            torch.set_num_threads(self.hilos)
+
+        t0 = time.perf_counter()
+        self._procesador = WhisperProcessor.from_pretrained(
+            str(self.directorio),
+            local_files_only=True,
+            trust_remote_code=False,
+        )
+        self._modelo = WhisperForConditionalGeneration.from_pretrained(
+            str(self.directorio),
+            dtype=torch.float32,
+            low_cpu_mem_usage=True,
+            use_safetensors=True,   # explicito aunque no haya .bin: es el invariante D-14
+            local_files_only=True,  # que un fichero que falte NO se busque en la red
+            trust_remote_code=False,
+        )
+        self._modelo.eval()
+        self.segundos_carga = time.perf_counter() - t0
+        return self.segundos_carga
+
+    # -- transcripcion ------------------------------------------------------- #
+
+    def transcribir(self, ruta_audio: str | os.PathLike[str], idioma: str) -> str:
+        """Transcribe un WAV con el idioma FORZADO (§6.2) y cronometra la pasada.
+
+        El idioma no tiene valor por defecto: §6.2 exige forzar el del brief
+        porque dejar que el modelo lo detecte «introduce una fuente de error que
+        no es del generador musical».
+        """
+        if not isinstance(idioma, str) or not idioma.strip():
+            raise ValueError(
+                "El idioma es obligatorio y se FUERZA (§6.2). Dejar que el modelo lo "
+                "detecte mete en la cifra del gate un error que no es del generador: una "
+                "pista en castellano detectada como portugues se transcribe entera mal."
+            )
+        self.cargar()
+        import torch
+
+        audio, duracion, sr_original = leer_wav_mono_16k(ruta_audio)
+        entradas = self._procesador(
+            audio,
+            sampling_rate=SR_TRANSCRIPTOR,
+            return_tensors="pt",
+            truncation=False,
+            padding="longest",
+            return_attention_mask=True,
+        )
+        # Whisper solo mira 30 s de golpe (3000 tramas de mel). Por encima de eso
+        # transformers decodifica en tramos encadenados, y ese camino exige las
+        # marcas de tiempo. Pedirlas siempre no vale: en la ventana corta cambian
+        # el texto que sale, y el WER no puede depender de un detalle asi.
+        largo = entradas.input_features.shape[-1] > 3000
+
+        t0 = time.perf_counter()
+        with torch.no_grad():
+            ids = self._modelo.generate(
+                entradas.input_features,
+                attention_mask=entradas.get("attention_mask"),
+                language=idioma.strip(),
+                task="transcribe",
+                num_beams=1,                     # voraz: barato y sin aleatoriedad
+                condition_on_prev_tokens=False,  # que un tramo no arrastre al siguiente
+                return_timestamps=largo,
+            )
+        segundos = time.perf_counter() - t0
+        # `clean_up_tokenization_spaces=False` explicito: esa limpieza esta pensada
+        # para tokenizadores WordPiece y sobre BPE es destructiva (se come espacios
+        # antes de la puntuacion). Hoy transformers ya la ignora para Whisper, pero
+        # una limpieza que cambia el texto segun la version de la libreria no puede
+        # quedar implicita en el camino de una cifra del gate.
+        texto = self._procesador.batch_decode(
+            ids, skip_special_tokens=True, clean_up_tokenization_spaces=False
+        )[0].strip()
+
+        self.segundos_inferencia += segundos
+        self.segundos_audio += duracion
+        self.historial.append({
+            "audio": os.fspath(ruta_audio),
+            "idioma": idioma.strip(),
+            "sr_original": sr_original,
+            "duracion_s": duracion,
+            "segundos": segundos,
+            "rtf": segundos / duracion if duracion else float("nan"),
+            "ventanas_de_30s": int(entradas.input_features.shape[-1] // 3000) or 1,
+        })
+        return texto
+
+    @property
+    def llamadas(self) -> int:
+        return len(self.historial)
+
+    @property
+    def ultima(self) -> dict[str, Any] | None:
+        """La ultima medida, o `None` si todavia no ha transcrito nada."""
+        return self.historial[-1] if self.historial else None
+
+    @property
+    def rtf_medio(self) -> float | None:
+        """Segundos de CPU por segundo de audio, sobre todo lo transcrito.
+
+        **No es una constante del modelo, y extrapolarlo sale mal.** Depende de
+        dos cosas ajenas al modelo, medidas las dos en esta maquina el 2026-09-03:
+
+        1. **La longitud de la pista.** Whisper mira ventanas de 30 s y rellena
+           las que no llegan: un enunciado de 4 s cuesta casi lo mismo que uno de
+           30, asi que su RTF sale disparado. Sobre las 80 frases sueltas del
+           corpus del suelo el RTF medio salio **1,60**; sobre una pista de 180 s,
+           **0,355**. Mismo modelo, misma maquina.
+        2. **Cuanto se canta dentro.** La decodificacion es autorregresiva, asi
+           que una ventana con letra densa cuesta mas que una con instrumental.
+           Pista de 180 s poco densa: **0,355**. Pista de 240 s con letra
+           continua: **0,907**.
+
+        Para presupuestar la tanda de §4 hay que quedarse con el PEOR caso medido
+        sobre material parecido, no con la media: 0,907 sobre pistas largas y
+        densas, que son las diez del gate.
+        """
+        if not self.segundos_audio:
+            return None
+        return self.segundos_inferencia / self.segundos_audio
+
+    @property
+    def segundos_por_ventana(self) -> float | None:
+        """Coste medio por ventana de 30 s: quita el efecto del relleno, no el otro.
+
+        Es mejor base que el RTF para comparar pistas de longitudes distintas,
+        porque descuenta el relleno hasta 30 s. Pero **sigue sin ser constante**:
+        lo medido va de 9,7 s por ventana (frases sueltas) a 10,7 s (pista de
+        180 s) y 27,2 s (pista de 240 s con letra densa), porque lo que domina es
+        cuantos tokens tiene que emitir el decodificador. Sirve para acotar, no
+        para predecir.
+        """
+        ventanas = sum(m["ventanas_de_30s"] for m in self.historial)
+        return self.segundos_inferencia / ventanas if ventanas else None
+
+
+def transcriptor_desde_ficha(
+    ruta_ficha: str | os.PathLike[str],
+    *,
+    hilos: int | None = None,
+    verificar_hash: bool = True,
+) -> TranscriptorLocal:
+    """`ficha.json` -> transcriptor listo (todavia sin cargar los pesos).
+
+    Es el camino corto y el unico recomendado: pasa por `cargar_ficha()`, asi que
+    licencia, formato y sha256 quedan comprobados antes de que el objeto exista.
+    """
+    return TranscriptorLocal(
+        cargar_ficha(ruta_ficha, verificar_hash=verificar_hash), hilos=hilos
+    )
+
+
+# =========================================================================== #
 # Medida de una pista
 # =========================================================================== #
 
@@ -840,6 +1410,180 @@ def medir_pista(
 # El suelo del transcriptor (§6.2): sin el, el 15 % no significa nada
 # =========================================================================== #
 
+#: La limitacion del suelo, escrita una sola vez y citada en todas partes: en las
+#: notas del resumen, en la salida de la linea de ordenes y en el JSON que se
+#: archiva. Escribirla en un sitio solo garantizaria que se cae del otro.
+AVISO_SUELO_ES_COTA_INFERIOR = (
+    "El suelo esta medido sobre VOZ HABLADA clara, no sobre canto, asi que es una COTA "
+    "INFERIOR del suelo que este mismo transcriptor tendria sobre las pistas del gate: "
+    "cantar es mas dificil de transcribir (melodia, vocales alargadas, notas sostenidas, "
+    "instrumentos de fondo). Dos consecuencias, de signo contrario: (1) presentado como "
+    "«lo que se equivoca el transcriptor» FAVORECE AL TRANSCRIPTOR, porque es su caso "
+    "facil y no el del gate; (2) restado de la media, PERJUDICA AL GENERADOR, porque deja "
+    "un residuo mayor del que le toca — «media menos suelo» no es «el error del generador» "
+    "y no se puede leer asi. Lo que esto impide es la tercera lectura, la unica que haria "
+    "pasar un gate que no pasa: ESTIMAR un suelo de canto, mayor, y restarlo. Ese numero no "
+    "esta medido y §2 aplica los umbrales tal cual."
+)
+
+#: Version del esquema del manifiesto del corpus del suelo. Igual que la ficha:
+#: un esquema desconocido se rechaza, no se interpreta a medias.
+SCHEMA_CORPUS_SUELO = 1
+
+#: Licencias admitidas para el AUDIO DE REFERENCIA del suelo. Es una lista propia
+#: y NO `LICENCIAS_COMERCIALES`, y la diferencia es deliberada:
+#:
+#: * `LICENCIAS_COMERCIALES` gobierna las **herramientas del pipeline** (pesos,
+#:   separadores, marcadores de agua). Ahi una clausula de ShareAlike es veneno:
+#:   se contagia a lo que se derive de ella, y unos pesos CC-BY-SA podrian
+#:   arrastrar a lo generado con ellos. Por eso esa lista no la admite.
+#: * El corpus del suelo no se integra en nada, no se redistribuye y no toca
+#:   ninguna pista: es material de MEDIDA que se escucha una vez para cronometrar
+#:   el error del transcriptor. Ahi ShareAlike no contagia nada, porque no hay
+#:   obra derivada que distribuir.
+#:
+#: La lista sigue siendo blanca, y anadir una entrada sigue exigiendo verificar la
+#: licencia contra la fuente primaria y dejarlo en un commit.
+LICENCIAS_CORPUS_SUELO = LICENCIAS_COMERCIALES | frozenset({"CC-BY-SA-4.0"})
+
+_CAMPOS_CORPUS = ("descripcion", "licencia_spdx", "fuente_licencia", "licencia_verificada_el")
+
+
+class CorpusInvalido(ErrorDePuerta):
+    """El manifiesto del corpus del suelo no acredita lo que tiene que acreditar."""
+
+
+class MuestraSuelo(NamedTuple):
+    """Un trozo de voz clara con su transcripcion conocida."""
+
+    ruta: Path
+    idioma: str
+    texto: str
+    fuente: str
+    duracion_s: float | None
+
+
+class CorpusSuelo(NamedTuple):
+    """El corpus de voz de referencia, con la licencia de su AUDIO declarada.
+
+    El manifiesto exige licencia y fuente por el mismo motivo que la ficha del
+    transcriptor: una cifra que se archiva en el acta arrastra consigo el material
+    con el que se obtuvo, y «lo baje de internet» no es una procedencia.
+    """
+
+    ruta_manifiesto: Path
+    descripcion: str
+    licencia_spdx: str
+    fuente_licencia: str
+    licencia_verificada_el: str
+    muestras: tuple[MuestraSuelo, ...]
+
+    def triples(self) -> tuple[tuple[Path, str, str], ...]:
+        """Lo que `medir_suelo()` espera: `(ruta, idioma, texto)`."""
+        return tuple((m.ruta, m.idioma, m.texto) for m in self.muestras)
+
+    def por_idioma(self) -> dict[str, int]:
+        recuento: dict[str, int] = {}
+        for m in self.muestras:
+            recuento[m.idioma] = recuento.get(m.idioma, 0) + 1
+        return recuento
+
+
+def cargar_corpus_suelo(
+    ruta: str | os.PathLike[str],
+    *,
+    verificar_audio: bool = True,
+) -> CorpusSuelo:
+    """Lee el manifiesto del corpus del suelo y comprueba que se puede usar.
+
+    Comprueba, en este orden: esquema conocido; campos de licencia presentes;
+    licencia en `LICENCIAS_CORPUS_SUELO`; al menos una muestra; y que cada muestra
+    trae ruta, idioma y texto no vacios, con el audio en su sitio.
+
+    Las rutas relativas se resuelven **contra el directorio del manifiesto**, para
+    que el corpus se pueda mover entero sin reescribirlo.
+    """
+    ruta_manifiesto = Path(ruta)
+    if not ruta_manifiesto.is_file():
+        raise CorpusInvalido(
+            f"No hay manifiesto de corpus en {ruta_manifiesto}. Sin suelo medido, "
+            "`resumir()` se declara interpretable=False y la cifra del gate no se lee "
+            "(§6.2)."
+        )
+    try:
+        documento = json.loads(ruta_manifiesto.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise CorpusInvalido(f"Manifiesto ilegible ({ruta_manifiesto}): {exc}") from exc
+    if not isinstance(documento, dict):
+        raise CorpusInvalido(f"El manifiesto {ruta_manifiesto} no es un objeto JSON.")
+
+    schema = documento.get("schema")
+    if schema != SCHEMA_CORPUS_SUELO:
+        raise CorpusInvalido(
+            f"schema {schema!r}: este modulo entiende el {SCHEMA_CORPUS_SUELO}."
+        )
+
+    faltan = [c for c in _CAMPOS_CORPUS
+              if not isinstance(documento.get(c), str) or not documento[c].strip()]
+    if faltan:
+        raise CorpusInvalido(
+            f"Al manifiesto {ruta_manifiesto} le faltan campos: {', '.join(faltan)}. La "
+            "licencia del AUDIO de referencia se declara igual que la de los pesos: una "
+            "cifra del acta arrastra el material con el que se obtuvo."
+        )
+
+    licencia = documento["licencia_spdx"].strip()
+    if licencia not in LICENCIAS_CORPUS_SUELO:
+        raise CorpusInvalido(
+            f"Licencia {licencia!r} del corpus: fuera de la lista verificada "
+            f"{sorted(LICENCIAS_CORPUS_SUELO)}. Lista BLANCA: lo que nadie ha comprobado no "
+            "pasa. Si de verdad permite el uso, se verifica contra la fuente primaria y se "
+            "anade con un commit."
+        )
+
+    crudas = documento.get("muestras")
+    if not isinstance(crudas, list) or not crudas:
+        raise CorpusInvalido(
+            f"El manifiesto {ruta_manifiesto} no trae muestras. Un suelo de cero muestras "
+            "no es un cero: es un suelo sin medir."
+        )
+
+    base = ruta_manifiesto.parent
+    muestras: list[MuestraSuelo] = []
+    for i, cruda in enumerate(crudas):
+        if not isinstance(cruda, dict):
+            raise CorpusInvalido(f"La muestra {i} del corpus no es un objeto JSON.")
+        for campo in ("ruta", "idioma", "texto"):
+            if not isinstance(cruda.get(campo), str) or not cruda[campo].strip():
+                raise CorpusInvalido(
+                    f"A la muestra {i} ({cruda.get('ruta', '?')}) le falta {campo!r}."
+                )
+        destino = Path(cruda["ruta"].strip())
+        if not destino.is_absolute():
+            destino = (base / destino).resolve()
+        if verificar_audio and not destino.is_file():
+            raise CorpusInvalido(
+                f"La muestra {i} apunta a un audio que no existe: {destino}."
+            )
+        duracion = cruda.get("duracion_s")
+        muestras.append(MuestraSuelo(
+            ruta=destino,
+            idioma=cruda["idioma"].strip(),
+            texto=cruda["texto"].strip(),
+            fuente=str(cruda.get("fuente", "")).strip(),
+            duracion_s=float(duracion) if isinstance(duracion, (int, float)) else None,
+        ))
+
+    return CorpusSuelo(
+        ruta_manifiesto=ruta_manifiesto,
+        descripcion=documento["descripcion"].strip(),
+        licencia_spdx=licencia,
+        fuente_licencia=documento["fuente_licencia"].strip(),
+        licencia_verificada_el=documento["licencia_verificada_el"].strip(),
+        muestras=tuple(muestras),
+    )
+
+
 class Suelo(NamedTuple):
     """WER del transcriptor sobre voz clara de referencia. Ver cabecera del modulo."""
 
@@ -847,10 +1591,30 @@ class Suelo(NamedTuple):
     n_muestras: int
     detalle: tuple[MedicionPista, ...]
 
+    dominio: str = "habla-leida-clara"
+    """Sobre QUE se midio. No es adorno: un suelo de habla y uno de canto no son
+    el mismo numero, y el campo obliga a decir cual es este."""
+
+    es_cota_inferior_del_suelo_de_canto: bool = True
+    """Siempre `True` mientras `dominio` sea habla. Ver `AVISO_SUELO_ES_COTA_INFERIOR`."""
+
+    corpus: str = ""
+    """De donde salio el audio de referencia, para poder repetirlo."""
+
+    licencia_corpus: str = ""
+    """Licencia SPDX del audio de referencia, verificada al cargar el manifiesto."""
+
+    def por_idioma(self) -> dict[str, float]:
+        """WER medio por idioma. Un suelo global esconde que un idioma va peor."""
+        suma: dict[str, list[float]] = {}
+        for m in self.detalle:
+            suma.setdefault(m.idioma, []).append(m.resultado.wer)
+        return {idioma: sum(v) / len(v) for idioma, v in sorted(suma.items())}
+
 
 def medir_suelo(
     transcriptor: Any,
-    muestras: Iterable[tuple[str | os.PathLike[str], str, str]],
+    muestras: CorpusSuelo | Iterable[tuple[str | os.PathLike[str], str, str]],
     *,
     para_acta: bool = True,
     norma: Normalizacion = NORMALIZACION_PROTOCOLO,
@@ -858,16 +1622,22 @@ def medir_suelo(
     """Mide el WER del transcriptor sobre audio de **voz clara** ya conocida.
 
     Args:
-        muestras: tuplas `(ruta_audio, idioma, texto_esperado)`. El audio debe
-            ser **voz hablada clara** con transcripcion conocida y verificada, en
-            los mismos idiomas de los briefs (castellano e ingles, §4). No sirve
-            audio del propio gate: eso es lo que se quiere medir.
+        muestras: un `CorpusSuelo` cargado con `cargar_corpus_suelo()` —que ademas
+            acredita la licencia del audio— o, para pruebas, tuplas sueltas
+            `(ruta_audio, idioma, texto_esperado)`. El audio debe ser **voz
+            hablada clara** con transcripcion conocida y verificada, en los mismos
+            idiomas de los briefs (castellano e ingles, §4). No sirve audio del
+            propio gate: eso es justo lo que se quiere medir.
         norma: la misma que se use con las pistas, o el suelo no es restable.
 
-    El numero que sale es el **error que el transcriptor comete solo**. Se
-    publica junto al WER de las pistas para poder leerlo (§6.2), y **no se resta
-    del numero del gate** (§2, regla de inmutabilidad).
+    El numero que sale es el **error que el transcriptor comete solo**, sobre
+    habla. Se publica junto al WER de las pistas para poder leerlo (§6.2), **no se
+    resta del numero del gate** (§2, regla de inmutabilidad) y arrastra siempre la
+    limitacion de `AVISO_SUELO_ES_COTA_INFERIOR`.
     """
+    corpus = muestras if isinstance(muestras, CorpusSuelo) else None
+    triples = corpus.triples() if corpus is not None else muestras
+
     detalle = [
         medir_pista(
             transcriptor, ruta, idioma, esperado,
@@ -875,7 +1645,7 @@ def medir_suelo(
             para_acta=para_acta,
             norma=norma,
         )
-        for ruta, idioma, esperado in muestras
+        for ruta, idioma, esperado in triples
     ]
     if not detalle:
         raise ValueError(
@@ -886,6 +1656,8 @@ def medir_suelo(
         wer_medio=sum(m.resultado.wer for m in detalle) / len(detalle),
         n_muestras=len(detalle),
         detalle=tuple(detalle),
+        corpus="" if corpus is None else str(corpus.ruta_manifiesto),
+        licencia_corpus="" if corpus is None else corpus.licencia_spdx,
     )
 
 
@@ -946,7 +1718,9 @@ class ResumenG1(NamedTuple):
     cumple: bool
     suelo: Suelo | None
     media_menos_suelo: float | None
-    """**Informativo.** No entra en `cumple`. Ver la cabecera del modulo."""
+    """**Informativo, y no es «el error del generador».** No entra en `cumple`.
+    Con un suelo de habla el residuo sale mayor del que le tocaria al modelo
+    musical (`AVISO_SUELO_ES_COTA_INFERIOR`). Ver la cabecera del modulo."""
 
     interpretable: bool
     para_acta: bool
@@ -1001,10 +1775,11 @@ def resumir(
     else:
         notas.append(
             f"Suelo del transcriptor: {suelo.wer_medio:.2%} sobre {suelo.n_muestras} muestras "
-            "de voz clara. Es INFORMATIVO: §2 aplica el 15 %/25 % tal cual y restar el suelo "
-            "para pasar seria degradar un umbral con aritmetica. Ademas es un suelo de voz "
-            "HABLADA: acota por abajo, no explica la diferencia entera con el canto."
+            f"de {suelo.dominio}. Es INFORMATIVO: §2 aplica el 15 %/25 % tal cual y restar el "
+            "suelo para pasar seria degradar un umbral con aritmetica."
         )
+        if suelo.es_cota_inferior_del_suelo_de_canto:
+            notas.append(AVISO_SUELO_ES_COTA_INFERIOR)
     if any(m.resultado.avisos for m in mediciones):
         notas.append(
             "Alguna medicion trae avisos (mira `resultado.avisos` pista a pista): resuelvelos "
@@ -1065,9 +1840,129 @@ def _cmd_ficha(args: argparse.Namespace) -> int:
     print("PUERTA ABIERTA. Lo que se archiva en 07-metricas/ (§6.2):")
     for clave, valor in ficha.para_acta().items():
         print(f"  {clave:<26} {valor}")
-    print("\nOjo: esto acredita LICENCIA e INTEGRIDAD. No hay transcriptor integrado en "
-          "este modulo; la implementacion real vive fuera y satisface el protocolo "
-          "`Transcriptor`.")
+    print("\nOjo: esto acredita LICENCIA e INTEGRIDAD, no inocuidad (D-14). Lo que impide "
+          "que cargar estos pesos sea ejecucion remota de codigo es que sean safetensors y "
+          "que el directorio pase `auditar_directorio_modelo()`, no este hash.")
+    return 0
+
+
+def _cmd_transcribir(args: argparse.Namespace) -> int:
+    """Transcribe UNA pista de verdad y cronometra. No mide WER: para eso hace
+    falta la letra de referencia, y esa la aporta `comparar` o `medir_pista()`."""
+    try:
+        transcriptor = transcriptor_desde_ficha(args.ficha, hilos=args.hilos)
+    except ErrorDePuerta as exc:
+        print(f"PUERTA CERRADA: {exc}")
+        return 2
+
+    print(f"Modelo   : {transcriptor.ficha.identificador}@{transcriptor.ficha.version}")
+    print(f"Directorio: {transcriptor.directorio} "
+          f"({transcriptor.auditoria.n_ficheros} ficheros auditados, "
+          f"{len(transcriptor.auditoria.pesos)} safetensors, 0 pickles, 0 codigo)")
+
+    try:
+        texto = transcriptor.transcribir(args.audio, args.idioma)
+    except (ErrorDePuerta, AudioNoSoportado, ValueError) as exc:
+        print(f"NO SE PUDO TRANSCRIBIR: {exc}")
+        return 2
+
+    ultima = transcriptor.ultima or {}
+    print(f"Carga    : {transcriptor.segundos_carga:.2f} s")
+    print(f"Audio    : {ultima.get('duracion_s', 0):.1f} s a {ultima.get('sr_original')} Hz "
+          f"({ultima.get('ventanas_de_30s')} ventanas de 30 s)")
+    print(f"Inferencia: {ultima.get('segundos', 0):.2f} s · RTF {ultima.get('rtf', 0):.3f} · "
+          f"{transcriptor.segundos_por_ventana:.1f} s por ventana")
+    print(f"\nTranscripcion ({args.idioma}):\n{texto}")
+    print("\n[RECORDATORIO] Esto es texto, no una cifra del gate. El WER sale de compararlo "
+          "con la letra de referencia, y no se interpreta sin el SUELO del transcriptor "
+          "(§6.2).")
+
+    if args.salida:
+        Path(args.salida).write_text(json.dumps({
+            "modelo": transcriptor.ficha.para_acta(),
+            "audio": os.fspath(args.audio),
+            "idioma": args.idioma,
+            "texto": texto,
+            "carga_s": transcriptor.segundos_carga,
+            "medida": ultima,
+        }, ensure_ascii=False, indent=1), encoding="utf-8")
+        print(f"\ninforme -> {args.salida}")
+    return 0
+
+
+def _cmd_suelo(args: argparse.Namespace) -> int:
+    """Mide el SUELO del transcriptor sobre el corpus de voz clara del manifiesto."""
+    try:
+        transcriptor = transcriptor_desde_ficha(args.ficha, hilos=args.hilos)
+        corpus = cargar_corpus_suelo(args.corpus)
+    except ErrorDePuerta as exc:
+        print(f"PUERTA CERRADA: {exc}")
+        return 2
+
+    if args.limite:
+        corpus = corpus._replace(muestras=corpus.muestras[: args.limite])
+
+    print(f"Corpus   : {corpus.descripcion}")
+    print(f"Licencia : {corpus.licencia_spdx} (verificada {corpus.licencia_verificada_el})")
+    print(f"Fuente   : {corpus.fuente_licencia}")
+    print(f"Muestras : {len(corpus.muestras)} {corpus.por_idioma()}")
+
+    suelo = medir_suelo(transcriptor, corpus, para_acta=not args.sin_puerta)
+
+    print(f"\nSUELO    : {suelo.wer_medio:.2%} sobre {suelo.n_muestras} muestras")
+    for idioma, wer in suelo.por_idioma().items():
+        print(f"  {idioma}: {wer:.2%}")
+    if transcriptor.rtf_medio is not None:
+        print(f"RTF medio: {transcriptor.rtf_medio:.3f} "
+              f"({transcriptor.segundos_inferencia:.0f} s de CPU sobre "
+              f"{transcriptor.segundos_audio:.0f} s de audio) · "
+              f"{transcriptor.segundos_por_ventana:.1f} s por ventana de 30 s")
+        print("[OJO] Este RTF es de FRASES SUELTAS y no se extrapola a las pistas del "
+              "gate: Whisper rellena cada frase hasta 30 s, asi que su RTF sale inflado. "
+              "Para presupuestar la tanda de §4 hay que cronometrar pistas largas.")
+    print(f"\n[LIMITACION] {AVISO_SUELO_ES_COTA_INFERIOR}")
+
+    if args.salida:
+        Path(args.salida).write_text(json.dumps({
+            "modelo": transcriptor.ficha.para_acta(),
+            "corpus": {
+                "manifiesto": str(corpus.ruta_manifiesto),
+                "descripcion": corpus.descripcion,
+                "licencia_spdx": corpus.licencia_spdx,
+                "fuente_licencia": corpus.fuente_licencia,
+                "licencia_verificada_el": corpus.licencia_verificada_el,
+            },
+            "normalizacion": NORMALIZACION_PROTOCOLO.nombre,
+            "suelo_wer": suelo.wer_medio,
+            "suelo_wer_por_idioma": suelo.por_idioma(),
+            "n_muestras": suelo.n_muestras,
+            "dominio": suelo.dominio,
+            "es_cota_inferior_del_suelo_de_canto": suelo.es_cota_inferior_del_suelo_de_canto,
+            "limitacion": AVISO_SUELO_ES_COTA_INFERIOR,
+            "rtf_medio": transcriptor.rtf_medio,
+            "rtf_medio_no_extrapolable_porque": (
+                "son frases sueltas y Whisper rellena cada una hasta 30 s; usa "
+                "segundos_por_ventana_de_30s para presupuestar pistas largas"
+            ),
+            "segundos_por_ventana_de_30s": transcriptor.segundos_por_ventana,
+            "segundos_carga": transcriptor.segundos_carga,
+            "detalle": [
+                {
+                    "audio": m.ruta_audio,
+                    "idioma": m.idioma,
+                    "referencia": m.resultado.referencia_normalizada,
+                    "transcripcion": m.transcripcion,
+                    "wer": m.resultado.wer,
+                    "n": m.resultado.n_referencia,
+                    "s_i_d": [m.resultado.sustituciones, m.resultado.inserciones,
+                              m.resultado.borrados],
+                    "avisos": m.resultado.avisos,
+                    "cronometro": cronometro,
+                }
+                for m, cronometro in zip(suelo.detalle, transcriptor.historial)
+            ],
+        }, ensure_ascii=False, indent=1), encoding="utf-8")
+        print(f"\ninforme -> {args.salida}")
     return 0
 
 
@@ -1086,8 +1981,9 @@ def _cmd_umbrales(args: argparse.Namespace) -> int:
 def construir_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         description=(
-            "WER del criterio 4 de G1 (§6.2). NO transcribe: la capa 1 mide y la capa 2 "
-            "exige que el transcriptor llegue de fuera con su ficha de licencia verificada."
+            "WER del criterio 4 de G1 (§6.2), y el suelo sin el cual no se interpreta. "
+            "`comparar` y `umbrales` no necesitan nada instalado; `transcribir` y `suelo` "
+            "cargan los pesos que declare la ficha, de disco y sin red."
         )
     )
     sub = p.add_subparsers(dest="orden", required=True)
@@ -1102,6 +1998,26 @@ def construir_parser() -> argparse.ArgumentParser:
     f = sub.add_parser("ficha", help="Comprueba una ficha de transcriptor contra la puerta.")
     f.add_argument("ruta")
     f.set_defaults(func=_cmd_ficha)
+
+    t = sub.add_parser("transcribir", help="Transcribe un WAV con los pesos de la ficha.")
+    t.add_argument("ficha")
+    t.add_argument("audio")
+    t.add_argument("--idioma", required=True,
+                   help="Se FUERZA, no se detecta (§6.2). Ej.: es, en.")
+    t.add_argument("--hilos", type=int, default=None, help="Hilos de CPU para torch.")
+    t.add_argument("--salida", default=None, help="Fichero JSON con el informe.")
+    t.set_defaults(func=_cmd_transcribir)
+
+    s = sub.add_parser("suelo", help="Mide el suelo del transcriptor sobre voz clara (§6.2).")
+    s.add_argument("ficha")
+    s.add_argument("corpus", help="Manifiesto JSON del corpus de voz de referencia.")
+    s.add_argument("--limite", type=int, default=None, help="Usa solo las N primeras muestras.")
+    s.add_argument("--hilos", type=int, default=None)
+    s.add_argument("--salida", default=None)
+    s.add_argument("--sin-puerta", action="store_true",
+                   help="Mide sin exigir que el transcriptor sea apto para el acta. "
+                        "Solo para probar el arnes; su cifra no vale para nada mas.")
+    s.set_defaults(func=_cmd_suelo)
 
     u = sub.add_parser("umbrales", help="Comprueba que los umbrales siguen siendo los del §2.")
     u.add_argument("protocolo", nargs="?", default=None)

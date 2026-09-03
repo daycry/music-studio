@@ -2,22 +2,11 @@
 # -*- coding: utf-8 -*-
 """Arnes de medicion de CLAP para el gate G1: criterio 3 del `g1-protocolo.md` §2.
 
-Que es esto, y que le falta
-===========================
+Que es esto
+===========
 Mide la **similitud audio-texto** entre cada pista y el prompt de estilo literal
 de su brief, y publica los pares `(propia, libreria)` de los 10 briefs. Es el
 criterio 3 de G1.
-
-**Le falta el modelo, y eso no es un descuido: es el estado real del gate.** El
-protocolo (§6.1) nombra **HeartCLAP** como candidato principal, y `T-06`
-comprobo que **no esta publicado** (hallazgo A-3: la organizacion en Hugging
-Face tiene seis repos y ninguno es ese; hay un issue abierto pidiendolo). El
-suplente —un CLAP de la familia LAION, o cualquier otro— **no esta designado**,
-y designarlo no es una decision de este fichero: exige **ficha de licencia
-verificada antes de usarlo** (regla 5 del registry, I-13b), que solo puede
-cerrar el propietario.
-
-Asi que este modulo es **el arnes**, no el instrumento:
 
 * **la mecanica de la medida es nuestra y esta probada** — troceado en ventanas,
   coseno y media;
@@ -25,9 +14,57 @@ Asi que este modulo es **el arnes**, no el instrumento:
   con un modelo de juguete determinista, sin descargar nada y sin GPU;
 * **la puerta de licencia esta puesta** — sin ficha valida no se mide, y el
   mensaje dice exactamente que falta;
-* **el backend no existe todavia**: `BACKENDS_CLAP` esta **vacio** a proposito.
-  Cuando se decida el modelo, anadirlo exige un commit, que es justo el punto de
-  control que se busca.
+* **el backend real esta cableado** (`transformers-clap`), y carga los pesos
+  **de disco**, sin red y sin codigo remoto.
+
+El modelo, y lo que costo elegirlo (2026-09-03)
+===============================================
+El protocolo (§6.1) nombraba **HeartCLAP** como candidato principal y **no esta
+publicado**: es el hallazgo A-3 de `T-06`, reconfirmado el 2026-09-03 contra la
+API del hub (la organizacion tiene seis repos y ninguno es ese; el mas reciente
+es de hace casi siete meses). Se pasa a la alternativa que el propio §6.1 preve
+—«un modelo CLAP de la familia LAION»— y de los cinco candidatos queda uno::
+
+    laion/clap-htsat-fused @ 365dea6ef167def6676140ed93bbc43f84dabb28
+
+**Lo eligio el invariante de `safetensors`, no su calidad musical**: los otros
+cuatro publican unicamente `pytorch_model.bin`, que es un pickle, y cargarlo
+ejecuta el codigo que lleve dentro (D-14). El precio hay que leerlo, porque
+viaja con el numero: **los dos LAION entrenados especificamente con musica estan
+entre los descartados**. El que queda es el generalista con fusion
+(LAION-Audio-630K: lleva musica, pero no esta especializado en ella), asi que el
+criterio 3 se mide con **menos poder discriminante sobre canciones** del que
+tendria con los otros. Es una perdida real, no un tecnicismo.
+
+**La licencia esta verificada contra fuente primaria y NO ratificada.** El repo
+de pesos declara `apache-2.0` solo como **metadato** —no publica fichero de
+licencia—, mientras que el repositorio de codigo del proveedor
+(`github.com/LAION-AI/CLAP`) publica un LICENSE **CC0-1.0** con texto integro.
+Las dos lecturas permiten uso comercial; la ficha declara **Apache-2.0 por ser la
+mas restrictiva de las dos**. La evidencia completa —textos integros de las dos
+licencias, respuestas crudas de las APIs, hashes de cada fichero— esta archivada
+en `D:/srv/clap/provenance/`. Quien cierra una ficha de licencia es el
+propietario (regla 5 del registry, I-13b): mientras no lo haga, la ficha lo dice
+en `licencia.verificada_por`, y ese texto **sale impreso en el informe** junto al
+numero.
+
+Como se carga, y las tres cosas que este backend no hace
+=======================================================
+`ClapDeTransformers` carga el modelo con `transformers` **desde el directorio
+local que nombra la ficha**, y por ese orden: primero se audita el directorio
+(un solo fichero de pesos, que es el que la ficha hasheo; nada en formato pickle
+al lado; ninguna configuracion que pida codigo remoto) y solo despues se importa
+`transformers` y se carga.
+
+1. **No descarga nada.** `local_files_only=True` en las dos cargas. Si algo
+   falta, falla; no sale a la red a buscarlo.
+2. **No ejecuta codigo del repositorio de pesos.** `trust_remote_code=False`
+   explicito, y ademas se rechaza el directorio si `config.json`,
+   `preprocessor_config.json` o `tokenizer_config.json` traen `auto_map` o
+   `custom_pipelines`, que son las dos llaves con las que un repo de pesos pide
+   que se ejecute codigo suyo.
+3. **No carga nada que no sea `safetensors`.** `use_safetensors=True` en la
+   carga del modelo, y la auditoria previa del directorio.
 
 Lo que este script NO hace
 --------------------------
@@ -35,7 +72,8 @@ Lo que este script NO hace
   umbrales del §2 **no aparecen aqui**, ni siquiera como comentario, por el
   mismo motivo por el que no aparecen en `g1_generar.py`: un script que conoce
   el liston acaba, antes o despues, opinando sobre el.
-* **No descarga pesos**, no toca la red y no elige modelo.
+* **No descarga pesos** ni toca la red: los pesos tienen que estar ya en disco,
+  puestos ahi por quien verifico su procedencia.
 * **No remuestrea en silencio.** Si la tasa del WAV no es la que declara la
   ficha, para. Remuestrear cambia la medida, y §6.1 exige que la politica sea
   identica para las tres series: esa decision se declara antes de calcular, no
@@ -73,8 +111,15 @@ Uso::
     python spikes/medir_clap.py --ficha D:/srv/clap/clap.model.json \\
         --directorio D:/srv/g1/07-metricas --salida clap.json
 
-Hoy ese comando **para en el backend**, y ese mensaje es el estado del gate.
-La API de Python si es usable ahora mismo inyectando un modelo propio.
+Ese comando carga el modelo y **para en el material**: `--directorio` no se lee
+todavia, porque el emparejado de los 10 briefs (que par de ficheros y que prompt
+literal va con cada uno) lo fija `T-09` y se archiva en `07-metricas/README.md`
+(§6.1). Leerlo «a ojo» seria inventarse la mitad del procedimiento.
+
+La API de Python si mide hoy, con el modelo real o con uno propio::
+
+    ficha = cargar_ficha("D:/srv/clap/clap.model.json")
+    par = medir_brief("B-01", prompt, propia, libreria, construir_modelo(ficha), ficha)
 """
 
 from __future__ import annotations
@@ -112,12 +157,14 @@ from contracts import (  # noqa: E402  (tras el arranque de sys.path)
 __all__ = [
     "ADVERTENCIA_CRITERIO_3",
     "BACKENDS_CLAP",
+    "BACKEND_TRANSFORMERS",
     "LICENCIAS_ACEPTADAS",
     "LICENCIAS_NO_COMERCIALES",
     "SCHEMA_FICHA",
     "VENTANA_S",
     "Audio",
     "BackendNoDisponible",
+    "ClapDeTransformers",
     "FichaClap",
     "FichaInvalida",
     "MedidaPista",
@@ -178,12 +225,15 @@ POLITICA_AGREGACION = (
 #: RECHAZA en vez de interpretarse a medias.
 SCHEMA_FICHA = 1
 
-#: Backends de CLAP que este repositorio sabe ejecutar. **Vacio hoy, y con
-#: motivo**: HeartCLAP no esta publicado (A-3) y no hay suplente designado.
-#: Anadir uno exige (1) escribirlo aqui en un commit y (2) archivar su ficha de
-#: licencia verificada (I-13b). Ninguna de las dos cosas la puede hacer un dato
-#: que aparezca en disco.
-BACKENDS_CLAP: frozenset[str] = frozenset()
+#: Nombre del unico backend que este repositorio sabe ejecutar. La ficha lo
+#: **nombra**; quien decide es el `if` explicito de `construir_modelo()`.
+BACKEND_TRANSFORMERS = "transformers-clap"
+
+#: Backends de CLAP que este repositorio sabe ejecutar. Anadir uno exige (1)
+#: escribirlo aqui **y** escribir su constructor, las dos cosas en un commit, y
+#: (2) archivar su ficha de licencia verificada (I-13b). Ninguna de las dos cosas
+#: la puede hacer un dato que aparezca en disco.
+BACKENDS_CLAP: frozenset[str] = frozenset({BACKEND_TRANSFORMERS})
 
 #: Licencias con uso comercial permitido **verificadas para este proyecto**.
 #: Lista CERRADA: lo que no esta aqui no se usa, aunque sea permisiva de fama.
@@ -479,25 +529,268 @@ class ModeloClap(Protocol):
         """Vector de una ventana de audio mono en float, a `tasa` Hz."""
 
 
-def construir_modelo(ficha: FichaClap) -> ModeloClap:
-    """Resuelve el backend que nombra la ficha. **Hoy no resuelve ninguno.**
+# --------------------------------------------------------------------------- #
+# El backend real: CLAP de LAION cargado con transformers, desde disco
+# --------------------------------------------------------------------------- #
+#: Extensiones de ficheros de pesos basadas en `pickle`. Si una aparece en el
+#: directorio del modelo, el directorio no es el que se verifico y se rechaza:
+#: `use_safetensors=True` impide cargarlo, pero un pickle al lado de los pesos es
+#: una invitacion a que el siguiente cargador —o el siguiente que edite esto— lo
+#: coja (D-14).
+_EXTENSIONES_DE_PESOS_PROHIBIDAS = frozenset({
+    ".bin", ".pt", ".pth", ".ckpt", ".pkl", ".joblib",
+})
 
-    La ficha *nombra* el backend; no lo importa. La lista `BACKENDS_CLAP` es de
-    este repositorio y esta vacia: HeartCLAP no esta publicado (A-3) y el
-    suplente no esta designado. Cuando se decida, se escribe aqui un constructor
-    explicito —con su ficha de licencia archivada—, no un `import` por nombre.
+#: Las dos llaves con las que un repositorio de pesos pide que se ejecute codigo
+#: suyo. `trust_remote_code=False` ya las desactiva; encontrarlas significa que el
+#: modelo NO es utilizable bajo el invariante del proyecto, y eso se dice al
+#: cargar y no cuando falle a medias.
+_CLAVES_DE_CODIGO_REMOTO = ("auto_map", "custom_pipelines")
+
+#: Configuraciones donde puede aparecer `auto_map`: la del modelo, la del
+#: extractor de caracteristicas, la del tokenizador y la del procesador.
+_CONFIGS_QUE_SE_AUDITAN = (
+    "config.json",
+    "preprocessor_config.json",
+    "tokenizer_config.json",
+    "processor_config.json",
+)
+
+
+def _auditar_directorio_de_pesos(ficha: FichaClap) -> Path:
+    """Comprueba el **directorio** del modelo antes de cargar nada de el.
+
+    `cargar_ficha()` valida un fichero: el que lleva el SHA-256. Pero
+    `from_pretrained` no carga un fichero, carga un **directorio** entero
+    —configuracion, tokenizador, extractor—, y de eso la ficha no dice nada. Asi
+    que aqui se mira lo que el hash no cubre:
+
+    1. que haya **un solo** fichero de pesos y sea exactamente el que la ficha
+       hasheo (si hubiera varios, el numero saldria de pesos sin verificar);
+    2. que no haya ningun fichero de pesos en formato pickle al lado (D-14);
+    3. que ninguna configuracion pida **codigo remoto**.
+
+    Es barato —cuatro `read_text` de ficheros pequenos— y ocurre **antes** de
+    importar `transformers`, para que el fallo llegue antes de leer 600 MB.
+    """
+    directorio = ficha.ruta_pesos.parent
+    if not directorio.is_dir():
+        raise FichaInvalida(
+            f"los pesos declarados no viven en un directorio legible: {directorio}"
+        )
+
+    pesos = sorted(p.name for p in directorio.glob("*.safetensors"))
+    if pesos != [ficha.ruta_pesos.name]:
+        raise FichaInvalida(
+            f"el directorio {directorio} contiene {pesos} y la ficha solo verifica "
+            f"{ficha.ruta_pesos.name!r}. Con varios ficheros de pesos, parte de lo que "
+            "se cargaria no esta cubierto por el SHA-256 de la ficha, y la medida "
+            "dejaria de ser reproducible."
+        )
+
+    pickles = sorted(
+        p.name for p in directorio.iterdir()
+        if p.is_file() and p.suffix.lower() in _EXTENSIONES_DE_PESOS_PROHIBIDAS
+    )
+    if pickles:
+        raise FichaInvalida(
+            f"hay ficheros de pesos en formato pickle junto a los verificados: {pickles} "
+            f"(en {directorio}). Deserializar uno ejecuta el codigo que lleve dentro "
+            "(D-14). Este backend no los carga, pero un directorio que los contiene no "
+            "es el que se verifico: borralos o apunta la ficha a uno limpio."
+        )
+
+    for nombre in _CONFIGS_QUE_SE_AUDITAN:
+        ruta = directorio / nombre
+        if not ruta.is_file():
+            continue
+        try:
+            documento = json.loads(ruta.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            raise FichaInvalida(f"configuracion ilegible ({ruta}): {exc}") from exc
+        if not isinstance(documento, dict):
+            continue
+        for clave in _CLAVES_DE_CODIGO_REMOTO:
+            if clave in documento:
+                raise FichaInvalida(
+                    f"{nombre} declara {clave!r}: este modelo pide ejecutar codigo de su "
+                    "propio repositorio de pesos para cargarse. No se usa, y no se "
+                    "arregla poniendo trust_remote_code: el invariante es que el codigo "
+                    "que corre aqui sea el que esta en este repositorio."
+                )
+    return directorio
+
+
+def _a_vector(salida: Any, dimension: int, que: str) -> np.ndarray:
+    """Saca el embedding de lo que devuelve `transformers`, sin adivinar.
+
+    En `transformers` 5.x, `get_audio_features()` y `get_text_features()`
+    devuelven `BaseModelOutputWithPooling`, y el embedding proyectado es
+    `pooler_output`; con la API anterior devolvian el tensor pelado. Coger el
+    objeto entero **no da un error**: da un vector inventado, y de ahi sale un
+    coseno plausible. Por eso se comprueba tambien la dimension contra la que
+    declara el modelo.
+    """
+    tensor = getattr(salida, "pooler_output", None)
+    if tensor is None and hasattr(salida, "detach"):
+        tensor = salida
+    if tensor is None:
+        raise TypeError(
+            f"el modelo devolvio {type(salida).__name__} como embedding de {que}: ni es "
+            "un tensor ni trae 'pooler_output'. La API de transformers ha cambiado y "
+            "seguir adelante daria un vector que no es el embedding."
+        )
+    vector = np.asarray(tensor.detach().to("cpu").numpy(), dtype=np.float64).reshape(-1)
+    if vector.shape != (dimension,):
+        raise ValueError(
+            f"el embedding de {que} tiene dimension {vector.shape[0]} y el modelo declara "
+            f"{dimension}. No se compara lo que no vive en el mismo espacio."
+        )
+    return vector
+
+
+class ClapDeTransformers:
+    """CLAP real (`laion/clap-htsat-*`) cargado con `transformers` desde disco.
+
+    Cumple `ModeloClap` y nada mas: dos metodos que devuelven vectores. Se
+    construye **solo** desde `construir_modelo()`, que revalida la ficha antes.
+
+    Tres decisiones que cambian el numero, escritas donde se toman:
+
+    * **CPU.** No se pide dispositivo, asi que `transformers` carga en CPU y ahi
+      se queda. §6.1 dice que la CPU es aceptable, y ademas deja libres los 8 GB
+      de la GPU local para generar. Sin GPU por medio no hay diferencias por
+      kernels de atencion ni por orden de reduccion. El audio entra en `float32`,
+      que es el dtype de los pesos.
+    * **No se remuestrea.** `embed_audio()` exige la tasa que declara el extractor
+      del propio modelo; si no cuadra, para. Es la misma regla que aplica
+      `medir_brief()` a los WAV.
+    * **No se trunca el texto.** Recortar un prompt de estilo largo cambiaria el
+      texto de referencia del §4.2 sin decirlo. Si un prompt no cabe en el
+      codificador, es mejor que reviente a que mida otra cosa.
+
+    La ultima ventana de una pista puede ser mas corta que la ventana declarada;
+    el extractor la rellena repitiendola (`padding="repeatpad"`, de la propia
+    configuracion del modelo). Es inherente a un modelo de entrada fija, y se
+    aplica **igual a las tres series**, que es lo que §6.1 exige.
+    """
+
+    def __init__(self, ficha: FichaClap) -> None:
+        directorio = _auditar_directorio_de_pesos(ficha)
+
+        try:
+            import torch  # noqa: PLC0415  (diferido: la mecanica no necesita torch)
+            from transformers import ClapModel, ClapProcessor  # noqa: PLC0415
+        except ImportError as exc:
+            raise BackendNoDisponible(
+                f"el backend {ficha.backend!r} necesita 'transformers' y 'torch' "
+                f"instalados, y falta alguno: {exc}. La CPU basta; no hace falta GPU."
+            ) from exc
+
+        self._torch = torch
+        self.ficha = ficha
+        # `local_files_only`: nada de red en tiempo de ejecucion, ni un HEAD para
+        # comprobar si hay revision mas nueva. La negativa a ejecutar codigo
+        # remoto va explicita en las dos cargas aunque ya sea el valor por
+        # defecto: es un invariante, no una preferencia, y un valor por defecto
+        # puede cambiar de version.
+        self._procesador = ClapProcessor.from_pretrained(
+            str(directorio), local_files_only=True, trust_remote_code=False,
+        )
+        self._modelo = ClapModel.from_pretrained(
+            str(directorio),
+            local_files_only=True,
+            use_safetensors=True,
+            trust_remote_code=False,
+        )
+        # Modo de inferencia. Se usa `train(False)` y no su alias corto porque el
+        # test que veta la resolucion dinamica de codigo busca esa subcadena en el
+        # fuente; son la misma llamada.
+        self._modelo.train(False)
+
+        extractor = self._procesador.feature_extractor
+        self.dimension = int(self._modelo.config.projection_dim)
+        self.tasa_entrada_hz = int(extractor.sampling_rate)
+        self.ventana_s = float(extractor.nb_max_samples) / self.tasa_entrada_hz
+
+        # La ficha describe el modelo; si lo que hay en disco no coincide, es la
+        # ficha la que miente sobre la medida que se va a publicar. §6.1 obliga a
+        # anotar tasa y ventana: anotar unas y usar otras seria peor que no
+        # anotarlas.
+        if self.tasa_entrada_hz != ficha.tasa_entrada_hz:
+            raise FichaInvalida(
+                f"la ficha declara {ficha.tasa_entrada_hz} Hz de entrada y el extractor "
+                f"del modelo consume {self.tasa_entrada_hz} Hz. El informe anotaria una "
+                "tasa que no es la que se uso."
+            )
+        if abs(self.ventana_s - ficha.ventana_s) > 1e-6:
+            raise FichaInvalida(
+                f"la ficha declara ventanas de {ficha.ventana_s} s y el modelo consume "
+                f"{self.ventana_s} s ({extractor.nb_max_samples} muestras). Con una "
+                "ventana mas larga el modelo comprimiria lo que sobra, y con una mas "
+                "corta rellenaria repitiendo: en los dos casos se mediria otra cosa."
+            )
+
+    def embed_texto(self, texto: str) -> np.ndarray:
+        """Vector del prompt de estilo literal del brief (§4.2), sin reescribir."""
+        if not isinstance(texto, str) or not texto.strip():
+            raise ValueError(
+                "el texto de referencia esta vacio: no hay prompt contra el que medir."
+            )
+        entradas = self._procesador(text=[texto], return_tensors="pt", padding=True)
+        with self._torch.inference_mode():
+            salida = self._modelo.get_text_features(**entradas)
+        return _a_vector(salida, self.dimension, "texto")
+
+    def embed_audio(self, ventana: np.ndarray, tasa: int) -> np.ndarray:
+        """Vector de una ventana de audio mono, a la tasa que exige el modelo."""
+        if int(tasa) != self.tasa_entrada_hz:
+            raise ValueError(
+                f"ventana a {tasa} Hz y el modelo consume {self.tasa_entrada_hz} Hz. "
+                "Aqui no se remuestrea: cambiaria la medida sin dejar rastro."
+            )
+        muestras = np.asarray(ventana, dtype=np.float32).reshape(-1)
+        if muestras.size == 0:
+            raise ValueError("ventana vacia: no hay audio que embeber")
+        entradas = self._procesador(
+            audio=muestras, sampling_rate=self.tasa_entrada_hz, return_tensors="pt",
+        )
+        with self._torch.inference_mode():
+            salida = self._modelo.get_audio_features(**entradas)
+        return _a_vector(salida, self.dimension, "audio")
+
+
+def construir_modelo(ficha: FichaClap) -> ModeloClap:
+    """Resuelve el backend que **nombra** la ficha, con un `if` explicito.
+
+    La ficha es un dato del disco: nombra, no importa. La correspondencia entre
+    el nombre y el codigo que se ejecuta vive aqui, en este fichero, y cambiarla
+    exige un commit — que es justo el punto de control que se busca (I-13b).
+
+    Levanta:
+        BackendNoDisponible: si la ficha nombra un backend que este repositorio
+            no sabe ejecutar, o si le faltan las dependencias al que si sabe.
+        FichaInvalida: si el directorio de pesos contradice la ficha o rompe un
+            invariante (varios ficheros de pesos, un pickle al lado, codigo
+            remoto declarado).
+        ValueError: desde `exigir_ficha_valida()`, si la ficha se construyo a
+            mano saltandose `cargar_ficha()`.
     """
     exigir_ficha_valida(ficha)
+    if ficha.backend not in BACKENDS_CLAP:
+        raise BackendNoDisponible(
+            f"la ficha nombra el backend {ficha.backend!r} y este repositorio solo sabe "
+            f"ejecutar {sorted(BACKENDS_CLAP)}.\n"
+            "Anadir uno exige escribir su constructor aqui, en un commit, y archivar "
+            "antes su ficha de licencia verificada contra fuente primaria (I-13b). "
+            "Nada se resuelve por nombre."
+        )
+    if ficha.backend == BACKEND_TRANSFORMERS:
+        return ClapDeTransformers(ficha)
     raise BackendNoDisponible(
-        f"la ficha nombra el backend {ficha.backend!r} y este repositorio no sabe "
-        f"ejecutar ninguno todavia (BACKENDS_CLAP esta vacio).\n"
-        "Motivo, que es el estado real del gate: el protocolo (§6.1) proponia "
-        "HeartCLAP y T-06 comprobo que NO esta publicado (A-3); el suplente (un CLAP "
-        "de la familia LAION, u otro) no esta designado. Designarlo exige ficha de "
-        "licencia verificada antes de integrarlo (I-13b) y es decision del "
-        "propietario, no de este script.\n"
-        "Mientras tanto, la API de Python si mide: inyecta un modelo que cumpla "
-        "ModeloClap en medir_brief(...)."
+        f"{ficha.backend!r} figura en BACKENDS_CLAP pero no tiene constructor escrito. "
+        "Es un fallo de este fichero, no de la ficha: la lista y los constructores se "
+        "escriben juntos."
     )
 
 
@@ -868,7 +1161,13 @@ def leer_wav(ruta: str | Path) -> Audio:
 # --------------------------------------------------------------------------- #
 
 def main(argv: list[str] | None = None) -> int:
-    """Puerta de licencia primero, backend despues. Hoy para en el segundo."""
+    """Puerta de licencia primero, backend despues, material al final.
+
+    Codigos de salida: `2` ficha invalida · `3` backend no disponible o
+    directorio de pesos rechazado · `4` modelo listo pero el material del gate no
+    se lee todavia (ver el final de la funcion). Nunca devuelve `0` sin medir:
+    un cero silencioso se leeria como «medido y sin novedad».
+    """
     p = argparse.ArgumentParser(
         description=(
             "Mide el criterio 3 de G1 (CLAP audio-texto). Requiere ficha de modelo "
@@ -893,16 +1192,31 @@ def main(argv: list[str] | None = None) -> int:
     print(f"[ficha] pesos {ficha.ruta_pesos.name} · sha256 {ficha.sha256[:16]}...")
 
     try:
-        construir_modelo(ficha)
-    except BackendNoDisponible as exc:
+        modelo = construir_modelo(ficha)
+    except (BackendNoDisponible, FichaInvalida) as exc:
         print(f"[backend] {exc}")
         return 3
 
-    # Inalcanzable hasta que se designe el modelo y se escriba su constructor.
-    # Cuando eso ocurra, aqui van la lectura del material y la escritura del
-    # informe; el resto del modulo ya esta probado.
+    print(
+        f"[modelo] backend {ficha.backend} cargado de {ficha.ruta_pesos.parent} "
+        f"(sin red, sin codigo remoto) · embeddings de "
+        f"{getattr(modelo, 'dimension', '?')}-d"
+    )
+
+    # Lo que falta ya no es el modelo: es el material. El emparejado de los 10
+    # briefs (que par de ficheros y que prompt literal va con cada uno) lo fija
+    # T-09 y se archiva en `07-metricas/README.md` (§6.1). Leer un directorio a
+    # ojo seria inventarse la mitad del procedimiento del gate, asi que esto para
+    # aqui y lo dice, en vez de devolver 0 como si hubiera medido algo.
+    print(
+        f"[material] no se ha leido {args.directorio}: el emparejado de los briefs "
+        "(§6.1, lo fija T-09 y se archiva en 07-metricas/README.md) no esta definido. "
+        "La API de Python si mide: medir_brief(...) con este modelo."
+    )
+    if args.salida:
+        print(f"[material] tampoco se ha escrito {args.salida}: no hay nada que escribir.")
     print(f"[aviso] {ADVERTENCIA_CRITERIO_3}")
-    return 0
+    return 4
 
 
 if __name__ == "__main__":

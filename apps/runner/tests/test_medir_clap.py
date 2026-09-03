@@ -4,13 +4,20 @@ Que se prueba aqui, y por que estos y no otros
 ==============================================
 `medir_clap.py` produce el **criterio 3** de G1 (`g1-protocolo.md` §2): en
 cuantos de los 10 briefs la pista propia alcanza o supera a la de libreria en
-similitud audio-texto. El modelo que lo mide **no esta decidido** (HeartCLAP no
-esta publicado, hallazgo A-3), asi que lo unico que hoy se puede probar es lo
-que es nuestro: **la mecanica de la medida** y **las puertas** que impiden usar
-un modelo sin ficha de licencia comprobada.
+similitud audio-texto. Lo que se prueba aqui es lo que es nuestro: **la mecanica
+de la medida** y **las puertas** que impiden usar un modelo sin ficha de licencia
+comprobada.
 
-Por eso el modelo llega **inyectado** y aqui se usa uno de juguete: estos tests
-no descargan nada, no tocan la red y no necesitan GPU.
+Por eso el modelo llega **inyectado** y en casi todos los tests se usa uno de
+juguete: no descargan nada, no tocan la red y no necesitan GPU.
+
+El backend real (`laion/clap-htsat-fused`, cableado el 2026-09-03) se prueba en
+el bloque 8, y esos tests **se saltan solos** si los pesos no estan en disco o si
+falta `transformers`. Es deliberado: los pesos ocupan 586 MB, viven fuera del
+repositorio (`D:/srv/clap/`) y una maquina limpia tiene que poder correr la suite
+en verde sin ellos. Lo que **no** se salta es la puerta: los tests de que una
+ficha invalida no llega ni a cargar el modelo corren en cualquier maquina, porque
+la puerta muerde antes de tocar el disco.
 
 Las cuatro cosas que fallarian en silencio, que son las que se prueban:
 
@@ -26,13 +33,16 @@ Las cuatro cosas que fallarian en silencio, que son las que se prueban:
 4. **La advertencia A-14** — si desaparece del informe, un 10 de 10 en CLAP se
    lee en el acta como prueba objetiva de calidad, que es justo lo que no es.
 
-Sin torch y sin GPU, como el resto de la suite.
+Sin GPU siempre, y sin torch salvo en el bloque 8, que se salta si falta.
 """
 
 from __future__ import annotations
 
 import hashlib
+import importlib.util
+import inspect
 import json
+import os
 import struct
 import wave
 from pathlib import Path
@@ -361,15 +371,22 @@ def test_un_esquema_de_ficha_desconocido_se_rechaza(tmp_path: Path):
 
 
 # --------------------------------------------------------------------------- #
-# 4. El backend: hoy no hay ninguno, y eso se dice
+# 4. El backend: cual hay, y que sigue sin haber
 # --------------------------------------------------------------------------- #
 
-def test_hoy_no_hay_ningun_backend_de_clap_implementado():
-    """A-3: HeartCLAP no esta publicado y no hay suplente designado. Si este
-    test falla es porque alguien anadio un backend: entonces hay que comprobar
-    que llego con su ficha de licencia verificada (I-13b) y actualizar el test
-    en el mismo commit."""
-    assert mc.BACKENDS_CLAP == frozenset()
+def test_el_unico_backend_implementado_es_el_de_transformers():
+    """La lista es corta a proposito y este test la fija.
+
+    Hasta el 2026-09-03 aqui se afirmaba `frozenset()`: HeartCLAP no estaba
+    publicado (A-3, reconfirmado ese dia) y no habia suplente. Ahora hay uno,
+    `laion/clap-htsat-fused`, elegido porque es **el unico de la familia LAION
+    que publica safetensors**. Si este test vuelve a fallar es porque alguien
+    anadio otro backend: entonces hay que comprobar que llego con su ficha de
+    licencia verificada contra fuente primaria (I-13b) y actualizar el test en el
+    mismo commit.
+    """
+    assert mc.BACKENDS_CLAP == frozenset({"transformers-clap"})
+    assert mc.BACKEND_TRANSFORMERS == "transformers-clap"
 
 
 def test_un_backend_que_este_repositorio_no_sabe_ejecutar_no_se_resuelve(ficha):
@@ -687,3 +704,286 @@ class TestLaVentanaFinalNoDecideLaMedida:
         fuente = inspect.getsource(mc.medir_pista)
         assert "fmean" in fuente
         assert "weights" not in fuente
+
+
+# --------------------------------------------------------------------------- #
+# 8. El backend real: `transformers-clap`
+# --------------------------------------------------------------------------- #
+#: Ficha del modelo real, donde la dejo la verificacion de procedencia. Los pesos
+#: NO viven en el repositorio y no van a vivir: son 586 MB, `.gitignore` excluye
+#: `*.safetensors` y la evidencia de su licencia esta en `D:/srv/clap/provenance/`.
+#: `CLAP_FICHA` la mueve, para una maquina que los tenga en otro sitio (y para
+#: comprobar, sin borrar nada, que sin pesos la suite se salta en vez de fallar).
+FICHA_REAL = Path(os.environ.get("CLAP_FICHA", r"D:\srv\clap\clap.model.json"))
+
+
+def _falta(modulo: str) -> bool:
+    try:
+        return importlib.util.find_spec(modulo) is None
+    except (ImportError, ValueError):
+        return True
+
+
+_SIN_MODELO_REAL = not FICHA_REAL.is_file() or _falta("transformers") or _falta("torch")
+
+#: Se salta, no falla: una maquina sin los pesos tiene que poder correr la suite
+#: en verde. Lo que NO se salta son las puertas —los bloques de abajo sin marca—,
+#: porque muerden antes de tocar el disco y valen en cualquier maquina.
+necesita_el_modelo_real = pytest.mark.skipif(
+    _SIN_MODELO_REAL,
+    reason=(
+        f"no estan los pesos verificados ({FICHA_REAL}) o falta transformers/torch. "
+        "El backend real no se puede probar sin ellos; el resto de la suite si."
+    ),
+)
+
+
+class TestLaPuertaMuerdeAntesDeCargarNada:
+    """Con el backend real cableado, la puerta importa mas que antes.
+
+    Hasta ahora `construir_modelo()` levantaba siempre, asi que daba igual cuando
+    validara. Ahora carga 586 MB de pesos, y lo que estos tests fijan es el
+    **orden**: primero se revalida la ficha, y solo si pasa se toca el disco. Por
+    eso corren en cualquier maquina, tenga o no los pesos.
+    """
+
+    @staticmethod
+    def _ficha_a_mano(**cambios) -> mc.FichaClap:
+        base = dict(
+            id="clap-falso",
+            version="0",
+            backend=mc.BACKEND_TRANSFORMERS,
+            ruta_pesos=Path("D:/no-existe/model.safetensors"),
+            sha256="0" * 64,
+            licencia_spdx="Apache-2.0",
+            licencia_verificada_por="nadie",
+            licencia_verificada_el="2026-01-01",
+            licencia_fuente=None,
+            tasa_entrada_hz=48000,
+            ventana_s=10.0,
+            ruta_ficha=Path("ficha.json"),
+        )
+        base.update(cambios)
+        return mc.FichaClap(**base)
+
+    def test_una_licencia_no_comercial_no_llega_a_cargar_el_modelo(self):
+        with pytest.raises(ValueError, match="comercial"):
+            mc.construir_modelo(self._ficha_a_mano(licencia_spdx="CC-BY-NC-4.0"))
+
+    def test_una_licencia_fuera_de_la_lista_verificada_no_llega_a_cargar_el_modelo(self):
+        with pytest.raises(ValueError, match="verificada"):
+            mc.construir_modelo(self._ficha_a_mano(licencia_spdx="LicenseRef-Cualquiera"))
+
+    def test_unos_pesos_en_pickle_no_llegan_a_cargarse(self):
+        """D-14. La ruta ni siquiera existe: si la puerta no fuera lo primero, el
+        error seria «no encuentro el fichero» y no «esto es un pickle»."""
+        with pytest.raises(ValueError, match="safetensors"):
+            mc.construir_modelo(
+                self._ficha_a_mano(ruta_pesos=Path("D:/no-existe/pytorch_model.bin"))
+            )
+
+
+class TestElDirectorioDePesosSeAuditaAntesDeCargar:
+    """El SHA-256 de la ficha cubre UN fichero; `from_pretrained` carga un
+    DIRECTORIO entero (configuracion, tokenizador, extractor). Estos tests fijan
+    lo que se mira de ese directorio, que es justo lo que el hash no cubre.
+
+    Ninguno necesita los pesos reales: todos fallan en la auditoria, que ocurre
+    antes de importar `transformers`.
+    """
+
+    @staticmethod
+    def _ficha_con_backend_real(tmp_path: Path) -> mc.FichaClap:
+        return mc.cargar_ficha(
+            _escribir_ficha(tmp_path, {"backend": mc.BACKEND_TRANSFORMERS})
+        )
+
+    def test_un_pickle_junto_a_los_pesos_verificados_se_rechaza(self, tmp_path: Path):
+        """`use_safetensors=True` impide cargarlo, pero un pickle al lado de los
+        pesos significa que el directorio no es el que se verifico."""
+        ficha = self._ficha_con_backend_real(tmp_path)
+        (tmp_path / "pytorch_model.bin").write_bytes(b"\x80\x04\x95" + b"\x00" * 8)
+
+        with pytest.raises(mc.FichaInvalida, match="pickle"):
+            mc.construir_modelo(ficha)
+
+    def test_varios_ficheros_de_pesos_se_rechazan(self, tmp_path: Path):
+        """Con dos, parte de lo que se cargaria no esta cubierto por el hash de la
+        ficha, y la medida deja de ser reproducible (§6.1)."""
+        ficha = self._ficha_con_backend_real(tmp_path)
+        _escribir_pesos(tmp_path / "model-00002-of-00002.safetensors")
+
+        with pytest.raises(mc.FichaInvalida, match="verifica"):
+            mc.construir_modelo(ficha)
+
+    @pytest.mark.parametrize(
+        "configuracion", ["config.json", "preprocessor_config.json", "tokenizer_config.json"],
+    )
+    def test_una_configuracion_que_pide_codigo_remoto_se_rechaza(
+        self, tmp_path: Path, configuracion: str,
+    ):
+        """`auto_map` es la llave con la que un repositorio de pesos pide que se
+        ejecute codigo suyo. Con `trust_remote_code=False` no se ejecutaria, pero
+        un modelo que lo exige no es utilizable aqui, y eso se dice al cargar."""
+        ficha = self._ficha_con_backend_real(tmp_path)
+        (tmp_path / configuracion).write_text(
+            json.dumps({"auto_map": {"AutoModel": "modeling_ajeno.ModeloAjeno"}}),
+            encoding="utf-8",
+        )
+
+        with pytest.raises(mc.FichaInvalida, match="auto_map"):
+            mc.construir_modelo(ficha)
+
+    def test_una_configuracion_ilegible_se_rechaza_en_vez_de_ignorarse(self, tmp_path: Path):
+        ficha = self._ficha_con_backend_real(tmp_path)
+        (tmp_path / "config.json").write_text("{ esto no es json", encoding="utf-8")
+
+        with pytest.raises(mc.FichaInvalida, match="ilegible"):
+            mc.construir_modelo(ficha)
+
+
+def test_un_backend_listado_sin_constructor_lo_dice_en_vez_de_fallar_raro(ficha, monkeypatch):
+    """La lista y los constructores se escriben juntos. Si alguien anade un nombre
+    a `BACKENDS_CLAP` y se olvida del `if`, el mensaje tiene que decir que el
+    fallo es de este fichero, no de la ficha."""
+    monkeypatch.setattr(mc, "BACKENDS_CLAP", frozenset({"backend-de-juguete"}))
+
+    with pytest.raises(mc.BackendNoDisponible, match="constructor"):
+        mc.construir_modelo(ficha)
+
+
+def test_el_backend_no_habilita_codigo_remoto_ni_sale_a_la_red():
+    """Los dos invariantes del encargo, comprobados en el fuente y no de palabra:
+    ninguna carga ejecuta codigo del repositorio de pesos, ninguna descarga nada y
+    ninguna acepta otro formato que `safetensors`."""
+    fuente = Path(mc.__file__).read_text(encoding="utf-8")
+    assert "trust_remote_code=True" not in fuente
+
+    fuente_backend = inspect.getsource(mc.ClapDeTransformers)
+    cargas = fuente_backend.count("from_pretrained(")
+    assert cargas == 2, "hay dos cargas: la del procesador y la del modelo"
+    assert fuente_backend.count("local_files_only=True") == cargas
+    assert fuente_backend.count("trust_remote_code=False") == cargas
+    assert "use_safetensors=True" in fuente_backend
+
+
+@pytest.fixture(scope="module")
+def ficha_real() -> mc.FichaClap:
+    return mc.cargar_ficha(FICHA_REAL)
+
+
+@pytest.fixture(scope="module")
+def modelo_real(ficha_real: mc.FichaClap):
+    """Una sola carga para todo el bloque: son 586 MB y ~0,6 s."""
+    return mc.construir_modelo(ficha_real)
+
+
+@necesita_el_modelo_real
+class TestElBackendRealSeCargaYMide:
+    """El backend real, contra los pesos verificados que hay en disco.
+
+    Cargar no es medir: si `_a_vector()` cogiera el tensor equivocado de la salida
+    de `transformers` —en 5.x estas funciones devuelven un objeto, no un tensor—
+    saldrian vectores plausibles y cosenos plausibles. Por eso, ademas de la
+    forma, se comprueba que los embeddings **significan** algo.
+    """
+
+    def test_se_construye_desde_la_ficha_y_cumple_el_protocolo(self, modelo_real):
+        assert isinstance(modelo_real, mc.ClapDeTransformers)
+        assert callable(modelo_real.embed_texto)
+        assert callable(modelo_real.embed_audio)
+
+    def test_la_ficha_y_el_modelo_declaran_la_misma_tasa_y_la_misma_ventana(
+        self, modelo_real, ficha_real,
+    ):
+        """§6.1 obliga a anotar tasa y ventana. Anotar unas y usar otras seria
+        peor que no anotarlas, asi que el backend compara las dos y para."""
+        assert modelo_real.tasa_entrada_hz == ficha_real.tasa_entrada_hz
+        assert modelo_real.ventana_s == pytest.approx(ficha_real.ventana_s)
+
+    @pytest.mark.parametrize("clase", ["texto", "audio"])
+    def test_los_embeddings_tienen_la_dimension_que_declara_el_modelo(
+        self, modelo_real, ficha_real, clase: str,
+    ):
+        """La dimension se lee de `config.json`, no de `modelo.dimension`: si se
+        comparara consigo misma, el test pasaria con cualquier vector."""
+        configuracion = json.loads(
+            (ficha_real.ruta_pesos.parent / "config.json").read_text(encoding="utf-8")
+        )
+        declarada = int(configuracion["projection_dim"])
+
+        if clase == "texto":
+            vector = modelo_real.embed_texto("indie-rock luminoso, 112 BPM, guitarras")
+        else:
+            muestras = np.zeros(modelo_real.tasa_entrada_hz * 2, dtype=np.float64)
+            vector = modelo_real.embed_audio(muestras, modelo_real.tasa_entrada_hz)
+
+        assert modelo_real.dimension == declarada
+        assert vector.shape == (declarada,)
+        assert vector.dtype == np.float64
+        assert np.linalg.norm(vector) > 0.0
+
+    def test_una_ventana_a_otra_tasa_se_rechaza_en_vez_de_remuestrearse(self, modelo_real):
+        with pytest.raises(ValueError, match="remuestrea"):
+            modelo_real.embed_audio(np.zeros(44100), 44100)
+
+    def test_un_texto_vacio_se_rechaza(self, modelo_real):
+        with pytest.raises(ValueError, match="vacio"):
+            modelo_real.embed_texto("   ")
+
+    def test_los_embeddings_significan_algo_tono_contra_ruido(self, modelo_real):
+        """Prueba de sanidad del cableado, NO una medida de calidad ni un umbral.
+
+        Un tono puro y ruido blanco se emparejan cada uno con SU texto. Si se
+        estuviera leyendo el tensor equivocado, esto no se sostendria.
+        """
+        tasa = modelo_real.tasa_entrada_hz
+        t = np.arange(tasa * 10, dtype=np.float64) / tasa
+        tono = 0.5 * np.sin(2.0 * np.pi * 440.0 * t)
+        ruido = 0.5 * np.random.default_rng(20260903).standard_normal(t.size)
+
+        v_tono = modelo_real.embed_audio(tono, tasa)
+        v_ruido = modelo_real.embed_audio(ruido, tasa)
+        t_tono = modelo_real.embed_texto("a pure sine tone, a steady electronic beep")
+        t_ruido = modelo_real.embed_texto("loud white noise, static hiss")
+
+        assert mc.similitud_coseno(v_tono, t_tono) > mc.similitud_coseno(v_tono, t_ruido)
+        assert mc.similitud_coseno(v_ruido, t_ruido) > mc.similitud_coseno(v_ruido, t_tono)
+
+    def test_la_cadena_entera_mide_un_par_con_el_modelo_real(self, modelo_real, ficha_real):
+        """De la ficha al `ParBrief`, con el modelo real y sin ningun juguete."""
+        tasa = ficha_real.tasa_entrada_hz
+        t = np.arange(tasa * 20, dtype=np.float64) / tasa
+        propia = mc.Audio(0.4 * np.sin(2.0 * np.pi * 220.0 * t), tasa)
+        libreria = mc.Audio(0.4 * np.random.default_rng(7).standard_normal(t.size), tasa)
+
+        par = mc.medir_brief(
+            "B-00", "un tono grave sostenido", propia, libreria, modelo_real, ficha_real,
+        )
+
+        assert par.propia.n_ventanas == 2
+        assert par.libreria.n_ventanas == 2
+        for valor in (par.clap_propia, par.clap_libreria):
+            assert -1.0 <= valor <= 1.0
+        assert par.diferencia == pytest.approx(par.clap_propia - par.clap_libreria)
+
+    def test_el_informe_del_modelo_real_lleva_su_identidad_verificada(
+        self, modelo_real, ficha_real,
+    ):
+        """El estado de la licencia viaja con el numero: la ficha dice quien la
+        verifico, y hoy ese texto declara que falta la ratificacion del propietario
+        (I-13b). Que salga impreso es justo el punto."""
+        tasa = ficha_real.tasa_entrada_hz
+        t = np.arange(tasa * 10, dtype=np.float64) / tasa
+        par = mc.medir_brief(
+            "B-00", "un tono grave sostenido",
+            mc.Audio(0.4 * np.sin(2.0 * np.pi * 220.0 * t), tasa), None,
+            modelo_real, ficha_real,
+        )
+        inf = mc.informe([par], ficha_real)
+
+        assert inf["modelo"]["backend"] == mc.BACKEND_TRANSFORMERS
+        assert inf["modelo"]["sha256"] == ficha_real.sha256
+        assert inf["modelo"]["licencia_spdx"] in mc.LICENCIAS_ACEPTADAS
+        assert inf["modelo"]["licencia_verificada_por"]
+        assert mc.ADVERTENCIA_CRITERIO_3 in mc.formatear(inf)
