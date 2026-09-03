@@ -560,6 +560,32 @@ Si el paso 1 no ha disparado, se comprueban **los cuatro**, sin ponderaciones ni
 
 Si el gate entra en repeticiones, **el contador de esfuerzo sigue corriendo**. El stop-loss de `gobernanza.md` §5 (> 60 % del presupuesto de la Fase 1 con < 40 % del alcance entregado → parada y decisión escrita) se evalúa formalmente al cierre de C-13, pero un G1 que necesita tres pasadas es **exactamente la clase de señal** que el stop-loss existe para no ignorar. Se anota en `g1-resultado.md` si se llega a la segunda repetición.
 
+### 8.7 Alcance del veredicto: a qué queda atado, y qué lo obliga a repetirse
+
+> **Decidido el 2026-09-03 (P-01 del ledger), a petición del propietario.** Se decide **antes** de generar, y no con el resultado delante, que es la única forma de que valga.
+
+**El problema.** El gate se va a medir en la máquina de referencia: GTX 1070, `tier3`, con el artefacto convertido a **fp16 porque Pascal no admite bf16**. En un servidor moderno lo correcto es **refundir los mismos pesos en bf16**, lo que produce otro artefacto con otro SHA-256. Si eso contase como «cambio de versión de adapter», migrar reabriría el gate y ejecutarlo ahora sería trabajo a repetir.
+
+**La regla.** El veredicto queda atado al **modelo y su adapter**, identificados por los **SHA-256 de las fuentes upstream** que registra `<artefacto>.provenance.json` por componente — **no** por el hash del artefacto fusionado ni por su dtype.
+
+Esto no es un criterio nuevo: es el que el propio fusor ya declara en su manifiesto («el criterio de identidad real son los `sha256` de las fuentes, no el del artefacto»), porque el hash del artefacto depende de la ruta absoluta del anfitrión y de la marca de tiempo de construcción. Hasta hoy ese criterio no se había conectado con esta pregunta.
+
+Por tanto, **refundir los mismos pesos upstream en otro dtype no es un adapter nuevo**: es el mismo modelo empaquetado para otra tarjeta, y **no** dispara la repetición del protocolo.
+
+**La asimetría, que es lo que hace la regla defendible y no una comodidad.** No se aplica igual en los dos sentidos, y así debe quedar:
+
+| Veredicto en `tier3` | ¿Se transfiere a hardware mejor? | Por qué |
+|---|---|---|
+| **`GO`** | **Sí** | Hardware mejor solo le da al modelo *más*: más pasos, planificador mayor, sin descarga de componentes. Si ya bastaba en el peor nivel medible, basta a fortiori en uno mejor. |
+| **`NO-GO`** | **No** | Condenaría al modelo por la máquina. Un `NO-GO` medido en `tier3` solo dice «no sirve en `tier3`», y obliga a repetir el protocolo en hardware de la clase objetivo antes de concluir nada sobre el modelo. |
+| **`REPLANTEO`** | **No** | Mismo motivo: las palancas del replanteo (§8.5) incluyen parámetros que el nivel de GPU limita. |
+
+Esta asimetría ya estaba implícita en el proyecto («un no-go medido en `tier3` no sería válido»); aquí queda escrita como regla del gate.
+
+**Consecuencia práctica: `G1` se puede ejecutar ya**, sin esperar a tener servidor. Si sale `GO`, vale para el servidor. Si sale `NO-GO`, no se pierde el trabajo: se aprende que hay que repetirlo con hardware decente, que es información igualmente y llega antes.
+
+**Lo que esta regla NO cubre**, para que nadie la estire: un **adapter distinto** (HeartMuLa, MiniMax, YuE) sigue exigiendo `G1-bis` completo; una **revisión upstream distinta** de los pesos cambia los `sha256` de las fuentes y por tanto es otro modelo; y la **retención de 12 meses** del material de medida (§10) sigue corriendo, así que un `GO` de hoy deja de ser comparable cuando el patrón se borre.
+
 ---
 
 ## 9. Ratificación de los umbrales — ANTES de la primera escucha
