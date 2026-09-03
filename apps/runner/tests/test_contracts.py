@@ -7,6 +7,10 @@ exhaustiva a proposito.
 
 from __future__ import annotations
 
+import json
+import pickle
+import struct
+
 import pytest
 
 from contracts import (
@@ -14,6 +18,7 @@ from contracts import (
     GpuBudgetExceeded,
     UnsafeWeightsFormat,
     assert_safetensors,
+    assert_safetensors_header,
     assert_within_gpu_budget,
 )
 
@@ -74,6 +79,103 @@ class TestAssertSafetensors:
         # Un directorio llamado *.safetensors no legitima un fichero pickle.
         with pytest.raises(UnsafeWeightsFormat):
             assert_safetensors("/malicioso.safetensors/pesos.pt")
+
+    def test_no_toca_el_disco(self, tmp_path):
+        # Contrato deliberado: es la puerta que se cruza ANTES de abrir el
+        # fichero, y la llaman sitios que no lo abren nunca (spikes/_mock.py).
+        # Una ruta inexistente pasa: el formato del nombre es correcto.
+        inexistente = tmp_path / "ni-existe-ni-hace-falta.safetensors"
+        assert not inexistente.exists()
+        assert assert_safetensors(inexistente) == str(inexistente)
+
+
+# --------------------------------------------------------------------------- #
+# assert_safetensors_header (D-14, al ABRIR el fichero)
+# --------------------------------------------------------------------------- #
+
+def _safetensors_de_juguete(destino, cabecera=None, datos=bytes(4)):
+    """Escribe un `.safetensors` minimo pero con la disposicion real del formato."""
+    if cabecera is None:
+        cabecera = {"t": {"dtype": "F32", "shape": [1], "data_offsets": [0, 4]}}
+    crudo = json.dumps(cabecera).encode("utf-8")
+    destino.write_bytes(struct.pack("<Q", len(crudo)) + crudo + datos)
+    return destino
+
+
+class TestAssertSafetensorsHeader:
+    """La cabecera se comprueba AL ABRIR; la extension, ANTES (`assert_safetensors`).
+
+    Defensa en profundidad, dicho sin inflarlo: los dos cargadores del runner
+    (`carga_contigua` y `safetensors.torch.load_file`) ya rechazan un pickle
+    renombrado. Esto no cierra un agujero abierto; adelanta el fallo al momento de
+    abrir el fichero y con un mensaje que dice que pasa.
+    """
+
+    def test_acepta_un_safetensors_valido(self, tmp_path):
+        ruta = _safetensors_de_juguete(tmp_path / "pesos.safetensors")
+        assert assert_safetensors_header(ruta) == str(ruta)
+
+    def test_rechaza_un_pickle_renombrado(self, tmp_path):
+        # El caso que importa: extension buena, contenido de pickle. Cargarlo con
+        # torch.load/joblib seria ejecucion remota de codigo (D-14). Aqui se
+        # SERIALIZA un pickle para tener bytes realistas; no se deserializa
+        # ninguno, ni aqui ni en ningun otro punto del runner.
+        ruta = tmp_path / "pesos.safetensors"
+        ruta.write_bytes(pickle.dumps({"truco": "sorpresa"}))
+        with pytest.raises(UnsafeWeightsFormat):
+            assert_safetensors_header(ruta)
+
+    def test_rechaza_un_checkpoint_zip_de_torch(self, tmp_path):
+        # Un .pt moderno es un ZIP: empieza por 'PK' y dos bytes de firma.
+        ruta = tmp_path / "pesos.safetensors"
+        ruta.write_bytes(b"PK" + bytes([3, 4, 20, 0, 0, 0]) + b"relleno" * 64)
+        with pytest.raises(UnsafeWeightsFormat):
+            assert_safetensors_header(ruta)
+
+    def test_rechaza_fichero_vacio(self, tmp_path):
+        ruta = tmp_path / "pesos.safetensors"
+        ruta.write_bytes(b"")
+        with pytest.raises(UnsafeWeightsFormat):
+            assert_safetensors_header(ruta)
+
+    def test_rechaza_longitud_de_cabecera_cero(self, tmp_path):
+        ruta = tmp_path / "pesos.safetensors"
+        ruta.write_bytes(struct.pack("<Q", 0))
+        with pytest.raises(UnsafeWeightsFormat):
+            assert_safetensors_header(ruta)
+
+    def test_rechaza_cabecera_truncada(self, tmp_path):
+        ruta = tmp_path / "pesos.safetensors"
+        ruta.write_bytes(struct.pack("<Q", 4096) + b'{"t": 1}')
+        with pytest.raises(UnsafeWeightsFormat):
+            assert_safetensors_header(ruta)
+
+    def test_rechaza_cabecera_que_no_es_json(self, tmp_path):
+        ruta = tmp_path / "pesos.safetensors"
+        basura = b"esto no es json"
+        ruta.write_bytes(struct.pack("<Q", len(basura)) + basura)
+        with pytest.raises(UnsafeWeightsFormat):
+            assert_safetensors_header(ruta)
+
+    def test_rechaza_cabecera_json_que_no_es_objeto(self, tmp_path):
+        # JSON valido pero una lista: el formato exige un objeto con los tensores.
+        ruta = _safetensors_de_juguete(tmp_path / "pesos.safetensors", cabecera=[1, 2, 3])
+        with pytest.raises(UnsafeWeightsFormat):
+            assert_safetensors_header(ruta)
+
+    def test_un_fichero_que_no_existe_es_error_de_e_s_no_de_formato(self, tmp_path):
+        # Que falte el fichero no es un problema de formato: se propaga el OSError
+        # en vez de disfrazarlo de UnsafeWeightsFormat, que enganaria al operador.
+        with pytest.raises(OSError):
+            assert_safetensors_header(tmp_path / "no-existe.safetensors")
+
+    def test_no_sustituye_a_la_puerta_por_nombre(self, tmp_path):
+        # Las dos puertas son independientes y complementarias: esta NO mira la
+        # extension (la mira `assert_safetensors`, antes de abrir nada).
+        ruta = _safetensors_de_juguete(tmp_path / "pesos.pt")
+        assert assert_safetensors_header(ruta) == str(ruta)
+        with pytest.raises(UnsafeWeightsFormat):
+            assert_safetensors(ruta)
 
 
 # --------------------------------------------------------------------------- #

@@ -289,6 +289,24 @@ PREFIJOS_RESIDENTES_GPU = ("dit.decoder.",)
 CLAVE_CONFIG_ACESTEP = "aux.config.acestep_json"
 CLAVE_SILENCE_LATENT = "aux.silence_latent"
 
+#: Blob con el manifiesto del artefacto. Es el UNICO canal por el que la version
+#: del esquema llega hasta aqui: `__metadata__` tambien la lleva, pero es un
+#: espejo documental que `load_file()` descarta antes de que el shim lo vea.
+CLAVE_MANIFIESTO = "aux.manifest_json"
+
+#: Version del layout del artefacto (`ARTIFACT_SCHEMA_VERSION` en
+#: `tools/build_artifact.py`) que ESTE shim sabe leer: prefijos, nombres de las
+#: claves `aux.*` y dtypes. `_exigir_esquema_compatible` la compara con la que
+#: declara el artefacto y aborta si el artefacto es mas nuevo.
+#:
+#: AL SUBIRLA: se sube DESPUES de adaptar la carga al layout nuevo, nunca antes
+#: —el numero no arregla nada por si solo—, y hay que subir tambien
+#: `ARTIFACT_SCHEMA_VERSION` en el fusor y regenerar los artefactos, porque los
+#: viejos dejaran de coincidir (seguiran cargando, con aviso). Si el layout nuevo
+#: no es compatible hacia atras, esta constante no basta: hay que rechazar
+#: tambien los anteriores.
+ARTIFACT_SCHEMA_VERSION_SOPORTADA = 1
+
 # --------------------------------------------------------------------------- #
 # El planificador de 5 Hz (`lm.*`). OPCIONAL: solo si el artefacto lo trae.
 # --------------------------------------------------------------------------- #
@@ -615,6 +633,89 @@ def _texto_de_blob(state_dict: dict[str, torch.Tensor], clave: str) -> str:
             f"{tensor.dtype} con forma {tuple(tensor.shape)}."
         )
     return bytes(tensor.detach().to("cpu").contiguous().numpy().tobytes()).decode("utf-8")
+
+
+def _exigir_esquema_compatible(state_dict: dict[str, torch.Tensor]) -> int | None:
+    """Puerta de compatibilidad entre el esquema del artefacto y este shim.
+
+    El fusor declara `artifact_schema_version` dentro de `aux.manifest_json`.
+    Compararla es lo unico que separa un fallo de arranque legible de una carga
+    silenciosa con los tensores en otra disposicion: eso no revienta, sale audio
+    incorrecto o un error raro veinte pasos mas adelante.
+
+    Reglas:
+
+    - igual a la soportada -> se sigue;
+    - mayor -> se aborta (este shim no sabe leer ese layout);
+    - menor -> se avisa y se sigue (el shim es mas nuevo que el artefacto);
+    - no declarada, o manifiesto ausente o ilegible -> se avisa y se sigue: es un
+      artefacto anterior a esta puerta y tiene que seguir cargando.
+
+    Consume el blob del manifiesto, como el resto de `aux.*`; nadie mas lo lee.
+
+    Returns:
+        La version declarada, o `None` si el artefacto no la declara.
+
+    Raises:
+        RuntimeError: si el artefacto declara un esquema que este shim no
+            entiende (mas nuevo, o no interpretable como entero).
+    """
+    def no_entendido(declarada: object) -> RuntimeError:
+        return RuntimeError(
+            f"El artefacto declara artifact_schema_version={declarada!r} y este shim "
+            f"entiende la {ARTIFACT_SCHEMA_VERSION_SOPORTADA}. La disposicion de los "
+            "tensores puede haber cambiado, asi que cargarlo no daria un error claro: "
+            "daria un fallo raro mas adelante, o audio incorrecto. Actualiza el shim a "
+            "ese esquema, o regenera el artefacto con un fusor de "
+            f"ARTIFACT_SCHEMA_VERSION={ARTIFACT_SCHEMA_VERSION_SOPORTADA} "
+            "(apps/runner/tools/build_artifact.py)."
+        )
+
+    if CLAVE_MANIFIESTO not in state_dict:
+        _LOG.warning(
+            "El artefacto no trae %r, asi que no declara 'artifact_schema_version': es "
+            "anterior a la puerta de compatibilidad. Se asume el esquema %d y se sigue.",
+            CLAVE_MANIFIESTO,
+            ARTIFACT_SCHEMA_VERSION_SOPORTADA,
+        )
+        return None
+    try:
+        manifiesto = json.loads(_texto_de_blob(state_dict, CLAVE_MANIFIESTO))
+    except (RuntimeError, UnicodeDecodeError, ValueError) as exc:
+        # Ilegible es el mismo caso que no declarada: no hay version que comparar.
+        _LOG.warning(
+            "%r no se puede leer (%s): no hay forma de comprobar el esquema del "
+            "artefacto. Se asume el %d y se sigue.",
+            CLAVE_MANIFIESTO,
+            exc,
+            ARTIFACT_SCHEMA_VERSION_SOPORTADA,
+        )
+        return None
+
+    declarada = manifiesto.get("artifact_schema_version") if isinstance(manifiesto, dict) else None
+    if declarada is None:
+        _LOG.warning(
+            "El manifiesto del artefacto no declara 'artifact_schema_version': es anterior "
+            "a la puerta de compatibilidad. Se asume el esquema %d y se sigue.",
+            ARTIFACT_SCHEMA_VERSION_SOPORTADA,
+        )
+        return None
+    try:
+        version = int(str(declarada).strip())
+    except ValueError:
+        raise no_entendido(declarada) from None
+    if version > ARTIFACT_SCHEMA_VERSION_SOPORTADA:
+        raise no_entendido(version)
+    if version < ARTIFACT_SCHEMA_VERSION_SOPORTADA:
+        _LOG.warning(
+            "El artefacto es del esquema %d y este shim entiende el %d. Se intenta cargar "
+            "igualmente, pero si algo no encaja, regeneralo con el fusor actual.",
+            version,
+            ARTIFACT_SCHEMA_VERSION_SOPORTADA,
+        )
+        return version
+    _LOG.info("Esquema del artefacto: %d, el que este shim entiende.", version)
+    return version
 
 
 def _colocar_buffers_no_persistentes(modulo: torch.nn.Module, destino: torch.device) -> int:
@@ -2370,6 +2471,10 @@ def build_pipeline(
     """
     if not isinstance(state_dict, dict):
         raise TypeError(f"Se esperaba un dict de tensores; llego {type(state_dict).__name__}.")
+    # Lo primero, antes de mirar un solo tensor: si el artefacto es de un esquema
+    # que este shim no entiende, se aborta aqui con un mensaje que lo diga, en vez
+    # de colocar mal los pesos y descubrirlo por el audio.
+    _exigir_esquema_compatible(state_dict)
     dispositivo = _normalizar_dispositivo(device)
     # `carga_contigua.EstadoDelArtefacto` marca su diccionario: los tensores ya
     # estan en memoria anonima (y `dit.decoder` ya en VRAM), asi que no hay que

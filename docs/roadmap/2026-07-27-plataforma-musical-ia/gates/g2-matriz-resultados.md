@@ -6,6 +6,7 @@ slug: plataforma-musical-ia
 tarea: T-01
 estado: resuelto-favorable
 fecha: 2026-08-18
+actualizado: 2026-09-03
 resuelto: 2026-08-18
 resultado: "Fila 1 de la matriz de §6 — «sí total»"
 resuelto-por: "Daycry (7590335+daycry@users.noreply.github.com), propietario de la iniciativa"
@@ -40,7 +41,34 @@ decisor: "Dirección — ⚠️ nombre pendiente"
 > 3. Los **ToS de Suno (§5.1) no están verificados.** Sin eso **no se puede usar la salida de Suno como línea base ciega de G1**, y el protocolo de G1 la exige ([`g1-protocolo.md`](./g1-protocolo.md)).
 > 4. El **Anexo A (§8.3) no está firmado por dirección.** Es la mitigación documentada del riesgo R-01.
 >
-> **Este documento se conserva íntegro**, con la consulta y la matriz tal como estaban escritas *antes* de preguntar. Nada se reescribe a posteriori: lo único que se añade es este banner y el registro de §10.
+> **Este documento se conserva íntegro**, con la consulta y la matriz tal como estaban escritas *antes* de preguntar. Nada se reescribe a posteriori: ~~lo único que se añade es este banner y el registro de §10~~ — **actualizado el 2026-09-03:** se añaden también el banner de **§0-bis** (errata de licencia) y el **§11** de registro de cambios, y los tres puntos afectados llevan la frase errónea **tachada y visible** junto a la correcta. **No se ha borrado ni uno solo de los textos que se pusieron delante de legal.**
+
+---
+
+> ## ⚠️ 0-bis. Errata de licencia en la versión que se puso delante de legal — 2026-09-03
+>
+> **Qué decía este documento y era falso.** Hasta hoy, §2.1 afirmaba que **ACE-Step 1.5** está «publicado bajo licencia **Apache 2.0**»; §2.2 enunciaba su argumento central como «**Apache 2.0** cubre los pesos del modelo y su código»; y el **punto 2 del Anexo A** — el que se pide a dirección que firme — repetía «la licencia **Apache 2.0** cubre los pesos y el código». **ACE-Step 1.5 es MIT.** Apache 2.0 es la licencia de **ACE-Step v1 3.5B**, que es **otro modelo** (`ACE-Step/ACE-Step-v1-3.5B`, tag `license: apache-2.0`); el error se arrastraba desde la investigación de julio 2026 recogida en `spec.md` §11.1.
+>
+> **Evidencia de la corrección.** `github.com/ace-step/ACE-Step-1.5` publica el proyecto bajo **MIT** (sidebar «MIT license», README «This project is licensed under [MIT]») y el repo de Hugging Face `ACE-Step/Ace-Step1.5` declara el tag `license: mit` — aunque **no publica fichero `LICENSE`** (HTTP 404). Verificado en la tarea **`T-06`**: [`spikes/comparativa-modelos.md`](../spikes/comparativa-modelos.md) §4.1 y corrección **#1** de su tabla de discrepancias, con copia archivada del fichero de licencia en `D:/srv/ace-step/provenance/LICENSE.acestep.mit.txt` (1.064 B, sha256 `05a6bce42a62636d2cfb24139cc008b6b899754e244175814bb5dd2f4a485357`).
+>
+> ### 🔴 Lo que hay que poder ver: **la decisión del 2026-08-18 se tomó sobre esta premisa equivocada**
+>
+> El gate G2 se levantó el **2026-08-18** aplicando la **fila 1 de §6 («sí total»)**, y con ella se autorizaron los **39.360 €** de Fase 0+1 — pero **el documento que sostenía esa decisión contenía mal el dato de licencia**. Quien lea el registro de §10 tiene que poder saberlo: **la respuesta se dio sobre una versión que afirmaba algo falso sobre la licencia del modelo de referencia.** El texto erróneo **no se ha borrado**: sigue visible, **tachado**, en §2.1, en §2.2 y en el punto 2 del Anexo A.
+>
+> ### ¿Invalida la respuesta de legal? Evaluación honesta, sin degradar el gate
+>
+> **Probablemente no — pero eso no lo decide quien redacta la errata.** Los argumentos, explícitos para que el decisor los revise en vez de fiarse:
+>
+> 1. **MIT y Apache 2.0 son ambas permisivas y permiten uso comercial**, así que el invariante de «licencias comerciales verificadas» de `CLAUDE.md` se cumple igual y **no cambia ninguna cifra, fase, estado ni umbral**.
+> 2. **El argumento de §2.2 no dependía de cuál fuera la licencia.** Su tesis — la licencia cubre pesos y código, **no** la procedencia de los datos de entrenamiento — es igual de cierta bajo MIT que bajo Apache 2.0. La pregunta 1 (I-05) que se le formuló a legal **sigue siendo exactamente la misma pregunta**.
+> 3. **Pero hay diferencias reales entre las dos licencias, y a legal nadie se las planteó**: Apache 2.0 concede **patentes de forma expresa** y **termina esa concesión si el licenciatario litiga por patentes** (§3), y obliga a **conservar el `NOTICE`** (§4); **MIT no tiene ninguna de las tres cosas**. Para un uso self-hosted cuyo output se incorpora a producciones comerciales, la **ausencia de concesión expresa de patentes** es el único delta con sustancia jurídica — y es justo la clase de matiz por la que se consulta.
+> 4. **La evidencia de MIT no está en el repo de pesos**, sino en el de código: Hugging Face solo expone el tag de metadatos. Es exactamente el tipo de detalle de procedencia documental sobre el que trata esta consulta.
+>
+> **Acción registrada, no cerrada.** Se añade a la **deuda documental de §10** una entrada nueva: *reconfirmar con legal que la respuesta «sí total» se mantiene sabiendo que la licencia es MIT y no Apache 2.0*. **No bloquea el build** — la fila 1 aplicada el 2026-08-18 **no se toca** —, pero **sí debe cerrarse antes de entregar audio generado a una producción de cliente**, junto al resto de `⚠️` de §10. **Esta errata no degrada ningún gate ni ningún umbral.**
+>
+> **Consecuencia operativa inmediata.** El manifiesto de procedencia registra la licencia de los pesos **en cada generación** (invariante innegociable de `CLAUDE.md`). A partir de ahora debe escribir **`MIT`** para ACE-Step 1.5: registrar «Apache 2.0» sería **un dato falso en el artefacto cuya única razón de ser es ser auditable**. Corrección propagada a [`spec.md`](../spec.md) (D-06, ejemplo de `ModelDescriptor`, S-05, tabla de §11.1 y matiz legal), [`evaluation.md`](../evaluation.md) (§2, §10.7 y riesgo R-01) y [`ui-design.md`](../ui-design.md) (maqueta del certificado de procedencia).
+>
+> **Qué NO se ha tocado, y por qué.** **HeartMuLa** y **YuE 7B** son Apache 2.0 verificado; **MiniMax-Music3** tiene licencia comunitaria propia; **DiffRhythm 2** no está verificada y se deja intacta, marcada como tal en `spec.md` §11.1. Corregir sin evidencia repetiría el mismo error en sentido contrario.
 
 ---
 
@@ -80,13 +108,17 @@ Este apartado está escrito para alguien que **no conoce el proyecto**. Cinco he
 
 ### 2.1 Qué se quiere construir
 
-Una aplicación web **interna** de Daycry donde un usuario escribe una letra y una descripción de estilo («balada de piano, melancólica, 90 segundos») y obtiene una canción descargable. El modelo de IA que genera el audio **no es un servicio externo**: los ficheros del modelo se descargan y se ejecutan en infraestructura controlada por Daycry (*self-hosted*). El modelo de referencia es **ACE-Step 1.5**, publicado bajo licencia **Apache 2.0**; el segundo previsto es **HeartMuLa**. Solo se integran herramientas cuya licencia permite uso comercial (por eso, por ejemplo, MusicGen está descartado: su licencia es CC BY-NC, no comercial).
+Una aplicación web **interna** de Daycry donde un usuario escribe una letra y una descripción de estilo («balada de piano, melancólica, 90 segundos») y obtiene una canción descargable. El modelo de IA que genera el audio **no es un servicio externo**: los ficheros del modelo se descargan y se ejecutan en infraestructura controlada por Daycry (*self-hosted*). El modelo de referencia es **ACE-Step 1.5**, publicado bajo licencia ~~**Apache 2.0**~~ **MIT** (*corregido el 2026-09-03; la versión sobre la que se decidió el 2026-08-18 decía «Apache 2.0» — ver §0-bis*); el segundo previsto es **HeartMuLa**, ese sí **Apache 2.0**. Solo se integran herramientas cuya licencia permite uso comercial (por eso, por ejemplo, MusicGen está descartado: su licencia es CC BY-NC, no comercial).
 
 ### 2.2 La licencia del modelo cubre el software, no los datos con los que se entrenó
 
 Este es el punto central de la consulta y conviene leerlo dos veces:
 
-> **Apache 2.0 cubre los pesos del modelo y su código. No dice nada sobre la procedencia de los datos con los que ese modelo se entrenó.**
+> ~~**Apache 2.0 cubre los pesos del modelo y su código. No dice nada sobre la procedencia de los datos con los que ese modelo se entrenó.**~~
+>
+> ⚠️ **Texto erróneo conservado a propósito: es literalmente lo que se puso delante de legal el 2026-08-18.** La licencia de ACE-Step 1.5 **no es Apache 2.0: es MIT** (ver §0-bis). La redacción correcta, con **el mismo argumento intacto**, es:
+>
+> **La licencia del modelo —MIT en ACE-Step 1.5, Apache 2.0 en HeartMuLa— cubre los pesos del modelo y su código. No dice nada sobre la procedencia de los datos con los que ese modelo se entrenó.**
 
 Los autores de ACE-Step y de otros modelos abiertos comparables (YuE, entre otros) **no publican el corpus de entrenamiento**. En consecuencia, el registro de procedencia que la plataforma emitirá por cada canción contendrá, **literalmente**, el valor:
 
@@ -244,7 +276,7 @@ Por eso G2 lleva dos preguntas y no una: **la primera decide si se puede constru
 
 1. **Las Fases 1 y 2 entregan una plataforma con la misma exposición de derechos que Suno: mejor auditada, no más limpia.** El manifiesto de procedencia dirá, literalmente, `training_data_declaration: no divulgada` para ACE-Step y para YuE, porque sus autores no publican el corpus de entrenamiento.
 
-2. **Alojar el modelo en infraestructura propia no cambia el estatus legal del resultado.** La licencia Apache 2.0 cubre los pesos y el código; **no limpia la procedencia de los datos de entrenamiento**. Suno y Udio fueron demandados en 2025 **por los datos**, no por el modo de despliegue.
+2. **Alojar el modelo en infraestructura propia no cambia el estatus legal del resultado.** La licencia del modelo —~~Apache 2.0~~ **MIT en ACE-Step 1.5**, Apache 2.0 en HeartMuLa; *corregido el 2026-09-03, ver §0-bis*— cubre los pesos y el código; **no limpia la procedencia de los datos de entrenamiento**. Suno y Udio fueron demandados en 2025 **por los datos**, no por el modo de despliegue.
 
 3. **La única vía a una procedencia realmente limpia es C-09** — fine-tuning sobre catálogo propio licenciado —, que es precisamente lo que la evaluación pone en **no-go**: está bloqueada por la incógnita I-03 (¿existe catálogo con derechos de entrenamiento?) y cuesta 400 h.
 
@@ -323,6 +355,7 @@ Con la firma de este anexo, dirección declara haber leído y aceptado los cinco
 | Enlace o referencia al documento de respuesta de legal | `⚠️ pendiente de archivar` |
 | ¿Se agotó el timebox? ¿Se escaló a dirección general? | No |
 | Anexo A firmado por dirección (§8.3) | `⚠️ pendiente` — es la mitigación documentada del riesgo R-01 |
+| ⚠️ **Premisa fáctica de la consulta — errata detectada el 2026-09-03** | **La versión del documento sobre la que se decidió el 2026-08-18 decía que ACE-Step 1.5 es Apache 2.0. Es MIT** (ver §0-bis). Deuda nueva: **reconfirmar con legal que la respuesta «sí total» se mantiene con la licencia correcta**. No bloquea el build — la fila 1 sigue aplicada —, pero **debe cerrarse antes de entregar audio a una producción de cliente**, con el resto de `⚠️` de esta tabla |
 
 **Criterios de cierre de `T-01`** — estado real, sin maquillar:
 
@@ -331,3 +364,14 @@ Con la firma de este anexo, dirección declara haber leído y aceptado los cinco
 3. ✅ La decisión resultante (**fila 1 de §6**) queda registrada por escrito en la tabla de arriba, con autor y fecha.
 
 `T-01` pasa a `completado` en el ledger porque **el propietario de la iniciativa tiene autoridad para levantar el gate y lo hizo de forma explícita**. Los puntos 1 y 2 quedan como **deuda documental**, enlazada desde `tasks.md`.
+
+---
+
+## 11. Registro de cambios de este documento
+
+> Este apartado existe desde el 2026-09-03. La entrada de 2026-08-18 se reconstruye a partir de lo que el propio documento deja constancia; **no se ha inferido nada más**.
+
+| Fecha | Cambio | Autor |
+|---|---|---|
+| 2026-08-18 | **Gate levantado.** Banner de cabecera «Gate G2 levantado» y **§10 Registro de la respuesta** rellenado: fila 1 de §6 («sí total»), decidida por el propietario de la iniciativa. Deuda documental declarada sin maquillar (envío, informe de legal, ToS de Suno, firma del esquema del manifiesto, Anexo A). El cuerpo de la consulta se conservó íntegro. | Daycry (propietario) |
+| 2026-09-03 | **Corrección de licencia: ACE-Step 1.5 es MIT, no Apache 2.0** — y constancia visible de que **la versión puesta delante de legal contenía el dato erróneo**. Corregidas las **tres** menciones de «Apache 2.0» referidas a ACE-Step: **§2.1** («publicado bajo licencia Apache 2.0»), **§2.2** (la frase destacada que es el núcleo de la consulta) y **punto 2 del Anexo A** (el texto que firma dirección). En los tres casos **el texto original queda tachado y visible**, no borrado. Banner nuevo **§0-bis** con la evidencia (`T-06`, [`spikes/comparativa-modelos.md`](../spikes/comparativa-modelos.md) §4.1; copia archivada `LICENSE.acestep.mit.txt`, sha256 `05a6bce4…a485357`), el análisis de si la errata invalida la respuesta, y el delta real entre MIT y Apache 2.0 (patentes y `NOTICE`). Fila nueva en la tabla de **§10** con la deuda de **reconfirmación con legal**. **Motivo:** el manifiesto de procedencia registra la licencia de los pesos en cada generación, y «Apache 2.0» sobre pesos MIT sería un dato falso en un artefacto auditable. **Sin cambio de resultado, cifras, fases, estados ni umbrales:** la fila 1 sigue aplicada y **no se degrada ningún gate**. | dev-cycle (orquestador) |

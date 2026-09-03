@@ -144,6 +144,24 @@ TOMAS_PROTOCOLO = 3
 #: identico para los 10 briefs»).
 COMPAS_POR_DEFECTO = "4/4"
 
+#: Variante de difusion del gate. `turbo` es la que T-06 dejo como variante de
+#: produccion tras medir la `sft` peor y 12 veces mas cara.
+#:
+#: Va DECLARADA en `model_params` y no se deja al defecto del shim a proposito.
+#: El shim resuelve `params.get("variante") or "turbo"`, asi que omitirla
+#: funcionaba «de casualidad»: el bucle corria programacion turbo (8 pasos, sin
+#: guia) aunque se cargaran los pesos `sft`, que esperan 50 pasos con guia APG.
+#: Los dos checkpoints tienen las mismas 677 claves con las mismas formas, asi
+#: que esa combinacion NO da ningun error: da audio peor y ninguna pista de por
+#: que. Este script no expone bandera para cambiarla, igual que no expone
+#: `--sin-lm`: el gate se ejecuta con una configuracion, no con la que toque.
+VARIANTE_G1 = "turbo"
+
+#: Marcas de variante que pueden aparecer en el nombre de un artefacto y que
+#: contradicen a `VARIANTE_G1`. Es una heuristica sobre el nombre, y por eso solo
+#: RECHAZA lo que reconoce; no valida lo que deja pasar (ver la funcion).
+_MARCAS_DE_OTRA_VARIANTE = ("sft",)
+
 #: Tonica de cada modo. NO es una decision musical: ver derivar_tonalidad().
 TONICA_MENOR = "A minor"
 TONICA_MAYOR = "C major"
@@ -965,6 +983,100 @@ def sellar_mapa(raiz: Path, filas: list[dict[str, Any]], semilla_maestra: int) -
     return sello
 
 
+#: Lo que se escribe cuando un dato no esta disponible. Un hueco explicito se
+#: audita; un valor plausible puesto por defecto se cree.
+DESCONOCIDO = "desconocido"
+
+
+def _texto_o_desconocido(valor: Any) -> str:
+    """Texto limpio del valor, o `desconocido` si no hay valor que dar."""
+    limpio = "" if valor is None else str(valor).strip()
+    return limpio or DESCONOCIDO
+
+
+def comprobar_pesos_de_la_variante(fichero_pesos: str) -> None:
+    """Aborta si el nombre del artefacto contradice `VARIANTE_G1`.
+
+    La variante NO se puede deducir del contenido: turbo y sft traen las mismas
+    677 claves con las mismas formas. Lo unico observable antes de cargar es el
+    nombre del fichero, asi que esta guardia es deliberadamente asimetrica:
+
+    * lo que reconoce como de otra variante, lo **rechaza**;
+    * lo que no reconoce, lo **deja pasar sin afirmar nada**. Un artefacto turbo
+      llamado `pesos.safetensors` es indistinguible de uno sft llamado igual, y
+      fingir que aqui se valida seria peor que no comprobar.
+
+    Existe porque el gate no puede depender de que nadie se equivoque de fichero:
+    generar la serie de G1 con los pesos sft y programacion turbo produce audio
+    peor sin un solo error, y el acta lo recogeria como veredicto del modelo.
+    """
+    nombre = os.path.basename(str(fichero_pesos).replace("\\", "/")).lower()
+    for marca in _MARCAS_DE_OTRA_VARIANTE:
+        if marca in nombre:
+            raise SystemExit(
+                f"El artefacto {fichero_pesos!r} lleva la marca '{marca}' y este script genera "
+                f"la serie de G1 con la variante '{VARIANTE_G1}' (T-06). Esa combinacion no "
+                "falla: corre programacion turbo (8 pasos, sin guia) sobre unos pesos que "
+                "esperan 50 pasos con guia APG, y entrega audio peor sin avisar. Usa el "
+                "artefacto turbo, o cambia el gate por escrito antes de generar."
+            )
+    return None
+
+
+def _descripcion_modelo(informe_adapter: dict[str, Any], params: dict[str, Any]) -> dict[str, Any]:
+    """Bloque de modelo del manifiesto, derivado de lo que de verdad se uso.
+
+    Por que esto no puede ser un literal
+    ------------------------------------
+    Era la cadena fija «ACE-Step 1.5 (turbo, artefacto con planificador de
+    5 Hz)», pero los pesos los elige `--fichero-pesos` y en disco hay tres
+    artefactos (`ace_step_1_5`, `ace_step_1_5_lm` y `ace_step_1_5_sft_lm`).
+    Generar con el que no fuera el turbo daba un manifiesto que seguia diciendo
+    «turbo» y afirmando que hubo planificador: no fallaba, no avisaba, y el acta
+    de G1 lo citaba como trazabilidad. Un manifiesto que miente en silencio es
+    peor que no tener manifiesto, porque se cree.
+
+    Fuentes, y solo estas
+    ---------------------
+    * `describe()` del adapter YA CARGADO: `model_id`, `model_version` y
+      `weights_file`. Es lo que el adapter reporta de si mismo, no lo que este
+      script supone.
+    * Los `model_params` de esta toma: `variante` y `usar_lm`.
+
+    Lo que no venga de ahi se escribe `desconocido`. No se completa con el
+    defecto del shim ni con lo que suele pasar: un hueco se audita, un relleno
+    verosimil no.
+
+    La `variante` es la del bucle de difusion y **la declara el llamante**: no se
+    deduce del artefacto (los dos checkpoints tienen las mismas 677 claves con
+    las mismas formas). Si la peticion no la trae, aqui consta como desconocida,
+    que es justo lo que es desde este lado.
+
+    Devuelve tres campos y no una frase: `modelo_variante` y `planificador_5hz`
+    se consultan sin parsear prosa, que es lo que §10.2 necesita del manifiesto.
+    """
+    informe_adapter = informe_adapter or {}
+    params = params or {}
+
+    usar_lm = params.get("usar_lm")
+    planificador = DESCONOCIDO if usar_lm is None else ("si" if usar_lm else "no")
+    variante = _texto_o_desconocido(params.get("variante"))
+    modelo = " · ".join(
+        (
+            f"{_texto_o_desconocido(informe_adapter.get('model_id'))} "
+            f"{_texto_o_desconocido(informe_adapter.get('model_version'))}",
+            f"variante: {variante}",
+            f"pesos: {_texto_o_desconocido(informe_adapter.get('weights_file'))}",
+            f"planificador de 5 Hz: {planificador}",
+        )
+    )
+    return {
+        "modelo": modelo,
+        "modelo_variante": variante,
+        "planificador_5hz": planificador,
+    }
+
+
 # --------------------------------------------------------------------------- #
 # Ejecucion
 # --------------------------------------------------------------------------- #
@@ -1003,6 +1115,10 @@ async def generar(args: argparse.Namespace, briefs: list[Brief], plan: list[Toma
 
     escucha = gs.EscuchaEtapas()
     logging.getLogger().addHandler(escucha)
+
+    # Antes de cargar 7,5 GB: un artefacto de otra variante no falla, entrega
+    # audio peor en silencio. Ver comprobar_pesos_de_la_variante().
+    comprobar_pesos_de_la_variante(args.fichero_pesos)
 
     adaptador = modulo_adapter.AceStepAdapter(
         weights_name=args.fichero_pesos, output_dir=dir_staging, require_gpu=True
@@ -1101,6 +1217,8 @@ async def generar(args: argparse.Namespace, briefs: list[Brief], plan: list[Toma
                 "bpm": meta["bpm"],
                 "keyscale": meta["keyscale"],
                 "timesignature": meta["timesignature"],
+                # Declarada, no heredada del defecto del shim: ver VARIANTE_G1.
+                "variante": VARIANTE_G1,
                 # Innegociable: efecto medido del 60,7 % frente al 1-7 % del ruido
                 # de semilla. Este script no expone forma de apagarlo.
                 "usar_lm": True,
@@ -1186,13 +1304,16 @@ async def generar(args: argparse.Namespace, briefs: list[Brief], plan: list[Toma
             # (D-20), asi que la trazabilidad de G1 es documental y no pretende
             # otra cosa. Va en 08-manifiestos/ y contiene la semilla: es el
             # SEGUNDO fichero que rompe el ciego, y por eso se avisa aqui.
+            # El bloque de modelo sale de lo que el adapter reporta AHORA y de los
+            # parametros con los que se genero ESTA toma. Nunca de un literal:
+            # ver `_descripcion_modelo`.
             (dir_manifiestos / f"{toma.etiqueta_ciega}.manifiesto.json").write_text(
                 json.dumps(
                     {
                         "aviso_ciego": (
                             "contiene la semilla: no abrir antes de elegir la toma (§5.2)"
                         ),
-                        "modelo": "ACE-Step 1.5 (turbo, artefacto con planificador de 5 Hz)",
+                        **_descripcion_modelo(adaptador.describe(), params),
                         "pesos_fichero": args.fichero_pesos,
                         "pesos_sha256": informe.get("pesos_sha256"),
                         "semilla": toma.semilla,

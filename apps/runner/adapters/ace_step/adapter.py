@@ -38,8 +38,12 @@ Lo que este fichero NO hace, y quien lo hace
 
 Invariantes que si hace cumplir
 -------------------------------
-* **D-14 — solo `safetensors`**: la unica puerta de entrada de pesos es
-  `contracts.assert_safetensors()`, llamada **antes** de abrir el fichero.
+* **D-14 — solo `safetensors`**: la puerta de entrada de pesos son dos
+  comprobaciones de `contracts`, en dos momentos distintos:
+  `assert_safetensors()` sobre el **nombre**, **antes** de abrir el fichero, y
+  `assert_safetensors_header()` sobre la **cabecera real**, **al abrirlo** en
+  `load()`. La segunda es defensa en profundidad y un error temprano y claro
+  (los cargadores ya rechazan un pickle renombrado), no un agujero que se cierre.
   Ningun cargador que deserialice objetos de Python (la familia `.pt`, `.bin`,
   `.ckpt`, `.pkl`, `.joblib`) toca un checkpoint: deserializar uno **ejecuta**
   el codigo que lleve dentro, es ejecucion remota de codigo (RCE). El hash de
@@ -139,6 +143,7 @@ from contracts import (  # noqa: E402
     RunnerContext,
     RunTelemetry,
     assert_safetensors,
+    assert_safetensors_header,
     assert_within_gpu_budget,
 )
 
@@ -557,6 +562,15 @@ class AceStepAdapter:
         self._gpu: dict[str, Any] | None = None
         self._generations = 0
         self._weights_path: str | None = None
+        #: SHA-256 del artefacto **efectivamente contrastado** y de donde salio el
+        #: valor esperado (`ACE_STEP_WEIGHTS_SHA256` o el `.provenance.json`
+        #: hermano). Los rellena `_verificar_integridad()` solo cuando la
+        #: comparacion cuadra; mientras valgan `None`, la identidad de los pesos
+        #: NO esta verificada y `describe()` lo dice tal cual. Es lo que permite
+        #: saber con que pesos exactos se genero una pista: `weights_file` es un
+        #: nombre, y un nombre se renombra.
+        self._weights_sha256: str | None = None
+        self._weights_sha256_origen: str | None = None
         #: Motivo del ultimo `--preload` fallido en modo serve, consultable por
         #: `health()`. Lo rellena el callback del Future de `_servir()` y se
         #: limpia cuando un `load()` posterior termina bien.
@@ -732,6 +746,12 @@ class AceStepAdapter:
                 "fichero DENTRO de ctx.weights_dir."
             )
         self._weights_path = ruta
+        # Una carga nueva parte sin identidad verificada: si esta apunta a otro
+        # fichero (o a uno que no se llega a contrastar), heredar el hash de la
+        # carga anterior publicaria una identidad que no corresponde a
+        # `weights_path`.
+        self._weights_sha256 = None
+        self._weights_sha256_origen = None
         with timer.stage("weights_download"):
             # En este contenedor los pesos llegan **montados** como volumen, asi que
             # esta etapa mide la comprobacion local (y el hash, si se pide), no una
@@ -745,6 +765,14 @@ class AceStepAdapter:
                     f"'-v /ruta/host/pesos:{DEFAULT_WEIGHTS_DIR}:ro'): la imagen no los "
                     "incluye a proposito."
                 )
+            # Primera vez que se ABRE el fichero: aqui se comprueba la cabecera
+            # real, ya que el nombre se valido antes (`assert_safetensors`, con
+            # el fichero aun sin tocar). Cuesta 8 bytes mas la cabecera JSON y
+            # convierte un artefacto que no es lo que dice su extension en un
+            # error inmediato y legible, en vez de un fallo mas oscuro dentro
+            # del cargador varios minutos despues (D-14, defensa en profundidad:
+            # ni la lectura contigua ni `load_file` deserializan objetos).
+            assert_safetensors_header(ruta)
             # Solo se RESUELVE que hash se espera; el calculo va de paso en la
             # lectura contigua de la etapa 3 y se compara alli.
             hash_esperado = self._hash_esperado(ruta)
@@ -939,6 +967,12 @@ class AceStepAdapter:
                 f"Integridad de pesos fallida en {ruta!r}: SHA-256 {obtenido} frente al "
                 f"esperado {valor} (segun {origen}). El arranque se aborta."
             )
+        # Identidad real del artefacto, para que `describe()` la publique. Se
+        # guarda SOLO aqui, en el unico camino en que la comparacion ha cuadrado:
+        # si se salto la comprobacion o no habia con que comparar, se sale antes
+        # y el campo sigue en `None` —ausencia de dato, no cadena vacia.
+        self._weights_sha256 = obtenido
+        self._weights_sha256_origen = origen
         _LOG.info(
             "Integridad de pesos verificada (SHA-256 %s..., segun %s, %s, %.1f s).",
             obtenido[:16],
@@ -971,6 +1005,10 @@ class AceStepAdapter:
         self._loaded = False
         self._ctx = None
         self._load_timings = {}
+        # Sin carga vigente no hay identidad de pesos que publicar: un load()
+        # fallido no puede dejar en `describe()` un hash con aspecto de bueno.
+        self._weights_sha256 = None
+        self._weights_sha256_origen = None
         gc.collect()
         torch = sys.modules.get("torch")
         if torch is not None:
@@ -1418,6 +1456,27 @@ class AceStepAdapter:
         Desde M-3 lleva tambien el coste del arranque (`load_stage_timings_s` y
         `load_gpu_seconds`), que se paga una vez por carga y ya no viaja en la
         telemetria de cada generacion.
+
+        Identidad de los pesos
+        ----------------------
+        `weights_sha256` es el hash **contrastado** en la ultima carga que lo
+        verifico, y `weights_sha256_origen` dice quien aporto el valor esperado
+        (`ACE_STEP_WEIGHTS_SHA256` o el `.provenance.json` hermano). Ambos son
+        `None` —nunca cadena vacia ni un hash calculado aqui por compromiso—
+        cuando no hubo verificacion: sin fuente con que comparar, con
+        `ACE_STEP_SKIP_INTEGRITY=1`, o antes del primer `load()`. Que sean `None`
+        significa exactamente eso: *nadie ha contrastado este artefacto*.
+        Sobreviven a `unload()`, igual que `weights_path`, porque un informe se
+        escribe a menudo con el modelo ya descargado. Verifican **integridad, no
+        inocuidad**: lo que hace segura la carga es el formato (D-14).
+
+        NO se publica la variante de pesos (`turbo` / `sft`), y no por olvido: el
+        adapter no puede saberla sin inventarsela. Los dos checkpoints tienen las
+        mismas claves con las mismas formas, asi que no se deduce del artefacto;
+        `ACE_STEP_VARIANTE` solo fija la que usa el **warm-up** del shim; y cada
+        peticion trae la suya en `model_params["variante"]`, asi que ni siquiera
+        hay una unica variante por carga. Publicar aqui un valor por defecto
+        seria una etiqueta que un informe leeria como hecho medido.
         """
         info: dict[str, Any] = {
             "tarea": "T-05",
@@ -1427,6 +1486,11 @@ class AceStepAdapter:
             "model_version": self.MODEL_VERSION,
             "weights_file": self._weights_name,
             "weights_path": self._weights_path,
+            # Identidad real del artefacto: `None` mientras nadie la haya
+            # contrastado (ver el docstring). El nombre de fichero no identifica
+            # nada, se renombra; el hash verificado si.
+            "weights_sha256": self._weights_sha256,
+            "weights_sha256_origen": self._weights_sha256_origen,
             "offloading_enabled": self._offload,
             "offloading_reason": self._offload_reason,
             "gpu": self._gpu,
@@ -1439,6 +1503,8 @@ class AceStepAdapter:
             "load_gpu_seconds": round(self.load_gpu_seconds(), 3),
             "writes_audio": self._output_dir is not None,
             "no_incluye": [
+                "variante de pesos (turbo/sft): no se deduce del artefacto (mismas "
+                "claves y formas) y cada peticion trae la suya en model_params",
                 "provenance / manifiesto (T-27, F5, esquema firmado por legal — D-20)",
                 "loudness y transcode FLAC/MP3/48 kHz (T-19 / T-45)",
                 "registry y ModelDescriptor persistido (T-30, F5)",

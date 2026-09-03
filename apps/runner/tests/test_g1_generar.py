@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import csv
 import hashlib
+import inspect
 import json
 from pathlib import Path
 
@@ -592,3 +593,128 @@ def test_el_planificador_no_se_puede_apagar_desde_la_linea_de_ordenes():
     }
     assert "--sin-lm" not in banderas
     assert "--dry-run" in banderas
+
+
+# --------------------------------------------------------------------------- #
+# El bloque de modelo del manifiesto (§10.2)
+# --------------------------------------------------------------------------- #
+
+def _informe_adapter(fichero_pesos: str) -> dict:
+    """Recorte de `AceStepAdapter.describe()` con lo unico que mira el manifiesto."""
+    return {
+        "tarea": "T-05",
+        "source": "gpu",
+        "model_id": "ace-step",
+        "model_version": "1.5",
+        "weights_file": fichero_pesos,
+        "weights_path": f"/weights/{fichero_pesos}",
+    }
+
+
+def test_el_bloque_de_modelo_no_dice_turbo_con_el_artefacto_sft():
+    """El manifiesto es la trazabilidad de G1: no puede afirmar lo que no paso.
+
+    `--fichero-pesos` ya permite generar con cualquiera de los tres artefactos
+    de disco. Con el `sft` y sin planificador, un manifiesto que siguiera
+    diciendo «turbo, artefacto con planificador de 5 Hz» seria una mentira
+    silenciosa: no falla, no avisa, y el acta del gate la da por buena.
+    """
+    bloque = g1._descripcion_modelo(
+        _informe_adapter("ace_step_1_5_sft_lm.safetensors"),
+        {"variante": "sft", "usar_lm": False, "bpm": 96, "lm_cfg": 2.0},
+    )
+    plano = json.dumps(bloque, ensure_ascii=False).lower()
+    assert "turbo" not in plano
+    assert "con planificador" not in plano
+    assert bloque["modelo_variante"] == "sft"
+    assert bloque["planificador_5hz"] == "no"
+    assert "ace_step_1_5_sft_lm.safetensors" in bloque["modelo"]
+    assert "ace-step" in bloque["modelo"] and "1.5" in bloque["modelo"]
+
+
+def test_el_bloque_de_modelo_declara_el_turbo_con_planificador_cuando_lo_hubo():
+    """La otra mitad: con el artefacto de produccion tiene que decirlo."""
+    bloque = g1._descripcion_modelo(
+        _informe_adapter("ace_step_1_5_lm.safetensors"),
+        {"variante": "turbo", "usar_lm": True},
+    )
+    assert bloque["modelo_variante"] == "turbo"
+    assert bloque["planificador_5hz"] == "si"
+    assert "ace_step_1_5_lm.safetensors" in bloque["modelo"]
+
+
+def test_el_bloque_de_modelo_escribe_desconocido_en_vez_de_inventar():
+    """Sin dato no hay afirmacion. Un `desconocido` se audita; un valor
+    inventado se cree."""
+    bloque = g1._descripcion_modelo({}, {})
+    assert bloque["modelo_variante"] == "desconocido"
+    assert bloque["planificador_5hz"] == "desconocido"
+    assert "turbo" not in bloque["modelo"]
+    assert "con planificador" not in bloque["modelo"]
+    assert bloque["modelo"].count("desconocido") >= 3
+
+
+def test_el_manifiesto_deriva_el_modelo_en_vez_de_clavarlo():
+    """Guardarrail de la regresion concreta: el modelo del manifiesto se
+    construia con un literal `"ACE-Step 1.5 (turbo, ...)"` mientras los pesos
+    venian de `--fichero-pesos`. Ningun nombre de variante puede volver a
+    aparecer clavado en el bucle de generacion."""
+    fuente = inspect.getsource(g1.generar)
+    assert "_descripcion_modelo(" in fuente
+    # Se prohibe el LITERAL que describia el modelo, no la palabra: declarar la
+    # variante del gate (`"variante": VARIANTE_G1`) es justo lo que hay que
+    # hacer, y una prohibicion por palabra lo bloquearia.
+    assert "ACE-Step 1.5 (turbo" not in fuente
+    assert "artefacto con planificador" not in fuente
+
+
+# --------------------------------------------------------------------------- #
+# La variante de difusion, declarada y coherente con los pesos
+# --------------------------------------------------------------------------- #
+
+class TestVarianteDeclarada:
+    """G1 se genera con el artefacto turbo, y eso tiene que estar DICHO.
+
+    El shim resuelve la variante con `params.get("variante") or "turbo"`, asi que
+    hasta ahora el bucle de difusion corria programacion turbo (8 pasos, sin
+    guia) aunque se cargaran los pesos sft, que esperan 50 pasos con guia APG.
+    Los dos checkpoints tienen las mismas claves con las mismas formas: no da
+    error, da audio peor. Como el gate no puede depender de que nadie se
+    equivoque de fichero, la variante se declara explicita y una guardia rechaza
+    un artefacto que la contradiga.
+    """
+
+    def test_la_variante_del_gate_es_turbo(self):
+        assert g1.VARIANTE_G1 == "turbo"
+
+    def test_el_bucle_de_generacion_declara_la_variante(self):
+        # Sin esto, el manifiesto dice "desconocido" en toda tanda real y el
+        # shim decide por su cuenta.
+        assert '"variante": VARIANTE_G1' in inspect.getsource(g1.generar)
+
+    @pytest.mark.parametrize(
+        "fichero",
+        ["ace_step_1_5_sft_lm.safetensors", "ACE_STEP_1_5_SFT_LM.safetensors", "x-sft-y.safetensors"],
+    )
+    def test_unos_pesos_sft_se_rechazan_antes_de_generar(self, fichero):
+        with pytest.raises(SystemExit) as info:
+            g1.comprobar_pesos_de_la_variante(fichero)
+        assert "sft" in str(info.value).lower()
+        assert "turbo" in str(info.value).lower()
+
+    @pytest.mark.parametrize(
+        "fichero",
+        ["ace_step_1_5_lm.safetensors", "ace_step_1_5.safetensors", "mi_artefacto_turbo.safetensors"],
+    )
+    def test_los_pesos_sin_marca_de_otra_variante_pasan(self, fichero):
+        assert g1.comprobar_pesos_de_la_variante(fichero) is None
+
+    def test_el_manifiesto_de_una_tanda_real_dice_la_variante_y_no_desconocido(self):
+        # Regresion del hueco que dejaba el arreglo anterior: el campo existia
+        # pero salia "desconocido" SIEMPRE, porque nadie lo declaraba.
+        params = {"usar_lm": True, "variante": g1.VARIANTE_G1}
+        informe = {"model_id": "ace-step", "model_version": "1.5",
+                   "weights_file": "ace_step_1_5_lm.safetensors"}
+        bloque = g1._descripcion_modelo(informe, params)
+        assert bloque["modelo_variante"] == "turbo"
+        assert "desconocido" not in bloque["modelo"]

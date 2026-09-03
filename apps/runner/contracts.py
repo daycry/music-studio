@@ -37,11 +37,17 @@ gate **G1**. Los spikes tienen que poder ejecutarse con un Python limpio.
 
 Invariantes de seguridad que este modulo si hace cumplir
 --------------------------------------------------------
-* **D-14 — solo `safetensors`**: `assert_safetensors()` valida la ruta de pesos y
-  levanta `UnsafeWeightsFormat` en cualquier otro caso. Jamas `pickle`,
-  `torch.load`, `joblib`, `dill`, `np.load(allow_pickle=True)` ni `yaml.load`
-  sin `SafeLoader` sobre checkpoints no confiables: es ejecucion remota de
-  codigo. `weights_sha256` verifica **integridad, no inocuidad**.
+* **D-14 — solo `safetensors`**, en dos puertas que no se solapan:
+  `assert_safetensors()` valida el **nombre** y se cruza **antes** de abrir el
+  fichero (la llaman sitios que ni lo abren, como el mock de los spikes);
+  `assert_safetensors_header()` valida la **cabecera real** y se cruza **al
+  abrir**, en el punto de carga. La segunda es defensa en profundidad y fallo
+  temprano, no el cierre de un agujero: los cargadores que se usan (lectura
+  contigua y `safetensors.torch.load_file`) ya rechazan un pickle renombrado.
+  Las dos levantan `UnsafeWeightsFormat`. Jamas `pickle`, `torch.load`,
+  `joblib`, `dill`, `np.load(allow_pickle=True)` ni `yaml.load` sin `SafeLoader`
+  sobre checkpoints no confiables: es ejecucion remota de codigo.
+  `weights_sha256` verifica **integridad, no inocuidad**.
 * **D-15 — aislamiento de credenciales**: `RunnerContext` no tiene ni un campo
   de credencial, a proposito. El runner recibe URLs firmadas de alcance por
   trabajo y caducidad corta por entorno de vida corta, nunca ficheros de
@@ -59,6 +65,7 @@ audio bit a bit (D-13: la conformidad es por tolerancia perceptual).
 
 from __future__ import annotations
 
+import json
 import os
 from dataclasses import dataclass, field
 from enum import StrEnum
@@ -78,11 +85,19 @@ __all__ = [
     "GpuBudgetExceeded",
     "UnsafeWeightsFormat",
     "assert_safetensors",
+    "assert_safetensors_header",
     "assert_within_gpu_budget",
 ]
 
 #: Unica extension de pesos aceptada (D-14).
 SAFETENSORS_SUFFIX = ".safetensors"
+
+#: Techo de la cabecera JSON que acepta `assert_safetensors_header()`. Es el
+#: mismo limite que aplica la implementacion de referencia de `safetensors`
+#: (100 MB), y sobra de largo: el artefacto de ACE-Step 1.5 tiene 677 tensores y
+#: su cabecera no llega a 200 KB. Sirve para no intentar leer a memoria una cifra
+#: disparatada cuando los 8 primeros bytes no son una longitud, sino opcodes.
+_SAFETENSORS_HEADER_MAX_BYTES = 100 * 1024 * 1024
 
 #: Formatos de artefacto de audio del contrato. FLAC es el formato de almacen y
 #: MP3 320 la copia de escucha (D-09); WAV es **exportacion a demanda** y siempre
@@ -167,6 +182,90 @@ def assert_safetensors(path: str | os.PathLike[str]) -> str:
             "que lleve el fichero, es ejecucion remota de codigo (RCE). "
             "'weights_sha256' verifica integridad, NO inocuidad: un pickle "
             "malicioso con hash correcto sigue siendo un pickle malicioso."
+        )
+    return raw
+
+
+def assert_safetensors_header(path: str | os.PathLike[str]) -> str:
+    """Comprueba que el fichero **empieza de verdad** por una cabecera safetensors.
+
+    Reparto de trabajo entre las dos puertas, que son distintas a proposito:
+
+    * `assert_safetensors()` valida el **nombre** y se cruza **antes** de abrir
+      nada. La llaman sitios que ni siquiera tienen el fichero delante (el mock
+      de los spikes), y por eso no toca el disco.
+    * esta valida la **cabecera real** y se cruza **al abrir** el fichero, en el
+      punto de carga.
+
+    El formato: 8 bytes little-endian con la longitud del JSON, ese JSON (que
+    debe parsear a un **objeto**), y a continuacion los datos crudos. Aqui no se
+    deserializa nada: `json.loads` sobre texto y ni un opcode de pickle.
+
+    Que aporta esto de verdad, sin venderlo de mas
+    ----------------------------------------------
+    **No cierra un agujero abierto.** Los dos cargadores del runner
+    (`carga_contigua.cargar_contiguo()` y `safetensors.torch.load_file()`) ya
+    rechazan un pickle renombrado: ninguno de los dos ejecuta opcodes, asi que
+    un `.pt` con extension cambiada falla igual sin esta funcion. Lo que aporta
+    es **defensa en profundidad** y un fallo **temprano y legible**: el error
+    llega al abrir el fichero, dice que el contenido no es un safetensors, y no
+    depende de que el cargador de turno —hoy dos, manana quiza otro— se acuerde
+    de ser estricto. La regla que evita la ejecucion remota de codigo sigue
+    siendo la de siempre: nada de `pickle`/`torch.load` sobre checkpoints (D-14).
+
+    Y tampoco verifica **inocuidad**: un safetensors con cabecera perfecta puede
+    traer pesos manipulados. Eso es `weights_sha256`, y es **integridad**.
+
+    Args:
+        path: ruta del fichero de pesos. Se abre en modo binario.
+
+    Devuelve la ruta (normalizada a `str`) para poder encadenarla en el punto de
+    carga, igual que `assert_safetensors()`.
+
+    Levanta:
+        UnsafeWeightsFormat: si el fichero no empieza por una cabecera
+            safetensors (truncado, longitud absurda o nula, JSON invalido, o un
+            JSON que no es un objeto).
+        OSError: si el fichero no existe o no se puede leer. **No** se disfraza
+            de `UnsafeWeightsFormat`: que falte un fichero no es un problema de
+            formato, y confundir las dos cosas manda al operador a buscar un
+            ataque donde hay un volumen mal montado.
+    """
+    raw = os.fspath(path)
+    with open(raw, "rb") as fichero:
+        crudo = fichero.read(8)
+        if len(crudo) != 8:
+            raise UnsafeWeightsFormat(
+                f"{raw!r} no llega ni a los 8 bytes de longitud de cabecera que abren "
+                f"un '{SAFETENSORS_SUFFIX}' (D-14). No se carga un fichero de pesos "
+                "cuyo contenido no es el que dice la extension."
+            )
+        longitud = int.from_bytes(crudo, "little")
+        if not 0 < longitud <= _SAFETENSORS_HEADER_MAX_BYTES:
+            raise UnsafeWeightsFormat(
+                f"Cabecera de longitud imposible en {raw!r}: {longitud} bytes (el maximo "
+                f"admitido son {_SAFETENSORS_HEADER_MAX_BYTES}). El fichero no es un "
+                f"'{SAFETENSORS_SUFFIX}'; un pickle renombrado, por ejemplo, da aqui una "
+                "cifra absurda porque sus primeros bytes son opcodes (D-14)."
+            )
+        texto = fichero.read(longitud)
+    if len(texto) != longitud:
+        raise UnsafeWeightsFormat(
+            f"Cabecera truncada en {raw!r}: declara {longitud} bytes de JSON y solo hay "
+            f"{len(texto)}. Fichero incompleto o formato distinto del declarado (D-14)."
+        )
+    try:
+        cabecera = json.loads(texto.decode("utf-8"))
+    except (UnicodeDecodeError, ValueError) as exc:
+        raise UnsafeWeightsFormat(
+            f"La cabecera de {raw!r} no es JSON valido ({exc}). Un '{SAFETENSORS_SUFFIX}' "
+            "empieza por 8 bytes de longitud y un objeto JSON con los tensores; esto no "
+            "lo es, y no se abre con ningun cargador que deserialice objetos (D-14)."
+        ) from exc
+    if not isinstance(cabecera, dict):
+        raise UnsafeWeightsFormat(
+            f"La cabecera de {raw!r} es JSON pero no un objeto ({type(cabecera).__name__}). "
+            f"El formato '{SAFETENSORS_SUFFIX}' exige un objeto con una entrada por tensor."
         )
     return raw
 

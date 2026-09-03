@@ -4,7 +4,7 @@ titulo: Diseño de interfaz — Plataforma musical IA
 slug: plataforma-musical-ia
 estado: propuesta
 fecha: 2026-08-18
-actualizado: 2026-08-18
+actualizado: 2026-09-03
 autor: Daycry (7590335+daycry@users.noreply.github.com)
 spec: ./spec.md
 plan: ./improvement-plan.md
@@ -287,7 +287,7 @@ Nav lateral estrecha (iconos + tooltip): Crear · Biblioteca · Admin (solo rol 
 │ ┌─ 🛡 CERTIFICADO DE PROCEDENCIA ────────────────────────────┐  │
 │ │ ✓ Cadena de trazabilidad verificada        manifiesto v1   │  │
 │ │                                                             │  │
-│ │ Modelo      ace-step@1.5.0 · Apache-2.0                    │  │
+│ │ Modelo      ace-step@1.5.0 · MIT                           │  │
 │ │ Pesos       sha256: 3fa9…c21e                              │  │
 │ │ Datos entr. no divulgada (declarado)                       │  │
 │ │ Letra       declaración: propia · 2026-08-18 · daycry      │  │
@@ -495,3 +495,4 @@ Los atajos se documentan en el modal `?` y se anuncian en los tooltips de los co
 | Fecha | Cambio | Autor |
 |---|---|---|
 | 2026-08-18 | Creación del documento de diseño de UI: concepto «estudio nocturno», sistema de tokens con contraste AA verificado, acento «verde traza» (candidatos A/B/C), tipografías Inter + Bricolage Grotesque + JetBrains Mono, firma visual de generación (condensación de onda por progreso SSE con mensajes honestos de cold start), 6 pantallas de F1 + 2 anticipadas de F2/F3, microinteracciones, inventario de componentes (shadcn/ui + wavesurfer.js encapsulado) y mapa a las tareas T-10…T-52 del ledger. Estado `propuesta`. | Claude (a petición de 7590335+daycry@users.noreply.github.com) |
+| 2026-09-03 | **Corrección de licencia en la maqueta del certificado de procedencia (§«Pantalla de resultado»).** La tarjeta «CERTIFICADO DE PROCEDENCIA» mostraba `Modelo  ace-step@1.5.0 · Apache-2.0`; **ACE-Step 1.5 es MIT, no Apache 2.0** (Apache 2.0 es de **ACE-Step v1 3.5B**, otro modelo). Verificado en `T-06` ([`spikes/comparativa-modelos.md`](./spikes/comparativa-modelos.md) §4.1) y archivado en `LICENSE.acestep.mit.txt`. **Por qué importa en la UI y no solo en la spec:** esta tarjeta es la representación visible del manifiesto de procedencia, el artefacto cuya razón de ser es ser auditable — una maqueta con la licencia equivocada se copia tal cual al implementar T-46…T-48. **Única ocurrencia de «Apache» en este documento**; no hay ningún otro modelo mencionado aquí, así que no hay nada más que revisar. Se conserva el ancho de la caja ASCII. Sin cambios de diseño, tokens ni alcance. | dev-cycle (orquestador) |

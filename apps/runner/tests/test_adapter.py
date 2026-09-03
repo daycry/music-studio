@@ -255,3 +255,76 @@ class TestIntegridadDePesos:
             self._adapter()._verificar_integridad(str(ruta))  # no aborta
         assert "NO verificada" in caplog.text
         assert "ACE_STEP_SKIP_INTEGRITY" in caplog.text
+
+
+# --------------------------------------------------------------------------- #
+# Identidad de los pesos publicada en describe() (encargo A2)
+# --------------------------------------------------------------------------- #
+
+class TestIdentidadDePesosEnDescribe:
+    """El adapter YA verifica el SHA-256 del artefacto al cargarlo, pero no lo
+    publicaba: un informe solo llevaba `weights_file`, que es un nombre y se
+    renombra. Sin el hash verificado nadie puede saber con que pesos exactos se
+    genero una pista.
+
+    Reutiliza los ayudantes de `TestIntegridadDePesos` por referencia explicita,
+    no por herencia: heredar volveria a ejecutar sus seis tests aqui.
+    """
+
+    _pesos = staticmethod(TestIntegridadDePesos._pesos)
+    _provenance = staticmethod(TestIntegridadDePesos._provenance)
+    _adapter = staticmethod(TestIntegridadDePesos._adapter)
+
+    @pytest.fixture(autouse=True)
+    def _entorno_limpio(self, monkeypatch):
+        monkeypatch.delenv("ACE_STEP_WEIGHTS_SHA256", raising=False)
+        monkeypatch.delenv("ACE_STEP_SKIP_INTEGRITY", raising=False)
+
+    def test_tras_verificar_describe_trae_el_hash_y_su_origen(self, tmp_path):
+        ruta, sha = self._pesos(tmp_path)
+        self._provenance(ruta, sha)
+        adapter = self._adapter()
+        # Antes de verificar nada no hay hash que publicar.
+        assert adapter.describe()["weights_sha256"] is None
+        adapter._verificar_integridad(str(ruta))
+        info = adapter.describe()
+        assert info["weights_sha256"] == sha
+        assert "provenance" in info["weights_sha256_origen"]
+
+    def test_sin_fuente_de_hash_el_campo_es_none_no_cadena_vacia(self, tmp_path):
+        ruta, _ = self._pesos(tmp_path)
+        adapter = self._adapter()
+        adapter._verificar_integridad(str(ruta))  # no hay con que comparar: no verifica
+        info = adapter.describe()
+        assert info["weights_sha256"] is None
+        assert info["weights_sha256_origen"] is None
+
+    def test_saltarse_la_comprobacion_no_publica_hash(self, tmp_path, monkeypatch):
+        ruta, sha = self._pesos(tmp_path)
+        self._provenance(ruta, sha)
+        monkeypatch.setenv("ACE_STEP_SKIP_INTEGRITY", "1")
+        adapter = self._adapter()
+        adapter._verificar_integridad(str(ruta))
+        # El hash existe en el provenance, pero NADIE lo ha contrastado: publicarlo
+        # seria vender por verificado un artefacto que no se leyo.
+        assert adapter.describe()["weights_sha256"] is None
+
+    def test_un_hash_que_no_cuadra_no_deja_rastro_publicado(self, tmp_path):
+        ruta, _ = self._pesos(tmp_path)
+        self._provenance(ruta, "0" * 64)
+        adapter = self._adapter()
+        with pytest.raises(RuntimeError, match="Integridad de pesos fallida"):
+            adapter._verificar_integridad(str(ruta))
+        assert adapter.describe()["weights_sha256"] is None
+
+    def test_el_hash_publicado_es_el_del_artefacto_verificado(self, tmp_path):
+        # La variable de entorno manda sobre el provenance: lo publicado tiene que
+        # ser el hash real del fichero, y el origen, quien lo aporto.
+        ruta, sha = self._pesos(tmp_path, contenido=b"otro artefacto")
+        adapter = self._adapter()
+        with pytest.MonkeyPatch.context() as mp:
+            mp.setenv("ACE_STEP_WEIGHTS_SHA256", sha)
+            adapter._verificar_integridad(str(ruta))
+        info = adapter.describe()
+        assert info["weights_sha256"] == sha
+        assert info["weights_sha256_origen"] == "ACE_STEP_WEIGHTS_SHA256"

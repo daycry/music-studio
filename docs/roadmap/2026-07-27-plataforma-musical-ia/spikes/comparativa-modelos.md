@@ -14,8 +14,11 @@ plan: ../improvement-plan.md
 tareas: ../tasks.md
 gate-g1: ../gates/g1-protocolo.md
 gate-g2: ../gates/g2-matriz-resultados.md
-fuentes-consultadas: 2026-09-02
+fuentes-consultadas: "2026-09-02; addendum §12 reverificado el 2026-09-03"
 mediciones-propias: 2026-09-01 (T-03 / T-05)
+actualizado: 2026-09-03
+addendum: "§12 — reevaluación de MiniMax-Music3 (la condición «hasta G2» quedó huérfana, no resuelta)"
+gate-comercializacion: ../gates/gobernanza.md
 ---
 
 # T-06 · Spike comparativo de modelos
@@ -48,7 +51,7 @@ Un aviso que conviene tener por escrito: **el desequilibrio de evidencia es enor
 4. **HeartMuLa no cabe en la GPU local.** Sus pesos son **15,8 GB en F32** (LM) más un codec de **2B en F32** que upstream **desaconseja** bajar a bf16 por pérdida de calidad **[D]**. En fp16 el LM solo ya son ~7,9 GB **[C]**, y en esta máquina hay **7.202 MiB libres** **[M]**. Consecuencia real: **T-29 y T-34 (G1-bis) no son ejecutables en local**; o RunPod, o cuantización que upstream no ofrece. Esto **no cambia el orden de D-06**, cambia el supuesto de coste de esas dos tareas. §8.
 5. **Hallazgo que toca el protocolo de G1: HeartCLAP no está publicado.** La organización `HeartMuLa` en Hugging Face tiene **seis repos y ninguno es HeartCLAP** **[D]**; el propio equipo de open source de Hugging Face lo pidió por escrito en el issue #4 de `heartlib`. `gates/g1-protocolo.md` §6.1 lo nombra **candidato principal** para medir CLAP. Hay que elegir suplente antes de T-09. §9, acción A-3.
 6. **Aviso para T-07: nuestro checkpoint es el que menos capacidades de edición declara.** `acestep-v15-turbo` declara Repaint y Cover pero **no** Extract / Lego / Complete; esas tres son exclusivas de los checkpoints `base` (50 pasos + CFG) **[D]**. Probar `CONTINUATION` sobre turbo y concluir «ACE-Step no lo soporta» sería un falso negativo del modelo. §4.3.
-7. **MiniMax-Music3 sigue siendo candidato condicional, no alcance.** Su licencia comunitaria (atribución en UI, umbral de 20 M$, AUP y salvaguardas obligatorias) está verificada contra el fichero `LICENSE` y confirmada palabra por palabra: §6.
+7. **MiniMax-Music3 sigue siendo candidato condicional, no alcance.** Su licencia comunitaria (atribución en UI, umbral de 20 M$, AUP y salvaguardas obligatorias) está verificada contra el fichero `LICENSE` y confirmada palabra por palabra: §6. **(Reevaluado el 2026-09-03 — ver §12: la condición «bloqueado hasta G2» estaba rota, porque MiniMax nunca entró en G2.)**
 
 ---
 
@@ -217,6 +220,8 @@ Se documenta aquí por exigencia de `spec.md` §5.3 y §11.1. **No es alcance, n
 5. Nota técnica llamativa: **es el único de los cuatro que declara caber en 8 GB con *group offloading*** — mejor encaje con nuestra GPU local que HeartMuLa. A cambio entrega **32 kHz** frente a los 48 kHz medidos de ACE-Step.
 
 > **Acción viva:** la pregunta para el lote de G2 (T-01) ya está registrada en `spec.md` §11.1. Este spike la confirma palabra por palabra y **añade el matiz 3**: la pregunta a legal debería incluir explícitamente la obligación de salvaguardas técnicas continuas, no solo la atribución y el umbral.
+>
+> ⚠️ **Superado el 2026-09-03 (§12).** **No existe tal «lote de G2»**: el gate se cerró el 2026-08-18 por decisión del propietario, **sin dictamen jurídico**, y MiniMax **nunca entró en él** (cero menciones en todo `gates/`). La acción se reancla a **GC-01 (h)** de `gates/gobernanza.md` §8. Además, el disparador de cada cláusula matiza el punto 3: **la obligación de salvaguardas (§4 de la licencia) no se activa en uso estrictamente personal**, solo al ofrecer generación a terceros.
 
 ---
 
@@ -243,6 +248,8 @@ Sigue siendo la elección correcta, por cuatro razones y a pesar de un problema 
 - **Aporta diversidad arquitectónica real.** ACE-Step es difusión; HeartMuLa es LM autorregresivo sobre codec. Es exactamente el *trade-off* que justifica D-02 (registry pluggable): un segundo adapter que fuera otro modelo de difusión no demostraría nada.
 
 **El problema, que no cambia el orden pero sí el plan:** **no cabe en la GPU local** (§8.1). Consecuencia sobre `tasks.md`: **T-29** (contenerización de HeartMuLa) y **T-34** (G1-bis) **no son ejecutables en modo GPU local** y vuelven a depender de RunPod, en contra del criterio de coste cloud cero de D-29. Se registra como acción A-2, no como cambio de D-06: si hubiera que reordenar por hardware, el sustituto natural sería MiniMax-Music3 (8 GB con group offloading) — y **está bloqueado por licencia hasta G2**, así que no es sustituto disponible hoy.
+
+> ⚠️ **Corregido el 2026-09-03 (§12), dos veces.** (i) **No está «bloqueado hasta G2»**: G2 nunca preguntó por esta licencia, así que la condición quedó **huérfana, no resuelta a favor**. (ii) **No está establecido que sea sustituto**: el «8 GB» es nominal de tarjeta y declarado por upstream sin verificar, mientras que aquí hay **7.202 MiB libres [M]**. Léase «candidato a comprobar», no «sustituto natural».
 
 ### 7.3 YuE 7B se queda donde está — condicional y tercero
 
@@ -291,7 +298,7 @@ Suma mínima de pesos: s1 de 7B en BF16 (≈ 12–14 GB **[C]**) + s2 de 1B + `x
 | **HeartMuLa oss-3B** | **No** — ~7,9 GB solo el LM **[C]** | RunPod ≥24 GB para T-29 / T-34 |
 | HeartTranscriptor-oss | **Sí** — 0,8B **[D]** | Ninguno. Es la herramienta de WER de G1 |
 | **YuE 7B** | **No**, doble bloqueo: VRAM + FA2 exige `sm_80+` **[D]** | Cloud ≥80 GB para canción completa. Fase 2 condicional |
-| MiniMax-Music3 | **Declarado que sí** con group offloading **[D]** — sin verificar | **Bloqueado por licencia** hasta dictamen de G2 |
+| MiniMax-Music3 | **Declarado que sí** con group offloading **[D]** — sin verificar. **Ojo (§12):** ese «8 GB» es capacidad **nominal**; aquí hay **7.202 MiB libres [M]** | **Condición sin resolver** (§12): la licencia **nunca entró en G2**. Evaluación legal anclada a **GC-01 (h)**; necesidad técnica, a **G1-bis** |
 
 ---
 
@@ -304,7 +311,7 @@ Ninguna requiere decisión del propietario salvo A-4. Ninguna cambia cifras de p
 | **A-1** | Corregir las seis inexactitudes de `spec.md` §11.1 (§5 de este documento). La #1 —MIT, no Apache 2.0— **antes** de que el manifiesto de procedencia registre licencia de pesos en una generación real | `spec.md` §11.1 | **Alta** |
 | **A-2** | Registrar que **T-29 y T-34 (G1-bis) no son ejecutables en GPU local**: el segundo adapter vuelve a depender de RunPod, en contra del criterio de coste cloud cero de D-29 | `tasks.md` T-29 / T-34, nota | **Alta** |
 | **A-3** | **HeartCLAP no está publicado** (6 repos en la organización de HF, ninguno es HeartCLAP; issue #4 de `heartlib` abierto por el equipo de HF pidiéndolo). `g1-protocolo.md` §6.1 lo nombra candidato principal para medir CLAP: hay que designar suplente **antes de T-09** | `gates/g1-protocolo.md` §6.1 | **Alta — bloquea G1** |
-| **A-4** | Ampliar la pregunta de G2 sobre MiniMax-Music3 para incluir la **obligación continua de salvaguardas técnicas** y la **AUP modificable unilateralmente**, no solo atribución y umbral de 20 M$ | `tasks.md` T-01 / `gates/g2-matriz-resultados.md` | Media — **firma del propietario** |
+| **A-4** | ~~Ampliar la pregunta de G2 sobre MiniMax-Music3 para incluir la **obligación continua de salvaguardas técnicas** y la **AUP modificable unilateralmente**, no solo atribución y umbral de 20 M$~~ — **⚠️ inejecutable: no hay lote de G2. Sustituida por A-4′ (§12.7), con destino `gates/gobernanza.md` §8, GC-01 (h)** | ~~`tasks.md` T-01 / `gates/g2-matriz-resultados.md`~~ → `gates/gobernanza.md` §8 | ~~Media~~ → **Baja** (no bloquea hasta GC-01) |
 | **A-5** | Anotar en T-07 que `CONTINUATION` (Complete) **no está en `turbo`**, solo en `base`/`xl-base`: un negativo ahí es propiedad del checkpoint, no del modelo | `tasks.md` T-07 | Media |
 | **A-6** | Registrar que **HeartTranscriptor-oss sí cabe en local** (0,8B) y es independiente del adapter de HeartMuLa: el WER de G1 **no** queda bloqueado por A-2 | `gates/g1-protocolo.md` §6.2 | Media |
 
@@ -359,8 +366,190 @@ Todas verificadas el **2026-09-02** salvo indicación. Se listan solo las que so
 
 ---
 
-## 12. Registro de cambios
+## 12. Addendum 2026-09-03 — MiniMax-Music3 reevaluado: el bloqueo no está resuelto, está **sin resolver**
+
+> **Por qué existe este addendum.** El 2026-09-03 se plantea reabrir MiniMax-Music3 con el razonamiento «G2 cerró el 2026-08-18, luego el candidato se desbloquea». **Ese razonamiento es falso**, y comprobarlo era el primer trabajo de este addendum, antes de escribir ninguna recomendación. Lo que sigue reevalúa el candidato con la misma regla de honestidad de §0: cada afirmación marcada **[M]**, **[D]** o **[C]**. Fuentes primarias reverificadas hoy.
+>
+> **Este addendum no reescribe §2, §6, §7.2 ni §8.3.** Los deja como estaban el 2026-09-02 y declara en §12.6 qué frases suyas quedan superadas. Nada se corrige a posteriori en silencio.
+
+### 12.1 Qué preguntó G2 y qué no preguntó
+
+**La comprobación, y dónde se hizo.** Tres verificaciones sobre los ficheros del repositorio, todas del 2026-09-03:
+
+| # | Comprobación | Resultado |
+|---|---|---|
+| 1 | `grep -ci minimax gates/g2-matriz-resultados.md` | **0**. Ni una mención en el documento del gate |
+| 2 | `grep -rni minimax gates/` (directorio completo: `g2-matriz-resultados.md`, `gobernanza.md`, `g1-protocolo.md`) | **0 resultados.** Tampoco aparecen «salvaguard», «atribuci» ni «20 M» en ningún fichero de `gates/` |
+| 3 | `grep -rni minimax` en toda la iniciativa | Aparece en `spec.md` (§5.3, §11.1), `evaluation.md` (§2, §11, changelog), `improvement-plan.md` (changelog), `tasks.md` (nota de `T-01`, changelog) y en este spike. **En `gates/` no aparece nunca** |
+
+**Lo que G2 sí preguntó** (`gates/g2-matriz-resultados.md` §3 y §4) son exactamente dos cosas, y ninguna es esta **[D]**:
+
+- **I-05 — procedencia**: ¿se acepta usar audio de modelos cuya declaración de datos de entrenamiento es `no divulgada`, en uso interno (a1) y en producciones de cliente (a2)?
+- **I-05b — protegibilidad**: ¿es protegible y licenciable en exclusiva el output generado sin autoría humana?
+
+Su matriz de resultados de §6 tiene cuatro filas, y las cuatro hablan de esas dos preguntas. **La fila 1, «sí total», que es la que se aplicó, es una respuesta sobre procedencia — no sobre términos de licencia de ningún modelo concreto.**
+
+**Cómo entró la pregunta de MiniMax y por qué nunca salió.** La nota está en `tasks.md`, en `T-01`, con fecha 2026-08-18, y su propio texto se autoanula **[D]**:
+
+> «Candidato añadido al lote de preguntas (2026-08-18, hallazgo HF, **informativo — no reabre la tarea**). […] **No crea tarea nueva ni cambia el estado `completado` de `T-01`**.»
+
+Es decir: la pregunta se anotó **el mismo día** en que `T-01` se cerraba, **en una tarea ya cerrada**, con la instrucción explícita de no reabrirla. Nunca llegó al documento del gate, nunca se formuló y nunca se respondió. La acción **A-4** de §9 de este spike —redactada el 2026-09-02— pedía precisamente repararlo, y **sigue sin ejecutar**.
+
+**Y hay un segundo motivo, más fuerte, por el que «ampliar la pregunta de G2» ya no es posible.** G2 no se cerró con un dictamen jurídico: se cerró **por decisión del propietario** (`g2-matriz-resultados.md`, banner y §10) **[D]**. Sus propios criterios de aceptación quedaron en **1 de 3**, y el propio documento lo declara sin maquillar:
+
+- «El **informe escrito de asesoría jurídica no está archivado**.»
+- «La **pregunta 2 (I-05b) no tiene respuesta**.»
+- «Los **ToS de Suno no están verificados**.»
+- «El **Anexo A no está firmado**.»
+
+**No existe un dictamen de legal al que añadirle una pregunta.** El canal «G2» está cerrado y vacío. Esa deuda se trasladó el 2026-09-01 al **gate de comercialización GC-01** (`gates/gobernanza.md` §1 y §8), cuyas condiciones (a), (b) y (c) son literalmente las tres deudas de arriba **[D]**.
+
+> **Conclusión de §12.1.** La condición «bloqueado por licencia **hasta** dictamen de G2» **no se resolvió a favor: quedó huérfana**. El gate al que apuntaba se cerró sin haberla mirado y sin producir dictamen alguno. Un candidato condicional cuya condición apunta a un gate cerrado no está desbloqueado — **está apuntando a una referencia muerta**, y eso es peor que estar bloqueado, porque parece resuelto.
+
+### 12.2 La licencia comunitaria, releída contra el fichero (2026-09-03)
+
+Reverificada hoy contra `huggingface.co/MiniMaxAI/MiniMax-Music3/raw/main/LICENSE`. Confirma §6 palabra por palabra y **añade un matiz decisivo que §6 registró pero no explotó: el disparador de cada cláusula**.
+
+| Cláusula | Texto de la fuente **[D]** | ¿Se dispara **hoy** (proyecto personal, un solo usuario, sin terceros)? | ¿Se dispara en **GC-01**? |
+|---|---|---|---|
+| **§3.1 — atribución en UI** | «prominently display "MiniMax-Music3" on user interface commercial product or service uses Software» | **No.** El disparador es «commercial product or service». Hoy no hay ninguno | **Sí** |
+| **§3.2 — umbral de ingresos** | Autorización previa por escrito si los ingresos anuales combinados del licenciatario y sus afiliadas superan **20 M$**; solicitud a `api@minimax.io` | **No** | **Casi con seguridad no.** Es ruido para un proyecto de una persona |
+| **§4 — salvaguardas técnicas y organizativas** | «implement, maintain, test, periodically review reasonable proportionate technical organizational safeguards». Aplica a quien ofrezca «a third-party product, service, or hosted service» que permita a otros generar. Prohibido desactivarlas, debilitarlas materialmente o permitir que se eludan; la responsabilidad de hacerlas cumplir es del licenciatario | **No.** El disparador es *ofrecer generación a terceros*. En modo solo no hay terceros | **Sí — y es la que duele** |
+| **§2 + Exhibit A — AUP** | Uso condicionado al cumplimiento de la AUP; «MiniMax reserves right update» | **Sí**, ya | **Sí** |
+| **Indemnización + AS IS** | «INDEMNIFY AND HOLD HARMLESS MINIMAX»; responsabilidad exclusiva del licenciatario sobre si usar, reproducir, modificar o distribuir el Software **o sus outputs** es apropiado | **Sí**, ya | **Sí** |
+
+**Qué implica cada una, en concreto y sin dramatizar:**
+
+1. **La atribución en UI es barata — en horas.** Es una línea de crédito visible en la interfaz: horas despreciables. Lo que cuesta no es implementarla, es **decidirla**: `ui-design.md` define una identidad visual propia y deliberada («estudio nocturno», acento `#34D399`, firma de condensación de onda) y esta cláusula mete una marca de tercero de forma **prominente** dentro de ella. Es una decisión de producto del propietario, no un ticket. **Y no se dispara hasta que haya producto comercial.**
+2. **El umbral de 20 M$ es irrelevante hoy y casi con seguridad también mañana.** Un proyecto personal de una persona no se acerca a esa cifra ni en el escenario optimista de GC-01. Conviene decirlo sin rodeos para que no siga apareciendo en las listas como si fuera un riesgo: **no lo es**. Ocupa espacio en la conversación que merecen las otras dos.
+3. **Las salvaguardas continuas de §4 son la única cláusula que puede doler de verdad, y hoy no se dispara.** Cuatro razones por las que, cuando se dispare, no es «un adapter más»:
+   - **No es una obligación pasiva de licencia, es un régimen operativo**: implementar *antes* del lanzamiento y después **mantener, probar y revisar periódicamente**. Una obligación con verbo en presente continuo no se cierra con una tarea del ledger; se paga cada mes que el servicio esté vivo.
+   - **La licencia no acota «periodically» ni «reasonable proportionate»**. El coste no tiene techo escrito: lo fija quien lo interprete, y en una disputa no sería el licenciatario.
+   - **La responsabilidad de hacerlas cumplir es explícitamente del licenciatario**, incluida la prohibición de permitir que se eludan. En una plataforma abierta a terceros eso significa moderación de entradas y salidas, no solo un filtro.
+   - **Ninguna fase del plan presupuesta trabajo recurrente de este tipo.** El ledger presupuesta tareas, no obligaciones perpetuas. Adoptar §4 abre una partida de OPEX que hoy no existe en ningún documento.
+4. **La AUP modificable unilateralmente es riesgo de dependencia**, y es el más incómodo de mitigar: las condiciones pueden endurecerse **después** de haber integrado el modelo y generado pistas con él. Mitigación posible y barata: archivar copia fechada del `LICENSE` y de la Exhibit A el día de la integración, igual que ya se hizo con `LICENSE.acestep.mit.txt` **[M]**. No evita el cambio; deja constancia de bajo qué términos se generó cada pista, que es exactamente para lo que existe el manifiesto de procedencia.
+5. **La indemnización va en dirección contraria a la alternativa que el proyecto evaluó.** `evaluation.md` §6.5b estudiaba comprar a un proveedor **con indemnización a favor de Daycry**. Aquí la indemnización es **a favor de MiniMax**, y el licenciatario asume además la responsabilidad exclusiva de juzgar si distribuir los outputs es apropiado. No descalifica —ACE-Step, siendo MIT, también se entrega «AS IS»—, pero conviene no confundir «licencia con uso comercial permitido» con «riesgo transferido»: aquí el riesgo se retiene entero.
+
+> **Resumen honesto de §12.2 para un proyecto personal con posible comercialización futura (GC-01):** hoy la Community License impone, en la práctica, **AUP + indemnización + AS IS**. Eso es sensiblemente **menos** de lo que sugería la lectura del 2026-09-02, que presentaba las tres obligaciones como si aplicaran ya. Lo que no cambia es que **todas se activan a la vez el día que se cruce GC-01**, y la de §4 es de coste abierto e indefinido.
+
+### 12.3 Encaje en hardware: lo declarado sigue siendo declarado
+
+**El estado no ha cambiado desde el 2026-09-02: «declarado que sí, sin verificar».** No se ha descargado el modelo, no se ha parseado su cabecera `safetensors`, no se ha construido imagen y **no se ha ejecutado ni una sola vez**. Todo lo de este apartado es **[D]** de la ficha o **[C]** de aritmética sobre ella.
+
+**Tamaños por componente que constan en la fuente primaria [D]** (reverificados el 2026-09-03 en `huggingface.co/MiniMaxAI/MiniMax-Music3`):
+
+| Componente | Tamaño declarado **[D]** | Huella en fp16 **[C]** |
+|---|---:|---:|
+| Global LLM (inicializado desde Qwen3-8B) | 8 B | 16,0 GB |
+| Local LLM (detalle acústico por frame) | 0,6 B | 1,2 GB |
+| Flow Matching | 2,4 B | 4,8 GB |
+| Flow-VAE Decoder | 123 M | 0,246 GB |
+| **Total** | **11,123 B** | **≈ 22,2 GB** |
+
+*Aritmética: parámetros × 2 B, con GB = 10⁹ B, misma convención que §8.1 de este documento.*
+
+**Comprobación cruzada que da confianza al cálculo [C].** La ficha declara «~22 GB» con offloading automático de CPU **[D]**. Nuestro cálculo de pesos residentes en fp16 da **22,2 GB**. Coinciden: la cifra de 22 GB de upstream es, esencialmente, **todos los pesos residentes en fp16 y poco más**. Es la misma clase de comprobación que en §3.1 identificó nuestro checkpoint de ACE-Step (4,788 GB frente a los «~4.7GB for 2B» declarados).
+
+**La contradicción de metadatos sigue abierta y hoy se confirma [D].** La barra lateral de HF declara **«2B params», tipo de tensor F32**; el cuerpo de la ficha describe 8B + 0,6B + 2,4B + 123M. Son incompatibles entre sí, y además con el propio «~22 GB» (11,1 B en F32 serían ~44,5 GB de descarga **[C]**). **No podemos resolverlo**: con ACE-Step lo resolvimos parseando la cabecera del `safetensors` **[M]**, y aquí no hay fichero descargado que parsear. Importa porque el manifiesto de procedencia registra tamaño y hash de pesos, y **no se puede citar un metadato que se contradice con su propia ficha**.
+
+**Qué dice exactamente la afirmación de 8 GB, y contra qué presupuesto [D]:**
+
+- «makes fit even 8 GB video cards», con el comentario de código «slower, but fits in 8 GB».
+- El mecanismo es `apply_group_offloading` con `offload_type="leaf_level"` y `use_stream=True`, **aplicado al modelo de lenguaje**: «streaming the language model layer by layer».
+
+**Por qué esto NO permite decir que cabe en nuestra máquina.** Cuatro razones, ninguna opinable:
+
+1. **El «8 GB» de upstream es capacidad nominal de tarjeta; el nuestro es memoria libre.** La GTX 1070 tiene **8.191 MiB totales** pero **7.202 MiB libres** con el escritorio de Windows cargado **[M]**: **989 MiB (12 %) ya consumidos** antes de cargar nada. La afirmación se mide contra un presupuesto que en esta máquina no existe.
+2. **El componente mayor, solo él, es 2,3× la tarjeta entera.** El Global LLM son **16,0 GB en fp16 [C]** frente a 8.191 MiB totales. Toda la afirmación descansa **íntegramente** en que el *streaming* por capas funcione; no hay margen de error en esa hipótesis.
+3. **Aritmética del conjunto residente, si el offloading solo alcanza al LM como dice la fuente [C]:** en la etapa de flow matching harían falta 2,4 B + 123 M = **2,523 B → 5,05 GB ≈ 4.812 MiB** de pesos residentes, sobre **7.202 MiB libres [M]** → quedarían **~2.390 MiB** para activaciones, la capa del LM en tránsito, sus búferes y el contexto CUDA. Para calibrar: ACE-Step, con 5.863 MiB de pesos residentes, midió un pico de **7.455 MiB [M]**, es decir **~1.600 MiB de sobrecoste no-pesos**. El margen de MiniMax es del **mismo orden que ese sobrecoste**. Aritméticamente no está descartado; tampoco está establecido.
+4. **Hay un término que la aritmética de arriba no cubre y la ficha no desglosa:** el **KV cache** de un LLM de 8 B autorregresivo sobre hasta **9.000 frames acústicos [D]**. Crece con la longitud de la secuencia y no aparece en ninguna cifra publicada. La afirmación «fits in 8 GB» no dice a qué duración de canción corresponde.
+
+**Y dos avisos que salen de lo único que hemos medido en esta tarjeta [M], aplicados aquí como razonamiento, no como medición:**
+
+- El *streaming* por capas mueve pesos de CPU a GPU **repetidamente durante la generación**. En esta máquina, la carga de pesos de ACE-Step, tensor a tensor sobre bind mount de Windows, costó **386–390 s [M]**. El «slower» del comentario de upstream, en esta máquina y por este camino, tiene una escala que nadie ha medido y que las cifras de upstream (obtenidas en tarjetas modernas) no predicen.
+- Ya nos pasó una vez que una ruta acelerada asumida por el README **degradara en silencio** en `sm_61`: SDPA cae al kernel *mem-efficient* y es **12,9× más lento que eager [M]**. `use_stream=True` es exactamente la misma clase de hipótesis: un camino optimizado cuya viabilidad en Pascal **nadie ha comprobado**.
+
+**Otras restricciones declaradas hoy [D]**, por completitud: inferencia **requiere CUDA**; **solo generación no-streaming**; prompt de texto limitado a **5.000 tokens**; audio limitado a **9.000 frames acústicos**; los tags de sección «provide generative control rather than strict symbolic guarantees». Salida **32 kHz · 16 bit · estéreo**, frente a los **48 kHz medidos** de ACE-Step **[M]** — para una plataforma cuyo almacén es FLAC y cuya exportación premium es WAV/48 kHz, adoptar 32 kHz es un techo de banda de 16 kHz que **ningún remuestreo posterior recupera**. La ruta de integración sigue **sin versión publicada de `diffusers`**: la ficha sigue apuntando hoy al commit fijado `dafe3733fcfdbf3c48915fe77be3aef65b5d6a2d` del PR #14456, aún sin mergear **[D]**; la vía documentada como principal es SGLang-Omni. Los idiomas **siguen sin enumerarse en ninguna parte de la ficha [D]** — para un producto en castellano, sigue siendo una incógnita abierta, no un dato.
+
+> **Estado de §12.3, sin adornos: NO se afirma que MiniMax-Music3 quepa en 8 GB, ni en esta tarjeta.** Se afirma que upstream lo declara, que la aritmética de pesos no lo contradice, que el margen es estrecho y que **la única forma de saberlo es ejecutarlo, cosa que no se ha hecho**.
+
+### 12.4 Veredicto
+
+**El candidato ni se desbloquea ni se descarta hoy: se le repara la condición, que estaba rota.** MiniMax-Music3 sigue siendo **candidato condicional**, exactamente el mismo estatus que tenía el 2026-08-18 — pero por un motivo distinto del que consta escrito, y con la condición apuntando a un gate vivo en vez de a uno cerrado.
+
+### 12.5 Las tres opciones y su coste
+
+| Opción | Qué implica | Coste |
+|---|---|---|
+| **(a) Dejarlo condicional, reparando la condición** | Sigue fuera de alcance y sin presupuestar. Se sustituye «bloqueado hasta dictamen de G2» (referencia muerta) por dos disparadores vivos: **G1-bis** para la necesidad técnica y **GC-01** para la licencia. A-4 se reancla a GC-01 | **0 h de desarrollo, 0 €.** Solo este addendum y las notas de §12.6 |
+| **(b) Hacer ahora la consulta legal que A-4 pedía** | Consulta profesional sobre la Community License, por separado y de forma anticipada | **Gasto externo de bolsillo, sin cifra y sin presupuestar.** Las 32 h de asesoría de `evaluation.md` §6.5d **dejaron de existir como partida el 2026-09-01**: `gobernanza.md` §7 las declara «N/A en modo personal» y las reagrupa en GC-01. A-4 se escribió cuando esas horas parecían una reserva interna ya pagada; hoy no lo son |
+| **(c) Descartarlo** | Sale del catálogo, como MusicGen | **0 h**, y cierra A-4 de un plumazo |
+
+**Se recomienda (a)**, y las razones son de coste y de método, no de preferencia:
+
+1. **(b) pagaría hoy por una respuesta que hoy no cambia ninguna decisión.** La cláusula cara —§4, salvaguardas continuas— **no se dispara en el ámbito actual** (§12.2). Preguntar ahora es pedir dictamen sobre una obligación que aún no aplica, para un modelo que **no es alcance** (Fase 2 está `bloqueada (gate)`), cuyo disparador técnico es un **G1-bis que aún no ha ocurrido** — y **G1 tampoco**. Es gastar contra una hipótesis.
+2. **(b) tiene además un momento mucho más barato, y ya está reservado.** GC-01 condición (a) exige de todos modos «una consulta a un profesional y su informe escrito archivado» sobre la procedencia. **La pregunta de MiniMax cabe como un punto más de esa misma consulta, con coste marginal prácticamente nulo** — que es exactamente el argumento con el que `g2-matriz-resultados.md` §4 justificó añadir la pregunta 2 a la pregunta 1: «el coste marginal de añadir la segunda es cero (misma consulta, mismas 32 h)». Aplicar hoy ese mismo criterio dice: **no una consulta aparte, sino un punto (h) dentro de GC-01**.
+3. **(c) descartaría por una cláusula que hoy no aplica y sobre un modelo que nunca se ha medido.** El precedente del proyecto para descartar es MusicGen: **CC BY-NC, un descalificador verificado y absoluto** frente al invariante de licencias comerciales. Aquí no hay nada equivalente: la Community License **permite uso comercial**, con condiciones que hoy no se activan. Descartar por incomodidad, sin medición y sin que la obligación aplique, sería el mismo error que el documento evita en todas partes: **confundir «no verificado» con «malo»**.
+4. **(a) no cuesta nada mantenerlo abierto, y el hueco ya existe.** El candidato vive en una partida condicional **no presupuestada** de Fase 2 (`evaluation.md` §2 y §11). Mantenerlo cuesta cero euros y cero horas; el único coste real de tenerlo ahí era **la referencia muerta**, y este addendum la elimina.
+5. **Ninguna opción degrada ningún gate ni umbral.** (a) los refuerza: sustituye un bloqueo huérfano por dos condiciones verificables, ancladas a gates que existen y tienen dueño.
+
+**Los dos disparadores, escritos para que no se improvisen:**
+
+| Disparador | Condición | Consecuencia |
+|---|---|---|
+| **Técnico** | **G1-bis** muestra adherencia a la letra insuficiente en ACE-Step **y** en HeartMuLa | Se abre la evaluación técnica de un tercer adapter. Orden de magnitud de referencia del ledger para tercer adapter + router: **≈ 50 h → 2.500 € base / 3.000 € con margen del 20 % [C]** (`.claude/rates.json`). Sigue sin presupuestar |
+| **Legal** | Se activa **GC-01** (comercialización o uso con terceros) | La consulta sobre la Community License entra **como punto de la consulta de GC-01 (a)**, no como consulta aparte. Coste marginal ≈ 0 |
+
+**Regla de precedencia, porque el orden importa:** si se dispara el técnico y **no** el legal (uso estrictamente personal), lo que aplica es solo AUP + indemnización + AS IS, y **no hace falta consulta para probarlo**. Si se dispara el legal, la consulta es **obligatoria antes de integrarlo**, se haya disparado el técnico o no. **Lo que no puede pasar es integrarlo y preguntar después**: la AUP es modificable unilateralmente y el ledger de procedencia no admite reescritura retroactiva.
+
+### 12.6 Qué queda superado de la versión del 2026-09-02
+
+Se corrige aquí, no allí. Las frases originales se conservan íntegras en sus secciones:
+
+| Dónde | Decía | Estado tras este addendum |
+|---|---|---|
+| **§2**, fila «VRAM mínima», columna MiniMax | «**8 GB** con `apply_group_offloading` […] «slower, but fits in 8 GB» **[D]**» | **Correcto como cita, insuficiente como dato.** Ese «8 GB» es capacidad **nominal** de tarjeta; en esta máquina hay **7.202 MiB libres [M]**. Ver §12.3 |
+| **§6**, punto 3 de la lectura | «Las **salvaguardas obligatorias** son la cláusula cara» | **Cierto, pero incompleto: no se dispara hoy.** Su disparador es ofrecer generación a terceros (§4 de la licencia). Aplica en GC-01, no en modo personal. Ver §12.2 |
+| **§6**, «Acción viva» | «la pregunta a legal debería incluir explícitamente la obligación de salvaguardas técnicas continuas» | **Sigue vigente en el fondo, muerta en la forma.** No hay lote de G2 al que añadirla: el gate se cerró sin dictamen. Se reancla a **GC-01 (h)** |
+| **§7.2**, final | «el sustituto natural sería MiniMax-Music3 (8 GB con group offloading) — y **está bloqueado por licencia hasta G2**» | **Doble corrección.** (i) No está «bloqueado hasta G2»: la condición quedó huérfana, no resuelta (§12.1). (ii) **No está establecido que sea sustituto**: su encaje en esta tarjeta es declarado y no verificado, con margen estrecho (§12.3). Léase «candidato a comprobar», no «sustituto» |
+| **§8.3**, fila MiniMax | «**Bloqueado por licencia** hasta dictamen de G2» | **Sustitúyase por:** «Condición **sin resolver** — la licencia nunca entró en G2. Evaluación legal anclada a **GC-01 (h)**; necesidad técnica, a **G1-bis**» |
+| **§9**, acción **A-4** | «Ampliar la pregunta de G2 sobre MiniMax-Music3 […]. Prioridad Media — firma del propietario» | **Reformulada** (§12.7). El destino ya no es `gates/g2-matriz-resultados.md` sino `gates/gobernanza.md` §8. Prioridad **baja**: no bloquea nada hasta GC-01 |
+
+### 12.7 Acciones que salen de este addendum
+
+Ninguna consume presupuesto. Ninguna cambia estado de tarea, fase ni cifra ratificada (656 h / 39.360 € intactos).
+
+| # | Acción | Dónde | Prioridad |
+|---|---|---|---|
+| **A-4′** | **Sustituir A-4.** Añadir a `gobernanza.md` §8 una condición **(h)**: «Términos de la **MiniMax-Music3 Community License** (§3.1 atribución en UI, §3.2 umbral de 20 M$, **§4 salvaguardas técnicas continuas**, Exhibit A modificable unilateralmente, indemnización a favor del licenciante) evaluados **antes de integrar el modelo**, como punto de la misma consulta de GC-01 (a)» | `gates/gobernanza.md` §8 | Baja — **no bloquea hasta GC-01** |
+| **A-7** | Corregir en `spec.md` §5.3 y §11.1 la frase «Añade una pregunta al lote del gate G2 (ver `tasks.md` T-01)»: **ese lote no existe**, G2 se cerró sin dictamen. Reapuntar a GC-01 (h) | `spec.md` §5.3, §11.1 | Media — es una referencia muerta en la fuente de verdad |
+| **A-8** | Anotar en `tasks.md`, junto a la nota de `T-01` del 2026-08-18, que **la tercera pregunta candidata nunca se formuló** y que su destino pasa a ser GC-01 (h). No reabre `T-01` | `tasks.md` `T-01` | Media |
+| **A-9** | Si algún día se dispara el criterio técnico, **el primer trabajo no es contenerizar: es descargar los pesos y parsear la cabecera `safetensors`**, como se hizo con ACE-Step (§3.1), para resolver la contradicción «2B params / F32» frente a los 11,1 B de la ficha. Es barato y decide si merece la pena seguir | Spike futuro, no de Fase 0 | Baja — condicional |
+
+### 12.8 Método de este addendum: qué se comprobó y qué no
+
+**Comprobado (verde):**
+
+- `gates/g2-matriz-resultados.md` y el directorio `gates/` completo, leídos y buscados por `grep`: **cero menciones a MiniMax, salvaguardas, atribución o umbral de 20 M$**.
+- `gates/g2-matriz-resultados.md` §3, §4, §6 y §10: las dos preguntas reales de G2 y el estado real de su cierre (1 de 3 criterios, sin informe archivado).
+- `tasks.md` `T-01`: el texto literal de la nota del 2026-08-18 que se autoanula, y los tres criterios de aceptación con su estado.
+- `gates/gobernanza.md` §1, §7 y §8: traslado de la deuda legal a **GC-01**, sus siete condiciones (a)–(g), y la declaración de que las 32 h de asesoría son **N/A en modo personal**.
+- `.claude/rates.json`: 50 €/h, margen 20 %.
+- Fuentes primarias reverificadas el **2026-09-03**: ficha de `huggingface.co/MiniMaxAI/MiniMax-Music3` (tamaños por componente, VRAM 24 GB / ~22 GB / 8 GB con su redacción literal, 32 kHz 16 bit estéreo, 25 fps, 9.000 frames, 5.000 tokens, limitaciones, PR #14456 con commit fijado y aún sin mergear, idiomas ausentes, contradicción «2B params» del panel lateral) y el fichero `LICENSE` (§3.1, §3.2, §4, §2 + Exhibit A, indemnización).
+
+**No comprobado, y por eso nada de lo anterior lo afirma (rojo):**
+
+- **No se ha descargado, construido ni ejecutado MiniMax-Music3.** Ni un byte de pesos, ni una imagen, ni una generación. **No hay ningún [M] de este modelo en este documento, ni en este addendum.**
+- **No se ha parseado su cabecera `safetensors`**, así que la contradicción de metadatos sigue sin resolver.
+- **No se ha verificado que `use_stream=True` funcione en `sm_61`**, ni el coste real del *streaming* por capas en esta máquina.
+- **No hay dictamen jurídico** sobre esta licencia. §12.2 es lectura del texto por el equipo técnico, **no asesoramiento legal** — la misma reserva que ya hacía §6.
+- **No se ha verificado si la afirmación «fits in 8 GB» corresponde a una canción de 5 minutos o a un fragmento corto.** La ficha no lo dice.
+
+---
+
+## 13. Registro de cambios
 
 | Fecha | Cambio | Autor |
 |---|---|---|
 | 2026-09-02 | Creación (T-06). Comparativa de ACE-Step 1.5, HeartMuLa y YuE 7B + MiniMax-Music3 condicional. **D-06 confirmado sin cambios.** Seis correcciones propuestas a `spec.md` §11.1, encabezadas por **ACE-Step 1.5 = MIT, no Apache 2.0**. Seis acciones abiertas (§9), de las que **A-3 (HeartCLAP no publicado) bloquea el protocolo de G1**. | implementer |
+| 2026-09-03 | **Addendum §12 — reevaluación de MiniMax-Music3.** Se comprueba y se refuta la premisa «G2 cerró, luego MiniMax se desbloquea»: **cero menciones a MiniMax en todo `gates/`**, G2 preguntó solo I-05 e I-05b, la nota de `T-01` se autoanulaba («no reabre la tarea») y el gate se cerró **sin dictamen jurídico** (1 de 3 criterios). La condición «hasta G2» quedó **huérfana, no resuelta a favor**. Licencia releída contra el `LICENSE` con el **disparador de cada cláusula**: atribución (§3.1) y salvaguardas continuas (§4) **no se disparan en modo personal**; se disparan en **GC-01**. Encaje en hardware: sigue **declarado y sin verificar** — tamaños por componente **[D]** y **≈ 22,2 GB en fp16 [C]**, que cuadra con los «~22 GB» de upstream; **no se afirma que quepa en 8 GB** (el «8 GB» de upstream es nominal; aquí hay **7.202 MiB libres [M]**). Veredicto: **seguir condicional con la condición reparada**, anclada a **G1-bis** (técnico) y **GC-01 (h)** (legal); **A-4 reformulada como A-4′** más A-7, A-8 y A-9. **Sin cambios de horas, coste, fases, estados ni gates: 656 h / 39.360 € intactos.** | implementer |
