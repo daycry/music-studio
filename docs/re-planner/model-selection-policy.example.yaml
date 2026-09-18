@@ -1,0 +1,80 @@
+schema_version: "1.0"
+policy_name: default-model-selection-v4
+precedence:
+  - generation_or_shot_override
+  - song_or_video_project_policy
+  - workspace_default
+  - application_default
+
+allowed_policies:
+  inherit:
+    description: "Hereda el siguiente nivel aplicable."
+    user_visible: true
+  auto:
+    description: "El resolver escoge un perfil/release stable compatible y explica la decisión."
+    user_visible: true
+    allowed_channels: [stable]
+    allow_family_fallback: true
+    silent_quality_fallback: false
+  pinned_profile:
+    description: "Fija una experiencia visible; el release puede promoverse solo para futuras generaciones."
+    user_visible: true
+    allowed_channels: [stable, candidate]
+    allow_family_fallback: false
+  pinned_release:
+    description: "Fija un release exacto para reproducibilidad o compatibilidad."
+    user_visible: advanced
+    required_permission: model.release.pin
+    allow_fallback: false
+
+resolution_constraints:
+  require_license_allowed: true
+  require_territory_allowed: true
+  require_capabilities: true
+  require_benchmark_approval: true
+  reject_deprecated_for_new_auto_selections: true
+  reject_blocked: true
+  forbid_floating_revisions: true
+  produce_decision_trace: true
+  include_worker_id_in_resolution: false
+
+scheduler_contract:
+  input:
+    - resolved_model_release_id
+    - adapter_release_id
+    - runtime_release_id
+    - execution_profile_candidates
+    - resource_requirements
+  output:
+    - worker_snapshot_id
+    - placement_reason
+  rules:
+    - "No mutar ModelSelection ni ModelResolution."
+    - "No elegir otra familia/modelo como fallback silencioso."
+    - "No persistir worker/GPU en Song o Workspace."
+
+examples:
+  workspace_default:
+    workspace_id: ws_album_01
+    default_music_profile_id: music.acestep15.balanced
+
+  inherited_song:
+    song_id: song_01
+    policy: inherit
+    expected_profile_id: music.acestep15.balanced
+
+  pinned_profile_song:
+    song_id: song_02
+    policy: pinned_profile
+    requested_profile_id: music.acestep15.fast
+
+  generation_override:
+    policy: pinned_profile
+    requested_profile_id: music.auto.balanced
+    required_capabilities:
+      - music.full_song
+      - music.lyrics_conditioned
+
+  exact_reproduction:
+    policy: pinned_release
+    requested_release_id: music.acestep.v15.2b-lm06@PENDING_PIN

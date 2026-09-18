@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.example/schemas/adapter-manifest-1.1.json",
+  "title": "Adapter Manifest v1.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "adapter_id",
+    "adapter_version",
+    "protocol_version",
+    "runtime",
+    "capabilities",
+    "operations",
+    "compatibility_contracts"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.1"
+    },
+    "adapter_id": {
+      "type": "string"
+    },
+    "adapter_version": {
+      "type": "string"
+    },
+    "protocol_version": {
+      "type": "string"
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "container_digest",
+        "entrypoint",
+        "runs_as_non_root"
+      ],
+      "properties": {
+        "container_digest": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "entrypoint": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "runs_as_non_root": {
+          "const": true
+        },
+        "network_during_inference": {
+          "const": false
+        }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "contract_version",
+          "input_schema",
+          "output_schema"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "contract_version": {
+            "type": "string"
+          },
+          "input_schema": {
+            "type": "string"
+          },
+          "output_schema": {
+            "type": "string"
+          },
+          "supports_cancel": {
+            "type": "boolean"
+          },
+          "supports_progress": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "operations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "health",
+        "capabilities",
+        "validate",
+        "estimate",
+        "load",
+        "run",
+        "cancel",
+        "unload"
+      ],
+      "properties": {
+        "health": {
+          "type": "string"
+        },
+        "capabilities": {
+          "type": "string"
+        },
+        "validate": {
+          "type": "string"
+        },
+        "estimate": {
+          "type": "string"
+        },
+        "load": {
+          "type": "string"
+        },
+        "run": {
+          "type": "string"
+        },
+        "cancel": {
+          "type": "string"
+        },
+        "unload": {
+          "type": "string"
+        }
+      }
+    },
+    "compatibility_contracts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operation",
+          "contract_version",
+          "requires_same_family",
+          "requires_same_release",
+          "requires_same_adapter_major"
+        ],
+        "properties": {
+          "operation": {
+            "type": "string"
+          },
+          "contract_version": {
+            "type": "string"
+          },
+          "requires_same_family": {
+            "type": "boolean"
+          },
+          "requires_same_release": {
+            "type": "boolean"
+          },
+          "requires_same_adapter_major": {
+            "type": "boolean"
+          },
+          "requires_source_state": {
+            "type": "boolean"
+          },
+          "allowed_family_ids": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string"
+            }
+          },
+          "compatible_release_ranges": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "incompatible_quantizations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  "not": {
+    "anyOf": [
+      {
+        "required": [
+          "worker_id"
+        ]
+      },
+      {
+        "required": [
+          "gpu_id"
+        ]
+      },
+      {
+        "required": [
+          "hostname"
+        ]
+      }
+    ]
+  }
+}

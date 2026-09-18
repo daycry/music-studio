@@ -1,0 +1,96 @@
+schema_version: "1.1"
+policy:
+  bind_creative_entities_to_hardware: false
+  selection_basis: measured_capabilities
+  require_worker_snapshot_per_claim: true
+  require_benchmark_for_model_profile: true
+  invalidate_only_hardware_bound_approvals_on_gpu_change: true
+
+profiles:
+  RTX-12:
+    description: "Baseline de producto; referencia RTX 5070 desktop de 12 GB."
+    min_usable_vram_mb: 11264
+    reference_devices:
+      - "NVIDIA GeForce RTX 5070 desktop 12 GB"
+    concurrency:
+      max_heavy_gpu_jobs: 1
+      max_render_only_jobs: benchmark_governed
+    residency:
+      policy: one_heavy_model_family_at_a_time
+      require_unload_between_families: true
+    defaults:
+      preview_first: true
+      allow_silent_quality_fallback: false
+      allow_model_family_fallback: false
+    expected_capabilities:
+      - music.full_song
+      - image.keyframe
+      - video.short_shot
+      - lipsync.audio_to_face
+      - render.timeline
+
+  RTX-16:
+    description: "Perfil local superior para checkpoints mayores y menos offload."
+    min_usable_vram_mb: 15360
+    concurrency:
+      max_heavy_gpu_jobs: 1
+    residency:
+      policy: benchmark_governed
+    defaults:
+      preview_first: true
+      allow_silent_quality_fallback: false
+
+  RTX-24:
+    description: "Perfil de alta memoria para música/vídeo/lip-sync mayores."
+    min_usable_vram_mb: 22528
+    concurrency:
+      max_heavy_gpu_jobs: benchmark_governed
+    residency:
+      policy: benchmark_governed
+    defaults:
+      preview_first: true
+      allow_silent_quality_fallback: false
+
+  RTX-32:
+    description: "Perfil avanzado; sigue sujeto a requisitos por release."
+    min_usable_vram_mb: 30720
+    concurrency:
+      max_heavy_gpu_jobs: benchmark_governed
+    residency:
+      policy: benchmark_governed
+    defaults:
+      preview_first: configurable
+      allow_silent_quality_fallback: false
+
+  HIGH-VRAM:
+    description: "Workers especializados por encima de 32 GB; no se asume soporte consumer."
+    min_usable_vram_mb: 40960
+    concurrency:
+      max_heavy_gpu_jobs: benchmark_governed
+    residency:
+      policy: benchmark_governed
+
+worker_snapshot_required_fields:
+  - worker_id
+  - captured_at
+  - gpu_name
+  - gpu_uuid
+  - compute_capability
+  - vram_total_mb
+  - vram_free_mb_at_claim
+  - driver_version
+  - cuda_runtime
+  - pytorch_version
+  - supported_dtypes
+  - installed_model_release_ids
+  - active_release_set_ids
+  - thermal_state
+  - free_disk_bytes
+
+resolution_rules:
+  - "El Model Resolver no selecciona un worker."
+  - "El Scheduler recibe ModelRelease y requisitos ya resueltos."
+  - "El nombre comercial de la GPU no es suficiente: se usan mediciones y snapshots."
+  - "Un perfil hardware no autoriza por sí solo un ModelRelease."
+  - "Cambiar GPU no modifica Workspace, Song, SongVersion, VideoProject ni Shot."
+  - "El hardware efectivo se registra únicamente en Job/ModelRun/WorkerSnapshot."

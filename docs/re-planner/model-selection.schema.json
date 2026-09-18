@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.example/schemas/model-selection-1.0.json",
+  "title": "Model Selection",
+  "description": "Intent captured before resolution. It cannot identify a physical worker.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "policy",
+    "required_capabilities"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "id": {
+      "type": "string"
+    },
+    "policy": {
+      "enum": [
+        "inherit",
+        "auto",
+        "pinned_profile",
+        "pinned_release"
+      ]
+    },
+    "inherited_from": {
+      "enum": [
+        "workspace",
+        "song",
+        "video_project",
+        "shot",
+        null
+      ]
+    },
+    "requested_profile_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "requested_release_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "required_capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "quality_tier": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "fast",
+        "balanced",
+        "quality",
+        "experimental",
+        null
+      ]
+    },
+    "constraints": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "policy": {
+            "const": "pinned_profile"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "requested_profile_id"
+        ],
+        "properties": {
+          "requested_release_id": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "policy": {
+            "const": "pinned_release"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "requested_release_id"
+        ],
+        "properties": {
+          "requested_profile_id": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "policy": {
+            "enum": [
+              "inherit",
+              "auto"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "requested_release_id": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ],
+  "not": {
+    "anyOf": [
+      {
+        "required": [
+          "worker_id"
+        ]
+      },
+      {
+        "required": [
+          "gpu_id"
+        ]
+      },
+      {
+        "required": [
+          "gpu_name"
+        ]
+      },
+      {
+        "required": [
+          "hostname"
+        ]
+      }
+    ]
+  }
+}

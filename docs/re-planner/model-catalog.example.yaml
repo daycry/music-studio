@@ -1,0 +1,434 @@
+schema_version: '1.1'
+generated_at: '2026-09-18'
+purpose: Planning example. Every PENDING_PIN value must be replaced before installation.
+policy:
+  default_channel: stable
+  require_exact_revision: true
+  require_sha256: true
+  require_license_review: true
+  require_territory_review: true
+  require_profile_benchmark: true
+  trust_remote_code_default: false
+  pickle_default: deny
+  inference_network_default: deny
+  reverify_at_install: true
+  creative_entities_may_reference_worker: false
+families:
+- id: ACE-Step-1.5
+  domain: music
+  display_name: ACE-Step 1.5
+  official_source: https://github.com/ace-step/ACE-Step-1.5
+- id: HeartMuLa
+  domain: music
+  display_name: HeartMuLa
+  official_source: https://github.com/HeartMuLa/heartlib
+- id: DiffRhythm2
+  domain: music
+  display_name: DiffRhythm2
+  official_source: https://huggingface.co/ASLP-lab/DiffRhythm2
+- id: YuE2
+  domain: music
+  display_name: YuE2
+  official_source: https://huggingface.co/m-a-p/YuE2-3B
+- id: SongGeneration2
+  domain: music
+  display_name: SongGeneration/LeVo 2
+  official_source: https://github.com/tencent-ailab/SongGeneration
+- id: FLUX.2-Klein
+  domain: image
+  display_name: FLUX.2 Klein
+  official_source: https://github.com/black-forest-labs/flux2
+- id: LTX-Video
+  domain: video
+  display_name: LTX-Video
+  official_source: https://github.com/Lightricks/LTX-Video
+- id: LTX-2.5
+  domain: video
+  display_name: LTX-2.5
+  official_source: https://huggingface.co/Lightricks/LTX-2.5
+- id: Wan2.2
+  domain: video
+  display_name: Wan2.2
+  official_source: https://github.com/Wan-Video/Wan2.2
+- id: HunyuanVideo-1.5
+  domain: video
+  display_name: HunyuanVideo 1.5
+  official_source: https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5
+- id: MuseTalk
+  domain: lipsync
+  display_name: MuseTalk
+  official_source: https://github.com/TMElyralab/MuseTalk
+- id: LatentSync
+  domain: lipsync
+  display_name: LatentSync
+  official_source: https://github.com/bytedance/LatentSync
+releases:
+- id: music.acestep.v15.2b-lm06@PENDING_PIN
+  family_id: ACE-Step-1.5
+  upstream_revision: PENDING_PIN
+  channel: lab
+  capabilities:
+  - music.full_song
+  - music.instrumental
+  - music.lyrics_conditioned
+  license_status: review_required
+  hardware_evidence:
+    RTX-12: benchmark_required
+    RTX-16: benchmark_required
+    RTX-24: benchmark_required
+    RTX-32: benchmark_required
+  notes: Baseline candidate for RTX-12; exact release and artifacts must be pinned.
+- id: music.acestep.v15.2b-lm17@PENDING_PIN
+  family_id: ACE-Step-1.5
+  upstream_revision: PENDING_PIN
+  channel: lab
+  capabilities:
+  - music.full_song
+  - music.lyrics_conditioned
+  license_status: review_required
+  hardware_evidence:
+    RTX-12: experimental_boundary
+    RTX-16: benchmark_required
+    RTX-24: benchmark_required
+    RTX-32: benchmark_required
+  notes: Boundary profile on exactly 12 GB; no stable claim before OOM/quality testing.
+- id: music.acestep.v15.xl4b@PENDING_PIN
+  family_id: ACE-Step-1.5
+  upstream_revision: PENDING_PIN
+  channel: lab
+  capabilities:
+  - music.full_song
+  - music.lyrics_conditioned
+  license_status: review_required
+  hardware_evidence:
+    RTX-12: lab_only_with_offload_and_quantization
+    RTX-16: lab_only
+    RTX-24: benchmark_required
+    RTX-32: benchmark_required
+  notes: High-quality candidate; not part of the RTX-12 stable baseline.
+- id: music.heartmula.3b@PENDING_PIN
+  family_id: HeartMuLa
+  upstream_revision: PENDING_PIN
+  channel: lab
+  capabilities:
+  - music.full_song
+  - music.lyrics_conditioned
+  license_status: review_required
+  hardware_evidence:
+    RTX-12: unknown_until_benchmark
+    RTX-16: benchmark_required
+    RTX-24: benchmark_required
+    RTX-32: benchmark_required
+- id: music.diffrhythm2.1b@PENDING_PIN
+  family_id: DiffRhythm2
+  upstream_revision: PENDING_PIN
+  channel: lab
+  capabilities:
+  - music.full_song
+  - music.lyrics_conditioned
+  license_status: review_required
+  hardware_evidence:
+    RTX-12: unknown_until_benchmark
+    RTX-16: benchmark_required
+    RTX-24: benchmark_required
+    RTX-32: benchmark_required
+- id: music.yue2.3b@PENDING_PIN
+  family_id: YuE2
+  upstream_revision: PENDING_PIN
+  channel: blocked
+  capabilities:
+  - music.full_song
+  license_status: noncommercial
+  hardware_evidence:
+    RTX-12: unsupported
+    RTX-24: research_only
+  notes: Current official weights require a separate noncommercial policy review.
+- id: music.songgeneration2@PENDING_PIN
+  family_id: SongGeneration2
+  upstream_revision: PENDING_PIN
+  channel: blocked
+  capabilities:
+  - music.full_song
+  license_status: noncommercial_or_research_only_review_required
+  hardware_evidence:
+    RTX-12: unsupported
+    RTX-24: research_candidate
+  notes: Excluded from productive/commercial release sets unless exact terms change and are re-approved.
+- id: image.flux2.klein4b@PENDING_PIN
+  family_id: FLUX.2-Klein
+  upstream_revision: PENDING_PIN
+  channel: lab
+  capabilities:
+  - image.text_to_image
+  - image.reference_edit
+  - image.multi_reference
+  - image.keyframe
+  license_status: review_required
+  hardware_evidence:
+    RTX-12: benchmark_required
+    RTX-16: benchmark_required
+    RTX-24: benchmark_required
+    RTX-32: benchmark_required
+- id: video.ltxvideo.2b-distilled@PENDING_PIN
+  family_id: LTX-Video
+  upstream_revision: PENDING_PIN
+  channel: lab
+  capabilities:
+  - video.image_to_video
+  - video.short_shot
+  license_status: review_required
+  hardware_evidence:
+    RTX-12: benchmark_required
+    RTX-16: benchmark_required
+    RTX-24: benchmark_required
+    RTX-32: benchmark_required
+- id: video.ltx2.5@PENDING_PIN
+  family_id: LTX-2.5
+  upstream_revision: PENDING_PIN
+  channel: lab
+  capabilities:
+  - video.text_to_video
+  - video.image_to_video
+  - video.audio_conditioned
+  license_status: conditional_review_required
+  hardware_evidence:
+    RTX-12: not_product_default
+    RTX-16: lab_only_until_measured
+    RTX-24: benchmark_required
+    RTX-32: benchmark_required
+- id: video.wan2.2.ti2v5b@PENDING_PIN
+  family_id: Wan2.2
+  upstream_revision: PENDING_PIN
+  channel: lab
+  capabilities:
+  - video.text_to_video
+  - video.image_to_video
+  license_status: review_required
+  hardware_evidence:
+    RTX-12: unsupported
+    RTX-16: unsupported_until_proven
+    RTX-24: benchmark_required
+    RTX-32: benchmark_required
+- id: video.wan2.2.s2v14b@PENDING_PIN
+  family_id: Wan2.2
+  upstream_revision: PENDING_PIN
+  channel: lab
+  capabilities:
+  - video.audio_conditioned
+  - video.performer
+  license_status: review_required
+  hardware_evidence:
+    RTX-12: unsupported
+    RTX-24: unsupported_by_default
+    RTX-32: unsupported_by_default
+    HIGH_VRAM: research_candidate
+- id: video.hunyuanvideo1.5@PENDING_PIN
+  family_id: HunyuanVideo-1.5
+  upstream_revision: PENDING_PIN
+  channel: blocked
+  capabilities:
+  - video.text_to_video
+  - video.image_to_video
+  license_status: territory_blocked
+  territories_blocked:
+  - EU
+  - UK
+  - KR
+  hardware_evidence:
+    RTX-12: unsupported
+  notes: Blocked for current Spain/EU context unless a later exact release has compatible terms.
+- id: lipsync.musetalk.1.5@PENDING_PIN
+  family_id: MuseTalk
+  upstream_revision: PENDING_PIN
+  channel: lab
+  capabilities:
+  - lipsync.audio_to_face
+  license_status: review_required
+  hardware_evidence:
+    RTX-12: benchmark_required
+    RTX-16: benchmark_required
+    RTX-24: benchmark_required
+    RTX-32: benchmark_required
+- id: lipsync.latentsync.1.5@PENDING_PIN
+  family_id: LatentSync
+  upstream_revision: PENDING_PIN
+  channel: lab
+  capabilities:
+  - lipsync.audio_to_face
+  license_status: review_required
+  hardware_evidence:
+    RTX-12: benchmark_required
+    RTX-16: benchmark_required
+    RTX-24: benchmark_required
+    RTX-32: benchmark_required
+- id: lipsync.latentsync.1.6@PENDING_PIN
+  family_id: LatentSync
+  upstream_revision: PENDING_PIN
+  channel: lab
+  capabilities:
+  - lipsync.audio_to_face
+  license_status: review_required
+  hardware_evidence:
+    RTX-12: unsupported
+    RTX-16: unsupported_until_proven
+    RTX-24: benchmark_required
+    RTX-32: benchmark_required
+profiles:
+- id: music.acestep15.fast
+  domain: music
+  display_name: ACE-Step 1.5 — rápida
+  quality_tier: fast
+  visibility: lab
+  required_capabilities:
+  - music.full_song
+  resolver_rule:
+    allowed_family_ids:
+    - ACE-Step-1.5
+    preferred_release_ids:
+    - music.acestep.v15.2b-lm06@PENDING_PIN
+    allowed_channels:
+    - stable
+    - candidate
+    - lab
+    family_fallback: false
+    require_license_allowed: true
+    require_territory_allowed: true
+    require_benchmark_approval: true
+    require_explainable_resolution: true
+  schema_version: '1.0'
+  version: 1
+  default_execution_profile_id: execution.acestep15.rtx12.fast
+- id: music.acestep15.balanced
+  domain: music
+  display_name: ACE-Step 1.5 — equilibrada
+  quality_tier: balanced
+  visibility: lab
+  required_capabilities:
+  - music.full_song
+  - music.lyrics_conditioned
+  resolver_rule:
+    allowed_family_ids:
+    - ACE-Step-1.5
+    preferred_release_ids:
+    - music.acestep.v15.2b-lm06@PENDING_PIN
+    allowed_channels:
+    - stable
+    - candidate
+    - lab
+    family_fallback: false
+    require_license_allowed: true
+    require_territory_allowed: true
+    require_benchmark_approval: true
+    require_explainable_resolution: true
+  schema_version: '1.0'
+  version: 1
+  default_execution_profile_id: execution.acestep15.rtx12.balanced
+- id: music.auto.balanced
+  domain: music
+  display_name: Auto recomendado — música
+  quality_tier: balanced
+  visibility: lab
+  required_capabilities:
+  - music.full_song
+  resolver_rule:
+    allowed_family_ids:
+    - ACE-Step-1.5
+    - HeartMuLa
+    - DiffRhythm2
+    allowed_channels:
+    - stable
+    family_fallback: true
+    require_explainable_resolution: true
+    require_license_allowed: true
+    require_territory_allowed: true
+    require_benchmark_approval: true
+  schema_version: '1.0'
+  version: 1
+  default_execution_profile_id: execution.music.auto.balanced
+- id: image.keyframe.balanced
+  domain: image
+  display_name: Keyframe equilibrado
+  quality_tier: balanced
+  visibility: lab
+  required_capabilities:
+  - image.keyframe
+  resolver_rule:
+    preferred_release_ids:
+    - image.flux2.klein4b@PENDING_PIN
+    allowed_channels:
+    - stable
+    - candidate
+    - lab
+    family_fallback: false
+    require_license_allowed: true
+    require_territory_allowed: true
+    require_benchmark_approval: true
+    require_explainable_resolution: true
+  schema_version: '1.0'
+  version: 1
+  default_execution_profile_id: execution.image.keyframe.balanced
+- id: video.shortshot.balanced
+  domain: video
+  display_name: Plano corto equilibrado
+  quality_tier: balanced
+  visibility: lab
+  required_capabilities:
+  - video.short_shot
+  resolver_rule:
+    preferred_release_ids:
+    - video.ltxvideo.2b-distilled@PENDING_PIN
+    allowed_channels:
+    - stable
+    - candidate
+    - lab
+    family_fallback: false
+    require_license_allowed: true
+    require_territory_allowed: true
+    require_benchmark_approval: true
+    require_explainable_resolution: true
+  schema_version: '1.0'
+  version: 1
+  default_execution_profile_id: execution.video.shortshot.balanced
+- id: lipsync.balanced
+  domain: lipsync
+  display_name: Lip-sync equilibrado
+  quality_tier: balanced
+  visibility: lab
+  required_capabilities:
+  - lipsync.audio_to_face
+  resolver_rule:
+    preferred_release_ids:
+    - lipsync.musetalk.1.5@PENDING_PIN
+    - lipsync.latentsync.1.5@PENDING_PIN
+    allowed_channels:
+    - stable
+    - candidate
+    - lab
+    family_fallback: true
+    require_license_allowed: true
+    require_territory_allowed: true
+    require_benchmark_approval: true
+    require_explainable_resolution: true
+  schema_version: '1.0'
+  version: 1
+  default_execution_profile_id: execution.lipsync.balanced
+- schema_version: '1.0'
+  id: render.timeline
+  version: 1
+  domain: render
+  display_name: Render de timeline
+  quality_tier: balanced
+  visibility: lab
+  required_capabilities:
+  - render.timeline
+  default_execution_profile_id: execution.ffmpeg.nvenc
+  resolver_rule:
+    allowed_channels:
+    - stable
+    - candidate
+    - lab
+    family_fallback: false
+    require_license_allowed: true
+    require_territory_allowed: true
+    require_benchmark_approval: true
+    require_explainable_resolution: true

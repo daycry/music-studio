@@ -1,0 +1,15 @@
+schema_version: "1.0"
+id: selection_example_01
+policy: pinned_profile
+inherited_from: song
+requested_profile_id: music.acestep15.balanced
+requested_release_id: null
+required_capabilities:
+  - music.full_song
+  - music.lyrics_conditioned
+quality_tier: balanced
+constraints:
+  duration_seconds: 210
+  language: es
+  allow_family_fallback: false
+created_at: "2026-09-18T00:00:00Z"

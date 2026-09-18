@@ -1,0 +1,187 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.example/schemas/model-profile-1.0.json",
+  "title": "Model Profile",
+  "description": "User-visible model choice. It resolves to immutable releases and never to a physical worker.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "domain",
+    "display_name",
+    "quality_tier",
+    "visibility",
+    "required_capabilities",
+    "resolver_rule",
+    "default_execution_profile_id"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]+$"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 1
+    },
+    "domain": {
+      "enum": [
+        "music",
+        "image",
+        "video",
+        "lipsync",
+        "analysis",
+        "render"
+      ]
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "quality_tier": {
+      "enum": [
+        "fast",
+        "balanced",
+        "quality",
+        "experimental"
+      ]
+    },
+    "visibility": {
+      "enum": [
+        "hidden",
+        "lab",
+        "candidate",
+        "public",
+        "deprecated"
+      ]
+    },
+    "required_capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "default_execution_profile_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "resolver_rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "allowed_channels",
+        "family_fallback"
+      ],
+      "properties": {
+        "allowed_family_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "preferred_release_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "allowed_channels": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "lab",
+              "candidate",
+              "stable",
+              "deprecated"
+            ]
+          }
+        },
+        "family_fallback": {
+          "type": "boolean"
+        },
+        "allow_lower_quality_tier": {
+          "type": "boolean",
+          "default": false
+        },
+        "require_license_allowed": {
+          "const": true
+        },
+        "require_territory_allowed": {
+          "const": true
+        },
+        "require_benchmark_approval": {
+          "const": true
+        },
+        "require_explainable_resolution": {
+          "const": true
+        }
+      }
+    },
+    "compatibility_contract_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "ui": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "badge": {
+          "type": "string"
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sort_order": {
+          "type": "integer"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object"
+    }
+  },
+  "not": {
+    "anyOf": [
+      {
+        "required": [
+          "worker_id"
+        ]
+      },
+      {
+        "required": [
+          "gpu_id"
+        ]
+      },
+      {
+        "required": [
+          "gpu_name"
+        ]
+      },
+      {
+        "required": [
+          "hostname"
+        ]
+      }
+    ]
+  }
+}

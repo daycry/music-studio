@@ -1,0 +1,185 @@
+{
+  "schema_version": "1.0",
+  "package_id": "suno-sondo-roadmap-audiovisual-rtx-v4",
+  "generated_at": "2026-09-18T00:00:00+02:00",
+  "canonical_ledger": "10-TASKS-RTX-AV-V4.md",
+  "hardware_baseline": "NVIDIA GeForce RTX 5070 desktop 12 GB (RTX-12 profile)",
+  "central_invariant": "Creative entities select model policies/profiles; physical GPU placement belongs only to Job/ModelRun/WorkerSnapshot.",
+  "validation": {
+    "status": "passed",
+    "markdown_files": 22,
+    "mermaid_blocks": 103,
+    "tasks": 94,
+    "dependency_edges": 288,
+    "hours_total": 1212,
+    "v3_tasks_mapped": 88,
+    "v2_tasks_mapped": 49,
+    "legacy_tasks_mapped": 86,
+    "catalog_families": 12,
+    "catalog_releases": 16,
+    "catalog_profiles": 7,
+    "errors": []
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "manifest_self_hash_included": false,
+    "file_count": 31,
+    "files": [
+      {
+        "path": "00-AUDITORIA-Y-REDEFINICION.md",
+        "bytes": 6989,
+        "sha256": "d0ef7891e3ed5dce25a4abe50aa813ada4289a9bfbd5d253abb403736bc028ec"
+      },
+      {
+        "path": "01-VISION-PRODUCTO-Y-WORKSPACES.md",
+        "bytes": 8307,
+        "sha256": "07c34f0713f8099601c30827342bd1fda65aa3299de133c79116dae1fd4edac3"
+      },
+      {
+        "path": "02-ARQUITECTURA-AUDIOVISUAL-MODULAR.md",
+        "bytes": 11179,
+        "sha256": "028ce83d62b4dadda806f709aaebbaff0070dba44e7a3f2a4eb6f2e359a54e2f"
+      },
+      {
+        "path": "03-MODEL-MANAGER-Y-ADAPTADORES.md",
+        "bytes": 8788,
+        "sha256": "ab758e7187d4814ff1239ecd5afaa283d76eea299fd26d5bac7fd4929a32326f"
+      },
+      {
+        "path": "04-SELECCION-MODELOS-CANCION-Y-HARDWARE.md",
+        "bytes": 10075,
+        "sha256": "f631e7861c5ec2c6986510e057c2fde2fdee82f40243de4d4756fa21909e48ad"
+      },
+      {
+        "path": "05-PERFILES-RTX-Y-MULTIWORKER.md",
+        "bytes": 7788,
+        "sha256": "ddc2336ae78ae7862e69b0347700974d5184a67de4908e7a40a3a7592ceb6667"
+      },
+      {
+        "path": "06-CATALOGO-MODELOS-2026-09.md",
+        "bytes": 14646,
+        "sha256": "f938584ef661efd93c8c675ceb5f9f2c515f145077fa152aab0d1bfd261e7f22"
+      },
+      {
+        "path": "07-PIPELINE-WAV-A-VIDEO.md",
+        "bytes": 15553,
+        "sha256": "416aba4ef862353d5435a52178d4e458ffbc1c74ef45f3acd4c57d19f7de105b"
+      },
+      {
+        "path": "08-MODELO-DATOS-Y-API.md",
+        "bytes": 20410,
+        "sha256": "a07c97f151cff93cad87a63bba130498e92f8c2f55faf697d92d6400feb0e22c"
+      },
+      {
+        "path": "09-ROADMAP-RTX-AUDIOVISUAL.md",
+        "bytes": 11042,
+        "sha256": "4c82cf3bcd0108777f94b32a9a776ad5b774ef7d6e8a9fecf2c5e144d25363bf"
+      },
+      {
+        "path": "10-TASKS-RTX-AV-V4.md",
+        "bytes": 73861,
+        "sha256": "13b73190b3b8641df98a97aa1af9800c0bed938a408f6684e8926450f4ac93a2"
+      },
+      {
+        "path": "11-TEST-PLAN-AUDIOVISUAL.md",
+        "bytes": 17449,
+        "sha256": "9c96dd07e2dbbabc9cf4f048da5885c1b390daa20ba9a37ff80c7e97497e4a52"
+      },
+      {
+        "path": "12-SEGURIDAD-LICENCIAS-Y-PROCEDENCIA.md",
+        "bytes": 13090,
+        "sha256": "fc4b84c51430786531e83ecfcb58336b2cd929b94d2df3a5cd96446670be42df"
+      },
+      {
+        "path": "13-MIGRACION-V3-A-V4.md",
+        "bytes": 15139,
+        "sha256": "c6427673d8157a2051b9295a020357a8ee2372ab7d9deadde0ee1c247131b994"
+      },
+      {
+        "path": "14-MIGRACION-V2-A-V4.md",
+        "bytes": 5466,
+        "sha256": "d701a202ac0dec8efb7a4fd0454c421eaa4f6e2591f6becbd938604e3521363a"
+      },
+      {
+        "path": "15-MIGRACION-LEGACY-T01-T86.md",
+        "bytes": 13952,
+        "sha256": "8c07c81d99ea92afbafc56a42a767cfe888ed53f83561e045bd490c6c0f48a18"
+      },
+      {
+        "path": "16-PROMPT-CODEX-CLAUDE.md",
+        "bytes": 9724,
+        "sha256": "16ebaf6cca5d295952f5840a563829eeb5e4a3b4a637754af2fee86f299e4a87"
+      },
+      {
+        "path": "17-REFERENCIAS-OFICIALES.md",
+        "bytes": 5928,
+        "sha256": "b9220afbe681bb17715bcad79c255b908591f3796a4570dbb6376bb635a1812e"
+      },
+      {
+        "path": "18-VALIDACION-DEL-PAQUETE.md",
+        "bytes": 5769,
+        "sha256": "001e859b0139250797d502ee3cacaaf4d1994eee725ed87b99456cee233990e4"
+      },
+      {
+        "path": "adapter-manifest.schema.json",
+        "bytes": 4360,
+        "sha256": "e854a8474255a4417ffe601e59bbbb2d4af68d4388e23f8449086690fa428c94"
+      },
+      {
+        "path": "AGENTS-CONTEXT.md",
+        "bytes": 5748,
+        "sha256": "2e2eec2cf4f29529d29c3dd6552d25315557d4b901e0f06e3555208ed377349b"
+      },
+      {
+        "path": "CHANGELOG-V3-A-V4.md",
+        "bytes": 2398,
+        "sha256": "60ca4667d5e53a16d1c1064cb8db4095b482764cbf8c2fe2ebe07d0f376b3700"
+      },
+      {
+        "path": "gpu-profiles.example.yaml",
+        "bytes": 2901,
+        "sha256": "51038f94ca834ee8870dfc8e9345ff057e41f581e684e74cdb8802a36d4ab4c8"
+      },
+      {
+        "path": "model-catalog.example.yaml",
+        "bytes": 12266,
+        "sha256": "6fe7d870bb9f223e95ba7a296f56dccbe579702a39631b3a63d9af1fef001596"
+      },
+      {
+        "path": "model-package.schema.json",
+        "bytes": 9138,
+        "sha256": "94e6a78841a8a07c6ab4f32156bb925ce3602c4d61b19836b5b48db200869bca"
+      },
+      {
+        "path": "model-profile.schema.json",
+        "bytes": 3737,
+        "sha256": "70bbd35266619089755a794ee2d495f403f851bb233e75c72bb1bc9f8922ca2e"
+      },
+      {
+        "path": "model-selection-policy.example.yaml",
+        "bytes": 2328,
+        "sha256": "74da90d6b831bf7da711c1d57c3da6a816c89a800acc05c51420d9f761f89362"
+      },
+      {
+        "path": "model-selection.example.yaml",
+        "bytes": 378,
+        "sha256": "0286ca87b36d1ba12d59f43eac4953ab3e7147a4ca2b18aa2afb38c25480b19d"
+      },
+      {
+        "path": "model-selection.schema.json",
+        "bytes": 2836,
+        "sha256": "d449a991bfd95322835a7588d4a1a4c845a7bd5cb96095b966c1aad9a278d9fd"
+      },
+      {
+        "path": "README.md",
+        "bytes": 8489,
+        "sha256": "4a5baa16a25f2bf619622461f7656dd3f3451559f212f2e55fc764fe626dba3d"
+      },
+      {
+        "path": "release-set.example.yaml",
+        "bytes": 2862,
+        "sha256": "09003b09d766ccd4f01367487ac5d8c828fba5f0e509bb79e4a9f67c3cb65b50"
+      }
+    ]
+  }
+}

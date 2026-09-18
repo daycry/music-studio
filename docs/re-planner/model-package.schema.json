@@ -1,0 +1,424 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.example/schemas/model-package-1.1.json",
+  "title": "Model Package v1.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "package_id",
+    "model",
+    "source",
+    "artifacts",
+    "runtime",
+    "hardware",
+    "compatibility",
+    "license",
+    "security",
+    "tests"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.1"
+    },
+    "package_id": {
+      "type": "string",
+      "minLength": 3
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "family",
+        "release_id",
+        "revision",
+        "capabilities"
+      ],
+      "properties": {
+        "family": {
+          "type": "string"
+        },
+        "release_id": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string",
+          "not": {
+            "enum": [
+              "latest",
+              "main",
+              "master"
+            ]
+          }
+        },
+        "capabilities": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "profile_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "official_url",
+        "retrieved_at"
+      ],
+      "properties": {
+        "official_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "model_card_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "retrieved_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "gated": {
+          "type": "boolean"
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "sha256",
+          "size_bytes",
+          "format"
+        ],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "safetensors",
+              "gguf",
+              "onnx",
+              "json",
+              "tokenizer",
+              "binary",
+              "other-reviewed"
+            ]
+          }
+        }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "adapter_release_id",
+        "container_digest",
+        "pytorch",
+        "cuda_runtime"
+      ],
+      "properties": {
+        "adapter_release_id": {
+          "type": "string"
+        },
+        "container_digest": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "pytorch": {
+          "type": "string"
+        },
+        "cuda_runtime": {
+          "type": "string"
+        },
+        "lockfile_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "hardware": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_profiles",
+        "min_vram_mb",
+        "dtypes"
+      ],
+      "properties": {
+        "candidate_profiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "min_vram_mb": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "preferred_vram_mb": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "min_compute_capability": {
+          "type": "string"
+        },
+        "dtypes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "fp32",
+              "tf32",
+              "bf16",
+              "fp16",
+              "fp8",
+              "int8",
+              "int4",
+              "nvfp4"
+            ]
+          }
+        },
+        "offload_modes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "license": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "code",
+        "weights",
+        "commercial_use",
+        "territories",
+        "verified_at",
+        "source_urls"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "allowed",
+            "review_required",
+            "noncommercial",
+            "territory_blocked",
+            "prohibited"
+          ]
+        },
+        "code": {
+          "type": "string"
+        },
+        "weights": {
+          "type": "string"
+        },
+        "commercial_use": {
+          "type": "string"
+        },
+        "territories": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "attribution": {
+          "type": "string"
+        },
+        "verified_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "source_urls": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      }
+    },
+    "security": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trust_remote_code",
+        "pickle_allowed",
+        "network_during_inference"
+      ],
+      "properties": {
+        "trust_remote_code": {
+          "const": false
+        },
+        "pickle_allowed": {
+          "type": "boolean"
+        },
+        "network_during_inference": {
+          "const": false
+        },
+        "exception_record_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "tests": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "smoke_suite",
+        "benchmark_suite",
+        "promotion_status"
+      ],
+      "properties": {
+        "smoke_suite": {
+          "type": "string"
+        },
+        "benchmark_suite": {
+          "type": "string"
+        },
+        "promotion_status": {
+          "enum": [
+            "not_run",
+            "failed",
+            "lab",
+            "candidate",
+            "stable",
+            "blocked"
+          ]
+        },
+        "evidence_uri": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "supported_worker_profiles",
+        "execution_profiles",
+        "operation_contracts"
+      ],
+      "properties": {
+        "supported_worker_profiles": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "execution_profiles": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "operation_contracts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "operation",
+              "requires_same_family",
+              "requires_same_release",
+              "requires_same_adapter_major"
+            ],
+            "properties": {
+              "operation": {
+                "type": "string"
+              },
+              "requires_same_family": {
+                "type": "boolean"
+              },
+              "requires_same_release": {
+                "type": "boolean"
+              },
+              "requires_same_adapter_major": {
+                "type": "boolean"
+              },
+              "requires_source_state": {
+                "type": "boolean"
+              },
+              "compatible_release_ranges": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "notes": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "hardware_notes": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "worker_id"
+            ]
+          },
+          {
+            "required": [
+              "gpu_id"
+            ]
+          },
+          {
+            "required": [
+              "hostname"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
