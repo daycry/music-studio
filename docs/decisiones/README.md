@@ -24,6 +24,7 @@ Formato: `ADR-XXXX-slug.md` con **Estado** (propuesta · aceptada · sustituida 
 | [0018](ADR-0018-cola-de-jobs.md) | Cola de jobs: carriles gpu/cpu/remote, prioridades, dependencias, reintentos, recuperación | aceptada |
 | [0019](ADR-0019-contratos-code-first.md) | Contratos code-first: OpenAPI generado, `engine-contract` Pydantic, esquemas JSON versionados | aceptada |
 | [0020](ADR-0020-seguridad-local.md) | Seguridad local: Host/Origin, puertos en 127.0.0.1, token de engines, subidas validadas | aceptada |
+| [0021](ADR-0021-repositorio-publico.md) | Remoto público `daycry/music-studio`; código anterior en `archive/legacy-main`; auth con `gh` | aceptada |
 
 ## Decisiones heredadas de la documentación archivada
 

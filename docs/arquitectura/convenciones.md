@@ -58,7 +58,7 @@ JSON en `data/logs/<proceso>.log`, rotación diaria y 14 días de retención. Ca
 
 - La rama `main` siempre funciona. Se trabaja en una rama por tarea: `m0/t-04-engine-common`, `fix/<slug>`, `docs/<slug>`.
 - **Commits** en castellano con el formato Conventional Commits y la tarea al final: `feat(server): dispatcher con cancelación [M1/T-04]`.
-- **Remoto privado** como copia de seguridad del código (GitHub privado u otro). El `.git` sincronizado por Synology **no** se considera copia fiable. El nombre del repositorio no incluye marcas de terceros ([gate GC-f](../legal/comercializacion.md)).
+- **Remoto:** `https://github.com/daycry/music-studio`, **público** ([ADR-0021](../decisiones/ADR-0021-repositorio-publico.md)); git se autentica con `gh` (helper local del repo). Es la copia de seguridad del código: el `.git` sincronizado por Synology **no** se considera copia fiable. Al ser público, antes de cada push se comprueba que no entra nada de `.env`, `data/` ni `models/`. El nombre y la descripción no incluyen marcas de terceros ([gate GC-f](../legal/comercializacion.md)).
 - **Definition of Done de una tarea:**
   1. Criterios de aceptación marcados, cada uno con su evidencia.
   2. La `Verificación` de la tarea ejecutada y su salida pegada en el ledger.

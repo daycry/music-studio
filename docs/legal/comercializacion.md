@@ -27,7 +27,7 @@ Consecuencia: la única vía a derechos realmente limpios es entrenar o afinar s
 | GC-c | Licencias de **todos** los pesos y herramientas del pipeline para uso comercial | [`licencias.md`](./licencias.md) sin ninguna fila en rojo para uso comercial |
 | GC-d | Condiciones de uso de servicios de terceros usados como referencia (p. ej. Suno en comparativas) | Verificadas; nada de su salida en producto |
 | GC-e | Datos personales: RGPD, retención y borrado; **imagen de personas reales** en vídeos (fotos subidas, LoRA de personaje) | Política escrita; consentimiento documentado y borrado de fotos y LoRA a petición; DPIA si hubiera voz o imagen de terceros a escala |
-| GC-f | Marcas: nombre del producto, repositorio y dominio sin referencias a marcas de terceros («suno», etc.) | Renombrado hecho |
+| GC-f | Marcas: nombre del producto, repositorio y dominio sin referencias a marcas de terceros («suno», etc.) | Repositorio renombrado a `music-studio` y descripción neutra (2026-09-28). Pendiente: nombre comercial y dominio |
 | GC-g | Multiusuario: autenticación real, aislamiento, cuotas, límites de gasto | Hito propio en el roadmap |
 | GC-h | Watermarking / credenciales de contenido (C2PA) si el destino lo exige | Decisión documentada en un ADR |
 

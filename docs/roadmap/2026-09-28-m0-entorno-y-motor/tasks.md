@@ -21,11 +21,11 @@ verificacion: obligatoria   # cada T-XX lleva `- **Verificación**:`; lo exige l
 
 | Fase | Completadas | Total | Progreso | H. humanas (real/est) | H. IA ejec. (real/est) | Supervisión (real/est) | Tokens (real/est) |
 |------|------------|-------|----------|-----------------------|------------------------|------------------------|-------------------|
-| Fase 1 — Preparación | 0 | 2 | 0% | 0 / 6h | 0 / 2h | 0 / 0.5h | 0 / — |
+| Fase 1 — Preparación | 1 | 2 | 50% | 0 / 6h | 0 / 2h | 0 / 0.5h | 0 / — |
 | Fase 2 — Cimientos compartidos | 0 | 3 | 0% | 0 / 26h | 0 / 13h | 0 / 3.3h | 0 / — |
 | Fase 3 — Motor musical | 0 | 3 | 0% | 0 / 19h | 0 / 9.5h | 0 / 2.4h | 0 / — |
 | Fase 4 — Medición y elección | 0 | 6 | 0% | 0 / 37h | 0 / 15h | 0 / 3.8h | 0 / — |
-| **TOTAL** | **0** | **14** | **0%** | **0 / 88h** | **0 / 39.5h** | **0 / 10h** | **0 / —** |
+| **TOTAL** | **1** | **14** | **7%** | **0 / 88h** | **0 / 39.5h** | **0 / 10h** | **0 / —** |
 
 > Horas orientativas (proyecto personal, sin presupuesto). La T-12 es opcional (8 h): sin ella son 80 h.
 
@@ -64,29 +64,32 @@ verificacion: obligatoria   # cada T-XX lleva `- **Verificación**:`; lo exige l
 ### T-01 — Esqueleto del repositorio
 
 - **Descripción**: Crear la estructura de [sistema.md](../../arquitectura/sistema.md) §2, el tooling Python/Node y las reglas de exclusión. Todavía sin código funcional.
-- **Estado**: en-progreso
+- **Estado**: completado
 - **Tiempo humano**: est. 4h · real —
-- **Tiempo IA (ejec.)**: est. 1.5h · real —
+- **Tiempo IA (ejec.)**: est. 1.5h · real 0.14h (estimado: 8 min de agente)
 - **Supervisión**: est. 0.4h (≈25 % IA) · real —
 - **Dependencias**: T-00
 - **Tipo**: devops
 - **Archivos**: `.gitignore`, `.gitattributes`, `.editorconfig`, `.env.example`, `.python-version`, `uv.toml`, `scripts/env.ps1`, `scripts/env.sh`, `scripts/bootstrap.ps1`, `scripts/bootstrap.sh`, `scripts/init_env.py`, `README.md`, `CLAUDE.md`, `pyproject.toml` (workspace de uv), `package.json`, `pnpm-workspace.yaml`, `.pre-commit-config.yaml`, `apps/`, `packages/`, `scripts/`, `models/.gitkeep`, `data/.gitkeep`, `tools/.gitkeep`, `eval/briefs/`, `eval/results/`
-- **Verificación**:
-  - `git check-ignore -q models/x.safetensors data/db/studio.sqlite eval/takes/a.wav .env && echo ignored` → `ignored`
+- **Verificación** (ejecutada 2026-09-28 — salida: 4 · tracked · 1 · ok · ok):
+  - `(git check-ignore models/x.safetensors data/db/studio.sqlite eval/takes/a.wav .env | Measure-Object).Count` → `4`
   - `git check-ignore -q models/models.lock.json || git check-ignore -q eval/briefs/B-02.txt || git check-ignore -q eval/results/x.md || echo tracked` → `tracked`
   - `uv run scripts/init_env.py && uv run scripts/init_env.py && grep -c STUDIO_ENGINE_TOKEN .env` → `1` (idempotente: no regenera el token)
   - `uv run python -c "print('ok')"` → `ok`
   - `Remove-Item -Recurse .venv; .\scripts\bootstrap.ps1; .\.venv\Scripts\python -c "print('ok')"` → `ok` (el entorno se reconstruye desde los locks)
 
 **Criterios de aceptación**
-- [ ] `git init` con rama `main`. `.gitignore` según ADR-0005, con el patrón exacto para `eval/`: `eval/*` · `!eval/briefs/` · `!eval/results/` · `eval/results/*` · `!eval/results/*.md` (git no reincluye ficheros de un directorio excluido). Los locks se versionan; los `.gitkeep` se añaden con `git add -f`.
-- [ ] Workspace de uv con los miembros `packages/*`, `apps/server`, `apps/engines/common` y `apps/engines/mock` (vacíos, **ninguno con torch**). `apps/engines/acestep` y `apps/engines/analysis` quedan **fuera** del workspace, con su propio `pyproject.toml`/`uv.lock` ([sistema.md](../../arquitectura/sistema.md) §4). Workspace de pnpm con `apps/web` (vacío). Pre-commit con ruff y prettier.
-- [ ] `.env.example` con las variables `STUDIO_*` y las de caché de [convenciones.md](../../arquitectura/convenciones.md) §4. `scripts/init_env.py` crea `.env` a partir del ejemplo y genera **una sola vez** `STUDIO_ENGINE_TOKEN` (persistente, lo usan el CLI, el server y los engines).
-- [ ] `CLAUDE.md` actualizado con los comandos de desarrollo.
-- [ ] Remoto privado configurado como copia de seguridad del código, con un nombre sin marcas de terceros.
-- [ ] **Reconstrucción en un comando:** `scripts/bootstrap.ps1` (y `bootstrap.sh`) carga `env.ps1`, ejecuta `uv python install` (lee `.python-version`), `uv sync --frozen` y `pnpm install --frozen-lockfile`. `uv.lock`, `pnpm-lock.yaml` y `.python-version` se versionan. Probado borrando `.venv/` y `node_modules/` y relanzando el script.
+- [x] `git init` con rama `main`. `.gitignore` según ADR-0005, con el patrón exacto para `eval/`: `eval/*` · `!eval/briefs/` · `!eval/results/` · `eval/results/*` · `!eval/results/*.md` (git no reincluye ficheros de un directorio excluido). Los locks se versionan; los `.gitkeep` se añaden con `git add -f`.
+- [x] Workspace de uv con los miembros `packages/*`, `apps/server`, `apps/engines/common` y `apps/engines/mock` (vacíos, **ninguno con torch**). `apps/engines/acestep` y `apps/engines/analysis` quedan **fuera** del workspace, con su propio `pyproject.toml`/`uv.lock` ([sistema.md](../../arquitectura/sistema.md) §4). Workspace de pnpm con `apps/web` (vacío). Pre-commit con ruff y prettier.
+- [x] `.env.example` con las variables `STUDIO_*` y las de caché de [convenciones.md](../../arquitectura/convenciones.md) §4. `scripts/init_env.py` crea `.env` a partir del ejemplo y genera **una sola vez** `STUDIO_ENGINE_TOKEN` (persistente, lo usan el CLI, el server y los engines).
+- [x] `CLAUDE.md` actualizado con los comandos de desarrollo.
+- [x] Remoto configurado como copia de seguridad del código, con un nombre sin marcas de terceros: `daycry/music-studio`, **público** por decisión del propietario ([ADR-0021](../../decisiones/ADR-0021-repositorio-publico.md)); el `main` antiguo queda en `archive/legacy-main`.
+- [x] **Reconstrucción en un comando:** `scripts/bootstrap.ps1` (y `bootstrap.sh`) carga `env.ps1`, ejecuta `uv python install` (lee `.python-version`), `uv sync --frozen` y `pnpm install --frozen-lockfile`. `uv.lock`, `pnpm-lock.yaml` y `.python-version` se versionan. Probado borrando `.venv/` y `node_modules/` y relanzando el script.
 
 ---
+
+**Notas**: implementada el 2026-09-28 por el agente `implementer` (commits `1994f64` en `main` y `4194129` en `m0/t-01-esqueleto`) y verificada de forma independiente por el orquestador: `.venv` sin torch (22 paquetes), sin accesos directos fuera de la carpeta, token de `init_env.py` estable entre ejecuciones y `.env` ignorado. `pnpm` no instalado: `bootstrap` avisa y lo omite (se revalida al cerrar T-00). Remoto: `main` subido con `--force-with-lease` tras copiar el `main` anterior (`5455e68`) a `archive/legacy-main`; rama `m0/t-01-esqueleto` subida; auth con `gh` como helper local.
+- **Changelog**: Repositorio inicializado con el esqueleto del monorepo y un script que reconstruye el entorno de desarrollo desde los ficheros de bloqueo.
 
 ## Fase 2 — Cimientos compartidos
 
