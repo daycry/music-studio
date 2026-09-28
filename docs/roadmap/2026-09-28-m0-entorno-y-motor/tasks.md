@@ -21,11 +21,11 @@ verificacion: obligatoria   # cada T-XX lleva `- **Verificación**:`; lo exige l
 
 | Fase | Completadas | Total | Progreso | H. humanas (real/est) | H. IA ejec. (real/est) | Supervisión (real/est) | Tokens (real/est) |
 |------|------------|-------|----------|-----------------------|------------------------|------------------------|-------------------|
-| Fase 1 — Preparación | 1 | 2 | 50% | 0 / 6h | 0 / 2h | 0 / 0.5h | 0 / — |
+| Fase 1 — Preparación | 2 | 2 | 100% | 0 / 6h | 0 / 2h | 0 / 0.5h | 0 / — |
 | Fase 2 — Cimientos compartidos | 0 | 3 | 0% | 0 / 26h | 0 / 13h | 0 / 3.3h | 0 / — |
 | Fase 3 — Motor musical | 0 | 3 | 0% | 0 / 19h | 0 / 9.5h | 0 / 2.4h | 0 / — |
 | Fase 4 — Medición y elección | 0 | 6 | 0% | 0 / 37h | 0 / 15h | 0 / 3.8h | 0 / — |
-| **TOTAL** | **1** | **14** | **7%** | **0 / 88h** | **0 / 39.5h** | **0 / 10h** | **0 / —** |
+| **TOTAL** | **2** | **14** | **14%** | **0 / 88h** | **0 / 39.5h** | **0 / 10h** | **0 / —** |
 
 > Horas orientativas (proyecto personal, sin presupuesto). La T-12 es opcional (8 h): sin ella son 80 h.
 
@@ -33,33 +33,34 @@ verificacion: obligatoria   # cada T-XX lleva `- **Verificación**:`; lo exige l
 
 ## Fase 1 — Preparación
 
-**Estado**: en-progreso · **Estimado**: 6h · **Real**: —
+**Estado**: completado · **Estimado**: 6h · **Real**: —
 
 ### T-00 — Prerrequisitos manuales de la máquina
 
 - **Descripción**: Dejar la máquina lista antes de crear ningún fichero pesado. Es una tarea **manual del propietario**; la IA la guía y comprueba el resultado.
-- **Estado**: en-progreso
+- **Estado**: completado
 - **Tiempo humano**: est. 2h · real —
 - **Tiempo IA (ejec.)**: est. 0.5h · real —
 - **Supervisión**: est. 0.1h (≈25 % IA) · real —
 - **Dependencias**: ninguna
 - **Tipo**: devops
 - **Archivos**: `%UserProfile%\.wslconfig` (fuera del repositorio, configuración de WSL), filtro de Synology Drive
-- **Verificación**:
+- **Verificación** (ejecutada 2026-09-28 — salida: RTX 5070 12227MiB · Mem total 23 · Node 22.23.2 / pnpm 9.12.0 / uv 0.12.19 / git 2.47.1 · filtro confirmado por el propietario):
   - `docker run --rm --gpus all nvidia/cuda:12.8.1-base-ubuntu22.04 nvidia-smi` → lista `NVIDIA GeForce RTX 5070` y `12227MiB`
   - `wsl -e free -g` → `Mem total` ≥ 22
   - `node --version; pnpm --version; uv --version; git --version` → Node 22.x y las demás versiones presentes
   - lectura: captura del filtro de Synology Drive con las exclusiones de ADR-0005
 
 **Criterios de aceptación**
-- [ ] Filtro de sincronización de Synology Drive configurado según [ADR-0005](../../decisiones/ADR-0005-todo-en-la-carpeta.md): se excluyen `data/db`, `data/tmp`, `data/cli`, `data/logs`, `data/trash`, `models`, `tools`, `.cache`, `node_modules`, `.venv`, `.next`, `eval/takes` y `eval/capabilities`.
-- [ ] `%UserProfile%\.wslconfig` con `memory=24GB` y `swap=16GB`; `wsl --shutdown` y Docker Desktop reiniciados. *(Fichero creado el 2026-09-28; falta el reinicio.)*
+- [x] Filtro de sincronización de Synology Drive configurado según [ADR-0005](../../decisiones/ADR-0005-todo-en-la-carpeta.md): se excluyen `data/db`, `data/tmp`, `data/cli`, `data/logs`, `data/trash`, `models`, `tools`, `.cache`, `node_modules`, `.venv`, `.next`, `eval/takes` y `eval/capabilities`.
+- [x] `%UserProfile%\.wslconfig` con `memory=24GB` y `swap=16GB`; `wsl --shutdown` y Docker Desktop reiniciados. *(Creado y aplicado el 2026-09-28: WSL ve 23 GB.)*
 - [x] Python aislado del de la máquina: intérprete 3.12.14 gestionado por uv en `.cache/uv/python/`, `.venv/` en la raíz, `uv.toml` (`only-managed`, `python-downloads = manual`) y `scripts/env.ps1`/`env.sh`. Sin accesos directos en `%USERPROFILE%\.local\bin`.
 - [x] La GPU es visible dentro de un contenedor.
-- [ ] Node 22 LTS, pnpm, uv y git instalados.
+- [x] Node 22 LTS, pnpm, uv y git instalados.
 - [x] Al menos 80 GB libres en C: para las imágenes (~10–15 GB cada una) y los pesos.
 
-**Notas**: comprobación 2026-09-28 — ✅ `docker run --gpus all …nvidia-smi` → `NVIDIA GeForce RTX 5070, 12227 MiB` · ✅ disco C: 623 GB libres · ✅ node v22.23.2, uv 0.12.19, git 2.47.1 · ❌ pnpm no instalado · ⏳ `.wslconfig` creado (24 GB / 16 GB swap), falta `wsl --shutdown` · ✅ `.venv` con Python 3.12.14 aislado (uv, `.cache/uv/python`) · ⏳ filtro de Synology pendiente (manual).
+**Notas**: comprobación 2026-09-28 — ✅ `docker run --gpus all …nvidia-smi` → `NVIDIA GeForce RTX 5070, 12227 MiB` · ✅ disco C: 623 GB libres · ✅ node v22.23.2, uv 0.12.19, git 2.47.1 · ✅ pnpm 9.12.0 (standalone en `%PNPM_HOME%\bin`; `env.ps1` lo añade al PATH si la sesión es anterior) · ✅ `.wslconfig` aplicado (WSL ve 23 GB) · ✅ `.venv` con Python 3.12.14 aislado (uv, `.cache/uv/python`) · ✅ filtro de Synology configurado (confirmado por el propietario). `pnpm-lock.yaml` generado y `bootstrap.ps1` probado de cero con pnpm incluido.
+- **Changelog**: Máquina preparada: GPU visible en Docker, WSL con 24 GB, herramientas instaladas y carpetas pesadas fuera de la sincronización.
 
 ### T-01 — Esqueleto del repositorio
 

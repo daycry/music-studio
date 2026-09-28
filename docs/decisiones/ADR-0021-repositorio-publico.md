@@ -19,4 +19,5 @@ La documentación preveía un remoto **privado** como copia del código. El repo
   - datos personales;
   - audio o fotos de la biblioteca (`data/`).
 - **Revisión previa a cada push:** comprobar que `git status` no incluye nada de `data/`, `models/` ni `.env`. La lente de seguridad de la revisión adversarial vigila que no haya secretos en el diff.
-- **Licencia:** el repo sigue sin fichero `LICENSE`, lo que significa «todos los derechos reservados». Elegir una es una decisión aparte, ligada a la comercialización.
+- **Licencia:** `LICENSE` explícita de **todos los derechos reservados** (código visible, sin permiso de uso, copia ni distribución). Es la opción reversible: más adelante se puede abrir con una licencia libre, pero una licencia abierta ya concedida no se puede retirar de lo publicado, y así la comercialización queda abierta. Los componentes de terceros conservan sus licencias ([`../legal/licencias.md`](../legal/licencias.md)).
+- **Integración:** una rama por tarea (`m0/t-02-…`), y al cerrarla (verificación ejecutada y revisión pasada) **merge fast-forward a `main` sin PR** y push. Si `main` avanzó, se hace rebase de la rama antes. Con un solo desarrollador, el PR no aporta nada que no den ya la verificación, la revisión de dos lentes y `qa`.

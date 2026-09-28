@@ -4,7 +4,7 @@
 
 ## Decisión
 
-- **Todo dentro de `music-studio/`.** Código, pesos (`models/`), herramientas descargadas (`tools/`), datos (`data/`), evaluaciones (`eval/`), cachés (`.cache/`, `models/.hf-cache`) y la memoria del proyecto (`docs/memory/`). Nada va a otras unidades ni a `%USERPROFILE%`: las variables de caché (`HF_HOME`, `UV_CACHE_DIR`, `PNPM_STORE_DIR`, `TORCH_HOME`) apuntan dentro de la carpeta ([`../arquitectura/convenciones.md`](../arquitectura/convenciones.md) §4).
+- **Todo dentro de `music-studio/`.** Código, pesos (`models/`), herramientas descargadas (`tools/`), datos (`data/`), evaluaciones (`eval/`), cachés (`.cache/`, `models/.hf-cache`) y la memoria del proyecto (`docs/memory/`). Nada va a otras unidades ni a `%USERPROFILE%`: las variables de caché (`HF_HOME`, `UV_CACHE_DIR`, `npm_config_store_dir`, `TORCH_HOME`) apuntan dentro de la carpeta ([`../arquitectura/convenciones.md`](../arquitectura/convenciones.md) §4).
 - **`.gitignore`** excluye:
   - `models/*`, salvo `models/models.lock.json`;
   - `tools/*`, salvo `tools/tools.lock.json`;

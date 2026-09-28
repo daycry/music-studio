@@ -40,7 +40,7 @@ actualizado: 2026-09-28
 - Variables clave: `STUDIO_DATA_DIR=./data`, `STUDIO_MODELS_DIR=./models`, `STUDIO_ENGINES=…` (mapa familia=url), `STUDIO_VRAM_MARGIN_MB=512`, `STUDIO_NIGHTLY_WINDOW=01:00-07:00`, `STUDIO_WEB_ORIGIN=http://127.0.0.1:3000`, `STUDIO_PROVIDER_<NOMBRE>_API_KEY` (solo si se activa un proveedor externo).
 - **Python aislado del de la máquina:** nunca se instala nada en el Python del sistema. El intérprete (3.12, gestionado por uv) vive en `.cache/uv/python/` y el entorno en `.venv/`, ambos dentro de la carpeta.
   - `uv.toml` (versionado) fija `cache-dir = .cache/uv`, `python-preference = only-managed` y `python-downloads = manual`: uv nunca usa el Python de la máquina ni descarga intérpretes a `%APPDATA%` por su cuenta.
-  - `scripts/env.ps1` (PowerShell: `. .\scripts\env.ps1`) y `scripts/env.sh` (bash: `source scripts/env.sh`) fijan lo que `uv.toml` no admite: `UV_PYTHON_INSTALL_DIR`, `UV_PYTHON_INSTALL_BIN=0` (sin accesos directos en `%USERPROFILE%\.local\bin`), `UV_PROJECT_ENVIRONMENT`, `HF_HOME`, `TORCH_HOME` y `PNPM_STORE_DIR`, y activan `.venv`. **Todo comando de desarrollo se ejecuta con ese entorno cargado.**
+  - `scripts/env.ps1` (PowerShell: `. .\scripts\env.ps1`) y `scripts/env.sh` (bash: `source scripts/env.sh`) fijan lo que `uv.toml` no admite: `UV_PYTHON_INSTALL_DIR`, `UV_PYTHON_INSTALL_BIN=0` (sin accesos directos en `%USERPROFILE%\.local\bin`), `UV_PROJECT_ENVIRONMENT`, `HF_HOME`, `TORCH_HOME` y `npm_config_store_dir`, y activan `.venv`. **Todo comando de desarrollo se ejecuta con ese entorno cargado.**
   - Sin esto se descargan gigas a `%USERPROFILE%` ([ADR-0005](../decisiones/ADR-0005-todo-en-la-carpeta.md)).
 - En ejecución normal, los engines corren con `HF_HUB_OFFLINE=1` y `TRANSFORMERS_OFFLINE=1`. Las descargas solo ocurren en `scripts/fetch_models.py`.
 
@@ -56,7 +56,7 @@ JSON en `data/logs/<proceso>.log`, rotación diaria y 14 días de retención. Ca
 
 ## 7. Git y proceso
 
-- La rama `main` siempre funciona. Se trabaja en una rama por tarea: `m0/t-04-engine-common`, `fix/<slug>`, `docs/<slug>`.
+- La rama `main` siempre funciona. Se trabaja en una rama por tarea: `m0/t-04-engine-common`, `fix/<slug>`, `docs/<slug>`. Al cerrar la tarea: **merge fast-forward a `main` sin PR** y push (rebase antes si `main` avanzó) ([ADR-0021](../decisiones/ADR-0021-repositorio-publico.md)).
 - **Commits** en castellano con el formato Conventional Commits y la tarea al final: `feat(server): dispatcher con cancelación [M1/T-04]`.
 - **Remoto:** `https://github.com/daycry/music-studio`, **público** ([ADR-0021](../decisiones/ADR-0021-repositorio-publico.md)); git se autentica con `gh` (helper local del repo). Es la copia de seguridad del código: el `.git` sincronizado por Synology **no** se considera copia fiable. Al ser público, antes de cada push se comprueba que no entra nada de `.env`, `data/` ni `models/`. El nombre y la descripción no incluyen marcas de terceros ([gate GC-f](../legal/comercializacion.md)).
 - **Definition of Done de una tarea:**
