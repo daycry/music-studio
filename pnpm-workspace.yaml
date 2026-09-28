@@ -1,0 +1,3 @@
+# Workspace de pnpm (docs/arquitectura/sistema.md §2).
+packages:
+  - "apps/web"

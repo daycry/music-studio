@@ -1,0 +1,44 @@
+# ADR-0005: todo dentro de la carpeta, pero solo se versionan las "recetas"
+# (.python-version, uv.toml, uv.lock, pnpm-lock.yaml, models.lock.json, tools.lock.json),
+# nunca los resultados.
+
+# Python (intérprete y venv gestionados por uv, dentro de la carpeta)
+.venv/
+.cache/
+
+# Node
+node_modules/
+.next/
+
+# Secretos (solo se versiona .env.example)
+.env
+
+# Modelos: solo se versiona el lock
+models/*
+!models/models.lock.json
+
+# Herramientas descargadas: solo se versiona el lock
+tools/*
+!tools/tools.lock.json
+
+# Datos generados en ejecución (ver docs/arquitectura/datos.md §2)
+data/
+
+# Evaluaciones: solo se versionan briefs/ y los resultados en markdown
+# (git no reincluye ficheros dentro de un directorio excluido: por eso
+# "eval/results/" se desexcluye antes de reexcluir su contenido).
+eval/*
+!eval/briefs/
+!eval/results/
+eval/results/*
+!eval/results/*.md
+
+# Ajenos al proyecto (sincronización Synology / config local del plugin Claude)
+desktop.ini
+.SynologyWorkingDirectory/
+.claude/settings.local.json
+.claude/.headroom_*
+
+# Editores / SO
+.DS_Store
+Thumbs.db

@@ -1,0 +1,18 @@
+# Normaliza finales de línea: LF por defecto, CRLF solo donde Windows lo exige.
+* text=auto eol=lf
+
+*.ps1 text eol=crlf
+*.md text eol=lf
+*.py text eol=lf
+*.sh text eol=lf
+
+# Binarios: sin conversión de fin de línea, sin diff de texto.
+*.png binary
+*.jpg binary
+*.wav binary
+*.flac binary
+*.mp3 binary
+*.mp4 binary
+*.safetensors binary
+*.onnx binary
+*.gguf binary

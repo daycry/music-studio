@@ -1,0 +1,24 @@
+# Workspace de uv en la raíz (docs/arquitectura/sistema.md §4).
+# Workspace virtual: sin [project] propio, solo declara los miembros.
+# Ninguno de estos miembros depende de torch; los engines con torch
+# (apps/engines/acestep, apps/engines/analysis) quedan fuera, con su
+# propio pyproject.toml/uv.lock, instalados solo dentro de su imagen Docker.
+[tool.uv.workspace]
+members = [
+    "packages/engine-contract",
+    "packages/audio-post",
+    "packages/weights",
+    "apps/server",
+    "apps/engines/common",
+    "apps/engines/mock",
+]
+exclude = [
+    "apps/engines/acestep",
+    "apps/engines/analysis",
+]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=3.8.0",
+    "ruff>=0.6.9",
+]

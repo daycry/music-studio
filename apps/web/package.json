@@ -1,0 +1,12 @@
+{
+  "name": "web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Next.js (App Router, TS, Tailwind, shadcn/ui, next-intl, wavesurfer.js). Todavía sin código.",
+  "scripts": {
+    "dev": "echo 'pendiente: next dev (M0/T-0x)' && exit 1",
+    "build": "echo 'pendiente: next build (M0/T-0x)' && exit 1",
+    "lint": "echo 'pendiente: eslint (M0/T-0x)' && exit 1",
+    "test": "echo 'pendiente: vitest/playwright (M0/T-0x)' && exit 1"
+  }
+}

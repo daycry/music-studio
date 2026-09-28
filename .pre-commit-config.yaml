@@ -1,0 +1,17 @@
+# Hooks locales. Se ejecutan con `uv run pre-commit run --all-files`
+# (pre-commit es una dependencia de desarrollo del workspace uv, no una
+# instalación global) — ver .env.example y docs/arquitectura/convenciones.md §4.
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        types_or: [javascript, jsx, ts, tsx, json, yaml, markdown, css]
+        exclude: ^docs/roadmap/.*/tasks\.md$
