@@ -7,3 +7,4 @@
 - [Local by default](local-by-default.md) — every feature defaults to a local model; APIs only opt-in alternatives
 - [Python isolation](python-isolation.md) — never install into machine Python; project-local uv interpreter + .venv via scripts/env.ps1
 - [GPU sharing](gpu-sharing.md) — knowledge-graphs stack (Ollama ~8.9 GB) shares the 5070; free VRAM before GPU work
+- [Use custom-agents plugin](use-custom-agents-plugin.md) — all work goes through the custom-agents plugin (dev-cycle, quick-implement, agents, skills)
