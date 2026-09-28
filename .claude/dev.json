@@ -1,0 +1,14 @@
+{
+  "constitucion": true,
+  "tdd": true,
+  "worktree": false,
+  "subagentes": true,
+  "statusline": true,
+  "revision": {
+    "lenteSeguridad": "auto",
+    "lenteRendimiento": "auto"
+  },
+  "tests": {
+    "coberturaMinima": 80
+  }
+}

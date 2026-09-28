@@ -1,0 +1,22 @@
+{
+  "_comment": "Proyecto personal (ADR-0001): sin presupuesto en euros. tarifaHora = 0 → el coste humano es 0 €; las horas y los tokens se siguen midiendo. El precio de tokens lo verifica la skill rates-verify.",
+  "tarifaHora": 0,
+  "monedaCoste": "EUR",
+  "modeloIA": "claude-opus-5-5",
+  "precioTokens": {
+    "moneda": "USD",
+    "unidad": "por_millon",
+    "input": 4,
+    "output": 20,
+    "cacheCreacion": 5,
+    "cacheLectura": 0.2,
+    "verificadoEl": "2026-09-28",
+    "fuente": "https://platform.claude.com/docs/en/about-claude/pricing",
+    "_nota": "Claude Opus 5.5, precio estándar (5m cache write $5; cache hit 0,05x = $0,20). Los agentes implementer/qa usan Sonnet 5 ($2/$10): el coste real por tarea puede ser menor."
+  },
+  "tipoCambioUsdEur": 0.92,
+  "ratioSupervision": 0.25,
+  "margenContingencia": 0.2,
+  "horasJornada": 8,
+  "horasMesFTE": 160
+}

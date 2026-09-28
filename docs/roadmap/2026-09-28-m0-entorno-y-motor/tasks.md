@@ -22,10 +22,10 @@ verificacion: obligatoria   # cada T-XX lleva `- **Verificación**:`; lo exige l
 | Fase | Completadas | Total | Progreso | H. humanas (real/est) | H. IA ejec. (real/est) | Supervisión (real/est) | Tokens (real/est) |
 |------|------------|-------|----------|-----------------------|------------------------|------------------------|-------------------|
 | Fase 1 — Preparación | 2 | 2 | 100% | 0 / 6h | 0 / 2h | 0 / 0.5h | 0 / — |
-| Fase 2 — Cimientos compartidos | 0 | 3 | 0% | 0 / 26h | 0 / 13h | 0 / 3.3h | 0 / — |
+| Fase 2 — Cimientos compartidos | 1 | 3 | 33% | 0 / 26h | 0 / 13h | 0 / 3.3h | 0 / — |
 | Fase 3 — Motor musical | 0 | 3 | 0% | 0 / 19h | 0 / 9.5h | 0 / 2.4h | 0 / — |
 | Fase 4 — Medición y elección | 0 | 6 | 0% | 0 / 37h | 0 / 15h | 0 / 3.8h | 0 / — |
-| **TOTAL** | **2** | **14** | **14%** | **0 / 88h** | **0 / 39.5h** | **0 / 10h** | **0 / —** |
+| **TOTAL** | **3** | **14** | **21%** | **0 / 88h** | **0 / 39.5h** | **0 / 10h** | **0 / —** |
 
 > Horas orientativas (proyecto personal, sin presupuesto). La T-12 es opcional (8 h): sin ella son 80 h.
 
@@ -94,31 +94,34 @@ verificacion: obligatoria   # cada T-XX lleva `- **Verificación**:`; lo exige l
 
 ## Fase 2 — Cimientos compartidos
 
-**Estado**: borrador · **Estimado**: 26h · **Real**: —
+**Estado**: en-progreso · **Estimado**: 26h · **Real**: —
 
 ### T-02 — `packages/weights`: lock, descarga verificada, auditor de pickle y herramientas
 
 - **Descripción**: Descarga reproducible y segura de modelos y herramientas, según [ADR-0006](../../decisiones/ADR-0006-seguridad-de-pesos.md).
-- **Estado**: borrador
+- **Estado**: completado
 - **Tiempo humano**: est. 8h · real —
-- **Tiempo IA (ejec.)**: est. 4h · real —
+- **Tiempo IA (ejec.)**: est. 4h · real 0.4h (estimado: ~25 min de agente en dos tramos; interrumpido por el límite de uso y reanudado)
 - **Supervisión**: est. 1h (≈25 % IA) · real —
 - **Dependencias**: T-01
 - **Tipo**: backend
 - **Archivos**: `packages/weights/` (lock, verify, seal, audit_pickle, convert), `scripts/fetch_models.py`, `scripts/fetch_tools.py`, `models/models.lock.json`, `tools/tools.lock.json`, `packages/weights/tests/`
-- **Verificación**:
+- **Verificación** (ejecutada 2026-09-28 por el orquestador — salida: 24 passed · ace-step-1.5 OK · ffmpeg win64-lgpl OK):
   - `uv run pytest packages/weights -q` → todos en verde (hash correcto e incorrecto, sello, pickle tensorial convertido, pickle malicioso rechazado, `.py` remoto con hash distinto rechazado)
   - `uv run scripts/fetch_models.py --model ace-step-1.5 --check` → `OK` para todos los ficheros del lock
   - `uv run scripts/fetch_tools.py --check` → `ffmpeg win64-lgpl OK`
 
 **Criterios de aceptación**
-- [ ] `models.lock.json` registra, por modelo: repo HF, **revisión (commit)**, ficheros (ruta relativa, SHA-256, bytes, formato, licencia), el `.py` remoto con su hash y los pickle con el hash del original y el del convertido.
-- [ ] El lock incluye:
+- [x] `models.lock.json` registra, por modelo: repo HF, **revisión (commit)**, ficheros (ruta relativa, SHA-256, bytes, formato, licencia), el `.py` remoto con su hash y los pickle con el hash del original y el del convertido.
+- [x] El lock incluye:
   - ACE-Step 1.5: bundle con turbo, LM 1.7B, VAE y Qwen3-Embedding; repos separados de sft, base y LM 0.6B; XL-turbo como opcional;
   - Qwen3-ASR-1.7B, Qwen3-ForcedAligner-0.6B, LAION `larger_clap_music` (convertido desde `.bin`), Audiobox Aesthetics (`model.safetensors`) y beat_this (convertido desde `.ckpt`).
-- [ ] Auditor y conversor **sin torch y sin `pickle.load`**: primero recorre los opcodes con `pickletools` y rechaza cualquier `GLOBAL`/`STACK_GLOBAL` que no esté en una **allowlist** (`torch._utils._rebuild_tensor_v2`, `torch.FloatStorage`/`HalfStorage`/`BFloat16Storage`, `collections.OrderedDict`, y para los `.ckpt` de Lightning también `builtins` inocuos). Después reconstruye los tensores con un intérprete propio (subclase de `pickle.Unpickler` con `find_class` restringido a la allowlist, que devuelve marcadores) más `numpy` sobre los storages del zip. En los `.ckpt` de Lightning extrae **solo** el `state_dict`. Escribe safetensors con `safetensors.numpy`.
-- [ ] `fetch_models.py` es idempotente, calcula el hash completo al descargar y escribe el sello `.verified`. Usa `HF_HOME=models/.hf-cache`. **Estructura en disco:** `models/<model_id>/`; en ACE-Step, `models/ace-step-1.5/checkpoints/` replica la estructura que espera upstream (`ACESTEP_CHECKPOINTS_DIR`), con un subdirectorio por repo de HF (p. ej. `acestep-v15-turbo/`, `acestep-5Hz-lm-0.6B/`, `vae/`, `Qwen3-Embedding-0.6B/`). Los pickle convertidos sustituyen al original en su sitio, con la extensión `.safetensors`, y el original se borra.
-- [ ] `fetch_tools.py` descarga ffmpeg BtbN `win64-lgpl` a `tools/ffmpeg/` y lo verifica con el lock.
+- [x] Auditor y conversor **sin torch y sin `pickle.load`**: primero recorre los opcodes con `pickletools` y rechaza cualquier `GLOBAL`/`STACK_GLOBAL` que no esté en una **allowlist** (`torch._utils._rebuild_tensor_v2`, `torch.FloatStorage`/`HalfStorage`/`BFloat16Storage`, `collections.OrderedDict`, y para los `.ckpt` de Lightning también `builtins` inocuos). Después reconstruye los tensores con un intérprete propio (subclase de `pickle.Unpickler` con `find_class` restringido a la allowlist, que devuelve marcadores) más `numpy` sobre los storages del zip. En los `.ckpt` de Lightning extrae **solo** el `state_dict`. Escribe safetensors con `safetensors.numpy`.
+- [x] `fetch_models.py` es idempotente, calcula el hash completo al descargar y escribe el sello `.verified`. Usa `HF_HOME=models/.hf-cache`. **Estructura en disco:** `models/<model_id>/`; en ACE-Step, `models/ace-step-1.5/checkpoints/` replica la estructura que espera upstream (`ACESTEP_CHECKPOINTS_DIR`), con un subdirectorio por repo de HF (p. ej. `acestep-v15-turbo/`, `acestep-5Hz-lm-0.6B/`, `vae/`, `Qwen3-Embedding-0.6B/`). Los pickle convertidos sustituyen al original en su sitio, con la extensión `.safetensors`, y el original se borra.
+- [x] `fetch_tools.py` descarga ffmpeg BtbN `win64-lgpl` a `tools/ffmpeg/` y lo verifica con el lock.
+
+**Notas**: commit `1947f02` en `m0/t-02-weights`. Verificación independiente del orquestador: 24 tests en verde; `--check` en OK para los 6 modelos (`ace-step-1.5`, `qwen3-asr-1.7b`, `qwen3-forcedaligner-0.6b`, `clap-larger-music`, `audiobox-aesthetics`, `beat-this`) y para ffmpeg (BtbN `autobuild-2026-09-26-13-03`, LGPL con lame/soxr/opus); 0 ficheros pickle en `models/`; `.hf-cache` vacío (se corrigió una copia duplicada de ~20 GB: ahora se mueve en lugar de copiar); `packages/weights` sin torch. En disco: `models/` 27 GB, `tools/` 0,4 GB. Pickles convertidos: `silence_latent.pt` ×3 (turbo/sft/base), CLAP `pytorch_model.bin` (555 tensores) y beat_this `final0.ckpt` (166 tensores, solo `state_dict`). Licencias sin discrepancias con `docs/legal/licencias.md`. **TDD n/a**: la tarea arrancó antes de activar `tdd` en `.claude/dev.json`. **Pendiente para la revisión de dos lentes de la Fase 2**: (1) el auditor rechaza siempre `STACK_GLOBAL` (protocolo 4+), una decisión *fail-closed* que puede bloquear pickles futuros; (2) el bundle `ACE-Step/Ace-Step1.5` se reparte en 4 subdirectorios de `checkpoints/` (una interpretación de «un subdirectorio por repo», que hay que confirmar contra lo que espera upstream en T-06).
+- **Changelog**: Descarga reproducible y verificada (SHA-256, revisión fijada) de los modelos de ACE-Step y de evaluación, con conversión segura de pickle a safetensors y ffmpeg LGPL.
 
 ### T-03 — `packages/engine-contract` + `apps/engines/common` + `engine-mock`
 
@@ -275,6 +278,7 @@ verificacion: obligatoria   # cada T-XX lleva `- **Verificación**:`; lo exige l
 **Criterios de aceptación**
 - [ ] Matriz de configuraciones: turbo + LM 0.6B (inicial), turbo + LM 1.7B, sft, base y XL-turbo con offload + INT8 si cabe. Duraciones: 30, 60, 180 y 300 s.
 - [ ] Carga desde el bind mount frente a una copia dentro del contenedor (I-02). Si la diferencia supera 30 s, se abre un ADR.
+- [ ] **Antes de medir**, Ollama y el stack `knowledge-graphs` quedan descargados o parados, y `nvidia-smi` muestra ≤ ~1,6 GB usados (E-16, [ADR-0022](../../decisiones/ADR-0022-memoria-tecnica-kwipu-graphiti.md)). Se anota la VRAM en reposo en el informe.
 - [ ] Medido con el navegador abierto (la UI también consume VRAM). Se registra si hubo desbordamiento (Administrador de tareas y caída de RTF por encima de 1,5×).
 - [ ] Opcional: `torch.compile` activado como experimento, anotando si falla en sm_120.
 - [ ] Recomendación argumentada con números para la configuración por defecto y la de alta calidad.

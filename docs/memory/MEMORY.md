@@ -6,3 +6,4 @@
 - [Memory location](memory-location.md) — all memory lives in docs/memory/, never in ~/.claude
 - [Local by default](local-by-default.md) — every feature defaults to a local model; APIs only opt-in alternatives
 - [Python isolation](python-isolation.md) — never install into machine Python; project-local uv interpreter + .venv via scripts/env.ps1
+- [GPU sharing](gpu-sharing.md) — knowledge-graphs stack (Ollama ~8.9 GB) shares the 5070; free VRAM before GPU work

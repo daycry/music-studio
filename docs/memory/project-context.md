@@ -17,4 +17,6 @@ Decisions of 2026-09-28:
 **Why:** leaner fresh start with better hardware; keep commercialization possible.
 **Docs reviewed 2026-09-28** by 3 independent reviewers (consistency, rework-risk, fact-check); all findings applied: generic task-based `/v1` engine contract (contrato-engines.md), full schema in first migration (job/asset/upload/lineage_edge…), manifest v1 for all artefacts, post-processing in server (ADR-0017), job queue (ADR-0018), code-first contracts (ADR-0019), local security (ADR-0020), weights incl. GGUF + pickle conversion (ADR-0006), CONSTITUTION.md. M0/M1 ledgers pass plugin `ledger-lint` (0 warnings) and `coverage-check`; valid task states are only borrador/en-progreso/en-revision/completado/cancelado.
 
+**Progress (2026-09-28):** M0 3/14 done (T-00, T-01, T-02; 27 GB of verified models in models/); next T-03. Resume state in `CONTINUE-HERE.md`.
+
 **How to apply:** follow `docs/README.md`; task state only in each milestone's `tasks.md`; keep paths relative to the project folder. See [[memory-location]].

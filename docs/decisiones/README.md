@@ -25,6 +25,7 @@ Formato: `ADR-XXXX-slug.md` con **Estado** (propuesta · aceptada · sustituida 
 | [0019](ADR-0019-contratos-code-first.md) | Contratos code-first: OpenAPI generado, `engine-contract` Pydantic, esquemas JSON versionados | aceptada |
 | [0020](ADR-0020-seguridad-local.md) | Seguridad local: Host/Origin, puertos en 127.0.0.1, token de engines, subidas validadas | aceptada |
 | [0021](ADR-0021-repositorio-publico.md) | Remoto público `daycry/music-studio` (todos los derechos reservados); código anterior en `archive/legacy-main`; auth con `gh`; merge ff a `main` por tarea | aceptada |
+| [0022](ADR-0022-memoria-tecnica-kwipu-graphiti.md) | Memoria técnica en Kwipu (export) y Graphiti (`shadow`, grupo `music-studio`) como MCP locales; liberar la VRAM de Ollama antes de trabajar con GPU | aceptada |
 
 ## Decisiones heredadas de la documentación archivada
 

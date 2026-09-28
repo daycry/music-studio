@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "utility_scoring": false,
+  "categories": [
+    {
+      "key": "DECISION",
+      "folder": "adr",
+      "min_evidence": "human_confirmed_rule",
+      "routing": {
+        "kwipu": false
+      }
+    },
+    {
+      "key": "PATTERN",
+      "folder": "gotchas",
+      "min_evidence": "multiple_validated_cases",
+      "routing": {
+        "kwipu": false
+      }
+    },
+    {
+      "key": "GOTCHA",
+      "folder": "gotchas",
+      "min_evidence": "validated_case",
+      "routing": {
+        "kwipu": false
+      }
+    },
+    {
+      "key": "LESSON",
+      "folder": "lessons",
+      "min_evidence": "single_case",
+      "routing": {
+        "kwipu": false
+      }
+    }
+  ],
+  "backends": {
+    "kwipu": {
+      "type": "markdown-export",
+      "enabled": true,
+      "config": {
+        "export_dir": ".claude/knowledge-services/kwipu-export",
+        "health": {
+          "url": "http://127.0.0.1:8765/health",
+          "timeout_ms": 800
+        }
+      }
+    },
+    "graphiti": {
+      "type": "graphiti",
+      "enabled": true,
+      "config": {
+        "mode": "shadow",
+        "endpoint": "http://127.0.0.1:8001/mcp",
+        "allow_remote": false,
+        "provider": {
+          "llm": "none"
+        },
+        "entity_map": {},
+        "relations": [],
+        "router": {
+          "intents": {
+            "temporal": false,
+            "relacional": false,
+            "evidencia": false
+          }
+        },
+        "telemetria": false,
+        "health": {
+          "url": "http://127.0.0.1:8001/health",
+          "timeout_ms": 3000
+        },
+        "timeout_ms": 3000,
+        "concurrency": 1,
+        "group_id": "music-studio"
+      }
+    }
+  },
+  "evidence_levels": [
+    "observation",
+    "single_case",
+    "validated_case",
+    "multiple_validated_cases",
+    "human_confirmed_rule"
+  ],
+  "denylist": [
+    "chain-of-thought",
+    "conversacion cruda",
+    "TODO:",
+    "planes/progreso",
+    "logs completos",
+    "salidas enormes",
+    "codigo duplicado",
+    "errores triviales",
+    "intentos sin aprendizaje",
+    "hipotesis presentadas como hechos",
+    "opiniones",
+    "redundancias"
+  ]
+}

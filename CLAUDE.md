@@ -4,6 +4,7 @@ Estudio personal de generación musical con IA, estilo Suno + Sondo (canción �
 
 ## Documentación
 
+- **Al retomar el trabajo, lee primero `CONTINUE-HERE.md`** (dónde se paró y cómo seguir).
 - Empieza por `docs/README.md` (mapa) y respeta **`docs/CONSTITUTION.md`** (principios permanentes; cambiarlos exige ADR). Fuente de verdad: todo `docs/` salvo `docs/archive/`, que es histórico y no vigente.
 - Antes de tocar contratos o datos: `docs/arquitectura/contrato-engines.md`, `datos.md` y `convenciones.md`.
 - Estado de las tareas: **solo** en el `tasks.md` del hito, en `docs/roadmap/<fecha>-<slug>/` (estados `borrador · en-progreso · en-revision · completado · cancelado`; validar con `ledger-lint`). Cada tarea se cierra ejecutando su **Verificación**. Hito actual: **M0**. Cómo implementar: `docs/roadmap/README.md`.
