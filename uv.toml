@@ -1,0 +1,5 @@
+# Configuración de uv para este proyecto: todo dentro de la carpeta (ADR-0005).
+# El directorio de intérpretes (UV_PYTHON_INSTALL_DIR) no admite uv.toml: lo fija scripts/env.ps1.
+cache-dir = ".cache/uv"
+python-preference = "only-managed"   # nunca usar el Python de la máquina
+python-downloads = "manual"          # nunca descargar un intérprete a %APPDATA% por sorpresa
