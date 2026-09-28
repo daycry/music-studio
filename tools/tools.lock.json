@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-28",
+  "tools": {
+    "ffmpeg": {
+      "provider": "BtbN/FFmpeg-Builds",
+      "release_tag": "autobuild-2026-09-26-13-03",
+      "asset": "ffmpeg-n9.0.2-10-g51c4a23d74-win64-lgpl-9.0.zip",
+      "url": "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-09-26-13-03/ffmpeg-n9.0.2-10-g51c4a23d74-win64-lgpl-9.0.zip",
+      "sha256": "ccde5efc9cf6e885cb418f4c0846865f0a7767752d42b1d955b901c41606b205",
+      "bytes": 171536113,
+      "dest": "tools/ffmpeg",
+      "license": "LGPL-2.1+",
+      "note": "Release fijada (no 'latest'), build estática win64-lgpl (>=7.1 per entorno.md S2). No incluye --enable-gpl ni --enable-nonfree; incluye libmp3lame, libsoxr y libopus."
+    }
+  }
+}

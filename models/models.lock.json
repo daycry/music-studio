@@ -1,0 +1,715 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-28",
+  "note": "Revisiones fijadas a un commit concreto de Hugging Face (nunca 'main'), obtenidas con HfApi().model_info(files_metadata=True). Los pickle (campo 'converted') se convierten una vez con packages/weights/weights/convert.py (ADR-0006 S3); su sha256 se rellena al descargar con scripts/fetch_models.py.",
+  "models": {
+    "ace-step-1.5": {
+      "kind": "ace-step-checkpoints",
+      "dest": "models/ace-step-1.5/checkpoints",
+      "components": [
+        {
+          "id": "acestep-v15-turbo",
+          "repo": "ACE-Step/Ace-Step1.5",
+          "revision": "19671f406d603126926c1b7e2adc169acbcade22",
+          "repo_subdir": "acestep-v15-turbo",
+          "dest_subdir": "acestep-v15-turbo",
+          "license": "mit",
+          "optional": false,
+          "files": [
+            {
+              "path": "config.json",
+              "bytes": 1968,
+              "sha256": "74745ff704ea49164c3d2d1c99fc0670f3fc635a869f0aec2d1311e6a52d400a",
+              "format": "metadata"
+            },
+            {
+              "path": "configuration_acestep_v15.py",
+              "bytes": 13130,
+              "sha256": "b89870c5c7a7ce060eb0bcdbb5ffc86b0b1a324ca325a26be552ea1b42496dc5",
+              "format": "remote_code"
+            },
+            {
+              "path": "model.safetensors",
+              "bytes": 4787825604,
+              "sha256": "3f6e0797fad420a39bd33979eb6e840e30989e34a3794e843d23b60ec6e422d7",
+              "format": "safetensors"
+            },
+            {
+              "path": "modeling_acestep_v15_turbo.py",
+              "bytes": 96036,
+              "sha256": "c1ab0dd547124fee7ada449b2b86eae8201dc7d15889932643bbb67e3c982444",
+              "format": "remote_code"
+            },
+            {
+              "path": "silence_latent.pt",
+              "bytes": 3841215,
+              "sha256": "a778e9dd942f5e8b2c09c55370782d318834432b03dabbcdf70e6ed49ad6358b",
+              "format": "pickle",
+              "converted": {
+                "dest": "silence_latent.safetensors",
+                "sha256": "3c9d1758b016fa80778981a4c1ecac50b75e10d2367ec193982801be5ac32632",
+                "bytes": 3840136
+              }
+            }
+          ]
+        },
+        {
+          "id": "acestep-5Hz-lm-1.7B",
+          "repo": "ACE-Step/Ace-Step1.5",
+          "revision": "19671f406d603126926c1b7e2adc169acbcade22",
+          "repo_subdir": "acestep-5Hz-lm-1.7B",
+          "dest_subdir": "acestep-5Hz-lm-1.7B",
+          "license": "mit",
+          "optional": false,
+          "files": [
+            {
+              "path": "added_tokens.json",
+              "bytes": 2217787,
+              "sha256": "db08b66a515fb5d6acca0b3492d25bb44e0deda6241fc1113ac0679d40558c48",
+              "format": "metadata"
+            },
+            {
+              "path": "chat_template.jinja",
+              "bytes": 4168,
+              "sha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8",
+              "format": "metadata"
+            },
+            {
+              "path": "config.json",
+              "bytes": 1385,
+              "sha256": "73515ca4bfd86a5b56f28bf680311d1911e159c85d7f7ceb2188e310007c9010",
+              "format": "metadata"
+            },
+            {
+              "path": "merges.txt",
+              "bytes": 1671853,
+              "sha256": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5",
+              "format": "metadata"
+            },
+            {
+              "path": "model.safetensors",
+              "bytes": 3708521528,
+              "sha256": "f161689da73e5ecefa28ff780d51c2d92a00f056d021d7933c779ed5c6cd7db8",
+              "format": "safetensors"
+            },
+            {
+              "path": "special_tokens_map.json",
+              "bytes": 1824199,
+              "sha256": "76e233bfc357b0b03d7b6e6ba8e799244f358552575a7cdadb78d3d19106b298",
+              "format": "metadata"
+            },
+            {
+              "path": "tokenizer.json",
+              "bytes": 24321939,
+              "sha256": "35af56c3f5cb3ea2cc578aa28a8937770981d504f183ac5c8c38baf4bbd4af4d",
+              "format": "metadata"
+            },
+            {
+              "path": "tokenizer_config.json",
+              "bytes": 14072925,
+              "sha256": "6cd70cdd89425971794f5235562edcc608b0629a6c4686ae51a8b8c8b8ba5e95",
+              "format": "metadata"
+            },
+            {
+              "path": "vocab.json",
+              "bytes": 2776833,
+              "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+              "format": "metadata"
+            }
+          ]
+        },
+        {
+          "id": "vae",
+          "repo": "ACE-Step/Ace-Step1.5",
+          "revision": "19671f406d603126926c1b7e2adc169acbcade22",
+          "repo_subdir": "vae",
+          "dest_subdir": "vae",
+          "license": "mit",
+          "optional": false,
+          "files": [
+            {
+              "path": "config.json",
+              "bytes": 425,
+              "sha256": "14e019904df567f26df750317a70e2bd08f9f8f3c40ff4a24c97d1cd3f20ccd2",
+              "format": "metadata"
+            },
+            {
+              "path": "diffusion_pytorch_model.safetensors",
+              "bytes": 337431388,
+              "sha256": "da17edb604c40deaf09e9b24974e590d1ca83a374070e5d0884cfa4bed9a99b0",
+              "format": "safetensors"
+            }
+          ]
+        },
+        {
+          "id": "Qwen3-Embedding-0.6B",
+          "repo": "ACE-Step/Ace-Step1.5",
+          "revision": "19671f406d603126926c1b7e2adc169acbcade22",
+          "repo_subdir": "Qwen3-Embedding-0.6B",
+          "dest_subdir": "Qwen3-Embedding-0.6B",
+          "license": "apache-2.0",
+          "optional": false,
+          "files": [
+            {
+              "path": "added_tokens.json",
+              "bytes": 707,
+              "sha256": "c0284b582e14987fbd3d5a2cb2bd139084371ed9acbae488829a1c900833c680",
+              "format": "metadata"
+            },
+            {
+              "path": "chat_template.jinja",
+              "bytes": 4116,
+              "sha256": "87a2728cb8dc9fe424d624542f6060ec05a1d285ebbec578bb078900e33396b5",
+              "format": "metadata"
+            },
+            {
+              "path": "config.json",
+              "bytes": 1359,
+              "sha256": "bb23c1607cfe059a58d8f0196cf1cebb52082b1056b8e358a579da80a5759420",
+              "format": "metadata"
+            },
+            {
+              "path": "merges.txt",
+              "bytes": 1671853,
+              "sha256": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5",
+              "format": "metadata"
+            },
+            {
+              "path": "model.safetensors",
+              "bytes": 1191586416,
+              "sha256": "0437e45c94563b09e13cb7a64478fc406947a93cb34a7e05870fc8dcd48e23fd",
+              "format": "safetensors"
+            },
+            {
+              "path": "special_tokens_map.json",
+              "bytes": 613,
+              "sha256": "76862e765266b85aa9459767e33cbaf13970f327a0e88d1c65846c2ddd3a1ecd",
+              "format": "metadata"
+            },
+            {
+              "path": "tokenizer.json",
+              "bytes": 11423705,
+              "sha256": "def76fb086971c7867b829c23a26261e38d9d74e02139253b38aeb9df8b4b50a",
+              "format": "metadata"
+            },
+            {
+              "path": "tokenizer_config.json",
+              "bytes": 5404,
+              "sha256": "443bfa629eb16387a12edbf92a76f6a6f10b2af3b53d87ba1550adfcf45f7fa0",
+              "format": "metadata"
+            },
+            {
+              "path": "vocab.json",
+              "bytes": 2776833,
+              "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+              "format": "metadata"
+            }
+          ]
+        },
+        {
+          "id": "acestep-5Hz-lm-0.6B",
+          "repo": "ACE-Step/acestep-5Hz-lm-0.6B",
+          "revision": "148d8ea0225bdab342ee1ae3a354275ccd60ca80",
+          "repo_subdir": "",
+          "dest_subdir": "acestep-5Hz-lm-0.6B",
+          "license": "mit",
+          "optional": false,
+          "files": [
+            {
+              "path": "README.md",
+              "bytes": 5498,
+              "sha256": "ed42093e8f7903f23bd45ea56bea8f484c8aee47820ae8880d6da752681a1da7",
+              "format": "metadata"
+            },
+            {
+              "path": "added_tokens.json",
+              "bytes": 2217787,
+              "sha256": "db08b66a515fb5d6acca0b3492d25bb44e0deda6241fc1113ac0679d40558c48",
+              "format": "metadata"
+            },
+            {
+              "path": "chat_template.jinja",
+              "bytes": 4168,
+              "sha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8",
+              "format": "metadata"
+            },
+            {
+              "path": "config.json",
+              "bytes": 1386,
+              "sha256": "873ca63808b74e1e008ab950114765553b898b489b9e077e80db83348a118384",
+              "format": "metadata"
+            },
+            {
+              "path": "merges.txt",
+              "bytes": 1671853,
+              "sha256": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5",
+              "format": "metadata"
+            },
+            {
+              "path": "model.safetensors",
+              "bytes": 1325804024,
+              "sha256": "5d92a60806e2e88c04de58ddc6dde93f2bc8f1336162b3ad5853886c9bcc6b82",
+              "format": "safetensors"
+            },
+            {
+              "path": "special_tokens_map.json",
+              "bytes": 1824199,
+              "sha256": "76e233bfc357b0b03d7b6e6ba8e799244f358552575a7cdadb78d3d19106b298",
+              "format": "metadata"
+            },
+            {
+              "path": "tokenizer.json",
+              "bytes": 24321939,
+              "sha256": "35af56c3f5cb3ea2cc578aa28a8937770981d504f183ac5c8c38baf4bbd4af4d",
+              "format": "metadata"
+            },
+            {
+              "path": "tokenizer_config.json",
+              "bytes": 14072925,
+              "sha256": "6cd70cdd89425971794f5235562edcc608b0629a6c4686ae51a8b8c8b8ba5e95",
+              "format": "metadata"
+            },
+            {
+              "path": "vocab.json",
+              "bytes": 2776833,
+              "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+              "format": "metadata"
+            }
+          ]
+        },
+        {
+          "id": "acestep-v15-sft",
+          "repo": "ACE-Step/acestep-v15-sft",
+          "revision": "c410d249e71ea9385a7b586865e65b1473e1098d",
+          "repo_subdir": "",
+          "dest_subdir": "acestep-v15-sft",
+          "license": "mit",
+          "optional": false,
+          "files": [
+            {
+              "path": "README.md",
+              "bytes": 5498,
+              "sha256": "ed42093e8f7903f23bd45ea56bea8f484c8aee47820ae8880d6da752681a1da7",
+              "format": "metadata"
+            },
+            {
+              "path": "apg_guidance.py",
+              "bytes": 7956,
+              "sha256": "0c0ce9755952c99307ecad2fac67863d43258e34541cd37ce2f2221f59e76b15",
+              "format": "remote_code"
+            },
+            {
+              "path": "config.json",
+              "bytes": 1940,
+              "sha256": "9bb4f832f2e5e6c8bf7bddab3c6a6da1b13c01d072efbf0ed3c830536c473359",
+              "format": "metadata"
+            },
+            {
+              "path": "configuration_acestep_v15.py",
+              "bytes": 13130,
+              "sha256": "b89870c5c7a7ce060eb0bcdbb5ffc86b0b1a324ca325a26be552ea1b42496dc5",
+              "format": "remote_code"
+            },
+            {
+              "path": "model.safetensors",
+              "bytes": 4787825604,
+              "sha256": "d4dd3a93870f06720027965b90771f529ab02094b3d29e2518f1d5e097e1af7e",
+              "format": "safetensors"
+            },
+            {
+              "path": "modeling_acestep_v15_base.py",
+              "bytes": 95910,
+              "sha256": "5e3b475d46965dcd5b0d037e53a9af359305a7dbd78e2ee08b39e94c4b02ca48",
+              "format": "remote_code"
+            },
+            {
+              "path": "silence_latent.pt",
+              "bytes": 3841215,
+              "sha256": "a778e9dd942f5e8b2c09c55370782d318834432b03dabbcdf70e6ed49ad6358b",
+              "format": "pickle",
+              "converted": {
+                "dest": "silence_latent.safetensors",
+                "sha256": "3c9d1758b016fa80778981a4c1ecac50b75e10d2367ec193982801be5ac32632",
+                "bytes": 3840136
+              }
+            }
+          ]
+        },
+        {
+          "id": "acestep-v15-base",
+          "repo": "ACE-Step/acestep-v15-base",
+          "revision": "e432212fec32b8965a14ffa57ae653438d6abd14",
+          "repo_subdir": "",
+          "dest_subdir": "acestep-v15-base",
+          "license": "mit",
+          "optional": false,
+          "files": [
+            {
+              "path": "README.md",
+              "bytes": 5498,
+              "sha256": "ed42093e8f7903f23bd45ea56bea8f484c8aee47820ae8880d6da752681a1da7",
+              "format": "metadata"
+            },
+            {
+              "path": "apg_guidance.py",
+              "bytes": 7956,
+              "sha256": "0c0ce9755952c99307ecad2fac67863d43258e34541cd37ce2f2221f59e76b15",
+              "format": "remote_code"
+            },
+            {
+              "path": "config.json",
+              "bytes": 1940,
+              "sha256": "9bb4f832f2e5e6c8bf7bddab3c6a6da1b13c01d072efbf0ed3c830536c473359",
+              "format": "metadata"
+            },
+            {
+              "path": "configuration_acestep_v15.py",
+              "bytes": 13130,
+              "sha256": "b89870c5c7a7ce060eb0bcdbb5ffc86b0b1a324ca325a26be552ea1b42496dc5",
+              "format": "remote_code"
+            },
+            {
+              "path": "model.safetensors",
+              "bytes": 4787825604,
+              "sha256": "4177f600501a6d4bd81cadaa0abac557ffd15c54e5c8cb52053cdb24a0844d6b",
+              "format": "safetensors"
+            },
+            {
+              "path": "modeling_acestep_v15_base.py",
+              "bytes": 95545,
+              "sha256": "d5f67ca269f8b854a86e203b843534ab62728193e45277115f667b00ab5aa2b6",
+              "format": "remote_code"
+            },
+            {
+              "path": "silence_latent.pt",
+              "bytes": 3841215,
+              "sha256": "a778e9dd942f5e8b2c09c55370782d318834432b03dabbcdf70e6ed49ad6358b",
+              "format": "pickle",
+              "converted": {
+                "dest": "silence_latent.safetensors",
+                "sha256": "3c9d1758b016fa80778981a4c1ecac50b75e10d2367ec193982801be5ac32632",
+                "bytes": 3840136
+              }
+            }
+          ]
+        },
+        {
+          "id": "acestep-v15-xl-turbo",
+          "repo": "ACE-Step/acestep-v15-xl-turbo",
+          "revision": "d4a0b288b83ebb7e25a8c0b32c573c22e134e8ee",
+          "repo_subdir": "",
+          "dest_subdir": "acestep-v15-xl-turbo",
+          "license": "mit",
+          "optional": true,
+          "files": [
+            {
+              "path": "README.md",
+              "bytes": 4106,
+              "sha256": "9cd512227aa80bc7572d09c318d5e3acc584bad1a7b5230ea03fa07220dbb6db",
+              "format": "metadata"
+            },
+            {
+              "path": "config.json",
+              "bytes": 2407,
+              "sha256": "e3665376d46477cbd3e76203cd4e241f11a6a6bb5f88464c49f3c6aae51a918b",
+              "format": "metadata"
+            },
+            {
+              "path": "configuration_acestep_v15.py",
+              "bytes": 13225,
+              "sha256": "0d66f38eba6a3d1665c9449a1a52724d68354477bc88dcf02389640e3602a0c7",
+              "format": "remote_code"
+            },
+            {
+              "path": "model-00001-of-00004.safetensors",
+              "bytes": 4986971456,
+              "sha256": "e54a8413c981797312f53d512dec9944023d03f42f0740cbe86f62582cc27bdc",
+              "format": "safetensors"
+            },
+            {
+              "path": "model-00002-of-00004.safetensors",
+              "bytes": 4986942776,
+              "sha256": "b45f788b6dc9f15957cfa3d9b403f25f3f64c5211ecaf18dda45b67ea6470664",
+              "format": "safetensors"
+            },
+            {
+              "path": "model-00003-of-00004.safetensors",
+              "bytes": 4986942808,
+              "sha256": "a4f6bd572eab79cf5f3e4678796f904c6d6c33680a3e6ed09034d6de7cabea4d",
+              "format": "safetensors"
+            },
+            {
+              "path": "model-00004-of-00004.safetensors",
+              "bytes": 4988483464,
+              "sha256": "a868b05493c73808408f58b33a903371bb2846b53c8b19bd7476991bc8837259",
+              "format": "safetensors"
+            },
+            {
+              "path": "model.safetensors.index.json",
+              "bytes": 71471,
+              "sha256": "0a0c7e153a7bb6f6061b155739e9502cf83977bb959186d4df688595302a9474",
+              "format": "metadata"
+            },
+            {
+              "path": "modeling_acestep_v15_xl_turbo.py",
+              "bytes": 103821,
+              "sha256": "6576bd225807998ac169c5a05b86fb778091d5967666cbb417841836bd553ecc",
+              "format": "remote_code"
+            },
+            {
+              "path": "silence_latent.pt",
+              "bytes": 3841215,
+              "sha256": "a778e9dd942f5e8b2c09c55370782d318834432b03dabbcdf70e6ed49ad6358b",
+              "format": "metadata"
+            }
+          ]
+        }
+      ]
+    },
+    "qwen3-asr-1.7b": {
+      "kind": "hf-repo",
+      "repo": "Qwen/Qwen3-ASR-1.7B",
+      "revision": "7278e1e70fe206f11671096ffdd38061171dd6e5",
+      "license": "apache-2.0",
+      "dest": "models/qwen3-asr-1.7b",
+      "files": [
+        {
+          "path": "README.md",
+          "bytes": 57456,
+          "sha256": "5058416891bc47a2051557765997e8c42f8eb78a0e33c3e775bd17d4b0ba4d50",
+          "format": "metadata"
+        },
+        {
+          "path": "chat_template.json",
+          "bytes": 1161,
+          "sha256": "75a8cfca24f00de72d796fbfed6858fc9614ef3dabd8696684cc3bc03a9c58ff",
+          "format": "metadata"
+        },
+        {
+          "path": "config.json",
+          "bytes": 6194,
+          "sha256": "2e74a751548b8ad7d7526d29365ad8144c345d8b412b1152d25dc6698452712f",
+          "format": "metadata"
+        },
+        {
+          "path": "generation_config.json",
+          "bytes": 142,
+          "sha256": "1da527824d81e07118facff437e03f2e24a23311e3bdeb2368973fe77e5f275c",
+          "format": "metadata"
+        },
+        {
+          "path": "merges.txt",
+          "bytes": 1671853,
+          "sha256": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5",
+          "format": "metadata"
+        },
+        {
+          "path": "model-00001-of-00002.safetensors",
+          "bytes": 4220320824,
+          "sha256": "a4cd1f1a04d90b757dc7f7dd26254e69a013b19e80efe590a83c6a3bde8608d6",
+          "format": "safetensors"
+        },
+        {
+          "path": "model-00002-of-00002.safetensors",
+          "bytes": 478200688,
+          "sha256": "6e0b9d9e09e2e0238e7ef3cc8a484ab387e91b90f1900bedf88bc92d7929ccfc",
+          "format": "safetensors"
+        },
+        {
+          "path": "model.safetensors.index.json",
+          "bytes": 64821,
+          "sha256": "f994739fe38e5210b9e3e8ce6c6307315e2ceac3cb630e7b7414d69dce520f60",
+          "format": "metadata"
+        },
+        {
+          "path": "preprocessor_config.json",
+          "bytes": 330,
+          "sha256": "45e120a4eda2c20c5d7f2ea9354e63536bf35e27aa573fb7cdf78017b378770d",
+          "format": "metadata"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "bytes": 12487,
+          "sha256": "4942d005604266809309cabc9f4e9cb89ce855d59b14681fdc0e1cc62ea26c4c",
+          "format": "metadata"
+        },
+        {
+          "path": "vocab.json",
+          "bytes": 2776833,
+          "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+          "format": "metadata"
+        }
+      ]
+    },
+    "qwen3-forcedaligner-0.6b": {
+      "kind": "hf-repo",
+      "repo": "Qwen/Qwen3-ForcedAligner-0.6B",
+      "revision": "c7cbfc2048c462b0d63a45797104fc9db3ad62b7",
+      "license": "apache-2.0",
+      "dest": "models/qwen3-forcedaligner-0.6b",
+      "files": [
+        {
+          "path": "README.md",
+          "bytes": 57456,
+          "sha256": "5058416891bc47a2051557765997e8c42f8eb78a0e33c3e775bd17d4b0ba4d50",
+          "format": "metadata"
+        },
+        {
+          "path": "chat_template.json",
+          "bytes": 1161,
+          "sha256": "75a8cfca24f00de72d796fbfed6858fc9614ef3dabd8696684cc3bc03a9c58ff",
+          "format": "metadata"
+        },
+        {
+          "path": "config.json",
+          "bytes": 5982,
+          "sha256": "d616c65d46c4b90bdc651b0a0963ea932732241140f337f9bb6b0335a9c8ef09",
+          "format": "metadata"
+        },
+        {
+          "path": "generation_config.json",
+          "bytes": 115,
+          "sha256": "948d089b23bca1d214e768d59c4438365665f52ec6d33678f4062206b3fbbb8c",
+          "format": "metadata"
+        },
+        {
+          "path": "merges.txt",
+          "bytes": 1671853,
+          "sha256": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5",
+          "format": "metadata"
+        },
+        {
+          "path": "model.safetensors",
+          "bytes": 1835544544,
+          "sha256": "47831d0e82f96b20e9034dba01a075ee06436654719f6a68289e49f1b65ce0e7",
+          "format": "safetensors"
+        },
+        {
+          "path": "preprocessor_config.json",
+          "bytes": 330,
+          "sha256": "45e120a4eda2c20c5d7f2ea9354e63536bf35e27aa573fb7cdf78017b378770d",
+          "format": "metadata"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "bytes": 12666,
+          "sha256": "3ab80063f8511deb9566e6ad438d17b7a6277fcffd52d92854112f19d36bd81c",
+          "format": "metadata"
+        },
+        {
+          "path": "vocab.json",
+          "bytes": 2776833,
+          "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+          "format": "metadata"
+        }
+      ]
+    },
+    "clap-larger-music": {
+      "kind": "hf-repo",
+      "repo": "laion/larger_clap_music",
+      "revision": "a0b4534a14f58e20944452dff00a22a06ce629d1",
+      "license": "apache-2.0",
+      "dest": "models/clap-larger-music",
+      "files": [
+        {
+          "path": "README.md",
+          "bytes": 3457,
+          "sha256": "6c2fc55edbba0f0f5d09388fdb6a2b5f324d8cc890fb1e43b271c1616fd84f61",
+          "format": "metadata"
+        },
+        {
+          "path": "config.json",
+          "bytes": 628,
+          "sha256": "2d7722d338bb83ea8824272b1431f088954d3425d79eb3c2d39489478516dc03",
+          "format": "metadata"
+        },
+        {
+          "path": "merges.txt",
+          "bytes": 456318,
+          "sha256": "1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5",
+          "format": "metadata"
+        },
+        {
+          "path": "preprocessor_config.json",
+          "bytes": 541,
+          "sha256": "9739f58296aa6f9ac18008fd0150fb2649bc554985fbde86d0a4041c882ac753",
+          "format": "metadata"
+        },
+        {
+          "path": "pytorch_model.bin",
+          "bytes": 776444665,
+          "sha256": "5c289311f4a030d768af7ffbfdecd01b008aa64824211899a4e59f4f9d154fd1",
+          "format": "pickle",
+          "converted": {
+            "dest": "pytorch_model.safetensors",
+            "sha256": "e1419344adc7a88ef4b08a1c94702ec759204b17e0b6dff81fc42810fcaccbb9",
+            "bytes": 776327504
+          }
+        },
+        {
+          "path": "special_tokens_map.json",
+          "bytes": 280,
+          "sha256": "06e405a36dfe4b9604f484f6a1e619af1a7f7d09e34a8555eb0b77b66318067f",
+          "format": "metadata"
+        },
+        {
+          "path": "tokenizer.json",
+          "bytes": 2108774,
+          "sha256": "dc239041d98de27ffc3975473a1a23e3db4c937b23c138c38bbc66588bd247e5",
+          "format": "metadata"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "bytes": 1362,
+          "sha256": "e2eb445cfdbf4711de620cbdf10478b0423950799e85652d9f28da47066ab86d",
+          "format": "metadata"
+        },
+        {
+          "path": "vocab.json",
+          "bytes": 798293,
+          "sha256": "ed19656ea1707df69134c4af35c8ceda2cc9860bf2c3495026153a133670ab5e",
+          "format": "metadata"
+        }
+      ]
+    },
+    "audiobox-aesthetics": {
+      "kind": "hf-repo",
+      "repo": "facebook/audiobox-aesthetics",
+      "revision": "9b1dd8e5df9af7216e836a98974fe3b82c56ded6",
+      "license": "cc-by-4.0",
+      "dest": "models/audiobox-aesthetics",
+      "files": [
+        {
+          "path": "config.json",
+          "bytes": 492,
+          "sha256": "0b8eabc5ced92cefed116a3aca8f1e59d2a33dc4d376b9e86dfb9c072e1d280d",
+          "format": "metadata"
+        },
+        {
+          "path": "model.safetensors",
+          "bytes": 415472992,
+          "sha256": "a5a3c2412649cc2384ec525ffd5180ce6c4778f43bed6108e0a1303de04d014e",
+          "format": "safetensors"
+        }
+      ]
+    },
+    "beat-this": {
+      "kind": "url",
+      "provider": "cloud.cp.jku.at (github.com/CPJKU/beat_this)",
+      "url": "https://cloud.cp.jku.at/public.php/dav/files/7ik4RrBKTS273gp/final0.ckpt",
+      "license": "mit",
+      "dest": "models/beat-this",
+      "file": {
+        "path": "final0.ckpt",
+        "sha256": "8c328b45f59d8dd3dff219253ff6a8d6482be57d0133a29140e2febbf8eb8331",
+        "bytes": 81058141,
+        "format": "pickle",
+        "converted": {
+          "dest": "final0.safetensors",
+          "sha256": "ca2402948fbdf16f21bd7a6190855a6fd1be59c1199289f01cc193ed850e6579",
+          "bytes": 81031368
+        }
+      }
+    }
+  }
+}

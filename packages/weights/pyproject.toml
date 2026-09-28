@@ -3,7 +3,11 @@ name = "weights"
 version = "0.1.0"
 description = "Lock de modelos, verificación SHA-256, auditor y conversor de pickle (ADR-0006)."
 requires-python = ">=3.12,<3.13"
-dependencies = []
+dependencies = [
+    "huggingface-hub>=2.0.0",
+    "numpy>=2.5.3",
+    "safetensors>=0.8.0",
+]
 
 [build-system]
 requires = ["hatchling"]
