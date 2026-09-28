@@ -278,7 +278,7 @@ verificacion: obligatoria   # cada T-XX lleva `- **Verificación**:`; lo exige l
 **Criterios de aceptación**
 - [ ] Matriz de configuraciones: turbo + LM 0.6B (inicial), turbo + LM 1.7B, sft, base y XL-turbo con offload + INT8 si cabe. Duraciones: 30, 60, 180 y 300 s.
 - [ ] Carga desde el bind mount frente a una copia dentro del contenedor (I-02). Si la diferencia supera 30 s, se abre un ADR.
-- [ ] **Antes de medir**, Ollama y el stack `knowledge-graphs` quedan descargados o parados, y `nvidia-smi` muestra ≤ ~1,6 GB usados (E-16, [ADR-0022](../../decisiones/ADR-0022-memoria-tecnica-kwipu-graphiti.md)). Se anota la VRAM en reposo en el informe.
+- [ ] **Antes de medir**, el modelo de Ollama queda descargado de la VRAM (`ollama stop <modelo>`; sin parar el servicio ni borrar el modelo), y `nvidia-smi` muestra ≤ ~1,6 GB usados (E-16, [ADR-0022](../../decisiones/ADR-0022-memoria-tecnica-kwipu-graphiti.md)). Se anota la VRAM en reposo en el informe.
 - [ ] Medido con el navegador abierto (la UI también consume VRAM). Se registra si hubo desbordamiento (Administrador de tareas y caída de RTF por encima de 1,5×).
 - [ ] Opcional: `torch.compile` activado como experimento, anotando si falla en sm_120.
 - [ ] Recomendación argumentada con números para la configuración por defecto y la de alta calidad.

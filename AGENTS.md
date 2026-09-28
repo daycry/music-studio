@@ -74,7 +74,12 @@ Scripts del plugin que se usan a menudo, en `<plugin>/agent-kits/shared/`:
    - el tope se calcula a partir de la VRAM **libre** menos un margen;
    - en WSL2, si se desborda, la GPU tira de RAM sin avisar;
    - la 5070 cae en el tier 4 de ACE-Step: los modos se fuerzan de forma explícita.
-8. **La GPU se comparte con el stack `knowledge-graphs`**, cuyo Ollama ocupa unos 8,9 GB. Antes de cualquier trabajo con GPU: `wsl -d Ubuntu -u root -e systemctl stop ollama` y comprobar que `nvidia-smi` marca ≲ 1,6 GB (ADR-0022).
+8. **La GPU se comparte con el Ollama del stack `knowledge-graphs`**, cuyo modelo cargado ocupa de 7 a 9 GB. Antes de cualquier trabajo con GPU:
+   - mira qué hay cargado: `wsl -d Ubuntu -e ollama ps`;
+   - descárgalo: `wsl -d Ubuntu -e ollama stop <modelo>`, hoy `mimo:9b-q5`;
+   - comprueba que `nvidia-smi` marca ≲ 1,6 GB.
+
+   Al terminar, vuélvelo a cargar con `wsl -d Ubuntu -e ollama run <modelo>`. **No pares el servicio ni borres modelos** (ADR-0022).
 9. **Licencias:** ningún modelo ni herramienta entra en el código sin su fila en [`docs/legal/licencias.md`](docs/legal/licencias.md). Los modelos no comerciales solo se usan para comparar, nunca como motor por defecto.
 10. **Repositorio público** (`github.com/daycry/music-studio`, todos los derechos reservados; ADR-0021):
     - nunca se commitea nada de `.env`, `data/`, `models/` (salvo los locks), ni rutas personales;

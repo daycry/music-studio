@@ -63,7 +63,7 @@ fuentes-verificadas: 2026-09-28
 | E-12 | Lectura lenta de `models/` a través del bind mount de Windows | Medir en M0 T-09 ([ADR-0005](../decisiones/ADR-0005-todo-en-la-carpeta.md)) |
 | E-13 | Liberar un modelo en torch no libera el contexto CUDA (0,3–0,5 GB) | Modelo en un **proceso hijo** que se termina al descargar ([ADR-0007](../decisiones/ADR-0007-gpu-local-12gb.md)) |
 | E-14 | Docker publica los puertos en `0.0.0.0` | `127.0.0.1:P:P` en compose ([ADR-0020](../decisiones/ADR-0020-seguridad-local.md)) |
-| E-16 | **Otros procesos en la GPU.** El stack `knowledge-graphs` (Ollama con `qwen3.5:9b`, ≈ 8,9 GB) ocupa la VRAM mientras Kwipu indexa o responde: el 2026-09-28 la 5070 marcaba 11.621 de 12.227 MiB en uso | Antes de medir o generar con GPU: descargar el modelo de Ollama o parar el stack, y comprobar con `nvidia-smi` que la VRAM usada es ≤ ~1,6 GB ([ADR-0022](../decisiones/ADR-0022-memoria-tecnica-kwipu-graphiti.md)) |
+| E-16 | **Otros procesos en la GPU.** El stack `knowledge-graphs` (Ollama con `qwen3.5:9b`, ≈ 8,9 GB) ocupa la VRAM mientras Kwipu indexa o responde: el 2026-09-28 la 5070 marcaba 11.621 de 12.227 MiB en uso | Antes de medir o generar con GPU: `wsl -d Ubuntu -e ollama stop <modelo>` (sin parar el servicio ni borrar el modelo) y comprobar con `nvidia-smi` que la VRAM usada es ≤ ~1,6 GB. Después, `ollama run <modelo>` para volver a cargarlo ([ADR-0022](../decisiones/ADR-0022-memoria-tecnica-kwipu-graphiti.md)) |
 | E-15 | Las cachés de HF, uv y pnpm van por defecto a `%USERPROFILE%` y duplican gigas | Variables `HF_HOME`, `UV_CACHE_DIR`, `npm_config_store_dir` y `TORCH_HOME` apuntando dentro de la carpeta ([convenciones.md](./convenciones.md) §4) |
 
 ## 4. Sincronización con Synology Drive

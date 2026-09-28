@@ -36,12 +36,13 @@
 
 ## Cómo retomar
 
-1. **Prepara la GPU.** Ollama, del stack `knowledge-graphs`, ocupa ~8,9 GB de VRAM. Desde T-05 hay que tenerlo parado:
+1. **Prepara la GPU.** El Ollama del stack `knowledge-graphs` ocupa de 7 a 9 GB de VRAM cuando tiene un modelo cargado. Desde T-05 hay que descargarlo, sin parar el servicio ni borrar el modelo:
    ```powershell
-   wsl -d Ubuntu -u root -e systemctl stop ollama
+   wsl -d Ubuntu -e ollama ps                  # qué modelo hay cargado
+   wsl -d Ubuntu -e ollama stop mimo:9b-q5     # descargarlo (usa el nombre que salga en ps)
    nvidia-smi --query-gpu=memory.used --format=csv   # debe marcar ≲ 1,6 GB
    ```
-   Vuelve a arrancar con WSL. Para relanzarlo: `wsl -d Ubuntu -u root -e systemctl start ollama` (Kwipu lo necesita para indexar).
+   Al terminar el trabajo con GPU: `wsl -d Ubuntu -e ollama run <modelo>`.
 2. **Carga el entorno:** `. .\scripts\env.ps1` en PowerShell. Si faltan `.venv` o `node_modules`, ejecuta `.\scripts\bootstrap.ps1`.
 3. **Comprueba el estado:**
    ```powershell

@@ -23,12 +23,13 @@ El plugin custom-agents puede publicar allí la memoria técnica curada (`docs/k
 Ollama carga `qwen3.5:9b` en la GPU (≈ 8,9 GB) cada vez que Kwipu indexa o responde. En la 5070 eso deja sin sitio a ACE-Step y, en WSL2, la GPU desborda a RAM sin avisar ([ADR-0007](ADR-0007-gpu-local-12gb.md)).
 
 - **Regla de medición:** antes de cualquier trabajo real con GPU (M0 T-05 en adelante, y **siempre** antes del benchmark de T-09 y de la escucha), hay que:
-  1. descargar el modelo de Ollama o parar el stack;
+  1. descargar de la VRAM el modelo de Ollama con `ollama stop <modelo>` (sin parar el servicio ni borrar el modelo);
   2. comprobar con `nvidia-smi` que la VRAM usada es ≤ ~1,6 GB (solo el escritorio).
 - **Sincronizaciones:** no se lanzan (`knowledge-sync.py`) mientras haya un trabajo GPU en marcha.
-- **Cómo liberarla.** Ollama no corre en Docker: es un **servicio systemd de la distro `Ubuntu` de WSL**. El contenedor `knowledge-graphs-ollama-1` es solo un nginx que hace de proxy hacia `host.docker.internal:11434`.
-  - Parar: `wsl -d Ubuntu -u root -e systemctl stop ollama`
-  - Volver a arrancar: `wsl -d Ubuntu -u root -e systemctl start ollama`
-  - Descargar solo el modelo: `wsl -d Ubuntu -e ollama stop qwen3.5:9b`
+- **Cómo liberarla (procedimiento del propietario, 2026-09-28).** Ollama es un **servicio systemd de la distro `Ubuntu` de WSL**: el contenedor `knowledge-graphs-ollama-1` es solo un nginx que hace de proxy hacia `host.docker.internal:11434`. **No se para el servicio ni se borra ningún modelo**: solo se **descarga de la VRAM** el que esté cargado.
+  1. Ver qué hay cargado: `wsl -d Ubuntu -e ollama ps`
+  2. Descargarlo: `wsl -d Ubuntu -e ollama stop <modelo>` (hoy `mimo:9b-q5`; el nombre exacto sale de `ollama ps` u `ollama list`)
+  3. Comprobar: `nvidia-smi` → ≲ 1,6 GB usados
+  4. Al terminar el trabajo con GPU, volver a cargar el que haga falta: `wsl -d Ubuntu -e ollama run <modelo>`
 
-  El servicio está `enabled` y vuelve a arrancar con WSL.
+  Ojo: una petición de Kwipu vuelve a cargar el modelo en la VRAM. Durante una medición o generación larga no se usa Kwipu.
