@@ -1,7 +1,7 @@
 ---
 documento: contrato-engines
 titulo: Contrato /v1 entre el server y los engines
-estado: vigente — congelado en el árbol verificado de T-03; integración Git pendiente
+estado: vigente — contrato /v1 con ampliaciones opcionales compatibles
 fecha: 2026-09-28
 actualizado: 2026-10-05
 ---
@@ -12,9 +12,9 @@ Todo engine implementa este contrato, sea local (contenedor GPU/CPU) o un adapte
 
 El contrato es **genérico por tarea**, no específico de audio. La misma interfaz sirve para música, imagen, vídeo, texto (LLM) y análisis.
 
-**Fuente única:** los [modelos Pydantic de `engine_contract`](../../packages/engine-contract/engine_contract/__init__.py). El paquete no depende de torch y declara Python ≥3.11. La suite ejecutada usa Python 3.12; la gramática AST 3.11 está comprobada, pero la ejecución real con 3.11 queda pendiente. [ADR-0019](../decisiones/ADR-0019-contratos-code-first.md) fija la compatibilidad requerida.
+**Fuente única:** los [modelos Pydantic de `engine_contract`](../../packages/engine-contract/engine_contract/__init__.py). El paquete no depende de torch y declara Python ≥3.11. La suite de Fase 2 se ejecutó con Python 3.12 y comprobó la gramática AST 3.11. T-05/T-06 acreditan ejecución real con Python 3.11.14 en el contenedor ACE-Step, incluida su factoría `/v1` y las pruebas CPU del adaptador. [ADR-0019](../decisiones/ADR-0019-contratos-code-first.md) fija la compatibilidad requerida.
 
-[export_contracts.py](../../scripts/export_contracts.py) genera [engine-v1.json](../../packages/contracts/engine-v1.json). [test_contract.py](../../packages/engine-contract/tests/test_contract.py) comprueba su igualdad con `contract_schema()`. La API del server de M1 y los adapters GPU seguirán usando este contrato; todavía no están implementados.
+[export_contracts.py](../../scripts/export_contracts.py) genera [engine-v1.json](../../packages/contracts/engine-v1.json). [test_contract.py](../../packages/engine-contract/tests/test_contract.py) comprueba su igualdad con `contract_schema()`. La factoría ACE-Step usa este contrato; T-06 acredita carga BF16, generación real de 30 s y descarga del proceso hijo ([QA](../roadmap/2026-09-28-m0-entorno-y-motor/testing/t06/report.md)). La API del server de M1 y los demás adaptadores quedan para tareas posteriores.
 
 ## 1. Principios
 
@@ -81,6 +81,7 @@ ModelDescriptor {
   license, commercial_use: bool, training_data: str   # literal del proveedor
   provider: {type: "local"|"external", name?}
   weights: [{path, sha256, bytes, format: "safetensors"|"gguf"|"onnx"}]
+  remote_code?: [{path, sha256}]           # opcional, [] por defecto; path relativo a models/
   modes: [{id, vram_mb, notes}]            # medidos en M0/M4; "desconocido" hasta entonces
   tasks: {
     "<task>": { verified: bool, checkpoint?: str, device: "gpu"|"cpu", params_schema: JSONSchema,
@@ -93,6 +94,12 @@ ModelDescriptor {
 ```
 
 Las **capacidades** que usa la lógica de negocio son las claves de `tasks` que tienen `verified: true`, y dentro de cada una, sus `features` verificadas: la UI solo muestra los controles de las features verificadas. El server resuelve «qué engine y qué modelo» buscando la tarea, nunca por el nombre del modelo.
+
+`remote_code` conserva los hashes del código cargado con `trust_remote_code`, obtenidos del lock
+y comprobados por el engine antes de cargarlo. No sustituye esa comprobación. Las rutas siguen
+la validación de `weights` y los hashes son SHA-256 en minúsculas. Es una ampliación opcional
+compatible de `/v1` ([ADR-0024](../decisiones/ADR-0024-hashes-de-codigo-remoto-en-descriptores.md));
+los descriptores existentes sin ese campo siguen siendo válidos.
 
 - **`device`**: una tarea `cpu` (p. ej. `audio.beats` con beat_this) no necesita la VRAM en exclusiva. El dispatcher la manda por el carril `cpu` sin descargar el modelo que ocupa la GPU.
 - **Mientras el adapter no la verifique en M0**, una tarea puede declararse con `verified: false`. En ese caso el resolver no la usa, salvo con `STUDIO_ALLOW_UNVERIFIED=1` (solo desarrollo).
@@ -172,7 +179,7 @@ El mapa lo configura el server: `STUDIO_ENGINES=acestep=http://127.0.0.1:8101,co
 
 ## 8. Uso de la implementación Python
 
-Las secciones anteriores fijan el contrato y los destinos previstos. T-03 implementa el paquete, el servidor común y el mock; los contenedores GPU y los adapters externos quedan para tareas posteriores.
+Las secciones anteriores fijan el contrato y los destinos previstos. T-03 implementa el paquete, el servidor común y el mock. T-05 proporciona el contenedor ACE-Step; T-06 añade su adaptador y factoría con pruebas CPU y generación GPU BF16 de 30 s acreditadas. Las capacidades de producto conservan `verified: false` hasta la evaluación de T-10. Los adaptadores externos quedan para tareas posteriores.
 
 | Unidad | API y responsabilidad | Fuente |
 |---|---|---|
@@ -180,6 +187,7 @@ Las secciones anteriores fijan el contrato y los destinos previstos. T-03 implem
 | `engine_common` | `create_app(descriptors, adapter_factory, ...)`: autenticación, rutas, trabajos y eventos | [Servidor](../../apps/engines/common/engine_common/server.py) |
 | `engine_common` | `ProcessSupervisor`, `VramGuard`, `NvmlGpu`, `CpuGpu`: proceso hijo y control de recursos | [Runtime](../../apps/engines/common/engine_common/runtime.py), [worker](../../apps/engines/common/engine_common/worker.py) |
 | `engine_mock` | `create_mock_app(...)`, `MockAdapter`, `descriptor()`: salidas sintéticas sin GPU | [Mock](../../apps/engines/mock/engine_mock/__init__.py) |
+| `engine_acestep` | `create_app()`, `AceStepAdapter`, descriptor: API `/v1` y ejecución del modelo en el proceso hijo | [Factoría](../../apps/engines/acestep/engine_acestep.py), [adaptador](../../apps/engines/acestep/adapter.py), [descriptor](../../apps/engines/acestep/descriptor.py) |
 
 `create_mock_app` admite `token`, `data_dir`, `stage_delay_ms`, `gpu` y `margin_mb`. Usa `CpuGpu` por defecto. El descriptor ofrece el modelo `mock`, modo `cpu`; todas sus tareas son CPU. El audio sintético es WAV PCM de 16 bits, 48 kHz y dos canales. Las imágenes son PNG de 64 × 64 y el vídeo MP4 requiere el ffmpeg local. `train.lora` devuelve un safetensors sintético; no entrena pesos.
 

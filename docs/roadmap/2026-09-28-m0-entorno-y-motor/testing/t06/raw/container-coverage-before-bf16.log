@@ -1,0 +1,39 @@
+ Container music-studio-engine-acestep-run-f9f3dd4ae1d0 Creating
+ Container music-studio-engine-acestep-run-f9f3dd4ae1d0 Created
+engine-acestep: attention=SDPA torch=2.10.0+cu128
+..................................                                       [100%]
+=============================== warnings summary ===============================
+tests/test_adapter.py::test_install_patch_on_actual_upstream_without_models
+  /opt/acestep/.venv/lib/python3.11/site-packages/torchao/dtypes/uintx/__init__.py:1: DeprecationWarning: Importing from torchao.dtypes.uintx.dyn_int8_act_int4_wei_cpu_layout is deprecated. Please use 'from torchao.prototype.dtypes import Int8DynamicActInt4WeightCPULayout' instead. This import path will be removed in a future release of torchao. See https://github.com/pytorch/ao/issues/2752 for more details.
+    from .dyn_int8_act_int4_wei_cpu_layout import (
+
+tests/test_adapter.py::test_install_patch_on_actual_upstream_without_models
+  /opt/acestep/.venv/lib/python3.11/site-packages/torchao/dtypes/uintx/__init__.py:22: DeprecationWarning: Importing from torchao.dtypes.uintx.uintx_layout is deprecated. Please use 'from torchao.prototype.dtypes import UintxLayout, UintxTensor' instead. This import path will be removed in a future release of torchao. See https://github.com/pytorch/ao/issues/2752 for more details.
+    from .uintx_layout import (
+
+tests/test_adapter.py::test_install_patch_on_actual_upstream_without_models
+  /opt/acestep/.venv/lib/python3.11/site-packages/torchao/dtypes/__init__.py:23: DeprecationWarning: Importing BlockSparseLayout from torchao.dtypes is deprecated. Please use 'from torchao.prototype.dtypes import BlockSparseLayout' instead. This import path will be removed in a future torchao release. Please check issue: https://github.com/pytorch/ao/issues/2752 for more details.
+    from .uintx.block_sparse_layout import BlockSparseLayout
+
+tests/test_adapter.py::test_install_patch_on_actual_upstream_without_models
+  /opt/acestep/.venv/lib/python3.11/site-packages/torchao/quantization/quant_api.py:1811: DeprecationWarning: invalid escape sequence '\.'
+    """Configuration class for applying different quantization configs to modules or parameters based on their fully qualified names (FQNs).
+
+tests/test_adapter.py::test_http_factory_parent_without_torch
+  /opt/acestep/.venv/lib/python3.11/site-packages/starlette/testclient.py:45: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.11.14-final-0 _______________
+
+Name                Stmts   Miss  Cover   Missing
+-------------------------------------------------
+adapter.py            132     17    87%   105, 127-145, 213
+descriptor.py          30      0   100%
+engine_acestep.py       7      0   100%
+patches.py             60      1    98%   91
+-------------------------------------------------
+TOTAL                 229     18    92%
+Required test coverage of 80% reached. Total coverage: 92.14%
+34 passed, 1 deselected, 5 warnings in 15.69s

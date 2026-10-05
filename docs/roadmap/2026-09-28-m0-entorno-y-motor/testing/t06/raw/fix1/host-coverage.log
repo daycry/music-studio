@@ -1,0 +1,13 @@
+.......................s...........................                      [100%]
+=============================== tests coverage ================================
+______________ coverage: platform win32, python 3.12.14-final-0 _______________
+
+Name                                     Stmts   Miss  Cover   Missing
+----------------------------------------------------------------------
+apps\engines\acestep\adapter.py            168     18    89%   177, 199-217, 294, 328
+apps\engines\acestep\descriptor.py          30      0   100%
+apps\engines\acestep\engine_acestep.py       7      0   100%
+apps\engines\acestep\patches.py             65     10    85%   86-98
+----------------------------------------------------------------------
+TOTAL                                      270     28    90%
+50 passed, 1 skipped in 0.85s

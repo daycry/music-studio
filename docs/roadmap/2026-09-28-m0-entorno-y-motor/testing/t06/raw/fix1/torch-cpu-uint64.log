@@ -1,0 +1,6 @@
+COMMAND: docker compose run --rm engine-acestep python -c "import torch; values=[9007199254740992,9007199254740993,18446744073709551615]; actual=[torch.Generator(device='cpu').manual_seed(s).initial_seed() for s in values]; assert actual == values; print('torch CPU uint64 seeds exact:', actual)"
+EXIT CODE: 0
+ Container music-studio-engine-acestep-run-370b84c41db7 Creating
+ Container music-studio-engine-acestep-run-370b84c41db7 Created
+engine-acestep: attention=SDPA torch=2.10.0+cu128
+torch CPU uint64 seeds exact: [9007199254740992, 9007199254740993, 18446744073709551615]

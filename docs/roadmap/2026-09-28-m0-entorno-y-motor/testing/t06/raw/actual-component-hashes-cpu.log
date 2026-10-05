@@ -1,0 +1,10 @@
+ Container music-studio-engine-acestep-run-7a5dab11258d Creating
+ Container music-studio-engine-acestep-run-7a5dab11258d Created
+engine-acestep: attention=SDPA torch=2.10.0+cu128
+SHA256 CPU verificados: DiT, LM 0.6B, VAE, text encoder, metadatos, codigo remoto y silence_latent.safetensors; sin cargar modelos
+
+Recibo de terminación original: write_stdin session_id=89282, chunk_id=b9b60d, exit_code=0.
+El resultado final se obtuvo en la llamada original; no se ha repetido la verificación.
+
+Comando exacto:
+docker compose run --rm engine-acestep python -c "from descriptor import model_root, locked_model, CHECKPOINT, LM; from patches import verify_components; components={c['id']: c for c in locked_model()['components']}; selected=[components[x] for x in (CHECKPOINT, LM, 'vae', 'Qwen3-Embedding-0.6B')]; verify_components(model_root() / 'ace-step-1.5/checkpoints', selected); print('SHA256 CPU verificados: DiT, LM 0.6B, VAE, text encoder, metadatos, codigo remoto y silence_latent.safetensors; sin cargar modelos')"

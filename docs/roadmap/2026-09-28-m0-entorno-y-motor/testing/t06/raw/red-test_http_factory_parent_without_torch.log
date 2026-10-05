@@ -1,0 +1,16 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+___________________ test_http_factory_parent_without_torch ____________________
+apps\engines\acestep\tests\test_adapter.py:71: in test_http_factory_parent_without_torch
+    factory = module("engine_acestep")
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+apps\engines\acestep\tests\test_adapter.py:78: in module
+    assert importlib.util.find_spec(name), f"Falta implementaci�n {name}"
+E   AssertionError: Falta implementaci�n engine_acestep
+E   assert None
+E    +  where None = <function find_spec at 0x00000114B0F52660>('engine_acestep')
+E    +    where <function find_spec at 0x00000114B0F52660> = <module 'importlib.util' (frozen)>.find_spec
+E    +      where <module 'importlib.util' (frozen)> = importlib.util
+=========================== short test summary info ===========================
+FAILED apps\engines\acestep\tests\test_adapter.py::test_http_factory_parent_without_torch
+1 failed in 0.31s

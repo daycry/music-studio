@@ -1,0 +1,22 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+____________ test_remote_code_descriptor_compatible_and_preserved _____________
+packages\engine-contract\tests\test_contract.py:11: in test_remote_code_descriptor_compatible_and_preserved
+    assert "remote_code" in legacy.model_fields, "Falta hashes de c�digo remoto opcionales"
+E   AssertionError: Falta hashes de c�digo remoto opcionales
+E   assert 'remote_code' in {'id': FieldInfo(annotation=str, required=True), 'family': FieldInfo(annotation=str, required=True), 'version': FieldInfo(annotation=str, required=True), 'revision': FieldInfo(annotation=str, required=True), ...}
+E    +  where {'id': FieldInfo(annotation=str, required=True), 'family': FieldInfo(annotation=str, required=True), 'version': FieldInfo(annotation=str, required=True), 'revision': FieldInfo(annotation=str, required=True), ...} = ModelDescriptor(id='test', family='test', version='1', revision='fixed', license='MIT', commercial_use=True, training_data='literal', provider=Provider(type='local', name=None), weights=[], modes=[], tasks={}).model_fields
+============================== warnings summary ===============================
+.venv\Lib\site-packages\_pytest\config\__init__.py:1464
+  <workspace>\.venv\Lib\site-packages\_pytest\config\__init__.py:1464: PytestConfigWarning: Unknown config option: cache_dir
+
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+packages/engine-contract/tests/test_contract.py::test_remote_code_descriptor_compatible_and_preserved
+  <workspace>\packages\engine-contract\tests\test_contract.py:11: PydanticDeprecatedSince211: Accessing the 'model_fields' attribute on the instance is deprecated. Instead, you should access this attribute from the model class. Deprecated in Pydantic V2.11 to be removed in V3.0.
+    assert "remote_code" in legacy.model_fields, "Falta hashes de c�digo remoto opcionales"
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED packages/engine-contract/tests/test_contract.py::test_remote_code_descriptor_compatible_and_preserved
+1 failed, 2 warnings in 0.11s

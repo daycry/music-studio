@@ -1,0 +1,22 @@
+.....F.FF.                                                               [100%]
+================================== FAILURES ===================================
+___________ test_explicit_invalid_seeds_never_fall_back_random[1_2] ___________
+apps\engines\acestep\tests\test_review_fixes.py:88: in test_explicit_invalid_seeds_never_fall_back_random
+    with pytest.raises(EngineError,match="INVALID_PARAMS"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE EngineError
+__________ test_explicit_invalid_seeds_never_fall_back_random[1.5_1] __________
+apps\engines\acestep\tests\test_review_fixes.py:88: in test_explicit_invalid_seeds_never_fall_back_random
+    with pytest.raises(EngineError,match="INVALID_PARAMS"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE EngineError
+__________ test_explicit_invalid_seeds_never_fall_back_random[True] ___________
+apps\engines\acestep\tests\test_review_fixes.py:88: in test_explicit_invalid_seeds_never_fall_back_random
+    with pytest.raises(EngineError,match="INVALID_PARAMS"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE EngineError
+=========================== short test summary info ===========================
+FAILED apps\engines\acestep\tests\test_review_fixes.py::test_explicit_invalid_seeds_never_fall_back_random[1_2]
+FAILED apps\engines\acestep\tests\test_review_fixes.py::test_explicit_invalid_seeds_never_fall_back_random[1.5_1]
+FAILED apps\engines\acestep\tests\test_review_fixes.py::test_explicit_invalid_seeds_never_fall_back_random[True]
+3 failed, 7 passed in 0.34s

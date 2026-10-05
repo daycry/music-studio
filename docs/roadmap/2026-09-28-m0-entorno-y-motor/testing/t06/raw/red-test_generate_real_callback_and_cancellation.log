@@ -1,0 +1,11 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+________________ test_generate_real_callback_and_cancellation _________________
+apps\engines\acestep\tests\test_adapter.py:46: in test_generate_real_callback_and_cancellation
+    assert hasattr(adapter, "AceStepAdapter"), "Falta generaci�n adapter"
+E   AssertionError: Falta generaci�n adapter
+E   assert False
+E    +  where False = hasattr(<module 'adapter' from '<workspace>\\apps\\engines\\acestep\\adapter.py'>, 'AceStepAdapter')
+=========================== short test summary info ===========================
+FAILED apps\engines\acestep\tests\test_adapter.py::test_generate_real_callback_and_cancellation
+1 failed in 0.33s

@@ -1,0 +1,11 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+________________ test_decoder_step_hooks_are_real_and_removed _________________
+apps\engines\acestep\tests\test_adapter.py:26: in test_decoder_step_hooks_are_real_and_removed
+    assert hasattr(adapter, "step_hooks"), "Falta cancelaci�n y progreso por paso real"
+E   AssertionError: Falta cancelaci�n y progreso por paso real
+E   assert False
+E    +  where False = hasattr(<module 'adapter' from '<workspace>\\apps\\engines\\acestep\\adapter.py'>, 'step_hooks')
+=========================== short test summary info ===========================
+FAILED apps\engines\acestep\tests\test_adapter.py::test_decoder_step_hooks_are_real_and_removed
+1 failed in 0.32s

@@ -1,0 +1,34 @@
+{
+  "command": "docker compose run --rm engine-acestep python /data/tmp/t06-gpu/run_test.py",
+  "image_id": "sha256:ecae5c354e3ec7350e1a6a6fc0118c8f3faf5ff4dc976a83e1444e82f3cd95b3",
+  "owner_authorized": true,
+  "generated_duration_s": 30,
+  "exit_code": 0,
+  "output": " Container music-studio-engine-acestep-run-0602f7dd1ff9 Creating \n Container music-studio-engine-acestep-run-0602f7dd1ff9 Created \nengine-acestep: attention=SDPA torch=2.10.0+cu128\n{\"events\": 31, \"free_mb_after\": 10512.5, \"free_mb_before\": 9322.30859375, \"job_id\": \"0153F9EEBDEA8D4747BD2CAF29\", \"lyrics_declaration\": {\"declared\": true, \"description\": \"Letra sint\\u00e9tica original creada por el asistente para esta prueba de 30 segundos.\", \"scope\": \"test_real_30_seconds_and_unload\", \"source\": \"assistant_created_for_this_test\"}, \"rms\": 0.17382144927978516, \"sample_rate\": 48000, \"samples\": 1440000, \"telemetry\": {\"extra\": {}, \"load_s\": 122.86637192699709, \"mode\": \"bf16\", \"model_revision\": \"19671f406d603126926c1b7e2adc169acbcade22\", \"rtf\": null, \"run_s\": 142.50300859300114, \"spilled\": false, \"vram_cap_mb\": 8810.30859375, \"vram_peak_mb\": 7806.7978515625}}\n.\n=============================== warnings summary ===============================\ntests/test_gpu.py::test_real_30_seconds_and_unload\n  /opt/acestep/.venv/lib/python3.11/site-packages/starlette/testclient.py:45: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.\n    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n1 passed, 58 deselected, 1 warning in 144.74s (0:02:24)\n{\"ram_measurement\": {\"after\": {\"cached_mib\": 16121.91796875, \"swap_used_mib\": 1.29296875, \"total_mib\": 24031.64453125, \"used_excluding_available_mib\": 2409.88671875}, \"before\": {\"cached_mib\": 17317.2109375, \"swap_used_mib\": 0.78515625, \"total_mib\": 24031.64453125, \"used_excluding_available_mib\": 2142.140625}, \"interval_s\": 0.5, \"max_child_rss_mib\": 5651.63671875, \"peak_wsl_swap_used_mib\": 1.29296875, \"peak_wsl_used_excluding_available_mib\": 4567.8984375, \"samples\": 291, \"scope\": \"WSL VM sampled; child RSS after reap; not Windows physical RAM or VRAM\"}}\n",
+  "chunks": [
+    {
+      "chunk_id": "0ef8f2",
+      "wall_time_seconds": 10.0072221,
+      "session_id": 56037,
+      "original_token_count": 46
+    },
+    {
+      "chunk_id": "0c0193",
+      "wall_time_seconds": 5.0093795,
+      "session_id": 56037,
+      "original_token_count": 0
+    },
+    {
+      "chunk_id": "1ecdfd",
+      "wall_time_seconds": 5.0038149,
+      "session_id": 56037,
+      "original_token_count": 0
+    },
+    {
+      "chunk_id": "d7c8dc",
+      "wall_time_seconds": 0.0000068,
+      "exit_code": 0,
+      "original_token_count": 446
+    }
+  ]
+}

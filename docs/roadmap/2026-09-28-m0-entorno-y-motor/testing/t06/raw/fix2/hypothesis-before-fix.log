@@ -1,0 +1,8 @@
+COMMAND: CPU AST preflight + classifier predicates; see fix2-report for full command
+EXIT CODE: 0
+music-studio: entorno listo (Python 3.12.14)
+{'audios': [], 'status_message': 'Error: Insufficient free VRAM: need ~0.8 GB, only 0.1 GB available. Reduce batch size (currently 1) or audio duration (currently 30s).', 'extra_outputs': {}, 'success': False, 'error': 'Insufficient free VRAM: need ~0.8 GB, only 0.1 GB available. Reduce batch size (currently 1) or audio duration (currently 30s).'}
+device predicate: True
+current reason predicate: False
+proposed exact predicate: True
+Hypothesis confirmed: classifier misses preflight phrase; sufficient VRAM, CPU and offload paths excluded

@@ -23,9 +23,9 @@ verificacion: obligatoria   # cada T-XX lleva `- **Verificación**:`; lo exige l
 |------|------------|-------|----------|-----------------------|------------------------|------------------------|-------------------|
 | Fase 1 — Preparación | 2 | 2 | 100% | 0 / 6h | 0 / 2h | 0 / 0.5h | 0 / — |
 | Fase 2 — Cimientos compartidos | 3 | 3 | 100% | — / 26h | — / 13h | — / 3.3h | — / — |
-| Fase 3 — Motor musical | 1 | 3 | 33% | — / 19h | — / 9.5h | — / 2.4h | — / — |
+| Fase 3 — Motor musical | 2 | 3 | 67% | — / 19h | — / 9.5h | — / 2.4h | — / — |
 | Fase 4 — Medición y elección | 0 | 6 | 0% | 0 / 37h | 0 / 15h | 0 / 3.8h | 0 / — |
-| **TOTAL** | **6** | **14** | **43%** | **— / 88h** | **— / 39.5h** | **— / 10h** | **— / —** |
+| **TOTAL** | **7** | **14** | **50%** | **— / 88h** | **— / 39.5h** | **— / 10h** | **— / —** |
 
 > Horas orientativas (proyecto personal, sin presupuesto). La T-12 es opcional (8 h): sin ella son 80 h.
 
@@ -247,23 +247,34 @@ verificacion: obligatoria   # cada T-XX lleva `- **Verificación**:`; lo exige l
 ### T-06 — Adapter ACE-Step (`music.song`, `music.instrumental`)
 
 - **Descripción**: Envolver la **API Python** de ACE-Step (el handler, no la REST) detrás del contrato `/v1`, con los modos forzados para el tier 4.
-- **Estado**: borrador
+- **Estado**: completado
 - **Tiempo humano**: est. 10h · real —
 - **Tiempo IA (ejec.)**: est. 5h · real —
 - **Supervisión**: est. 1.3h (≈25 % IA) · real —
 - **Dependencias**: T-05
 - **Tipo**: backend
-- **Archivos**: `apps/engines/acestep/adapter.py`, `apps/engines/acestep/descriptor.py`, `apps/engines/acestep/patches/`, tests `gpu`
+- **Archivos**: `apps/engines/acestep/` (adapter.py, descriptor.py, factoría engine_acestep.py, proceso hijo, patches, tests CPU/GPU y ajustes necesarios de empaquetado/imagen), `packages/engine-contract/engine_contract/__init__.py`, `packages/engine-contract/tests/test_contract.py`, `packages/contracts/engine-v1.json`, `docs/arquitectura/contrato-engines.md`, `docs/arquitectura/entorno.md`, `docs/decisiones/ADR-0024-hashes-de-codigo-remoto-en-descriptores.md`, `docs/decisiones/ADR-0025-limite-de-memoria-wsl.md`, `docs/decisiones/README.md`, `docs/legal/licencias.md`, `CONTINUE-HERE.md`, `docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t06/`
+- **Changelog**: ACE-Step genera canciones e instrumentales locales mediante /v1, con pesos verificados, semillas exactas, control de memoria y salida WAV estéreo a 48 kHz.
 - **Verificación**:
   - `docker compose run --rm engine-acestep uv run pytest -m "not gpu" -q` → verde
   - `docker compose run --rm engine-acestep uv run pytest -m gpu -q` → verde (30 s de audio, 48 kHz estéreo, sin NaN ni silencio; telemetría completa; `unload` libera la VRAM)
 
 **Criterios de aceptación**
-- [ ] `load` carga DiT, LM, VAE y text encoder desde `models/ace-step-1.5/`. **Modos forzados**: bf16, sin offload, sin INT8 y sin `torch.compile`, además del modo `offload`. El checkpoint y el LM (0.6B por defecto) se eligen por configuración, **sin fiarse del tier automático**.
-- [ ] Parche documentado para que `silence_latent` se lea del safetensors convertido. Si aparecen otros `torch.load` en el camino de carga (I-04), se parchean igual y se añaden al test.
-- [ ] `generate` acepta letra con etiquetas, estilo, duración, semilla, `vocal_language` (por defecto el de la canción, **no** `"en"`), BPM y tonalidad (si el upstream los expone) y `n_outputs`. Emite etapas y progreso reales, lo más fino que permita la API (I-03), y respeta la cancelación.
-- [ ] Escribe WAV float32 con **soundfile** a partir del tensor en memoria, sin usar `torchaudio.save`.
-- [ ] Descriptor con licencia MIT, `training_data` literal, `remote_code` con sus hashes y las tareas `music.song` y `music.instrumental` (con sus features: `negative_prompt`, `bpm`, `key`, `timbre_ref`, `lora`) en `verified: false` hasta T-10. El CLI de T-07 funciona con `STUDIO_ALLOW_UNVERIFIED=1`.
+- [x] `load` carga DiT, LM, VAE y text encoder desde `models/ace-step-1.5/`. **Modos forzados**: bf16, sin offload, sin INT8 y sin `torch.compile`, además del modo `offload`. El checkpoint y el LM (0.6B por defecto) se eligen por configuración, **sin fiarse del tier automático**.
+- [x] Parche documentado para que `silence_latent` se lea del safetensors convertido. Si aparecen otros `torch.load` en el camino de carga (I-04), se parchean igual y se añaden al test.
+- [x] `generate` acepta letra con etiquetas, estilo, duración, semilla, `vocal_language` (por defecto el de la canción, **no** `"en"`), BPM y tonalidad (si el upstream los expone) y `n_outputs`. Emite etapas y progreso reales, lo más fino que permita la API (I-03), y respeta la cancelación.
+- [x] Escribe WAV float32 con **soundfile** a partir del tensor en memoria, sin usar `torchaudio.save`.
+- [x] Descriptor con licencia MIT, `training_data` literal, `remote_code` con sus hashes y las tareas `music.song` y `music.instrumental` (con sus features: `negative_prompt`, `bpm`, `key`, `timbre_ref`, `lora`) en `verified: false` hasta T-10. El CLI de T-07 funciona con `STUDIO_ALLOW_UNVERIFIED=1`.
+
+**Arranque — 2026-10-05:** T-05 completada, integrada y publicada en `main` (`19ab239`); rama `m0/t-06-acestep-adapter`. Se retoma con brief determinista, subagente fresco y TDD activo. Backend pt obligatorio: la imagen omite flash-attn; upstream usa vllm por defecto en su API si no se fuerza. La autorización previa del propietario cubría solo la matmul BF16, ya ejecutada; no se extiende a carga de modelos o benchmark. Avanza implementación y verificación CPU mientras se mantiene la condición de VRAM para pruebas GPU. No se declara generación ni carga real acreditada.
+
+**Contexto resuelto:** el contrato descartaba `remote_code` como extra. Se amplía con lista opcional de rutas relativas y SHA-256, sin romper `/v1`, según [ADR-0024](../../decisiones/ADR-0024-hashes-de-codigo-remoto-en-descriptores.md); se regenera el JSON Schema en el mismo cambio. Se amplía el ownership del implementer únicamente a modelo/test de contrato y esquema generado; los documentos los mantiene el orquestador. La literalidad de `training_data` se obtiene de la [model card en la revisión fijada](https://huggingface.co/ACE-Step/Ace-Step1.5/blob/19671f406d603126926c1b7e2adc169acbcade22/README.md), como declaración del proveedor, sin atribuirle una auditoría.
+
+**Verificación CPU T-06 — 2026-10-05:** imagen final `sha256:6fbddce9961c7ac6d3ae4e38dfdc39f947c5fe0607637d7215b03aa1ddc7a75e`; comando declarado `docker compose run --rm engine-acestep uv run pytest -m "not gpu" -q` → **35 passed, 1 deselected**, exit 0. Cobertura real Python 3.11.14 de adapter/patches/descriptor/factoría: **92,31 %**, todos los ficheros ≥80 %. Host adapter+contrato: **45 passed, 1 skipped**; lint, formato y esquema verdes. Hashes locales reales comprobados sin deserialización y factoría sin torch/proceso acreditada. [Recibo de implementación y RED/GREEN por criterio](testing/t06/implementation-report.md), con salidas individuales en `testing/t06/raw/`. RED adicional: `test_pretrained_loads_bf16_before_cuda_transfer` falló por falta de dtype en la deserialización · 2026-10-05; GREEN 1 passed y suite final verde. TDD n/a: configuración/empaquetado. **GPU no ejecutada**: Ollama vacío y baseline 2.874 MiB; resolución solicitada al propietario conforme AGENTS.md regla 8. No se acredita carga de modelos, audio ni liberación real de VRAM; T-06 sigue en-progreso. Medición de implementación cerrada 11:45:20–12:30:29 UTC, `fuente: estimado`, sin tokens/horas/coste medidos; 45 min son duración de reloj.
+
+**Cierre técnico T-06 — 2026-10-05:** revisión A+B+C intento 3 sin gaps y [QA CPU/GPU](testing/t06/report.md) conforme. CPU host 179 passed/5 skipped/1 deselected, gate del diff **94,58 %** (mínimo 80 %). Prueba real autorizada → **1 passed/58 deselected**, exit 0: 30 s, 48 kHz, estéreo FLOAT, sin NaN/silencio, RMS 0,17382145, 31 eventos. Carga implícita real de DiT/LM/VAE/text encoder BF16, pico VRAM 7.806,80 MiB bajo cap 8.810,31 MiB, spilled=false. Unload termina el proceso y loaded=null; free antes 9.322,31/después 10.512,50 MiB, diferencia afectada por actividad del escritorio. Ollama vacío, sin modelo que restaurar; nvidia-smi posterior 1.338/12.227 MiB. load_s=122,87 y run_s=142,50 (este último incluye carga); RTF null. [Salida y herramienta](testing/t06/raw/gpu-30s-tool-receipt.json). RAM WSL pico excluyendo memoria recuperable 4.567,90 MiB; swap pico 1,293 MiB, caché final 16.121,92 MiB. Se mide, sin cambiar .wslconfig. QA sin UI por diseño, sin gate E2E ficticio; PDF pendiente de herramientas. Ventana QA cerrada estimada sin horas/tokens/coste medidos. Capacidades verified:false hasta T-10; esta prueba no cierra T-07 ni la escucha de M0. Integración Git siguiente, con preparación T-07 preservada.
+
+**Cambio de perfil WSL posterior a la prueba GPU — 2026-10-05:** el propietario eligió y escribió 16 GB de RAM / 8 GB de swap / `autoMemoryReclaim=dropCache` y solicitó reiniciar. `wsl --shutdown` → exit 0; Ubuntu tras el arranque informa MemTotal 16.375.452 kB y swap 8.388.608 KiB, sin uso. Docker Desktop vuelve a responder. [ADR-0025](../../decisiones/ADR-0025-limite-de-memoria-wsl.md) y entorno E-03 actualizados. No se ha repetido audio con el nuevo límite; el recibo de 30 s corresponde a los 24 GB anteriores.
 
 ### T-07 — CLI `scripts/generate.py`: primera canción 🎯
 
@@ -522,3 +533,79 @@ El orquestador marca T-03/T-04 y Fase 2 como completadas técnicamente al cumpli
 **Medición:** ventana de revisión cerrada; `usage-meter` degradó a `fuente: estimado`, sin tokens, coste u horas IA medidos. 10 minutos de reloj no se imputan como IA. Jira/Confluence desactivados. No se han promovido journals ni candidatos ajenos. Tras la adenda GPU, T-05 pasa a **en-revision** hasta QA; M0 permanece abierto, 5/14 tareas completadas.
 
 **QA y cierre posterior:** [informe T-05](testing/t05/report.md), cuatro verificaciones canónicas acreditadas, 125 pruebas locales sin GPU verdes, lint/ledger sin incoherencias. QA sin UI por diseño (`test-plan: n/a (sin UI)`); sin qa-gate E2E fabricado y sin porcentaje de cobertura Python para shell/config. Ventana QA cerrada con degradación estimada, sin horas IA medidas; sus 11 minutos de reloj no se imputan como ejecución IA. T-05 marcada completado; M0 en-progreso, 6/14 tareas. PDF pendiente por herramientas ausentes, sin instalar ni escribir fuera del proyecto.
+
+## Revisión de dos lentes — intento 1: Fase 3 (T-06) — dos defectos de corrección pendientes
+
+**Fecha:** 2026-10-05. **Lentes:** A+B+C en paralelo, contexto fresco; C activada por Dockerfile y `exec` fijado por SHA en el parche, D no activada. Base `main` = `19ab239`, diff y archivos nuevos, sin reabrir T-05. Alcance exit 0, sin salidas ni avisos; journals preexistentes fuera de autoría T-06. T-07 es preparación documental existente, sin cierre. Jira/Confluence desactivados; no se promueve conocimiento ajeno.
+
+| Criterio | Veredicto | Evidencia |
+|---|---|---|
+| Modos BF16/offload, PT, sin INT8/compile y carga configurable | ✓ fuentes CPU; GPU pendiente | `adapter.py:54,116,162`, tests CPU del borde de carga; cuatro componentes reales aún sin cargar |
+| Parche seguro silence_latent y hashes previos | ✓ CPU | `patches.py:18,85`, parche sobre upstream real y hash recalculado por C |
+| Parámetros/variantes y semilla ejecutada | ✗ | B1: upstream convierte semilla por float y pierde precisión; meta puede discrepar de la ejecución |
+| Clasificación del agotamiento VRAM | ✗ | B2: retorno OOM capturado por upstream termina como INTERNAL |
+| Callbacks, cancelación y WAV FLOAT/48 kHz/estéreo | ✓ borde CPU | Muestras exactas, hooks retirados; no acredita modelo GPU |
+| Descriptor MIT/literal/hashes/capacidades false y contrato opcional | ✓ | Tests de contrato 15 passed, exportador al día; ADR-0024 |
+| Constitución, autenticación y seguridad introducida | ✓ fuentes | C sin hallazgos; [informe C](testing/t06/review-c-attempt-1.md) |
+| Documentos y recibos públicos | ✓ tras corrección | Texto de Python 3.11 actualizado; A1 anonimizado y búsqueda sin rutas personales |
+| Verificación/cobertura/estado | ✓ CPU; GPU no verificable | 35 passed, 1 deselected; 92,31 % en el contenedor. T-06 sigue en-progreso |
+
+| # | Grado | Gap | Tarea | Corrección / veredicto | Evidencia |
+|---|---|---|---|---|---|
+| A1 | Important | Rutas personales en repr de tracebacks | T-06 | Corregido: anonimización de barras normales, duplicadas y slash; ninguna ruta personal restante | `testing/t06/raw/red-pretrained-bf16.log:10` antes del arreglo; búsqueda completa sin coincidencias después |
+| B1 | Important | Semillas grandes pierden precisión y variantes pueden repetirse | T-06 | Corregido en fix1; pendiente validación del intento 2 | `adapter.py:95,253` del intento 1; seed=9007199254740992/n_outputs=2 terminaba con dos semillas ejecutadas iguales pero meta de la segunda=9007199254740993; reproducción CPU con parser upstream real |
+| B2 | Important | OOM capturado por upstream pierde código VRAM_EXCEEDED | T-06 | Corregido en fix1; pendiente validación del intento 2 | `adapter.py:175,184` del intento 1; retorno ('CUDA out of memory…', False) se traducía a INTERNAL; LM/generación tenían traducción genérica equivalente |
+
+**Evidencia independiente:** A ejecutó contrato (15 passed), exportador, ledger-lint (0 incoherencias/8 avisos futuros), diff-check y anonimización; B y C ejecutaron adapter+contrato (45 passed, 1 skipped). B reprodujo ambos fallos CPU; C recalculó el SHA upstream. No se ejecutó GPU ni reconstrucción por revisores. Interop/OpenAPI no aplican.
+
+**Medición:** revisión cerrada antes de abrir `T-06-fix1`; `usage-meter` degrada a estimado, sin tokens/coste/horas IA medidos. Los defectos vuelven al mismo implementer para corrección, seguida del intento 2 de 3. No se cierra T-06 ni M0 con estos resultados.
+
+**Fix1 — 2026-10-05:** [recibo separado](testing/t06/fix1-report.md). RED: `test_large_seeds_exact_distinct_after_real_parser` falló por segunda semilla 9007199254740992 frente a 9007199254740993; `test_cuda_oom_status_becomes_vram_exceeded` falló en DiT/LM/generación por INTERNAL frente a VRAM_EXCEEDED; ambos el 2026-10-05. GREEN inicial 4 passed; casos adicionales inválidos RED y GREEN conservados. Parser exacto uint64, rechazo de desbordamiento antes de generar, status/error/excepciones OOM clasificados sin exponer texto upstream. Torch CPU conserva las tres semillas límite comprobadas. Imagen corregida `sha256:9934f4f4cc13bdde43f534b961c1fda7620f5cc0b1df67372148b0959e0d2403`; build exit 0. Verificación CPU contractual → **55 passed, 1 deselected**, exit 0; cobertura real **92,96 %**, todos los ficheros ≥80 %. Ruff/formato verdes. Fix1 cerrado 12:37:49–12:53:46 UTC, estimado sin horas/tokens/coste medidos; 16 min son reloj. Segunda revisión abierta después; GPU sigue sin ejecutar, última ocupación 2.906 MiB, resolución pendiente del propietario.
+
+## Revisión de dos lentes — intento 2: Fase 3 (T-06) — insuficiencia VRAM upstream pendiente
+
+**Lentes A+B+C**, frescas y en paralelo. Puerta de alcance exit 0, sin avisos; C activada por los mismos motivos, D no activada. Se conserva lo aprobado del intento 1; A1 corregido y sin rutas personales, B1 validado con semillas exactas. A y C sin gaps nuevos. B detecta un caso adicional dentro de B2 con evidencia del método upstream real.
+
+| Criterio | Veredicto | Evidencia |
+|---|---|---|
+| B1: semillas, límites, overflow, sin fallback | ✓ corregido | Parser real y tests independientes, metadatos coincidentes |
+| B2: OOM por status/error/excepción en DiT/LM/generación | ✓ corregido | Pruebas de los tres caminos y mensajes públicos constantes |
+| B2: insuficiencia de VRAM detectada antes de difusión | ✗ | `_vram_preflight_check` real devuelve `Insufficient free VRAM…`, aún clasificado como INTERNAL |
+| Seguridad del parser/errores y autenticación | ✓ | C sin hallazgos; SHA de loader/parser coincide y mensajes no filtran texto upstream |
+| Conformidad, documentos, RED/GREEN, cobertura y estado | ✓ CPU | A conserva aprobados; contrato/exportador verdes; 92,96 % contenedor, estado abierto |
+| Carga/generación/descarga real GPU | No verificable | Test preparado, aún no ejecutado |
+
+| # | Grado | Gap | Tarea | Corrección / veredicto | Evidencia |
+|---|---|---|---|---|---|
+| A1 | Important | Rutas personales | T-06 | Corregido, conservado | Búsqueda pública sin coincidencias |
+| B1 | Important | Semillas grandes | T-06 | Corregido y validado | Valores efectivos 9007199254740992/993 distintos; overflow previo sin artefactos |
+| B2 | Important | Clasificación incompleta del preflight VRAM upstream | T-06 | Pendiente de fix2 | `adapter.py:57,326`; método real `_vram_preflight_check`, SHA `4126b89bea9032d5ad1a5d9f906410ef4ede79a1d2328635aa365010473ee086`: 1,1 GB necesarios/0,1 GB libres produce INTERNAL en vez de VRAM_EXCEEDED |
+
+**Ejecución independiente:** A regresiones+contrato 35 passed, exportador/ledger verdes; B y C adapter+regresiones+contrato **65 passed, 1 skipped**. B reprodujo el preflight real mediante AST sin torch/GPU; C verificó SHA del parser. Sin cambios de producción durante la pasada. Revisión cerrada antes de abrir fix2; medición estimada, sin horas/tokens/coste medidos. Se aplica debug-root-cause a B2 y después revisión **intento 3 de 3**, sin reabrir aprobados salvo evidencia nueva.
+
+**Autorización GPU recibida — 2026-10-05:** el propietario autoriza expresamente la prueba de **30 s** con ocupación 2.874 MiB y el límite de VRAM del adaptador. Cubre esa prueba preparada, sin cerrar aplicaciones ni cambiar servicios. Ollama no tenía modelo cargado; se volverá a comprobar justo antes de ejecutar. La autorización no acredita ejecución ni se extiende a la canción privada de 255 s.
+
+**Fix2 — 2026-10-05:** [cuatro fases de debug-root-cause](testing/t06/fix2-report.md). RED `test_real_preflight_failure_classified_vram[1-30]`, `[2-120]` y `test_preflight_isolation_and_equivalent_statuses` reproducen el retorno real con insuficiencia VRAM · 2026-10-05; aislamiento y prueba previos al fix confirman predicado de dispositivo True/motivo False. Se añade únicamente `insufficient free vram` a la clasificación; casos suficientes, CPU y offload descartados con evidencia, semillas intactas. GREEN 3 casos y suite; imagen `sha256:ecae5c354e3ec7350e1a6a6fc0118c8f3faf5ff4dc976a83e1444e82f3cd95b3`, build exit 0. CPU contractual **58 passed, 1 deselected**, exit 0; cobertura real **92,96 %**, todos los ficheros ≥80 %. Fix2 cerrado antes de abrir intento 3, estimado sin tokens/coste/horas IA medidos. Candidato de gotcha devuelto sin aprobar/publicar; journals existentes preservados. GPU aún no ejecutada.
+
+## Revisión de dos lentes — intento 3: Fase 3 (T-06) — fuentes sin gaps pendientes
+
+**A+B+C**, contexto fresco y paralelo, reevaluación exclusiva de fix2 y aprobados conservados. Puerta alcance exit 0, 0 salidas/avisos; C por Dockerfile/exec, D no activada. No se han reabierto T-05 ni journals ajenos. Jira/Confluence desactivados.
+
+| Criterio | Veredicto | Evidencia |
+|---|---|---|
+| A1: recibos sin rutas personales | ✓ conservado | Anonimización verificada en intentos anteriores |
+| B1: semillas exactas, límites y variantes | ✓ conservado | Regresiones verdes, sin cambios en fix2 |
+| B2: OOM y preflight de VRAM insuficiente | ✓ corregido | `adapter.py:62,327`; `test_preflight_vram.py:59,83` integra método real por AST/hash |
+| Suficiente VRAM, CPU/offload y errores sin información privada | ✓ | `test_preflight_vram.py:84,90,105,109`; CPU conserva INTERNAL, mensajes constantes y sin artefactos |
+| Constitución, alcance y causa raíz/TDD | ✓ | Presupuesto intacto, RED 3 failed e hipótesis antes de cambiar producción; 4 fases documentadas |
+| Descriptor, factoría, generado, WAV/cancelación y modos | ✓ fuentes CPU conservadas | Exportador al día, aprobados anteriores conservados |
+| Imagen y cobertura reales CPU | ✓ | Imagen `ecae5c35…`, 58 passed/1 deselected, 92,96 % y todos los archivos ≥80 % |
+| Carga/generación/descarga real GPU | No verificable en esta revisión | Autorización recibida; ejecución siguiente por el orquestador |
+
+| # | Grado | Gap | Tarea | Corrección / veredicto | Evidencia |
+|---|---|---|---|---|---|
+| A1 | Important | Rutas personales | T-06 | Corregido y validado | Sin coincidencias públicas |
+| B1 | Important | Semillas grandes | T-06 | Corregido y validado | Semillas consecutivas exactas, uint64 y overflow previo |
+| B2 | Important | OOM/preflight VRAM clasificado como INTERNAL | T-06 | Corregido y validado | Retorno upstream real ahora VRAM_EXCEEDED, 23 regresiones B verdes |
+
+**Evidencia independiente:** A regresiones+contrato 38 passed, exportador/ledger/alcance verdes; B regresiones fix1+fix2 23 passed; C preflight+regresiones+adapter+contrato **68 passed, 1 skipped**, SHA upstream coincidente, diff-check exit 0. Sin hallazgos de seguridad nuevos. No se repitió build ni ejecutó GPU por revisores. Ventana de revisión cerrada antes de QA, estimada sin horas/tokens/coste medidos. **0 gaps pendientes**; aún no habilita cerrar T-06 sin su verificación GPU.

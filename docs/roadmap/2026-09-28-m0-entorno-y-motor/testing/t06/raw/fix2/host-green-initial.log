@@ -1,0 +1,26 @@
+COMMAND: . ./scripts/env.ps1; uv run --frozen --all-packages pytest apps/engines/acestep/tests -m "not gpu" -q --tb=short -p no:cacheprovider; uv run --frozen ruff check apps/engines/acestep; uv run --frozen ruff format apps/engines/acestep
+EXIT CODE: 0
+music-studio: entorno listo (Python 3.12.14)
+...s...........................ssss.......................               [100%]
+53 passed, 5 skipped, 1 deselected in 0.47s
+UP006 [*] Use `dict` instead of `typing.Dict` for type annotation
+  --> apps\engines\acestep\tests\test_preflight_vram.py:34:46
+   |
+32 |     namespace = {
+33 |         **constants,
+34 |         "Optional": typing.Optional, "Dict": typing.Dict, "Any": typing.Any,
+   |                                              ^^^^^^^^^^^
+35 |         "torch": SimpleNamespace(cuda=SimpleNamespace(is_available=lambda: cuda)),
+36 |         "logger": SimpleNamespace(debug=lambda *a: None, info=lambda *a: None, warning=lambda *a: None),
+   |
+help: Replace with `dict`
+   |
+33 |         **constants,
+   -         "Optional": typing.Optional, "Dict": typing.Dict, "Any": typing.Any,
+34 +         "Optional": typing.Optional, "Dict": dict, "Any": typing.Any,
+35 |         "torch": SimpleNamespace(cuda=SimpleNamespace(is_available=lambda: cuda)),
+   |
+
+Found 1 error.
+[*] 1 fixable with the `--fix` option.
+1 file reformatted, 10 files left unchanged

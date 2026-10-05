@@ -1,0 +1,14 @@
+ Container music-studio-engine-acestep-run-0602f7dd1ff9 Creating
+ Container music-studio-engine-acestep-run-0602f7dd1ff9 Created
+engine-acestep: attention=SDPA torch=2.10.0+cu128
+{"events": 31, "free_mb_after": 10512.5, "free_mb_before": 9322.30859375, "job_id": "0153F9EEBDEA8D4747BD2CAF29", "lyrics_declaration": {"declared": true, "description": "Letra sint\u00e9tica original creada por el asistente para esta prueba de 30 segundos.", "scope": "test_real_30_seconds_and_unload", "source": "assistant_created_for_this_test"}, "rms": 0.17382144927978516, "sample_rate": 48000, "samples": 1440000, "telemetry": {"extra": {}, "load_s": 122.86637192699709, "mode": "bf16", "model_revision": "19671f406d603126926c1b7e2adc169acbcade22", "rtf": null, "run_s": 142.50300859300114, "spilled": false, "vram_cap_mb": 8810.30859375, "vram_peak_mb": 7806.7978515625}}
+.
+=============================== warnings summary ===============================
+tests/test_gpu.py::test_real_30_seconds_and_unload
+  /opt/acestep/.venv/lib/python3.11/site-packages/starlette/testclient.py:45: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 58 deselected, 1 warning in 144.74s (0:02:24)
+{"ram_measurement": {"after": {"cached_mib": 16121.91796875, "swap_used_mib": 1.29296875, "total_mib": 24031.64453125, "used_excluding_available_mib": 2409.88671875}, "before": {"cached_mib": 17317.2109375, "swap_used_mib": 0.78515625, "total_mib": 24031.64453125, "used_excluding_available_mib": 2142.140625}, "interval_s": 0.5, "max_child_rss_mib": 5651.63671875, "peak_wsl_swap_used_mib": 1.29296875, "peak_wsl_used_excluding_available_mib": 4567.8984375, "samples": 291, "scope": "WSL VM sampled; child RSS after reap; not Windows physical RAM or VRAM"}}
+exit_code=0

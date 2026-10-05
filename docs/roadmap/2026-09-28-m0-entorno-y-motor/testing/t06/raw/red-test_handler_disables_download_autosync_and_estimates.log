@@ -1,0 +1,11 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+____________ test_handler_disables_download_autosync_and_estimates ____________
+apps\engines\acestep\tests\test_adapter.py:14: in test_handler_disables_download_autosync_and_estimates
+    assert hasattr(adapter, "configure_handler"), "Falta desactivar progreso estimado y persistencia upstream"
+E   AssertionError: Falta desactivar progreso estimado y persistencia upstream
+E   assert False
+E    +  where False = hasattr(<module 'adapter' from '<workspace>\\apps\\engines\\acestep\\adapter.py'>, 'configure_handler')
+=========================== short test summary info ===========================
+FAILED apps\engines\acestep\tests\test_adapter.py::test_handler_disables_download_autosync_and_estimates
+1 failed in 0.50s

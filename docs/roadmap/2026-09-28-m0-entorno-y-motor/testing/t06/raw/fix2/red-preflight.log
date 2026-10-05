@@ -1,0 +1,41 @@
+COMMAND: . ./scripts/env.ps1; uv run --frozen --all-packages pytest apps/engines/acestep/tests/test_preflight_vram.py -q --tb=short -o cache_dir=.cache/pytest/cache
+EXIT CODE: 1
+music-studio: entorno listo (Python 3.12.14)
+FFF                                                                      [100%]
+================================== FAILURES ===================================
+______________ test_real_preflight_failure_classified_vram[1-30] ______________
+apps\engines\acestep\tests\test_preflight_vram.py:62: in test_real_preflight_failure_classified_vram
+    assert caught.value.code == "VRAM_EXCEEDED"
+E   AssertionError: assert 'INTERNAL' == 'VRAM_EXCEEDED'
+E
+E     - VRAM_EXCEEDED
+E     + INTERNAL
+_____________ test_real_preflight_failure_classified_vram[2-120] ______________
+apps\engines\acestep\tests\test_preflight_vram.py:62: in test_real_preflight_failure_classified_vram
+    assert caught.value.code == "VRAM_EXCEEDED"
+E   AssertionError: assert 'INTERNAL' == 'VRAM_EXCEEDED'
+E
+E     - VRAM_EXCEEDED
+E     + INTERNAL
+______________ test_preflight_isolation_and_equivalent_statuses _______________
+apps\engines\acestep\tests\test_preflight_vram.py:79: in test_preflight_isolation_and_equivalent_statuses
+    assert error.code == "VRAM_EXCEEDED"
+E   AssertionError: assert 'INTERNAL' == 'VRAM_EXCEEDED'
+E
+E     - VRAM_EXCEEDED
+E     + INTERNAL
+============================== warnings summary ===============================
+.venv\Lib\site-packages\_pytest\cacheprovider.py:469
+  <workspace>\.venv\Lib\site-packages\_pytest\cacheprovider.py:469: PytestCacheWarning: could not create cache path <workspace>\apps\engines\acestep\.cache\pytest\cache\v\cache\nodeids: [WinError 5] Access is denied: '<workspace>\\apps\\engines\\acestep\\.cache\\pytest\\pytest-cache-files-9sitdzlx'
+    config.cache.set("cache/nodeids", sorted(self.cached_nodeids))
+
+.venv\Lib\site-packages\_pytest\cacheprovider.py:423
+  <workspace>\.venv\Lib\site-packages\_pytest\cacheprovider.py:423: PytestCacheWarning: could not create cache path <workspace>\apps\engines\acestep\.cache\pytest\cache\v\cache\lastfailed: [WinError 5] Access is denied: '<workspace>\\apps\\engines\\acestep\\.cache\\pytest\\pytest-cache-files-rvbahol2'
+    config.cache.set("cache/lastfailed", self.lastfailed)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED apps\engines\acestep\tests\test_preflight_vram.py::test_real_preflight_failure_classified_vram[1-30]
+FAILED apps\engines\acestep\tests\test_preflight_vram.py::test_real_preflight_failure_classified_vram[2-120]
+FAILED apps\engines\acestep\tests\test_preflight_vram.py::test_preflight_isolation_and_equivalent_statuses
+3 failed, 2 warnings in 0.37s

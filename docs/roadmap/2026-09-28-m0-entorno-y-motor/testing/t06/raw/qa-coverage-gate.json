@@ -1,0 +1,24 @@
+{
+  "ok": true,
+  "exit": 0,
+  "stack": "pytest",
+  "detalle": {
+    "stack": "pytest",
+    "informe": "coverage.json",
+    "global": 26.29,
+    "modo": "changed-only",
+    "base": "main",
+    "ficheros": {
+      "apps/engines/acestep/adapter.py": 89.29,
+      "apps/engines/acestep/descriptor.py": 100.0,
+      "apps/engines/acestep/engine_acestep.py": 100.0,
+      "apps/engines/acestep/patches.py": 84.62,
+      "packages/engine-contract/engine_contract/__init__.py": 99.0
+    },
+    "porcentaje": 94.58,
+    "minimo": 80.0
+  },
+  "avisos": [
+    "sin datos de cobertura para: docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t06/raw/qa-cpu-runner.py (excluidos de la media)"
+  ]
+}

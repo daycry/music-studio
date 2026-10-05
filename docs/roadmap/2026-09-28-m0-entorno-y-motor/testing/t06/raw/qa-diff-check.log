@@ -1,0 +1,11 @@
+git : warning: in the working copy of 'docs/roadmap/2026-09-28-m0-entorno-y-motor/spec.md', CRLF will be replaced by
+LF the next time Git touches it
+At line:2 char:1126
++ ... cts.log"; Write-Output $result; $result=git diff --check 2>&1; $code= ...
++                                             ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (warning: in the... Git touches it:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+warning: in the working copy of 'packages/contracts/engine-v1.json', CRLF will be replaced by LF the next time Git
+touches it
+EXIT=0

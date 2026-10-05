@@ -1,0 +1,11 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+_________________ test_runtime_load_forces_pt_bf16_and_budget _________________
+apps\engines\acestep\tests\test_adapter.py:27: in test_runtime_load_forces_pt_bf16_and_budget
+    assert hasattr(adapter, "AceStepAdapter"), "Falta carga real del adapter en hijo"
+E   AssertionError: Falta carga real del adapter en hijo
+E   assert False
+E    +  where False = hasattr(<module 'adapter' from '<workspace>\\apps\\engines\\acestep\\adapter.py'>, 'AceStepAdapter')
+=========================== short test summary info ===========================
+FAILED apps\engines\acestep\tests\test_adapter.py::test_runtime_load_forces_pt_bf16_and_budget
+1 failed in 0.26s

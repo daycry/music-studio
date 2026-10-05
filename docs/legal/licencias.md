@@ -14,7 +14,7 @@ actualizado: 2026-10-05
 
 | Componente | Rol | Código | Pesos | Datos de entrenamiento | Uso comercial | Verificado |
 |---|---|---|---|---|---|---|
-| ACE-Step 1.5 (2B turbo/sft/base, LM 0.6B/1.7B, XL) | P | MIT | **MIT** (todos los repos HF; `silence_latent.pt` pickle → convertir; `.py` remotos fijados) | Declarados «licensed, royalty-free/PD, synthetic» (sin auditoría) | ✅ pesos · ⚠️ datos | 2026-09-28 |
+| ACE-Step 1.5 (2B turbo/sft/base, LM 0.6B/1.7B, XL) | P | MIT | **MIT** (todos los repos HF; `silence_latent.pt` pickle → convertir; `.py` remotos fijados) | Declarados «licensed, royalty-free/PD, synthetic» ([model card fijada](https://huggingface.co/ACE-Step/Ace-Step1.5/blob/19671f406d603126926c1b7e2adc169acbcade22/README.md), sin auditoría) | ✅ pesos · ⚠️ datos | 2026-10-05 (declaración del proveedor contrastada) |
 | Qwen3-Embedding-0.6B (codificador de texto de ACE-Step) | P | Apache 2.0 | Apache 2.0 | — | ✅ | 2026-09 |
 | HeartMuLa-oss-3B + HeartCodec | L→F | Apache 2.0 | Apache 2.0 | No declarados | ✅ pesos · ⚠️ datos | 2026-09-28 |
 | MiniMax-Music3 | L | — | Community License (marca en la UI, umbral de 20 M$, AUP) | No declarados | ⚠️ | 2026-09-28 |

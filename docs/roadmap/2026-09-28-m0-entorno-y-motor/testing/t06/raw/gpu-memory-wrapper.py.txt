@@ -1,0 +1,54 @@
+"""Run the authorised test and sample WSL RAM without changing WSL settings."""
+import json
+import os
+import resource
+import threading
+from pathlib import Path
+
+import pytest
+
+os.environ['STUDIO_ALLOW_UNVERIFIED'] = '1'
+samples = []
+stop = threading.Event()
+
+
+def memory_sample():
+    values = {}
+    for line in Path('/proc/meminfo').read_text().splitlines():
+        key, value = line.split(':', 1)
+        values[key] = int(value.strip().split()[0])
+    return {
+        'total_mib': values['MemTotal'] / 1024,
+        'used_excluding_available_mib': (values['MemTotal'] - values['MemAvailable']) / 1024,
+        'swap_used_mib': (values['SwapTotal'] - values['SwapFree']) / 1024,
+        'cached_mib': values['Cached'] / 1024,
+    }
+
+
+def sample_loop():
+    while not stop.is_set():
+        samples.append(memory_sample())
+        stop.wait(0.5)
+
+
+thread = threading.Thread(target=sample_loop, daemon=True)
+thread.start()
+try:
+    code = pytest.main(['-m', 'gpu', '-q', '-s'])
+finally:
+    stop.set()
+    thread.join()
+    samples.append(memory_sample())
+    print(json.dumps({
+        'ram_measurement': {
+            'interval_s': 0.5,
+            'samples': len(samples),
+            'before': samples[0],
+            'after': samples[-1],
+            'peak_wsl_used_excluding_available_mib': max(x['used_excluding_available_mib'] for x in samples),
+            'peak_wsl_swap_used_mib': max(x['swap_used_mib'] for x in samples),
+            'max_child_rss_mib': resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss / 1024,
+            'scope': 'WSL VM sampled; child RSS after reap; not Windows physical RAM or VRAM',
+        }
+    }, sort_keys=True), flush=True)
+raise SystemExit(code)

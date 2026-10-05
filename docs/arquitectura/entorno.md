@@ -51,7 +51,7 @@ fuentes-verificadas: 2026-09-28
 |---|---|---|
 | E-01 | **Desbordamiento silencioso de VRAM a RAM.** En WSL2 el driver no respeta la «CUDA sysmem fallback policy» | Tope por proceso calculado a partir de la VRAM **libre** menos un margen de 512 MB (no una fracción fija). Registrar el pico y marcar `spilled` ([contrato-engines.md](./contrato-engines.md) §1). `MAX_CUDA_VRAM` de ACE-Step **no** sirve como tope: solo lo aplica si el valor es menor que la VRAM física |
 | E-02 | Memoria *pinned* limitada en WSL2 | `pin_memory=False` si falla el offload; `--disable-pinned-memory` en ComfyUI |
-| E-03 | WSL2 usa por defecto el 50 % de la RAM | `%UserProfile%\.wslconfig`: `memory=24GB`, `swap=16GB` (M0 T-00) |
+| E-03 | Límite de RAM y recuperación de caché de WSL2 | `%UserProfile%\.wslconfig`: `memory=16GB`, `swap=8GB`; `[experimental] autoMemoryReclaim=dropCache`. Perfil aplicado y comprobado el 2026-10-05; sustituye los 24/16 GB de T-00 ([ADR-0025](../decisiones/ADR-0025-limite-de-memoria-wsl.md)) |
 | E-04 | Instalar un driver NVIDIA de Linux dentro de WSL2 | No hacerlo. WSL2 usa el driver de Windows |
 | E-05 | flash-attn: FA3 no funciona en sm_120; FA4 tiene errores en varlen | SDPA por defecto. ACE-Step no necesita flash-attn en Linux |
 | E-06 | xformers puede degradar torch a una build sin sm_120 | No usarlo, o instalar con `--no-deps` |

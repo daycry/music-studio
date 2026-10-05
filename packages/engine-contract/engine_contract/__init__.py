@@ -218,6 +218,12 @@ class Mode(ContractModel):
     notes: str
 
 
+class RemoteCode(ContractModel):
+    path: str
+    sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    _path = field_validator("path")(relative_path)
+
+
 class ModelDescriptor(ContractModel):
     id: str
     family: str
@@ -228,6 +234,7 @@ class ModelDescriptor(ContractModel):
     training_data: str
     provider: Provider
     weights: list[Weight]
+    remote_code: list[RemoteCode] = Field(default_factory=list)
     modes: list[Mode]
     tasks: dict[str, TaskDescriptor]
 

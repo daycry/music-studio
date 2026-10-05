@@ -1,0 +1,26 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+_________________________ test_descriptor_unverified __________________________
+apps\engines\acestep\tests\test_adapter.py:57: in test_descriptor_unverified
+    desc = module("descriptor").descriptor()
+           ^^^^^^^^^^^^^^^^^^^^
+apps\engines\acestep\tests\test_adapter.py:8: in module
+    assert importlib.util.find_spec(name), f"Falta implementaci�n {name}"
+E   AssertionError: Falta implementaci�n descriptor
+E   assert None
+E    +  where None = <function find_spec at 0x0000020685202660>('descriptor')
+E    +    where <function find_spec at 0x0000020685202660> = <module 'importlib.util' (frozen)>.find_spec
+E    +      where <module 'importlib.util' (frozen)> = importlib.util
+============================== warnings summary ===============================
+.venv\Lib\site-packages\_pytest\cacheprovider.py:469
+  <workspace>\.venv\Lib\site-packages\_pytest\cacheprovider.py:469: PytestCacheWarning: could not create cache path <workspace>\apps\engines\acestep\.cache\pytest\cache\v\cache\nodeids: [WinError 5] Access is denied: '<workspace>\\apps\\engines\\acestep\\.cache\\pytest\\pytest-cache-files-ts_w0x_h'
+    config.cache.set("cache/nodeids", sorted(self.cached_nodeids))
+
+.venv\Lib\site-packages\_pytest\cacheprovider.py:423
+  <workspace>\.venv\Lib\site-packages\_pytest\cacheprovider.py:423: PytestCacheWarning: could not create cache path <workspace>\apps\engines\acestep\.cache\pytest\cache\v\cache\lastfailed: [WinError 5] Access is denied: '<workspace>\\apps\\engines\\acestep\\.cache\\pytest\\pytest-cache-files-5q0kogs3'
+    config.cache.set("cache/lastfailed", self.lastfailed)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED apps\engines\acestep\tests\test_adapter.py::test_descriptor_unverified
+1 failed, 2 warnings in 0.03s

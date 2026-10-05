@@ -1,0 +1,7 @@
+EXIT CODE: 0
+.cache/dev-cycle/t06/upstream/acestep\gpu_config.py:1339:            f"⚠️ Requested duration ({duration:.0f}s) exceeds the limit for your GPU "
+.cache/dev-cycle/t06/upstream/acestep\gpu_config.py:1371:            f"⚠️ Requested batch size ({batch_size}) exceeds the limit for your GPU "
+.cache/dev-cycle/t06/upstream/acestep\llm_inference.py:737:                        f"vLLM disabled due to insufficient free VRAM (total={total_gb:.2f}GB, free={free_gb:.2f}GB, need>={VRAM_SAFE_FREE_GB}GB free) — falling back to PyTorch backend"
+.cache/dev-cycle/t06/upstream/acestep\api\server_cli.py:52:        help="Initialize LLM even if GPU memory is insufficient (may cause OOM). "
+.cache/dev-cycle/t06/upstream/acestep\core\generation\handler\generate_music.py:125:            An error payload dict when VRAM is insufficient, or None when the
+.cache/dev-cycle/t06/upstream/acestep\core\generation\handler\generate_music.py:166:            f"Insufficient free VRAM: need ~{needed_gb:.1f} GB, "

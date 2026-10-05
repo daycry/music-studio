@@ -1,0 +1,16 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+______________________________ test_float32_wav _______________________________
+apps\engines\acestep\tests\test_adapter.py:47: in test_float32_wav
+    adapter = module("adapter")
+              ^^^^^^^^^^^^^^^^^
+apps\engines\acestep\tests\test_adapter.py:8: in module
+    assert importlib.util.find_spec(name), f"Falta implementaci�n {name}"
+E   AssertionError: Falta implementaci�n adapter
+E   assert None
+E    +  where None = <function find_spec at 0x00000166C3EA2660>('adapter')
+E    +    where <function find_spec at 0x00000166C3EA2660> = <module 'importlib.util' (frozen)>.find_spec
+E    +      where <module 'importlib.util' (frozen)> = importlib.util
+=========================== short test summary info ===========================
+FAILED apps\engines\acestep\tests\test_adapter.py::test_float32_wav - Asserti...
+1 failed in 0.17s

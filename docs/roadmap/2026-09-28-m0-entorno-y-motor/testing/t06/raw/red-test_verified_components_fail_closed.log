@@ -1,0 +1,11 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+____________________ test_verified_components_fail_closed _____________________
+apps\engines\acestep\tests\test_adapter.py:13: in test_verified_components_fail_closed
+    assert hasattr(patches, "verify_components"), "Falta verificaci�n de pesos antes de runtime"
+E   AssertionError: Falta verificaci�n de pesos antes de runtime
+E   assert False
+E    +  where False = hasattr(<module 'patches' from '<workspace>\\apps\\engines\\acestep\\patches.py'>, 'verify_components')
+=========================== short test summary info ===========================
+FAILED apps\engines\acestep\tests\test_adapter.py::test_verified_components_fail_closed
+1 failed in 0.05s

@@ -1,0 +1,28 @@
+FFF                                                                      [100%]
+================================== FAILURES ===================================
+_______________ test_cuda_oom_status_becomes_vram_exceeded[dit] _______________
+apps\engines\acestep\tests\test_review_fixes.py:58: in test_cuda_oom_status_becomes_vram_exceeded
+    assert caught.value.code == "VRAM_EXCEEDED"
+E   AssertionError: assert 'INTERNAL' == 'VRAM_EXCEEDED'
+E
+E     - VRAM_EXCEEDED
+E     + INTERNAL
+_______________ test_cuda_oom_status_becomes_vram_exceeded[lm] ________________
+apps\engines\acestep\tests\test_review_fixes.py:58: in test_cuda_oom_status_becomes_vram_exceeded
+    assert caught.value.code == "VRAM_EXCEEDED"
+E   AssertionError: assert 'INTERNAL' == 'VRAM_EXCEEDED'
+E
+E     - VRAM_EXCEEDED
+E     + INTERNAL
+____________ test_cuda_oom_status_becomes_vram_exceeded[generate] _____________
+apps\engines\acestep\tests\test_review_fixes.py:58: in test_cuda_oom_status_becomes_vram_exceeded
+    assert caught.value.code == "VRAM_EXCEEDED"
+E   AssertionError: assert 'INTERNAL' == 'VRAM_EXCEEDED'
+E
+E     - VRAM_EXCEEDED
+E     + INTERNAL
+=========================== short test summary info ===========================
+FAILED apps\engines\acestep\tests\test_review_fixes.py::test_cuda_oom_status_becomes_vram_exceeded[dit]
+FAILED apps\engines\acestep\tests\test_review_fixes.py::test_cuda_oom_status_becomes_vram_exceeded[lm]
+FAILED apps\engines\acestep\tests\test_review_fixes.py::test_cuda_oom_status_becomes_vram_exceeded[generate]
+3 failed in 0.32s

@@ -54,5 +54,5 @@ RUN /usr/sbin/useradd --uid 10001 --no-create-home --home-dir /studio engine \
 USER engine
 EXPOSE 8101
 ENTRYPOINT ["/bin/sh", "/studio/apps/engines/acestep/entrypoint.sh"]
-# La factoría del adapter /v1 se implementa en T-06.
+# Factoría /v1; el padre no importa torch ni inicializa CUDA.
 CMD ["uvicorn", "engine_acestep:create_app", "--factory", "--host", "0.0.0.0", "--port", "8101"]

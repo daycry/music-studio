@@ -1,0 +1,58 @@
+{
+  "recorded_on": "2026-10-05",
+  "image_id": "sha256:ecae5c354e3ec7350e1a6a6fc0118c8f3faf5ff4dc976a83e1444e82f3cd95b3",
+  "cpu_verification_before_review_fixes": {
+    "command": "docker compose run --rm engine-acestep uv run pytest -m \"not gpu\" -q",
+    "exit_code": 0,
+    "passed": 35,
+    "deselected": 1,
+    "coverage_percent": 92.31,
+    "report": "implementation-report.md"
+  },
+  "cpu_verification_after_fix1": {
+    "command": "docker compose run --rm engine-acestep uv run pytest -m \"not gpu\" -q",
+    "exit_code": 0,
+    "passed": 55,
+    "deselected": 1,
+    "coverage_percent": 92.96,
+    "report": "fix1-report.md"
+  },
+  "cpu_verification_after_fix2": {
+    "exit_code": 0,
+    "passed": 58,
+    "deselected": 1,
+    "coverage_percent": 92.96,
+    "report": "fix2-report.md"
+  },
+  "gpu_preflight": {
+    "ollama_ps_exit_code": 0,
+    "ollama_loaded_models": [],
+    "nvidia_smi_exit_code": 0,
+    "used_mib": 2874,
+    "latest_used_mib": 2906,
+    "total_mib": 12227,
+    "previous_matmul_permission_covers_model_loading": false,
+    "model_loading_condition_satisfied": false,
+    "resolution_requested_from_owner": true,
+    "owner_authorized_30_second_test_with_current_occupation": true,
+    "gpu_generation_executed": true,
+    "restore_model": null,
+    "gpu_exit_code": 0,
+    "gpu_passed": 1,
+    "gpu_report": "report.md",
+    "post_test_used_mib": 1338
+  },
+  "wsl_profile_after_gpu_test": {
+    "chosen_and_written_by_owner": true,
+    "memory": "16GB",
+    "swap": "8GB",
+    "autoMemoryReclaim": "dropCache",
+    "shutdown_requested_by_owner": true,
+    "shutdown_exit_code": 0,
+    "memtotal_kib": 16375452,
+    "swap_total_kib": 8388608,
+    "swap_used_kib": 0,
+    "docker_server_responding": true,
+    "audio_generation_with_new_profile_verified": false
+  }
+}

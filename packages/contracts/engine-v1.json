@@ -916,6 +916,13 @@
         "provider": {
           "$ref": "#/$defs/Provider"
         },
+        "remote_code": {
+          "items": {
+            "$ref": "#/$defs/RemoteCode"
+          },
+          "title": "Remote Code",
+          "type": "array"
+        },
         "revision": {
           "title": "Revision",
           "type": "string"
@@ -1068,6 +1075,25 @@
         "type"
       ],
       "title": "Provider",
+      "type": "object"
+    },
+    "RemoteCode": {
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "RemoteCode",
       "type": "object"
     },
     "StageData": {

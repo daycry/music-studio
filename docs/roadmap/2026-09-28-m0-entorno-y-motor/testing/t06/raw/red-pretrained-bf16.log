@@ -1,0 +1,14 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+_______________ test_pretrained_loads_bf16_before_cuda_transfer _______________
+apps\engines\acestep\tests\test_adapter.py:51: in test_pretrained_loads_bf16_before_cuda_transfer
+    assert "dtype" in inspect.signature(patches.enforce_safe_pretrained).parameters, "Falta forzar BF16 al deserializar, antes de transferir a CUDA"
+E   AssertionError: Falta forzar BF16 al deserializar, antes de transferir a CUDA
+E   assert 'dtype' in mappingproxy(OrderedDict())
+E    +  where mappingproxy(OrderedDict()) = <Signature ()>.parameters
+E    +    where <Signature ()> = <function signature at 0x0000020518827880>(<function enforce_safe_pretrained at 0x000002051B9ADDA0>)
+E    +      where <function signature at 0x0000020518827880> = <module 'inspect' from '<workspace>\\.cache\\uv\\python\\cpython-3.12-windows-x86_64-none\\Lib\\inspect.py'>.signature
+E    +      and   <function enforce_safe_pretrained at 0x000002051B9ADDA0> = <module 'patches' from '<workspace>\\apps\\engines\\acestep\\patches.py'>.enforce_safe_pretrained
+=========================== short test summary info ===========================
+FAILED apps\engines\acestep\tests\test_adapter.py::test_pretrained_loads_bf16_before_cuda_transfer
+1 failed in 0.29s

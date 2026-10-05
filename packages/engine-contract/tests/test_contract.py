@@ -5,6 +5,38 @@ import engine_contract as contract
 import pytest
 
 
+def test_remote_code_descriptor_compatible_and_preserved():
+    payload = {
+        "id": "test",
+        "family": "test",
+        "version": "1",
+        "revision": "fixed",
+        "license": "MIT",
+        "commercial_use": True,
+        "training_data": "literal",
+        "provider": {"type": "local"},
+        "weights": [],
+        "modes": [],
+        "tasks": {},
+    }
+    legacy = contract.ModelDescriptor(**payload)
+    assert "remote_code" in contract.ModelDescriptor.model_fields, (
+        "Falta hashes de código remoto opcionales"
+    )
+    assert legacy.remote_code == []
+    entry = {"path": "model/modeling.py", "sha256": "a" * 64}
+    assert contract.ModelDescriptor(**payload, remote_code=[entry]).model_dump()[
+        "remote_code"
+    ] == [entry]
+    for invalid in (
+        {"path": "../evil.py", "sha256": "a" * 64},
+        {"path": "safe.py", "sha256": "bad"},
+        {"path": "/outside.py", "sha256": "a" * 64},
+    ):
+        with pytest.raises(ValueError):
+            contract.ModelDescriptor(**payload, remote_code=[invalid])
+
+
 def test_models_and_schema():
     assert hasattr(contract, "JobRequest"), (
         "JobRequest y esquema todavía no implementados"
