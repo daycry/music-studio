@@ -1,0 +1,2 @@
+﻿# Ruta | motivo (la excepción solo permite la clase base pickle.Unpickler)
+packages/weights/weights/audit_pickle.py | RestrictedUnpickler audita opcodes y restringe find_class antes de reconstruir pesos; ADR-0006.

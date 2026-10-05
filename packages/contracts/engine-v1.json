@@ -1,0 +1,1342 @@
+{
+  "$defs": {
+    "Artifact": {
+      "properties": {
+        "media_type": {
+          "title": "Media Type",
+          "type": "string"
+        },
+        "meta": {
+          "additionalProperties": true,
+          "title": "Meta",
+          "type": "object"
+        },
+        "output_index": {
+          "minimum": 0,
+          "title": "Output Index",
+          "type": "integer"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "output_index",
+        "path",
+        "media_type",
+        "sha256"
+      ],
+      "title": "Artifact",
+      "type": "object"
+    },
+    "CancelledData": {
+      "properties": {
+        "telemetry": {
+          "$ref": "#/$defs/Telemetry"
+        }
+      },
+      "required": [
+        "telemetry"
+      ],
+      "title": "CancelledData",
+      "type": "object"
+    },
+    "DeltaData": {
+      "properties": {
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "DeltaData",
+      "type": "object"
+    },
+    "DoneData": {
+      "properties": {
+        "artifacts": {
+          "items": {
+            "$ref": "#/$defs/Artifact"
+          },
+          "title": "Artifacts",
+          "type": "array"
+        },
+        "result": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Result"
+        },
+        "telemetry": {
+          "$ref": "#/$defs/Telemetry"
+        }
+      },
+      "required": [
+        "artifacts",
+        "telemetry"
+      ],
+      "title": "DoneData",
+      "type": "object"
+    },
+    "ErrorCode": {
+      "enum": [
+        "INVALID_PARAMS",
+        "MODEL_NOT_FOUND",
+        "WEIGHTS_MISMATCH",
+        "VRAM_EXCEEDED",
+        "BUSY",
+        "CANCELLED",
+        "TIMEOUT",
+        "PROVIDER_ERROR",
+        "INTERNAL"
+      ],
+      "title": "ErrorCode",
+      "type": "string"
+    },
+    "ErrorData": {
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/ErrorCode"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "retryable": {
+          "title": "Retryable",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "retryable"
+      ],
+      "title": "ErrorData",
+      "type": "object"
+    },
+    "Estimate": {
+      "properties": {
+        "cost_eur": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cost Eur"
+        },
+        "eta_s": {
+          "minimum": 0,
+          "title": "Eta S",
+          "type": "number"
+        },
+        "vram_mb": {
+          "minimum": 0,
+          "title": "Vram Mb",
+          "type": "number"
+        }
+      },
+      "required": [
+        "eta_s",
+        "vram_mb"
+      ],
+      "title": "Estimate",
+      "type": "object"
+    },
+    "Event": {
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "stage"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "properties": {
+                  "stage": {
+                    "title": "Stage",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "stage"
+                ],
+                "title": "StageData",
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "progress"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "properties": {
+                  "eta_s": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Eta S"
+                  },
+                  "fraction": {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "title": "Fraction",
+                    "type": "number"
+                  },
+                  "output_index": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Output Index"
+                  },
+                  "step": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Step"
+                  },
+                  "total": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Total"
+                  }
+                },
+                "required": [
+                  "fraction"
+                ],
+                "title": "ProgressData",
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "delta"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "properties": {
+                  "text": {
+                    "title": "Text",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "text"
+                ],
+                "title": "DeltaData",
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "artifact"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "properties": {
+                  "media_type": {
+                    "title": "Media Type",
+                    "type": "string"
+                  },
+                  "meta": {
+                    "additionalProperties": true,
+                    "title": "Meta",
+                    "type": "object"
+                  },
+                  "output_index": {
+                    "minimum": 0,
+                    "title": "Output Index",
+                    "type": "integer"
+                  },
+                  "path": {
+                    "title": "Path",
+                    "type": "string"
+                  },
+                  "sha256": {
+                    "pattern": "^[a-f0-9]{64}$",
+                    "title": "Sha256",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "output_index",
+                  "path",
+                  "media_type",
+                  "sha256"
+                ],
+                "title": "Artifact",
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "log"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "properties": {
+                  "level": {
+                    "title": "Level",
+                    "type": "string"
+                  },
+                  "message": {
+                    "title": "Message",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "level",
+                  "message"
+                ],
+                "title": "LogData",
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "done"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "properties": {
+                  "artifacts": {
+                    "items": {
+                      "$ref": "#/$defs/Artifact"
+                    },
+                    "title": "Artifacts",
+                    "type": "array"
+                  },
+                  "result": {
+                    "anyOf": [
+                      {
+                        "additionalProperties": true,
+                        "type": "object"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Result"
+                  },
+                  "telemetry": {
+                    "$ref": "#/$defs/Telemetry"
+                  }
+                },
+                "required": [
+                  "artifacts",
+                  "telemetry"
+                ],
+                "title": "DoneData",
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "error"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "properties": {
+                  "code": {
+                    "$ref": "#/$defs/ErrorCode"
+                  },
+                  "message": {
+                    "title": "Message",
+                    "type": "string"
+                  },
+                  "retryable": {
+                    "title": "Retryable",
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable"
+                ],
+                "title": "ErrorData",
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "cancelled"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "properties": {
+                  "telemetry": {
+                    "$ref": "#/$defs/Telemetry"
+                  }
+                },
+                "required": [
+                  "telemetry"
+                ],
+                "title": "CancelledData",
+                "type": "object"
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "data": {
+          "additionalProperties": true,
+          "title": "Data",
+          "type": "object"
+        },
+        "job_id": {
+          "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+          "title": "Job Id",
+          "type": "string"
+        },
+        "seq": {
+          "minimum": 1,
+          "title": "Seq",
+          "type": "integer"
+        },
+        "ts": {
+          "format": "date-time",
+          "title": "Ts",
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "stage",
+            "progress",
+            "delta",
+            "artifact",
+            "log",
+            "done",
+            "error",
+            "cancelled"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "seq",
+        "job_id",
+        "type",
+        "data"
+      ],
+      "title": "Event",
+      "type": "object"
+    },
+    "Feature": {
+      "properties": {
+        "verified": {
+          "title": "Verified",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "verified"
+      ],
+      "title": "Feature",
+      "type": "object"
+    },
+    "GpuInfo": {
+      "properties": {
+        "cap_mb": {
+          "minimum": 0,
+          "title": "Cap Mb",
+          "type": "number"
+        },
+        "free_mb": {
+          "minimum": 0,
+          "title": "Free Mb",
+          "type": "number"
+        },
+        "total_mb": {
+          "minimum": 0,
+          "title": "Total Mb",
+          "type": "number"
+        }
+      },
+      "required": [
+        "total_mb",
+        "free_mb",
+        "cap_mb"
+      ],
+      "title": "GpuInfo",
+      "type": "object"
+    },
+    "Health": {
+      "properties": {
+        "contract_version": {
+          "default": "1",
+          "title": "Contract Version",
+          "type": "string"
+        },
+        "engine_id": {
+          "title": "Engine Id",
+          "type": "string"
+        },
+        "engine_version": {
+          "title": "Engine Version",
+          "type": "string"
+        },
+        "gpu": {
+          "$ref": "#/$defs/GpuInfo"
+        },
+        "image_digest": {
+          "title": "Image Digest",
+          "type": "string"
+        },
+        "job_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Job Id"
+        },
+        "loaded": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LoadedModel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "state": {
+          "enum": [
+            "idle",
+            "loading",
+            "busy",
+            "error"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "engine_id",
+        "engine_version",
+        "image_digest",
+        "state",
+        "gpu"
+      ],
+      "title": "Health",
+      "type": "object"
+    },
+    "Input": {
+      "properties": {
+        "media_type": {
+          "title": "Media Type",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "role": {
+          "title": "Role",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "role",
+        "path",
+        "sha256",
+        "media_type"
+      ],
+      "title": "Input",
+      "type": "object"
+    },
+    "InputDescriptor": {
+      "properties": {
+        "media_types": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Media Types",
+          "type": "array"
+        },
+        "required": {
+          "title": "Required",
+          "type": "boolean"
+        },
+        "role": {
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "role",
+        "media_types",
+        "required"
+      ],
+      "title": "InputDescriptor",
+      "type": "object"
+    },
+    "JobRequest": {
+      "properties": {
+        "inputs": {
+          "items": {
+            "$ref": "#/$defs/Input"
+          },
+          "title": "Inputs",
+          "type": "array"
+        },
+        "job_id": {
+          "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+          "title": "Job Id",
+          "type": "string"
+        },
+        "mode": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mode"
+        },
+        "model_id": {
+          "minLength": 1,
+          "title": "Model Id",
+          "type": "string"
+        },
+        "n_outputs": {
+          "default": 1,
+          "maximum": 64,
+          "minimum": 1,
+          "title": "N Outputs",
+          "type": "integer"
+        },
+        "output_dir": {
+          "title": "Output Dir",
+          "type": "string"
+        },
+        "params": {
+          "additionalProperties": true,
+          "title": "Params",
+          "type": "object"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed"
+        },
+        "task": {
+          "minLength": 1,
+          "title": "Task",
+          "type": "string"
+        },
+        "timeout_s": {
+          "exclusiveMinimum": 0,
+          "title": "Timeout S",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "job_id",
+        "task",
+        "model_id",
+        "output_dir",
+        "timeout_s"
+      ],
+      "title": "JobRequest",
+      "type": "object"
+    },
+    "JobStatus": {
+      "properties": {
+        "job_id": {
+          "title": "Job Id",
+          "type": "string"
+        },
+        "seq": {
+          "minimum": 0,
+          "title": "Seq",
+          "type": "integer"
+        },
+        "state": {
+          "enum": [
+            "loading",
+            "busy",
+            "done",
+            "error",
+            "cancelled"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "job_id",
+        "state",
+        "seq"
+      ],
+      "title": "JobStatus",
+      "type": "object"
+    },
+    "LoadRequest": {
+      "properties": {
+        "mode": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mode"
+        },
+        "model_id": {
+          "title": "Model Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "model_id"
+      ],
+      "title": "LoadRequest",
+      "type": "object"
+    },
+    "LoadedModel": {
+      "properties": {
+        "mode": {
+          "title": "Mode",
+          "type": "string"
+        },
+        "model_id": {
+          "title": "Model Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "model_id",
+        "mode"
+      ],
+      "title": "LoadedModel",
+      "type": "object"
+    },
+    "LogData": {
+      "properties": {
+        "level": {
+          "title": "Level",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "level",
+        "message"
+      ],
+      "title": "LogData",
+      "type": "object"
+    },
+    "Mode": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "notes": {
+          "title": "Notes",
+          "type": "string"
+        },
+        "vram_mb": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Vram Mb"
+        }
+      },
+      "required": [
+        "id",
+        "notes"
+      ],
+      "title": "Mode",
+      "type": "object"
+    },
+    "ModelDescriptor": {
+      "properties": {
+        "commercial_use": {
+          "title": "Commercial Use",
+          "type": "boolean"
+        },
+        "family": {
+          "title": "Family",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "license": {
+          "title": "License",
+          "type": "string"
+        },
+        "modes": {
+          "items": {
+            "$ref": "#/$defs/Mode"
+          },
+          "title": "Modes",
+          "type": "array"
+        },
+        "provider": {
+          "$ref": "#/$defs/Provider"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "string"
+        },
+        "tasks": {
+          "additionalProperties": {
+            "$ref": "#/$defs/TaskDescriptor"
+          },
+          "title": "Tasks",
+          "type": "object"
+        },
+        "training_data": {
+          "title": "Training Data",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        },
+        "weights": {
+          "items": {
+            "$ref": "#/$defs/Weight"
+          },
+          "title": "Weights",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "family",
+        "version",
+        "revision",
+        "license",
+        "commercial_use",
+        "training_data",
+        "provider",
+        "weights",
+        "modes",
+        "tasks"
+      ],
+      "title": "ModelDescriptor",
+      "type": "object"
+    },
+    "OutputDescriptor": {
+      "properties": {
+        "count": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Count",
+          "type": "integer"
+        },
+        "media_type": {
+          "title": "Media Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "media_type"
+      ],
+      "title": "OutputDescriptor",
+      "type": "object"
+    },
+    "ProgressData": {
+      "properties": {
+        "eta_s": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Eta S"
+        },
+        "fraction": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Fraction",
+          "type": "number"
+        },
+        "output_index": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Output Index"
+        },
+        "step": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Step"
+        },
+        "total": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Total"
+        }
+      },
+      "required": [
+        "fraction"
+      ],
+      "title": "ProgressData",
+      "type": "object"
+    },
+    "Provider": {
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "type": {
+          "enum": [
+            "local",
+            "external"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "Provider",
+      "type": "object"
+    },
+    "StageData": {
+      "properties": {
+        "stage": {
+          "title": "Stage",
+          "type": "string"
+        }
+      },
+      "required": [
+        "stage"
+      ],
+      "title": "StageData",
+      "type": "object"
+    },
+    "TaskDescriptor": {
+      "properties": {
+        "checkpoint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Checkpoint"
+        },
+        "cost_model": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cost Model"
+        },
+        "device": {
+          "enum": [
+            "gpu",
+            "cpu"
+          ],
+          "title": "Device",
+          "type": "string"
+        },
+        "features": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Feature"
+          },
+          "title": "Features",
+          "type": "object"
+        },
+        "inputs": {
+          "items": {
+            "$ref": "#/$defs/InputDescriptor"
+          },
+          "title": "Inputs",
+          "type": "array"
+        },
+        "limits": {
+          "additionalProperties": true,
+          "title": "Limits",
+          "type": "object"
+        },
+        "outputs": {
+          "items": {
+            "$ref": "#/$defs/OutputDescriptor"
+          },
+          "title": "Outputs",
+          "type": "array"
+        },
+        "params_schema": {
+          "additionalProperties": true,
+          "title": "Params Schema",
+          "type": "object"
+        },
+        "verified": {
+          "title": "Verified",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "verified",
+        "device",
+        "params_schema"
+      ],
+      "title": "TaskDescriptor",
+      "type": "object"
+    },
+    "Telemetry": {
+      "properties": {
+        "extra": {
+          "additionalProperties": true,
+          "title": "Extra",
+          "type": "object"
+        },
+        "load_s": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Load S",
+          "type": "number"
+        },
+        "mode": {
+          "title": "Mode",
+          "type": "string"
+        },
+        "model_revision": {
+          "title": "Model Revision",
+          "type": "string"
+        },
+        "rtf": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rtf"
+        },
+        "run_s": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Run S",
+          "type": "number"
+        },
+        "spilled": {
+          "default": false,
+          "title": "Spilled",
+          "type": "boolean"
+        },
+        "vram_cap_mb": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Vram Cap Mb",
+          "type": "number"
+        },
+        "vram_peak_mb": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Vram Peak Mb",
+          "type": "number"
+        }
+      },
+      "required": [
+        "mode",
+        "model_revision"
+      ],
+      "title": "Telemetry",
+      "type": "object"
+    },
+    "Weight": {
+      "properties": {
+        "bytes": {
+          "minimum": 0,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "format": {
+          "enum": [
+            "safetensors",
+            "gguf",
+            "onnx"
+          ],
+          "title": "Format",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "bytes",
+        "format"
+      ],
+      "title": "Weight",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "artifact": {
+      "$ref": "#/$defs/Artifact"
+    },
+    "cancelled": {
+      "$ref": "#/$defs/CancelledData"
+    },
+    "contract_version": {
+      "const": "1",
+      "default": "1",
+      "title": "Contract Version",
+      "type": "string"
+    },
+    "delta": {
+      "$ref": "#/$defs/DeltaData"
+    },
+    "done": {
+      "$ref": "#/$defs/DoneData"
+    },
+    "error": {
+      "$ref": "#/$defs/ErrorData"
+    },
+    "estimate": {
+      "$ref": "#/$defs/Estimate"
+    },
+    "event": {
+      "$ref": "#/$defs/Event"
+    },
+    "health": {
+      "$ref": "#/$defs/Health"
+    },
+    "load": {
+      "$ref": "#/$defs/LoadRequest"
+    },
+    "log": {
+      "$ref": "#/$defs/LogData"
+    },
+    "model": {
+      "$ref": "#/$defs/ModelDescriptor"
+    },
+    "progress": {
+      "$ref": "#/$defs/ProgressData"
+    },
+    "request": {
+      "$ref": "#/$defs/JobRequest"
+    },
+    "stage": {
+      "$ref": "#/$defs/StageData"
+    },
+    "status": {
+      "$ref": "#/$defs/JobStatus"
+    },
+    "telemetry": {
+      "$ref": "#/$defs/Telemetry"
+    }
+  },
+  "required": [
+    "request",
+    "event",
+    "telemetry",
+    "model",
+    "health",
+    "estimate",
+    "load",
+    "status",
+    "stage",
+    "progress",
+    "delta",
+    "artifact",
+    "log",
+    "done",
+    "error",
+    "cancelled"
+  ],
+  "title": "Contract",
+  "type": "object"
+}

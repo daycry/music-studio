@@ -7,6 +7,12 @@
 .cache/
 __pycache__/
 *.pyc
+.pytest_cache/
+pytest-cache-files-*/
+.coverage*
+coverage.json
+coverage.xml
+htmlcov/
 
 # Serena MCP (índice local del proyecto)
 .serena/
@@ -43,6 +49,9 @@ desktop.ini
 .SynologyWorkingDirectory/
 .claude/settings.local.json
 .claude/.headroom_*
+.claude/.skill-index.cache
+.claude/usage-state.json
+.codex/
 
 # Editores / SO
 .DS_Store

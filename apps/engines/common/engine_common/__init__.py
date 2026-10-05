@@ -1,5 +1,21 @@
-"""Servidor /v1 común a todos los engines: supervisor de proceso hijo,
-VramGuard y verificación de pesos (docs/arquitectura/sistema.md §4).
+"""Servidor compartido del contrato /v1."""
 
-Todavía sin contenido: se implementa en M0/T-04.
-"""
+from .runtime import (
+    CancelToken,
+    CpuGpu,
+    EngineError,
+    NvmlGpu,
+    ProcessSupervisor,
+    VramGuard,
+)
+from .server import create_app
+
+__all__ = [
+    "CancelToken",
+    "CpuGpu",
+    "EngineError",
+    "NvmlGpu",
+    "ProcessSupervisor",
+    "VramGuard",
+    "create_app",
+]

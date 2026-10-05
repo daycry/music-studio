@@ -5,6 +5,10 @@ description = "Servidor /v1 común, supervisor de proceso hijo, VramGuard y veri
 requires-python = ">=3.11"
 dependencies = [
     "engine-contract",
+    "fastapi>=0.142.2",
+    "jsonschema>=4.26.0",
+    "nvidia-ml-py>=13.615.71",
+    "uvicorn>=0.54.0",
 ]
 
 [tool.uv.sources]

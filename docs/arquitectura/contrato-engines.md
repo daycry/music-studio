@@ -1,9 +1,9 @@
 ---
 documento: contrato-engines
 titulo: Contrato /v1 entre el server y los engines
-estado: vigente — se congela al cerrar M0 T-03
+estado: vigente — congelado en el árbol verificado de T-03; integración Git pendiente
 fecha: 2026-09-28
-actualizado: 2026-09-28
+actualizado: 2026-10-05
 ---
 
 # Contrato `/v1` de los engines
@@ -12,7 +12,9 @@ Todo engine implementa este contrato, sea local (contenedor GPU/CPU) o un adapte
 
 El contrato es **genérico por tarea**, no específico de audio. La misma interfaz sirve para música, imagen, vídeo, texto (LLM) y análisis.
 
-**Fuente única:** los modelos Pydantic del paquete `packages/engine-contract/`. Es un paquete sin torch y compatible con Python 3.11 y 3.12, y lo importan el server y todos los engines. `packages/contracts/engine-v1.json` (JSON Schema) se **genera** a partir de él y se versiona. Un test falla si ambos difieren ([ADR-0019](../decisiones/ADR-0019-contratos-code-first.md)).
+**Fuente única:** los [modelos Pydantic de `engine_contract`](../../packages/engine-contract/engine_contract/__init__.py). El paquete no depende de torch y declara Python ≥3.11. La suite ejecutada usa Python 3.12; la gramática AST 3.11 está comprobada, pero la ejecución real con 3.11 queda pendiente. [ADR-0019](../decisiones/ADR-0019-contratos-code-first.md) fija la compatibilidad requerida.
+
+[export_contracts.py](../../scripts/export_contracts.py) genera [engine-v1.json](../../packages/contracts/engine-v1.json). [test_contract.py](../../packages/engine-contract/tests/test_contract.py) comprueba su igualdad con `contract_schema()`. La API del server de M1 y los adapters GPU seguirán usando este contrato; todavía no están implementados.
 
 ## 1. Principios
 
@@ -167,3 +169,59 @@ El mapa lo configura el server: `STUDIO_ENGINES=acestep=http://127.0.0.1:8101,co
   - Las mismas opciones se pueden pasar en `params._mock` cuando la llamada es directa.
 - El descriptor declara **todas** las tareas del catálogo §5 con `verified: true` y todas sus features, para poder probar cada pantalla. `audio.beats` se declara con `device: cpu`, igual que en el engine real.
 - Es el engine por defecto en los E2E y en el desarrollo de UI.
+
+## 8. Uso de la implementación Python
+
+Las secciones anteriores fijan el contrato y los destinos previstos. T-03 implementa el paquete, el servidor común y el mock; los contenedores GPU y los adapters externos quedan para tareas posteriores.
+
+| Unidad | API y responsabilidad | Fuente |
+|---|---|---|
+| `engine_contract` | `JobRequest`, `Event`, `ModelDescriptor`, `Health`, `Telemetry`, `contract_schema()` | [Modelos](../../packages/engine-contract/engine_contract/__init__.py) |
+| `engine_common` | `create_app(descriptors, adapter_factory, ...)`: autenticación, rutas, trabajos y eventos | [Servidor](../../apps/engines/common/engine_common/server.py) |
+| `engine_common` | `ProcessSupervisor`, `VramGuard`, `NvmlGpu`, `CpuGpu`: proceso hijo y control de recursos | [Runtime](../../apps/engines/common/engine_common/runtime.py), [worker](../../apps/engines/common/engine_common/worker.py) |
+| `engine_mock` | `create_mock_app(...)`, `MockAdapter`, `descriptor()`: salidas sintéticas sin GPU | [Mock](../../apps/engines/mock/engine_mock/__init__.py) |
+
+`create_mock_app` admite `token`, `data_dir`, `stage_delay_ms`, `gpu` y `margin_mb`. Usa `CpuGpu` por defecto. El descriptor ofrece el modelo `mock`, modo `cpu`; todas sus tareas son CPU. El audio sintético es WAV PCM de 16 bits, 48 kHz y dos canales. Las imágenes son PNG de 64 × 64 y el vídeo MP4 requiere el ffmpeg local. `train.lora` devuelve un safetensors sintético; no entrena pesos.
+
+El servidor exige `X-Studio-Engine-Token` en las rutas. La factoría usa `STUDIO_ENGINE_TOKEN` si no recibe `token` y rechaza un valor vacío. Los trabajos y eventos viven en memoria: la idempotencia y la reanudación duran hasta reiniciar el proceso. Esto respeta la ausencia de persistencia del engine; la cola duradera corresponderá al server.
+
+Las entradas se verifican por SHA-256. `output_dir` debe coincidir con `tmp/<job_id>/`; el servidor rechaza rutas inseguras y salidas preexistentes. En el host, `STUDIO_DATA_DIR` debe quedar dentro del proyecto; en Docker se admite el montaje contractual `/data`. Véase [server.py](../../apps/engines/common/engine_common/server.py).
+
+### Arrancar el mock en local
+
+Ejecuta desde la raíz en PowerShell. `env.ps1` prepara el entorno, pero no carga `.env`: copia el token a la variable del proceso sin imprimirlo.
+
+```powershell
+. .\scripts\env.ps1
+$tokenLine = Get-Content .env | Where-Object { $_ -match '^STUDIO_ENGINE_TOKEN=' } | Select-Object -First 1
+if (-not $tokenLine) { throw 'Falta STUDIO_ENGINE_TOKEN en .env' }
+$env:STUDIO_ENGINE_TOKEN = ($tokenLine -split '=', 2)[1]
+uv run --frozen --package engine-mock uvicorn engine_mock:create_mock_app --factory --host 127.0.0.1 --port 8199
+```
+
+En otra consola, carga el entorno y el token de la misma forma. Esta petición carga implícitamente el mock y devuelve el `job_id`. Usa un ULID nuevo para cada prueba independiente.
+
+```powershell
+$headers = @{ 'X-Studio-Engine-Token' = $env:STUDIO_ENGINE_TOKEN }
+$jobId = '01ARZ3NDEKTSV4RRFFQ69G5FAV'
+$body = @{
+    job_id = $jobId; task = 'music.instrumental'; model_id = 'mock'; mode = 'cpu'
+    inputs = @(); params = @{ duration_s = 3 }; seed = 42; n_outputs = 1
+    output_dir = "tmp/$jobId/"; timeout_s = 30
+} | ConvertTo-Json -Depth 5
+Invoke-RestMethod http://127.0.0.1:8199/v1/health -Headers $headers
+Invoke-RestMethod http://127.0.0.1:8199/v1/jobs -Method Post -Headers $headers -ContentType application/json -Body $body
+Invoke-WebRequest "http://127.0.0.1:8199/v1/jobs/$jobId/events?after=0" -Headers $headers | Select-Object -ExpandProperty Content
+```
+
+El flujo devuelve NDJSON con `seq` creciente y un solo terminal. En caso de éxito, `artifact.path` señala la salida cruda relativa a `data/`, con su hash. Para simular un error usa `params._mock = @{ fail = 'INTERNAL'; retryable = $true }` o las directivas del §7. `fail_once` se recuerda durante la vida del adapter; una descarga pierde esa memoria.
+
+### Comprobar el contrato
+
+```powershell
+. .\scripts\env.ps1
+uv run --frozen --all-packages scripts/export_contracts.py --check
+uv run --frozen --all-packages pytest packages/engine-contract/tests apps/engines/common/tests apps/engines/mock/tests -q
+```
+
+El [informe de QA de Fase 2](../roadmap/2026-09-28-m0-entorno-y-motor/testing/report.md) recoge las comprobaciones y sus límites. El arranque HTTP descrito es reproducible con la API existente; la QA independiente no abrió un host ni probó Docker o una GPU real.
