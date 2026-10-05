@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "url": "http://127.0.0.1:8767/listen.html",
+  "checked_at": "2026-10-05",
+  "scope": "HTTP/DOM y metadatos del navegador; sin audición ni prueba E2E de producto",
+  "players": [
+    {"src":"reference-suno-original.mp3","duration_s":227.640979,"readyState":4,"error":null},
+    {"src":"P1A/listen.mp3","duration_s":90,"readyState":4,"error":null},
+    {"src":"P1B/listen.mp3","duration_s":90,"readyState":4,"error":null},
+    {"src":"P2A/listen.mp3","duration_s":90,"readyState":4,"error":null},
+    {"src":"P2B/listen.mp3","duration_s":90,"readyState":4,"error":null},
+    {"src":"P3A/listen.mp3","duration_s":90,"readyState":4,"error":null},
+    {"src":"P3B/listen.mp3","duration_s":90,"readyState":4,"error":null}
+  ],
+  "instrument_input_count":6,
+  "score_input_count":24,
+  "export_button_present":true,
+  "export_button_executed":false,
+  "console_errors":[],
+  "musical_quality_approved":false,
+  "reference_volume_verified_in_browser":false,
+  "notes":"Los servidores de escucha se restablecieron tras reinicio del daemon. No hubo regeneración ni recarga de la página de valoraciones anterior. La atenuación está registrada en el HTML/recibo privado, no se acredita la propiedad volume mediante DOM."
+}

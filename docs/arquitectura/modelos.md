@@ -3,7 +3,7 @@ documento: modelos
 titulo: Selección de modelos (septiembre 2026)
 estado: vigente — pendiente de confirmar con la medición y la escucha de M0
 fecha: 2026-09-28
-actualizado: 2026-09-28
+actualizado: 2026-10-05
 fuentes-consultadas: 2026-09-28
 ---
 
@@ -24,7 +24,7 @@ Revisión del catálogo abierto a **2026-09-28** para una **RTX 5070 de 12 GB**.
 | Datos de entrenamiento (declarados) | «licensed, royalty-free/PD, synthetic» [V:S3] | 100k h «internas», origen no declarado [V:S5] | No declarados [V:S10] |
 | Idiomas | 50+ declarados, español incluido; sin evaluación seria del español [V:S1][NV] | Evaluado en EN/ZH/JA/KO/**ES**: en español PER 0,13 y SongEval 4,34, frente a 0,15 y 4,46 de Suno v5, según su propio paper [V:S5] | EN/ZH en las demos; español sin evidencia [NV] |
 | Duración y audio | 10 s–10 min [V:S1]; salida a 48 kHz medida en el spike anterior | Hasta 6 min (4 por defecto); codec 48 kHz estéreo [V:S4,S5] | Hasta 5 min; 32 kHz estéreo [V:S10] |
-| ¿Cabe en 12 GB? | **Sí.** La 5070 (11,94 GiB) es **tier 4** en `gpu_config.py`: 2B turbo/sft + **LM 0.6B**. El LM 1.7B es del tier 5 (12–16 GB) y XL pide ≥ 12 GB con offload + INT8 → experimentos de M0 T-09 [V:S1, GPU_COMPATIBILITY.md] | **Solo en 4 bits**: BF16 ≈ 12,7 GB (OOM); NF4/FP4 ≈ 8,3 GB [P:S7] | **Justo**: cabe en 8 GB con offload por capas, pero lento [V:S10] |
+| ¿Cabe en 12 GB? | **Sí.** La 5070 (11,94 GiB) es **tier 4** en `gpu_config.py`: 2B turbo/sft + **LM 0.6B**. El LM 1.7B es del tier 5 (12–16 GB) y XL pide ≥ 12 GB con offload + INT8 → experimentos de M0 T-09 [V:S1, GPU_COMPATIBILITY.md] | Sin benchmark local: cuantización4bits según [P:S7]; upstream también propone lazy_load. No se confirma encaje BF16 en12GB | **Justo**: cabe en 8 GB con offload por capas, pero lento [V:S10] |
 | Velocidad | Rápido (turbo, pocos pasos); se mide [M0] | RTF ≈ 1 [V:S4] | Lento con offload [V:S10] |
 | Capacidades | text2music, **repaint**, **cover**, retake, vocal2BGM, flow-edit, **LoRA**; extract/lego/complete solo en el checkpoint base [V:S1,S2] | Letra + tags; referencia de audio pendiente; sin LoRA oficial [V:S4] | Letra con secciones y captions estructurados; sin cover, edición ni extend [V:S10] |
 | Calidad frente a Suno | Según el equipo, «entre Suno v4.5 y v5» [V:S1]. Arena de Khala: 1471 frente a 1644 de Suno v5 [V:S13]. «Brillo metálico» en las voces [P:S14] | Arena de Khala: 1422 [V:S13]; «todo suena a pop genérico» [P:S14] | **El único abierto en la arena vocal independiente de Artificial Analysis**: Elo 1000 frente a 1134 de Suno v6 [V:S12] |
@@ -127,3 +127,8 @@ Todos corren en `engine-analysis` ([contrato-engines.md](./contrato-engines.md) 
 - Blackwell y WSL2: ver [entorno.md](./entorno.md).
 
 **Imagen Docker oficial:** existe `ghcr.io/ace-step/ace-step-1.5` (`latest` = `0.1.8`, linux/amd64) y el repo trae `Dockerfile` y `docker-compose.yml` [V]. **No se usa tal cual**: carga el LM 4B por defecto (OOM en 12 GB) e instala el ffmpeg GPL de apt. Sirve de referencia para el Dockerfile propio ([entorno.md](./entorno.md) §2).
+
+
+## Revisión de naturalidad — 2026-10-05
+
+[Revisión de candidatos T-15](../roadmap/2026-09-28-m0-entorno-y-motor/testing/t15/model-review.md): fuentes primarias actualizadas, límites de memoria y licencias, y evidencia local separada de declaraciones de autores. SFT2B y HeartMuLa3B son prioridades para probar; no hay cambio de motor por defecto ni superioridad musical acreditada. T-14 no mostró ganador consistente de shift y el propietario sigue percibiendo falta de naturalidad. La comparación de prompts T-15 mantiene la configuración actual fija.

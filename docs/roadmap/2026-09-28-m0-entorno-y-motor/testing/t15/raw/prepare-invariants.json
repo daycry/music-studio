@@ -1,0 +1,19 @@
+{
+    "caption_hashes_distinct":  true,
+    "caption_file_hashes_match":  true,
+    "dimensions":  [
+                       "rhythm",
+                       "pitch",
+                       "voice",
+                       "instruments"
+                   ],
+    "private_text_read":  false,
+    "quality_approved":  false,
+    "fixed_parameters_match":  true,
+    "lyrics_bytes_identical_by_sha256":  true,
+    "status":  "passed",
+    "caption_character_counts":  [
+                                     415,
+                                     426
+                                 ]
+}

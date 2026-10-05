@@ -24,8 +24,8 @@ verificacion: obligatoria   # cada T-XX lleva `- **Verificación**:`; lo exige l
 | Fase 1 — Preparación | 2 | 2 | 100% | 0 / 6h | 0 / 2h | 0 / 0.5h | 0 / — |
 | Fase 2 — Cimientos compartidos | 3 | 3 | 100% | — / 26h | — / 13h | — / 3.3h | — / — |
 | Fase 3 — Motor musical | 3 | 3 | 100% | — / 19h | — / 9.5h | — / 2.4h | — / — |
-| Fase 4 — Medición y elección | 1 | 7 | 14% | 0 / 37h | 0 / 15h | 0 / 3.8h | 0 / — |
-| **TOTAL** | **9** | **15** | **60%** | **— / 88h** | **— / 39.5h** | **— / 10h** | **— / —** |
+| Fase 4 — Medición y elección | 2 | 8 | 25% | 0 / 37h | 0 / 15h | 0 / 3.8h | 0 / — |
+| **TOTAL** | **10** | **16** | **63%** | **— / 88h** | **— / 39.5h** | **— / 10h** | **— / —** |
 
 > Horas orientativas (proyecto personal, sin presupuesto). La T-12 es opcional (8 h): sin ella son 80 h.
 
@@ -494,6 +494,40 @@ Seis copias privadas codificadas al nivel común **−16,47 LUFS**, mediante gan
 
 Página, hoja de escucha y mapa de ajustes privados y separados. Calidad musical y ganador **pendientes del propietario** (`false`/`null`). No se genera una canción completa por suposición. T-08–T-13 y M0 siguen abiertos. [Ventana QA cerrada](testing/t14/qa-usage.json): fuente estimado, sin horas IA, tokens ni coste medidos; el tiempo de reloj no se imputa como IA. PDF pendiente de herramientas. Sin candidatos nuevos de conocimiento que curar; journals ajenos intactos.
 
+### T-15 — Calidad de Libre: revisión de candidatos y comparación de prompts
+
+- **Descripción**: El propietario pide continuar tras valorar T-14 y revisar si existe un modelo mejor. Investigación de alternativas locales y prueba acotada del prompt actual frente a uno orientado a interpretación natural, sin cambiar letra ni modelo durante esa prueba. No se atribuye superioridad musical sin escucha ni se instalan candidatos por suposición.
+- **Estado**: completado
+- **Tiempo humano**: est. — · real —
+- **Tiempo IA (ejec.)**: est. — · real —
+- **Supervisión**: est. — · real —
+- **Dependencias**: T-14
+- **Tipo**: investigación
+- **Archivos**: `CONTINUE-HERE.md`, `docs/arquitectura/modelos.md`, `docs/roadmap/2026-09-28-m0-entorno-y-motor/improvement-plan.md`, `docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t15/`, `data/inputs/libre/prompt-ab/` y `data/eval/libre-prompt/` (privados), `.cache/dev-cycle/t15/` (efímero).
+- **Verificación**:
+  - `uv run --no-sync --all-packages python .cache/dev-cycle/t15/prepare.py` → letra idéntica por SHA-256, dos captions ≤512 caracteres y configuración constante.
+  - `uv run --no-sync --all-packages python .cache/dev-cycle/t15/run-comparison.py` → seis tomas nuevas de90s, tres pares de semillas, solo varía caption; hashes, telemetría, unload y salidas válidos.
+  - `uv run --no-sync scripts/verify_manifest.py data/cli/` y sesión de escucha → todos válidos; revisión/QA sin UI y comprobación HTTP/metadatos.
+
+**Criterios de aceptación**
+- [x] Revisión fechada con fuentes primarias de SFT/LM1.7B/XL, HeartMuLa, MiniMax Music3, SongGeneration y YuE2: disponibilidad, español, licencias y límites de GPU/RAM. Separar declaraciones del autor, inferencias y mediciones locales; sin ganador garantizado.
+- [x] Seis tomas nuevas en tres pares, 90s, semillas1/2/3, shift1 fijo (conserva el anterior; no ganador consistente de T-14), BF16/PT, Turbo/LM0.6B, BPM94, es y misma letra/etiquetas por hash. Solo varía caption; no se cambian modelos, pesos, contratos ni parámetros de producto. Autoría own ya registrada.
+- [x] Escuchas privadas codificadas con volumen comparable por ganancia lineal, sin compresor, referencia Suno original intacta y mapa separado. Valorar ritmo, afinación, voz e instrumentos; sin aprobación musical por métricas.
+- [x] Revisión A+B y QA independientes conformes. Ollama vacío/VRAM ≤1600MiB antes de cargar, cap dinámico y parada ante spill, unload confirmado. TDD/cobertura n/a para prosa/config/orquestación efímera; producción sin cambios. Calidad y candidato definitivo pendientes del propietario; M0 abierto.
+
+**Arranque — 2026-10-05:** autorización «continua» a la siguiente comparación y petición adicional de revisar mejores modelos. Rama m0/t-15-libre-prompt-ab. TDD n/a: prosa, configuración privada y orquestación efímera, sin cambios de código de producto. Subagente fresco prepara entradas/harness; root conserva ledger, investigación, GPU y Git. VRAM inicial1448MiB, Ollama vacío; se exige ≤1600MiB al arrancar cada tanda, sin extender la excepción de T-14.
+
+- **Changelog**: Revisa candidatos locales y sus licencias, y prepara seis tomas privadas para comparar prompts con escucha ciega; calidad pendiente del propietario.
+
+**Cierre técnico — 2026-10-05:** T-15 completada técnicamente, calidad musical y candidato definitivo pendientes del propietario. Investigación primaria fechada: [modelos](testing/t15/model-review.md); recomendación de probar SFT 2B/LM 0,6B y después HeartMuLa 3B, sin instalación ni cambio de motor. Revisión A+B intento 2 y [QA independiente](testing/t15/report.md) conformes. TDD/cobertura n/a, sin producto cambiado ni suite de producto repetida.
+
+**Verificación ejecutada:** `prepare.py` exit 0: letra/control idénticos por bytes, SHA-256 acorde, captions 415/426 caracteres, configuración fija. `run-comparison.py`, mediante wrapper con entorno gestionado, exit 0: seis tomas nuevas de 90 s, semillas 1/2/3 × dos captions, shift 1/BF16/PT/Turbo/LM 0,6B/BPM 94/es; solo varía caption. Pares privados por ganancia lineal y sin limitador, nivel -16.39 LUFS; seis manifiestos derivados válidos con linaje. `verify_manifest.py data/cli/`: all valid (14 manifests); sesión: all valid (6 manifests). [Recibo GPU](testing/t15/generation-receipt.json), [preservación](testing/t15/preservation-receipt.json) y [metadatos HTTP/navegador](testing/t15/listening-receipt.json): siete reproductores sin error, seis fragmentos y referencia original; no se atribuye audición al agente ni se prueba exportación de valoraciones.
+
+**GPU:** Ollama vacío; baselines por tanda [1327.0, 1327.0] MiB, todos ≤1600, sin excepción T-14. Pico 7891.26 MiB; caps dinámicos [10104.17578125] MiB; `spilled: false` en seis salidas, sin parada del monitor y unload confirmado en ambas tandas. Muestreo WSL: pico RAM usada excluyendo disponible 4805.84 MiB; swap 0.5195 MiB; 177 muestras. No se garantizan picos entre muestras ni se suman tiempos compartidos de la tanda. Orquestación 383.28 s, tiempo de reloj, no horas IA ni RTF. Sin modelo previo de Ollama que restaurar.
+
+Privados: `data/eval/libre-prompt/01M46QBFERQBK6XCH2Z4QQP9B1/listen.html`, mapa separado y sesión efímera bajo `.cache/dev-cycle/t15/runtime/`. Original de Suno, entradas/escuchas T-14 y manifiestos previos preservados por hashes. No se sobrescribe ningún take ni manifiesto. M0 sigue abierto; faltan T-08–T-13. Coste/tokens/horas IA desconocidos, ventanas estimadas; presupuesto adicional no fijado.
+
+
 ---
 
 ## Revisión de dos lentes — intento 1: Fase 2 (T-03, T-04) — correcciones pendientes
@@ -736,3 +770,28 @@ Lentes A+B frescas en paralelo, traspaso completo del intento1. [Criterios y evi
 | B1 | Important | Entero enorme desborda finitud antes de rango | T-14 | corregido fix1 | rango antes de finite tras tipo; RED4→GREEN4/39, reproducción B independiente INVALID_PARAMS |
 
 0 Critical / 0 Important pendiente / 0 Minor. T-14 permanece en-progreso para QA sin UI y seis tomas GPU autorizadas. Calidad y ganador siguen pendientes del propietario.
+
+
+**Escucha del propietario T-14 — 2026-10-05:** preferencias recuperadas de su formulario abierto, sin recargarlo: B/B/B; mapa privado: shift1 preferido en dos pares y shift3 en uno. Sin notas ni puntuaciones numéricas. El propietario sigue percibiendo falta de naturalidad de voces, ritmo e instrumentos frente a Suno y su prompt. Calidad no aprobada; no hay ganador consistente del ajuste. Recibo privado owner-feedback-2026-10-05.json. T-14 permanece completada técnicamente; T-15 investiga el siguiente paso sin alterar audios/manifiestos anteriores.
+
+## Revisión de dos lentes — intento 1: T-15 — preparación requiere fix1
+
+Lentes A+B frescas, C/D=false; alcance exit0 sin avisos. [Informe](testing/t15/review-attempt1.md). Generación y QA pendientes, T-15 en-progreso.
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| R1 (A1/B1) | Important | Spill comprobado después de tres salidas | T-15 | Pendiente fix1 de supervisión privada | CPU cap1000/pico960 marca spill sin excepción; arnés esperaba final de tanda |
+| R2 (B2) | Important | MP3 parcial adoptado con metadato fijo90s | T-15 | Pendiente fix1 de empaquetado privado | MP3 decodificable10,032s cumple LUFS/pico; falta comprobar duración/procedencia |
+
+No rebates; 0 Critical, 2 Important, 0 Minor pendientes. TDD n/a: prosa/config/orquestación efímera sin cambios de producto. Ventanas implementación/revisión estimadas, tokens/horas IA/€ desconocidos; no se convierten los minutos de reloj en coste.
+
+## Revisión de dos lentes — intento 2: T-15 — correcciones conformes
+
+Lentes A+B de contexto fresco; C/D=false. [Informe](testing/t15/review-attempt2.md) y [fix1 con evidencia CPU](testing/t15/fix1-report.md). Los dos revisores ejecutaron el probe CPU real, exit 0; no GPU ni cambios de producto. Generación y QA aún pendientes en esta puerta.
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| R1 (A1/B1) | Important | Parada tardía ante presupuesto/spill | T-15 | Corregido: monitor 2 s, umbral conservador 95 %, ID propio reservado y cancelación exclusiva; idle/unloaded exigido | Probe reproduce umbral, fallo de monitor y job ajeno; no cancela ajeno ni declara spill real por crecimiento agregado |
+| R2 (B2) | Important | MP3 parcial certificado como 90 s | T-15 | Corregido: ffprobe duración/layout, checkpoint de hashes/procedencia/ganancia antes de rename, archivos exclusivos | MP3 real de 10 s rechazado; 90 s/48 kHz/estéreo aceptado; checkpoint ausente/hash distinto rechazados |
+
+Fusión: 0 Critical / 0 Important / 0 Minor pendientes, sin rebates. TDD/cobertura n/a para prosa/config/orquestación efímera; sin suite de producto nueva. Journals ajenos preservados, sin promoción de conocimiento. Coste/tokens/horas IA desconocidos, ventanas estimadas; no se infieren a partir del reloj.

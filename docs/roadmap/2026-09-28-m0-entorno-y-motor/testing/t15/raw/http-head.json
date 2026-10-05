@@ -1,0 +1,108 @@
+{
+    "port":  8767,
+    "host":  "127.0.0.1",
+    "checks":  [
+                   {
+                       "expected":  200,
+                       "path":  "/listen.html",
+                       "actual":  200,
+                       "exit":  0,
+                       "method":  "HEAD"
+                   },
+                   {
+                       "expected":  200,
+                       "path":  "/reference-suno-original.mp3",
+                       "actual":  200,
+                       "exit":  0,
+                       "method":  "HEAD"
+                   },
+                   {
+                       "expected":  200,
+                       "path":  "/P1A/listen.mp3",
+                       "actual":  200,
+                       "exit":  0,
+                       "method":  "HEAD"
+                   },
+                   {
+                       "expected":  200,
+                       "path":  "/P1B/listen.mp3",
+                       "actual":  200,
+                       "exit":  0,
+                       "method":  "HEAD"
+                   },
+                   {
+                       "expected":  200,
+                       "path":  "/P2A/listen.mp3",
+                       "actual":  200,
+                       "exit":  0,
+                       "method":  "HEAD"
+                   },
+                   {
+                       "expected":  200,
+                       "path":  "/P2B/listen.mp3",
+                       "actual":  200,
+                       "exit":  0,
+                       "method":  "HEAD"
+                   },
+                   {
+                       "expected":  200,
+                       "path":  "/P3A/listen.mp3",
+                       "actual":  200,
+                       "exit":  0,
+                       "method":  "HEAD"
+                   },
+                   {
+                       "expected":  200,
+                       "path":  "/P3B/listen.mp3",
+                       "actual":  200,
+                       "exit":  0,
+                       "method":  "HEAD"
+                   },
+                   {
+                       "expected":  404,
+                       "path":  "/.map-private.json",
+                       "actual":  404,
+                       "exit":  0,
+                       "method":  "HEAD"
+                   },
+                   {
+                       "expected":  404,
+                       "path":  "/P1A/manifest.json",
+                       "actual":  404,
+                       "exit":  0,
+                       "method":  "HEAD"
+                   },
+                   {
+                       "expected":  404,
+                       "path":  "/../.map-private.json",
+                       "actual":  404,
+                       "exit":  0,
+                       "method":  "HEAD"
+                   },
+                   {
+                       "expected":  404,
+                       "path":  "/%2e%2e/.map-private.json",
+                       "actual":  404,
+                       "exit":  0,
+                       "method":  "HEAD"
+                   },
+                   {
+                       "expected":  404,
+                       "path":  "/scores.md",
+                       "actual":  404,
+                       "exit":  0,
+                       "method":  "HEAD"
+                   },
+                   {
+                       "expected":  404,
+                       "path":  "/normalization-private.json",
+                       "actual":  404,
+                       "exit":  0,
+                       "method":  "HEAD"
+                   }
+               ],
+    "proxy_environment_used":  false,
+    "response_body_read":  false,
+    "proxy_disabled_by":  "curl --noproxy * (equivalent direct connection to trust_env=False)",
+    "status":  "passed"
+}

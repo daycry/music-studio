@@ -1,0 +1,49 @@
+{
+  "task": "M0/T-15",
+  "takes": 6,
+  "pairs": 3,
+  "duration_s": 90,
+  "sole_independent_variable": "caption",
+  "shift": 1,
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "bpm": 94,
+  "language": "es",
+  "mode": "bf16",
+  "backend": "pt",
+  "checkpoint": "acestep-v15-turbo",
+  "lm": "acestep-5Hz-lm-0.6B",
+  "inference_steps": 8,
+  "lyrics_declaration": "own",
+  "lyrics_sha256": "421a2aaa97998b38b71db4aa939f468e4f6fb54a0b3d0c895d93fbae7ad5e635",
+  "captions": [
+    {
+      "file_sha256": "bc86875aea3f663c4d28af38428f8d1b71d0b1ff2313ff1c1fa5d9854f059b7d",
+      "caption_sha256": "22471b4c4326638c937d5ac12347ca84ddc3b90407a590f3d5abcdc071e1757b",
+      "caption_characters": 415
+    },
+    {
+      "file_sha256": "27561998b3461bb954d5ae9283348c53d7ade5dc2853ccaff0572778ead01f92",
+      "caption_sha256": "79104170ef608618132f5134051751d73b2345df3fafc6a7dce5de66aa988bed",
+      "caption_characters": 426
+    }
+  ],
+  "image_digest": "sha256:ca67e3d08a79cab5ab4ace06ec3c6f98ba349270407028b94ee73ba0d40a0b79",
+  "baseline_ceiling_mib": 1600,
+  "desktop_variation_tolerance_mib": 0,
+  "ollama_must_be_empty": true,
+  "stop_on_spill": true,
+  "reference_conditioning_used": false,
+  "normalization": "ganancia lineal sin limitador, sobre copias",
+  "listening_dimensions": [
+    "rhythm",
+    "pitch",
+    "voice",
+    "instruments"
+  ],
+  "musical_quality_approved": false,
+  "winner": null
+}

@@ -1,0 +1,14 @@
+{
+  "image_digest": "sha256:ca67e3d08a79cab5ab4ace06ec3c6f98ba349270407028b94ee73ba0d40a0b79",
+  "model_id": "ace-step-1.5-turbo",
+  "checkpoint": "acestep-v15-turbo",
+  "lm": "acestep-5Hz-lm-0.6B",
+  "bf16_declared": true,
+  "backend": "pt",
+  "backend_evidence": "adapter pins pt; container ACESTEP_LM_BACKEND=pt checked by root",
+  "prior_cli_manifest_count": 8,
+  "preservation_snapshot_file_count": 30,
+  "original_reference_hash_confirmed": true,
+  "engine_unloaded_before": true,
+  "no_product_changes": true
+}

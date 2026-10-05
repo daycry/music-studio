@@ -1,0 +1,7 @@
+{
+  "status": "passed",
+  "prior_files_unchanged": 30,
+  "original_reference_unchanged": true,
+  "engine_idle_unloaded_after": true,
+  "image_digest": "sha256:ca67e3d08a79cab5ab4ace06ec3c6f98ba349270407028b94ee73ba0d40a0b79"
+}

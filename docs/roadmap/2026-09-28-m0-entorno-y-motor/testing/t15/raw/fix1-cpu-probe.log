@@ -1,0 +1,8 @@
+CPU scenario1: 95% aggregate budget cancels only reserved job before group completion; idle/unloaded confirmed
+CPU monitor failure: generation invalidated, own cancellation requested, no blind continuation
+CPU foreign job: never cancelled foreign ID; unload not falsely confirmed
+CPU scenario2: real10s MP3 rejected despite correct hash/provenance and safe true peak
+CPU90s stereo48k valid; missing checkpoint and hash mismatch rejected
+AST3.11 four files OK; first generate.ulid is job_id; read_request/environment do not consume reserved ULID
+ALL_FIX1_CPU_CHECKS_PASSED; GPU not executed
+exit 0

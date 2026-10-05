@@ -1,0 +1,67 @@
+{
+    "normalization_metadata":  [
+                                   {
+                                       "limiter":  false,
+                                       "lufs_out":  -16.39089278677424,
+                                       "gain_db":  -3.480808992755845,
+                                       "blind_slot":  "P1A",
+                                       "lineage_parent_present":  true,
+                                       "true_peak_dbtp":  -3.4
+                                   },
+                                   {
+                                       "limiter":  false,
+                                       "lufs_out":  -16.389182302733364,
+                                       "gain_db":  -3.4368828782338046,
+                                       "blind_slot":  "P1B",
+                                       "lineage_parent_present":  true,
+                                       "true_peak_dbtp":  -3.5
+                                   },
+                                   {
+                                       "limiter":  false,
+                                       "lufs_out":  -16.38576318610083,
+                                       "gain_db":  -3.725335285986487,
+                                       "blind_slot":  "P2A",
+                                       "lineage_parent_present":  true,
+                                       "true_peak_dbtp":  -3.7
+                                   },
+                                   {
+                                       "limiter":  false,
+                                       "lufs_out":  -16.388962074104015,
+                                       "gain_db":  -2.0,
+                                       "blind_slot":  "P2B",
+                                       "lineage_parent_present":  true,
+                                       "true_peak_dbtp":  -2.0
+                                   },
+                                   {
+                                       "limiter":  false,
+                                       "lufs_out":  -16.390661907540295,
+                                       "gain_db":  -2.7445341897455844,
+                                       "blind_slot":  "P3A",
+                                       "lineage_parent_present":  true,
+                                       "true_peak_dbtp":  -2.7
+                                   },
+                                   {
+                                       "limiter":  false,
+                                       "lufs_out":  -16.3909411083001,
+                                       "gain_db":  -4.2959659121796445,
+                                       "blind_slot":  "P3B",
+                                       "lineage_parent_present":  true,
+                                       "true_peak_dbtp":  -4.3
+                                   }
+                               ],
+    "reference_unchanged":  true,
+    "export_button_executed":  false,
+    "browser_players":  7,
+    "browser_source":  "root independent IAB metadata receipt",
+    "validation_note":  "Initial local assertion expected lyrics hash in derived request; field absent by derived schema, corrected to lineage check; hashes validated against source experiment receipt.",
+    "strict_preflight_1600":  true,
+    "unload_verified":  true,
+    "status":  "passed",
+    "cap_and_no_spill":  true,
+    "browser_volume_verified":  false,
+    "preservation_source":  "root SHA-256 before/after receipt",
+    "runtime_receipts_verified":  true,
+    "preserved_prior_files":  30,
+    "only_caption_variable":  true,
+    "musical_quality_approved":  false
+}
