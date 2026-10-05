@@ -59,6 +59,10 @@ La 5070 permite además activar el **planificador LM**, que controla el idioma, 
 | YuE v1, SongGen, SongBloom, DiffRhythm 2 | Peor calidad o limitaciones (SongBloom: 2:30 y necesita un prompt de audio). DiffRhythm 2 (Apache) queda en reserva |
 | «Ace-Step2.0» en HF | Subida de terceros, no oficial |
 
+### Fidelidad de entradas de ACE-Step
+
+Antes de comparar checkpoints, M0/T-18 conserva original y efectivo y M0/T-19 valida presupuesto nativo y captura el recorrido de instrucciones, conforme [ADR-0029](../decisiones/ADR-0029-presupuesto-operativo-de-texto-acestep.md). En la ruta fijada `pt`/tier 4 se comprueba entrada más reserva completa de códigos dentro de 4096 tokens operativos, descripción DiT dentro de 256 y letra dentro de 2048. El límite con LM es 480 s, no los 600 s del descriptor anterior. Cambiar checkpoint o backend exige verificar su propio perfil; `model_max_length=131072` no justifica ampliar la política. Las capacidades siguen sin aprobarse por estos controles. [Pipeline de fidelidad](./pipeline-audio.md#presupuesto-operativo--t-19-en-integración).
+
 ## 1-bis. Imagen y vídeo
 
 Ver [`video.md`](./video.md) §4: Wan 2.2/2.1 (Apache 2.0), InfiniteTalk (Apache 2.0), Z-Image-Turbo, Qwen-Image-2512/Edit-2511, FLUX.2 klein 4B (Apache 2.0), Depth Anything V2 Small, beat_this, allin1; ejecutados en `engine-comfy` ([ADR-0016](../decisiones/ADR-0016-comfyui-como-motor-de-imagen-y-video.md)). El LLM local del §2 también escribe el guion de planos.

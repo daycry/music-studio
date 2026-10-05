@@ -1,0 +1,50 @@
+{
+  "status": "passed",
+  "cpu_only": true,
+  "model_inference_executed": false,
+  "native_receipts_validated": 10,
+  "source_sha256": "759350ba9c7f3f34428cc2434ada01edac439f1f8b31d59070d83c2ac4877a6d",
+  "original_receipts_unchanged": true,
+  "cases": [
+    {
+      "case_id": "C001",
+      "valid": true
+    },
+    {
+      "case_id": "C002",
+      "valid": true
+    },
+    {
+      "case_id": "C003",
+      "valid": true
+    },
+    {
+      "case_id": "C004",
+      "valid": true
+    },
+    {
+      "case_id": "C005",
+      "valid": true
+    },
+    {
+      "case_id": "C006",
+      "valid": true
+    },
+    {
+      "case_id": "libre_complete_adapter",
+      "valid": true
+    },
+    {
+      "case_id": "libre_t15_control",
+      "valid": true
+    },
+    {
+      "case_id": "libre_t15_natural",
+      "valid": true
+    },
+    {
+      "case_id": "libre_faithful_candidate",
+      "valid": true
+    }
+  ]
+}

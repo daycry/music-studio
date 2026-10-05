@@ -61,8 +61,8 @@ def descriptor(lock_path=None, checkpoint=None, lm=None):
                     }
                 )
     properties = {
-        "style": {"type": "string", "minLength": 1, "maxLength": 512},
-        "lyrics": {"type": "string", "maxLength": 4096},
+        "style": {"type": "string", "minLength": 1, "maxLength": 16384},
+        "lyrics": {"type": "string", "maxLength": 32768},
         "duration_s": {"type": "number", "minimum": 10, "maximum": 600},
         "language": {"type": "string", "minLength": 1},
         "vocal_language": {"type": "string", "minLength": 1},

@@ -324,10 +324,11 @@ def test_instrumental_language_and_random_seed():
     assert params["vocal_language"] == "unknown" and config["seeds"] == [params["seed"]]
 
 
-def test_upstream_error_and_swallowed_cancel(tmp_path):
+def test_upstream_error_and_swallowed_cancel(tmp_path, monkeypatch):
     from engine_common.runtime import CancelToken, EngineError
 
     adapter = module("adapter")
+    monkeypatch.setattr(adapter, "preflight", lambda *a, **k: {"kind": "planned"})
     model = adapter.AceStepAdapter()
     token = CancelToken()
     request = {
@@ -397,11 +398,12 @@ def test_runtime_load_forces_pt_bf16_and_budget(monkeypatch):
     assert calls[2][1]["lm_model_path"] == "acestep-5Hz-lm-0.6B"
 
 
-def test_generate_real_callback_and_cancellation(tmp_path):
+def test_generate_real_callback_and_cancellation(tmp_path, monkeypatch):
     import numpy as np
     from engine_common.runtime import CancelToken, EngineError
 
     adapter = module("adapter")
+    monkeypatch.setattr(adapter, "preflight", lambda *a, **k: {"kind": "planned"})
     assert hasattr(adapter, "AceStepAdapter"), "Falta generación adapter"
     model = adapter.AceStepAdapter()
     events, seen = [], []

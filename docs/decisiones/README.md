@@ -31,6 +31,7 @@ Formato: `ADR-XXXX-slug.md` con **Estado** (propuesta · aceptada · sustituida 
 | [0025](ADR-0025-limite-de-memoria-wsl.md) | WSL con límite de 16 GB, swap de 8 GB y recuperación de caché dropCache; perfil elegido por el propietario y aplicado | aceptada |
 | [0026](ADR-0026-comparacion-controlada-shift.md) | Comparación privada shift 1/3; parámetro opcional y default anterior conservado | aceptada |
 | [0028](ADR-0028-preparacion-fiel-de-instrucciones.md) | Preparación determinista original/efectiva, limpieza explícita de Markdown en tags y recibo privado inmutable | aceptada |
+| [0029](ADR-0029-presupuesto-operativo-de-texto-acestep.md) | Preflight offline con plantillas/tokenizadores fijados, política LM y reserva completa, metadata entrenada y captura privada de fronteras | aceptada |
 
 ## Decisiones heredadas de la documentación archivada
 

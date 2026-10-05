@@ -51,6 +51,7 @@ def create_app(
     adapter_options=None,
     engine_id="engine",
     margin_mb=None,
+    preflight=None,
 ):
     token = token if token is not None else os.environ.get("STUDIO_ENGINE_TOKEN", "")
     if not token:
@@ -178,7 +179,12 @@ def create_app(
                 item.role == spec.role for item in request.inputs
             ):
                 raise EngineError("INVALID_PARAMS", "Falta una entrada obligatoria")
-        return model, mode
+        budget = (
+            preflight(request.model_dump(mode="json"))
+            if preflight is not None
+            else None
+        )
+        return model, mode, budget
 
     def load(model_id, mode, deadline=None):
         nonlocal guard
@@ -400,8 +406,8 @@ def create_app(
 
     @app.post("/v1/estimate")
     def estimate(request: JobRequest):
-        _, mode = validate(request)
-        return {
+        _, mode, budget = validate(request)
+        result = {
             "eta_s": float(request.params.get("duration_s", 1)),
             "vram_mb": next(
                 item.vram_mb or 0
@@ -409,6 +415,20 @@ def create_app(
                 if item.id == mode
             ),
         }
+        if budget is not None:
+            result["input_budget"] = {
+                key: budget[key]
+                for key in (
+                    "kind",
+                    "profile_revision",
+                    "profile_sha256",
+                    "request_sha256",
+                    "effective_sha256",
+                    "lm",
+                    "dit",
+                )
+            }
+        return result
 
     @app.post("/v1/jobs", status_code=202)
     def submit(request: JobRequest):
@@ -420,7 +440,7 @@ def create_app(
                 raise EngineError("BUSY")
             maintenance = True
         try:
-            _, mode = validate(request)
+            _, mode, _ = validate(request)
             with lock:
                 job = {
                     "request": request,

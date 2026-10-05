@@ -24,8 +24,8 @@ verificacion: obligatoria   # cada T-XX lleva `- **Verificación**:`; lo exige l
 | Fase 1 — Preparación | 2 | 2 | 100% | 0 / 6h | 0 / 2h | 0 / 0.5h | 0 / — |
 | Fase 2 — Cimientos compartidos | 3 | 3 | 100% | — / 26h | — / 13h | — / 3.3h | — / — |
 | Fase 3 — Motor musical | 3 | 3 | 100% | — / 19h | — / 9.5h | — / 2.4h | — / — |
-| Fase 4 — Medición y elección | 4 | 12 | 33% | 0 / 37h | 0 / 15h | 0 / 3.8h | 0 / — |
-| **TOTAL** | **12** | **20** | **60%** | **— / 88h** | **— / 39.5h** | **— / 10h** | **— / —** |
+| Fase 4 — Medición y elección | 5 | 12 | 42% | 0 / 37h | 0 / 15h | 0 / 3.8h | 0 / — |
+| **TOTAL** | **13** | **20** | **65%** | **— / 88h** | **— / 39.5h** | **— / 10h** | **— / —** |
 
 > Horas orientativas (proyecto personal, sin presupuesto). La T-12 es opcional (8 h): sin ella son 80 h.
 
@@ -343,7 +343,7 @@ Se recuperaron master.flac (PCM24), listen.mp3, peaks.json y manifest.json desde
 - **Tiempo humano**: est. 8h · real —
 - **Tiempo IA (ejec.)**: est. 4h · real —
 - **Supervisión**: est. 1h (≈25 % IA) · real —
-- **Dependencias**: T-03, T-02
+- **Dependencias**: T-03, T-02, T-19 (entrada efectiva y recibos antes de evaluar fidelidad)
 - **Tipo**: backend
 - **Archivos**: `apps/engines/analysis/` (Dockerfile y adapters), `docker-compose.yml`
 - **Verificación**:
@@ -354,6 +354,8 @@ Se recuperaron master.flac (PCM24), listen.mp3, peaks.json y manifest.json desde
 - [ ] Base `pytorch/pytorch:2.14.0-cuda13.0-cudnn9-runtime`, dependencias fijadas, puerto `127.0.0.1:8130`, y los mismos montajes y token que engine-acestep (contrato §6). `audio.beats` se declara con `device: cpu` (beat_this en CPU).
 - [ ] Tareas `audio.transcribe` (Qwen3-ASR-1.7B), `audio.clap` (LAION, pesos convertidos), `audio.aesthetics` (Audiobox, `model.safetensors`) y `audio.beats` (beat_this, pesos convertidos). `audio.align_lyrics` (ForcedAligner) queda preparada pero no se verifica hasta M3.
 - [ ] Un modelo cada vez en el proceso hijo; se cambia de modelo dentro del engine descargando el anterior.
+
+**Fidelidad al evaluar:** contrastar letra efectiva sin tags con transcripción y tiempos, conservando el suelo WER. Los resultados de análisis alimentan [evaluacion-escucha §3.1](../../calidad/evaluacion-escucha.md#31-fidelidad-de-instrucciones-y-naturalidad) y la [rúbrica T-18](testing/t18/preparation-report.md#rúbrica-para-la-evaluación-musical-posterior); no atribuyen naturalidad ni obediencia por sí solos. Los recibos planned/captured siguen siendo evidencia de transporte, no de calidad.
 
 ### T-09 — Benchmark en la 5070
 
@@ -435,6 +437,8 @@ Se recuperaron master.flac (PCM24), listen.mp3, peaks.json y manifest.json desde
 - [ ] Contenedor con las versiones de heartlib (`torch<2.11`, `bitsandbytes==0.49`, `transformers==4.57`) en **build cu128**, y el modelo oss-3B «happy-new-year» con el codec 20260123 en NF4/FP4.
 - [ ] Mismo contrato `/v1`; la batería de T-11 se genera como candidato B.
 
+**Fidelidad del candidato B:** el adaptador de HeartMuLa demuestra su propio recorrido de letra/tags y límites; no hereda el perfil ACE-Step. Comparar el mismo texto efectivo, con original/diff preservados, y aplicar [evaluacion-escucha §3.1](../../calidad/evaluacion-escucha.md#31-fidelidad-de-instrucciones-y-naturalidad) y la [rúbrica T-18](testing/t18/preparation-report.md#rúbrica-para-la-evaluación-musical-posterior). Registrar naturalidad y cumplimiento por separado, sin reinterpretar un recibo de entrada como una aprobación musical.
+
 ### T-13 — Escucha y decisión de modelo
 
 - **Descripción**: Sesión de escucha a ciegas y decisión registrada.
@@ -454,6 +458,8 @@ Se recuperaron master.flac (PCM24), listen.mp3, peaks.json y manifest.json desde
 - [ ] Veredicto: modelo aprobado / elección entre candidatos / replantear.
 - [ ] Nota en `docs/memory/` con la decisión y la fecha.
 
+
+**Verificación de fidelidad en la escucha:** las hojas incorporan [evaluacion-escucha §3.1](../../calidad/evaluacion-escucha.md#31-fidelidad-de-instrucciones-y-naturalidad) y la [rúbrica T-18](testing/t18/preparation-report.md#rúbrica-para-la-evaluación-musical-posterior), con tiempos del audio, recibos de preparación/entrada y notas separadas de naturalidad y cumplimiento. No verificar arco/outro desde fragmentos ni abrir el mapa antes de terminar. Los umbrales D1–D5/WER fijados permanecen iguales.
 
 ### T-14 — Comparación privada de «Libre»: shift 1 frente a 3
 
@@ -539,7 +545,7 @@ Privados: `data/eval/libre-prompt/01M46QBFERQBK6XCH2Z4QQP9B1/listen.html`, mapa 
 - **Supervisión**: est. — · real —
 - **Dependencias**: T-06, T-07, T-15, T-19 (entradas musicales verificadas)
 - **Tipo**: backend
-- **Archivos**: `apps/engines/acestep/descriptor.py`, `apps/engines/acestep/adapter.py`, `apps/engines/acestep/tests/test_inference_controls.py`, `scripts/generate.py`, `tests/test_generate_inference.py`, `apps/engines/acestep/README.md`, `docs/arquitectura/pipeline-audio.md`, `docs/arquitectura/modelos.md`, `docs/decisiones/ADR-0027-controles-de-inferencia-sft.md`, `docs/decisiones/README.md`, `CONTINUE-HERE.md`, `docs/roadmap/2026-09-28-m0-entorno-y-motor/improvement-plan.md`, `docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t16/`, `data/inputs/libre/sft-ab/`, `data/eval/libre-sft/`, `.cache/dev-cycle/t16/` (últimas tres rutas privadas/efímeras).
+- **Archivos**: `apps/engines/acestep/descriptor.py`, `apps/engines/acestep/adapter.py`, `apps/engines/acestep/tests/test_inference_controls.py`, `scripts/generate.py`, `tests/test_generate_inference.py`, `apps/engines/acestep/README.md`, `docs/arquitectura/pipeline-audio.md`, `docs/arquitectura/modelos.md`, `docs/decisiones/ADR-0027-controles-de-inferencia-sft.md`, `docs/decisiones/README.md`, `CONTINUE-HERE.md`, `docs/roadmap/2026-09-28-m0-entorno-y-motor/improvement-plan.md`, `docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t16/`, `data/inputs/libre/sft-ab/`, `data/eval/libre-sft/`, `.cache/dev-cycle/t16/` (últimas tres rutas privadas/efímeras)., `apps/engines/acestep/preflight.py`, `apps/engines/acestep/input_profile.py`, `packages/audio-post/audio_post/manifest.py` (perfil/recibos coherentes con pasos y defaults SFT/Turbo)
 - **Verificación**:
   - `uv run --no-sync --all-packages pytest tests/test_generate_inference.py apps/engines/acestep/tests/test_inference_controls.py -q` → validación, defaults, identidad, propagación y progreso correctos; RED previo registrado.
   - QA sin UI: tests vecinos CPU, ruff/formato, contratos y cobertura ≥80 % de producción cambiada; imagen final con tests CPU del adaptador; revisión A+B y lentes condicionales conformes.
@@ -555,6 +561,8 @@ Privados: `data/eval/libre-prompt/01M46QBFERQBK6XCH2Z4QQP9B1/listen.html`, mapa 
 **Arranque — 2026-10-05:** «continua» después de recoger otra valoración de la página8766 (T-14: P1B/P2B/Ninguna, campos numéricos/comentarios vacíos). La página8767 de T-15 permanece sin valorar en la pestaña disponible; no se interpreta como empate ni aprobación. Recibo privado nuevo con timestamp, anterior intacto. Investigación propone SFT como siguiente prueba local. Rama m0/t-16-libre-sft; presupuesto adicional no fijado. TDD activo para producto; TDD n/a para prosa/config/orquestación efímera. Subagente fresco implementa controles; root conserva ledger/documentación/GPU/Git.
 
 **Cambio de prioridad explícito — 2026-10-05:** el propietario pide asegurar primero los prompts y revisar qué llega al LM, antes de perfeccionar o cambiar modelo. T-16 vuelve a borrador. Sin producto cambiado, build ni GPU. El subagente conserva el test parcial fuera de la colección pytest en `.cache/dev-cycle/t16/test_inference_controls.deferred.py`: RED real `test_descriptor_sft_identity_and_limits` falló AssertionError por identidad Turbo en descriptor SFT, 1 failed/0,18s; sin GREEN, no se declara implementación. Ventana inicial cerrada, fuente estimado; horas/tokens/coste medidos null. La auditoría se registra en T-17 y condiciona retomar SFT.
+
+**Compatibilidad tras T-19:** los nuevos controles deben viajar también por el perfil planned/captured y su validador, con identidad de checkpoint y defaults coherentes. Acreditar SFT50/CFG7 y opciones explícitas sin relajar los presupuestos PT/DiT ni la correspondencia de idioma, metadata y flags con el request. No basta cambiar GenerationParams dejando un recibo que siga declarando ocho pasos.
 
 ### T-17 — Auditoría de fidelidad de prompts hasta LM y DiT
 
@@ -644,7 +652,7 @@ Los errores de import del entrypoint descubiertos por CLI real se corrigieron co
 ### T-19 — Preflight nativo de tokens y captura de entradas efectivas
 
 - **Descripción**: Medir plantillas completas y reserva de salida LM con tokenizadores locales fijados; rechazar truncamiento, extracción o clamp no explícitos en estimate/jobs y adaptador directo; transportar idioma/metadata en formato entrenado y capturar recibo efectivo privado sin textos públicos.
-- **Estado**: borrador
+- **Estado**: completado
 - **Tiempo humano**: est. — · real —
 - **Tiempo IA (ejec.)**: est. — · real —
 - **Supervisión**: est. — · real —
@@ -652,27 +660,44 @@ Los errores de import del entrypoint descubiertos por CLI real se corrigieron co
 - **Coste**: n/a económico, ADR-0001; consumo desconocido.
 - **Dependencias**: T-06, T-18
 - **Tipo**: backend
-- **Archivos**: `apps/engines/acestep/preflight.py`, `apps/engines/acestep/input_profile.py`, `apps/engines/acestep/adapter.py`, `apps/engines/acestep/descriptor.py`, `apps/engines/acestep/engine_acestep.py`, `apps/engines/acestep/tests/test_preflight.py`, `apps/engines/acestep/tests/test_adapter.py`, `apps/engines/common/engine_common/server.py`, `apps/engines/common/engine_common/worker.py` (solo si recibo requiere IPC adicional), `apps/engines/common/tests/test_common.py`, `scripts/generate.py`, `tests/test_generate_preparation.py`, `packages/engine-contract/engine_contract/__init__.py` (solo campos opcionales si necesarios), `packages/engine-contract/tests/test_contract.py`, `packages/contracts/engine-v1.json`, `packages/contracts/openapi.json` (si el export genera cambios), `packages/contracts/manifest-v1.schema.json` (solo aditivo si se necesita), `packages/audio-post/audio_post/manifest.py`, `scripts/export_contracts.py`, `docs/arquitectura/contrato-engines.md`, `docs/arquitectura/pipeline-audio.md`, `docs/arquitectura/modelos.md`, `docs/decisiones/ADR-0029-presupuesto-operativo-de-texto-acestep.md` (reservado), `docs/decisiones/README.md`, `CONTINUE-HERE.md`, `docs/roadmap/2026-09-28-m0-entorno-y-motor/improvement-plan.md`, `docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t19/`, `.cache/dev-cycle/t19/`, `data/preparations/`, `data/tmp/`, `data/cli/` (recibos nuevos); locks/tokenizadores/fuente T-17 solo lectura.
-- **Verificación**: `uv run --frozen --all-packages pytest apps/engines/acestep/tests/test_preflight.py apps/engines/acestep/tests/test_adapter.py apps/engines/common/tests/test_common.py tests/test_generate_preparation.py packages/engine-contract/tests/test_contract.py -q -m "not gpu"` → límites exactos y +1 LM/DiT, bypass directo, idioma YAML, ausencia de CUDA/torch parent y cero load/jobs ante rechazo. `uv run --frozen scripts/export_contracts.py --check` →0. `uv run --frozen scripts/verify_manifest.py packages/contracts/examples/` →0. Probe nativo CPU `.cache/dev-cycle/t19/verify-native-preflight.py` → perfiles/hashes reales y conteos coinciden con captura del upstream fijado, original Libre bloqueado sin truncar y candidato fiel íntegro. Si requiere contenedor, ejecutar imagen existente con CUDA_VISIBLE_DEVICES vacío y sin build/GPU/model load; no instalar herramientas.
+- **Archivos**: `apps/engines/acestep/preflight.py`, `apps/engines/acestep/input_profile.py`, `apps/engines/acestep/adapter.py`, `apps/engines/acestep/descriptor.py`, `apps/engines/acestep/engine_acestep.py`, `apps/engines/acestep/tests/test_preflight.py`, `apps/engines/acestep/tests/test_adapter.py`, `apps/engines/common/engine_common/server.py`, `apps/engines/common/engine_common/worker.py` (solo si recibo requiere IPC adicional), `apps/engines/common/tests/test_common.py`, `scripts/generate.py`, `tests/test_generate_preparation.py`, `packages/engine-contract/engine_contract/__init__.py` (solo campos opcionales si necesarios), `packages/engine-contract/tests/test_contract.py`, `packages/contracts/engine-v1.json`, `packages/contracts/openapi.json` (si el export genera cambios), `packages/contracts/manifest-v1.schema.json` (solo aditivo si se necesita), `packages/audio-post/audio_post/manifest.py`, `packages/audio-post/tests/test_manifest_errors.py`, `scripts/export_contracts.py`, `docs/arquitectura/contrato-engines.md`, `docs/arquitectura/pipeline-audio.md`, `docs/arquitectura/modelos.md`, `docs/decisiones/ADR-0029-presupuesto-operativo-de-texto-acestep.md` (reservado), `docs/decisiones/README.md`, `CONTINUE-HERE.md`, `docs/roadmap/2026-09-28-m0-entorno-y-motor/improvement-plan.md`, `docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t19/`, `.cache/dev-cycle/t19/`, `data/preparations/`, `data/tmp/`, `data/cli/` (recibos nuevos); locks/tokenizadores/fuente T-17 solo lectura., `apps/engines/acestep/tests/test_preflight_vram.py`, `apps/engines/acestep/tests/test_review_fixes.py`, `apps/engines/acestep/tests/test_shift.py`, `docs/calidad/evaluacion-escucha.md` (puente canónico a rúbrica de fidelidad, sin cambiar umbrales)
+- **Verificación**: `uv run --frozen --all-packages pytest apps/engines/acestep/tests/test_preflight.py apps/engines/acestep/tests/test_adapter.py apps/engines/common/tests/test_common.py tests/test_generate_preparation.py packages/engine-contract/tests/test_contract.py -q -m "not gpu"` → límites exactos y +1 LM/DiT, bypass directo, idioma YAML, ausencia de CUDA/torch parent y cero load/jobs ante rechazo. `uv run --frozen scripts/export_contracts.py --check` →0. `uv run --frozen scripts/verify_manifest.py packages/contracts/examples/` →0. Probe nativo CPU `.cache/dev-cycle/t19/verify-native-preflight.py` → perfiles/hashes reales y conteos coinciden con captura del upstream fijado, original Libre bloqueado sin truncar y candidato fiel íntegro. Si requiere contenedor, ejecutar imagen existente con CUDA_VISIBLE_DEVICES vacío y sin GPU/model load; no instalar herramientas. El orquestador puede reconstruir la imagen con código local al congelar producción, reutilizando pesos y dependencias fijados, para acreditar la integración runtime.
 
 **Criterios de aceptación**
 
-- [ ] Presupuesto nativo LM entrada+reserva real y DiT256/2048, incluye todas las cabeceras/metadatos/ramas activas; no infiere contexto de131072 ni duplica plantilla aproximada.
-- [ ] Estimate y jobs rechazan antes de carga/cola toda pérdida/truncamiento o duración limitada; adaptador directo protege el mismo criterio. Fallo de tokenizer/config/hash/timeout no se convierte en aceptación.
-- [ ] Caption largo que cabe se acepta, exceso nativo se rechaza; elevar límites administrativos solo cuando el preflight ya protege. Música instrumental y seeds/shift anteriores conservan comportamiento compatible.
-- [ ] Idioma validado llega como language al YAML entrenado LM y al DiT; key/compás opcionales viajan en formato upstream, sin valores inventados, conflictos ni reescritura por CoT.
-- [ ] Recibo planned/captured distingue estimate de frontera real, hashes token/input/flags y defaults efectivos, referencias privadas validables; logs/eventos/errores públicos no contienen letras ni prompts.
-- [ ] Tests diferenciales del upstream/tokenizadores fijados y regresión de16 casos auditados. Los casos que exceden presupuesto se bloquean; adaptaciones conservadas y nueva preparación cuentan íntegramente. Presencia de tags en tokens no se declara obediencia musical.
-- [ ] TDD, revisión fresca A+B+C/D cuando apliquen, QA CPU y >=80% producción cambiada, code-first aditivo compatible, padre sin torch/CUDA y server sin torch. Sin modelos/build/GPU/instalaciones nuevas en este tramo.
+- [x] Presupuesto nativo LM entrada+reserva real y DiT256/2048, incluye todas las cabeceras/metadatos/ramas activas; no infiere contexto de131072 ni duplica plantilla aproximada.
+- [x] Estimate y jobs rechazan antes de carga/cola toda pérdida/truncamiento o duración limitada; adaptador directo protege el mismo criterio. Fallo de tokenizer/config/hash/timeout no se convierte en aceptación.
+- [x] Caption largo que cabe se acepta, exceso nativo se rechaza; elevar límites administrativos solo cuando el preflight ya protege. Música instrumental y seeds/shift anteriores conservan comportamiento compatible.
+- [x] Idioma validado llega como language al YAML entrenado LM y al DiT; key/compás opcionales viajan en formato upstream, sin valores inventados, conflictos ni reescritura por CoT.
+- [x] Recibo planned/captured distingue estimate de frontera real, hashes token/input/flags y defaults efectivos, referencias privadas validables; logs/eventos/errores públicos no contienen letras ni prompts.
+- [x] Tests diferenciales del upstream/tokenizadores fijados y regresión de16 casos auditados. Los casos que exceden presupuesto se bloquean; adaptaciones conservadas y nueva preparación cuentan íntegramente. Presencia de tags en tokens no se declara obediencia musical.
+- [x] TDD, revisión fresca A+B+C/D cuando apliquen, QA CPU y >=80% producción cambiada, code-first aditivo compatible, padre sin torch/CUDA y server sin torch. Sin nuevos modelos, carga GPU ni instalaciones de herramientas en este tramo. Reconstrucción CPU de imagen permitida por el orquestador para integrar el código, sin cambiar locks ni dependencias.
 
 **Subtareas**
 
-- [ ] RED perfil/hashes/ventana/reserva/limites; conteo local diferencial CPU.
-- [ ] RED estimate/jobs/directadapter y compatibilidad mock; hook opcional sin modelos.
-- [ ] RED idioma/compás/key/CFG/SFT extraction; wrapper mínimo y captura de frontera.
-- [ ] RED privacidad/publicación/recibo/integridad; logger ámbito hijo y procedencia CLI.
-- [ ] Exportar contratos aditivos, ADR/docs, ampliar dependencias/rúbrica T-08/T-12/T-13, revisión y QA.
+- [x] RED perfil/hashes/ventana/reserva/limites; conteo local diferencial CPU.
+- [x] RED estimate/jobs/directadapter y compatibilidad mock; hook opcional sin modelos.
+- [x] RED idioma/compás/key/CFG/SFT extraction; wrapper mínimo y captura de frontera.
+- [x] RED privacidad/publicación/recibo/integridad; logger ámbito hijo y procedencia CLI.
+- [x] Exportar contratos aditivos, ADR/docs, ampliar dependencias/rúbrica T-08/T-12/T-13, revisión y QA.
 
+
+**Arranque T-19 — 2026-10-05:** T-18 integrada por fast-forward y publicada como `83fc652` en main y rama de tarea. Rama actual `m0/t-19-presupuesto-prompts`. Decisión técnica dentro del objetivo autorizado: permitir reconstrucción CPU de la imagen con código local al congelar producción, porque la imagen T-14 aún no incorpora T-18; no basta un probe del código antiguo para probar el nuevo producto. No hay instalación de herramientas ni nuevos modelos, cambios de locks, GPU o audio.
+
+**Fuentes de implementación y verificación:** [auditoría T-17](testing/t17/audit-report.md), `.cache/dev-cycle/t17/native-probe.py`, `.cache/dev-cycle/t17/upstream-acestep/`, `.cache/dev-cycle/t17/audit-input-private.json`, `models/models.lock.json` y `models/ace-step-1.5/checkpoints/` (solo lectura). Código upstream fijado a `dce621408bee8c31b4fcf4811682eb9359e1bc94`. Los 4096 tokens son política operativa explícita del backend pt, no una inferencia de model_max_length=131072. Revisar YAML entrenado, reserva completa de códigos de audio, límite LM de duración tier4 y ramas activas antes de fijar perfil. Los recibos privados originales y journals ajenos no se modifican. Orquestador propietario exclusivo de ledger, ADR-0029, arquitectura y CONTINUE; implementer propietario de producción/tests y evidencia T-19. Sin medidores propios solapados.
+
+**Contexto adicional verificado — 2026-10-05:** corpus host T-17 en `.cache/dev-cycle/t17/audit-input-private.json`, 16 casos incluido el candidato fiel. La ruta `.cache/huggingface/t17-audit-input-private.json` del brief era una copia interna del contenedor; referencia corregida sin regenerar ni sobrescribir la auditoría. Imagen existente `music-studio/engine-acestep:m0-t14-shift`, upstream `/opt/acestep`, intérprete `/opt/acestep/.venv/bin/python`; probe CPU autorizado con repo solo lectura y salida privada nueva. Límites administrativos permitidos 16384 caracteres de estilo y 32768 de letra, solo con preflight nativo activo y tests de aceptación/rechazo; no sustituyen presupuesto de tokens ni acreditan musicalidad.
+
+**Validación ampliada — 2026-10-06:** la suite completa explícita descubrió seis regresiones de fixtures en `apps/engines/acestep/tests/test_preflight_vram.py`, `test_review_fixes.py` y `test_shift.py`: los dobles de runtime anteriores no proporcionan la nueva dependencia CPU de preflight. Se incorporan esos tres ficheros al alcance de T-19 para mantener sus comprobaciones de VRAM, semillas y shift, sin omitir tests ni desactivar controles en producción. Evidencia RED: `.cache/dev-cycle/t19/root-full-suite.txt`, `6 failed, 349 passed, 5 skipped, 1 deselected`; exit 1. En el contenedor, el mock necesita la profundidad original y los temporales de los tests common necesitan un montaje escribible; los fallos de fixture no se declaran verificación verde. Se aplica `debug-root-cause` para separar esos problemas de los controles de producto.
+
+**Implementación congelada y Verificación ejecutada — 2026-10-06:** [informe TDD](testing/t19/implementation-report.md), [integración](testing/t19/integration-report.md) y [cobertura](testing/t19/implementation-coverage.json). RED reales conservados, entre otros: `test_http_preflight_hook_is_optional` falló por ausencia del hook (`red-hook.txt`); `test_long_caption_is_not_rejected_by_administrative_limit` falló por límite previo de 512 (`red-caption.txt`); `test_native_receipt_interrupted_write_cannot_leave_partial_cas` reprodujo destino parcial (`red-atomic.txt`); `test_manifest_checks_the_same_native_bytes_it_hashes` reprodujo doble lectura (`red-single-read.txt`). Perfil/reserva, bypass, idioma/captura, hash/timeout/checkpoint, privacidad y vínculo con preparation tienen RED/GREEN adicionales en el informe y la caché privada. Un único re-despacho por validación corrigió los tres módulos de fixtures; producción no cambió. Verificación declarada cinco módulos **120 passed, 1 skipped**, exit 0 (`root-declared-tests.txt`); export **engine-v1.json up to date**, exit 0; cuatro ejemplos **all valid (4 manifests)**, exit 0; Ruff global **All checks passed!**, exit 0. Suite completa explícita **355 passed, 5 skipped, 1 deselected**, exit 0; imagen reconstruida **133 passed, 1 deselected**, exit 0. Cobertura de statements añadidos **327/354 = 92,37 %**, mínimo medible por fichero **86,05 %**, descriptor literal 30/30. Probe integrado **16 casos, diez aceptados/seis bloqueados**, exit 0, con producción desde imagen y ambas ramas PT antes del forward sustituido. [HTTP real](testing/t19/http-receipt.json): ocho comprobaciones, dos estimates aceptados y seis rechazos estimate/jobs, health idle, loaded/job_id null; ningún job aceptable enviado, sin GPU/audio/pesos cargados. Digest imagen en los recibos; no cambian locks ni dependencias. Revisión fresca A+B+C y QA independiente pendientes: esta nota no cierra criterios ni declara musicalidad.
+
+**Medición de implementación:** ventana 2026-10-05T21:48:38Z–22:36:52Z, `fuente: estimado`; tokens/coste/horas IA reales desconocidos (`null`), reloj contextual 48 min, sin transformarlo en coste IA. Marcador cerrado antes de abrir revisión. Jira/Confluence desactivados; journals ajenos preservados y no promovidos.
+
+**Fix de revisión 1 — 2026-10-06:** [informe](testing/t19/fix1-report.md). Subagente implementer fresco corrige B-01 únicamente en manifest.py y test_generate_preparation.py; no repite el re-despacho previo de fixtures ni reabre lo aprobado. RED: `test_native_receipt_rejects_rehashed_semantic_contradiction[language]` falló con **DID NOT RAISE ValueError** (`fix1/red-language.txt`); regresión de publicación real y flag legacy tienen RED contractuales adicionales. La primera fixture de integración colocaba input_receipts fuera de done.result: sus errores no cuentan como RED y se conservaron. GREEN del validador y publicación/CAS/verify, baseline válido y mutaciones recalculadas rechazadas; **98 vecinos passed**. Verificación declarada **146 passed, 1 skipped**, export up to date, cuatro ejemplos válidos y Ruff verdes. [Cobertura actual del diff](testing/t19/fix1-coverage.json) **349/377 = 92,57 %**, mínimo por fichero **86,05 %**; en el fix 22/23 = 95,65 %. Cruce oficial con base 83fc652; producción no alterada usa el freeze previo y manifest usa la medición nueva. [Diez capturas nativas integradas válidas](testing/t19/fix1-native-validation.json) con validador nuevo, originales intactos, sin repetir forward ni GPU. Se mantiene compatibilidad con campos opcionales ausentes de la fixture anterior: captured metadata se contrasta siempre contra la solicitud; planned metadata/legacy se contrastan cuando existen. El puente documental A1 queda incorporado en evaluación-escucha §3.1 y T-08/T-12/T-13, sin modificar umbrales. T-16 declara también actualizar perfil/validador al habilitar pasos/defaults SFT. Revisión 2 y QA pendientes; no se cierra la tarea aún. TDD n/a para este puente de prosa.
+
+**Cierre técnico T-19 — 2026-10-06:** [QA independiente](testing/t19/report.md) y [recibo](testing/t19/qa-receipt.json): Verificación declarada **146 passed, 1 skipped**, suite explícita completa **381 passed, 5 skipped, 1 deselected**, cinco avisos de terceros, exit 0. Cobertura independiente actual **350/377 = 92,84 %**, mínimo por fichero **87,50 %**, descriptor literal 30/30. Ruff global, formato de 15 Python, exportador, cuatro ejemplos, 14 manifiestos CLI y diff-check conformes. Diez capturas privadas intactas validadas, baseline válido y tres contradicciones originales rechazadas; 32 hashes, 72 versos y nueve tags preservados por lectura. Padre sin torch/transformers en el probe. Imagen actual y health descargado coinciden con digest acreditado; 133 tests de imagen/16 casos/ocho comprobaciones HTTP son antecedentes de integración, no nuevas ejecuciones QA. A+B+C intento 2 frescas sin gaps; C secuencial por límite de threads. qa: sin UI por diseño (`test-plan: n/a (sin UI)`); ledger-lint 0 incoherencias, coverage-check exit 0/applies=false y degradación de base documentada; qa-gate E2E n/a, sin resultados ficticios. 252 enlaces locales y privacidad del alcance comprobados sin hallazgos. PDF pendiente por dependencias ausentes; no bloquea el backend CPU. Ventana QA 23:02:19–23:07:47 UTC, fuente estimado, tokens/horas/coste IA reales null. No GPU/audio nuevo ni cumplimiento artístico: M0 abierto con 13/20 tareas. Siguiente: controles SFT y comparación T-16; T-08–T-13 permanecen pendientes.
+- **Changelog**: La generación comprueba el presupuesto real antes de aceptar letra y estilo, transporta idioma y metadata sin reescritura y registra entradas efectivas verificables de forma privada.
 
 ## Revisión de dos lentes — intento 1: Fase 2 (T-03, T-04) — correcciones pendientes
 
@@ -969,3 +994,25 @@ A+B frescas; C/D=false por selector, alcance exit0 sin avisos ni exclusiones de 
 ## Revisión de dos lentes — intento 2: T-18 — correcciones conformes
 
 [Tabla y evidencia](testing/t18/review-attempt2.md). A1/B1/B2 corregidos y aprobados anteriores conservados; cero gaps pendientes. A7 regresiones/exportador/ejemplos verdes; B185passed/1skipped/5warnings y nueve casos de ejecución malformada rechazados. Alcance0 sin avisos ni exclusiones de usuario, C/Dfalse. Contextos de revisión reutilizados por límite de threads, independientes de implementación; degradación explícita. Journals ajenos preservados, sin promoción de conocimiento. QA pendiente; T-18 en-revision, no cierre. Consumo estimado/null; revisión cerrada antes de QA.
+
+## Revisión de dos lentes — intento 1: T-19 — corrección pendiente
+
+Lentes A+B+C frescas; C ejecutada después de A por límite de threads. D no aplica. [Veredictos y gaps completos](testing/t19/review-1.md). Scope exit 0; A: CA1–CA6 acreditados, CA7 pendiente de puertas. B reproduce contradicción de solicitud/efectivo: CA5 no acreditado para cierre. C sin hallazgos.
+
+| ID | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| A1 | Minor | Falta puente desde T-08/T-12/T-13 a la rúbrica existente y recibos de fidelidad | T-19 | pendiente documental | tasks.md:674; testing/t18/preparation-report.md:23 |
+| B-01 | Important | Recibo autoconsistente acepta idioma/shift distintos de la solicitud y CoT true | T-19 | pendiente, confirmado por root | manifest.py:207/267; publicación y verify_manifest reales reproducidos por B |
+
+Revisión: 120 tests declarados A/B y 72 C verdes, sin sustituir el gap reproducido. Ventana conjunta 22:37:20–22:45:07 UTC, fuente estimado; tokens/coste/horas IA reales null. Marcador cerrado antes de fix1. T-19 vuelve a en-progreso; QA pendiente. Jira/Confluence desactivados, journals ajenos intactos.
+
+## Revisión de dos lentes — intento 2: T-19 — correcciones conformes
+
+[Veredictos completos y evidencia](testing/t19/review-2.md). A+B+C frescas, independientes de implementación; A/B paralelas y C posterior por límite de threads. D no aplica. Scope exit 0, sin avisos ni exclusiones de usuario. Traspaso íntegro del intento 1, aprobaciones conservadas, sin rebates.
+
+| ID | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| A1 | Minor | Puente documental desde T-08/T-12/T-13 a rúbrica y recibos | T-19 | corregido y revalidado | evaluación-escucha §3.1, notas/dependencias tasks.md, umbrales conservados |
+| B-01 | Important | Recibo autoconsistente contradice idioma/shift/CoT solicitados | T-19 | corregido y revalidado | manifest.py:217/232/246; B acepta baseline y rechaza tres contradicciones originales, diez capturas válidas intactas |
+
+Fusión: cero gaps pendientes. A 26 regresiones verdes; B 264 passed/1 skipped y probes independientes; C 38 passed/17 deselected, sin hallazgos. CA1–CA6 conformes; CA7 pendiente de QA independiente, tarea en-revision. Cobertura leída 349/377 = 92,57 %, mínimo 86,05 %. Ventana 22:53:00–23:01:38 UTC, fuente estimado/null, cerrada antes de QA. No se promueven journals ajenos ni se declara calidad musical. Jira/Confluence desactivados; sin GPU/audio nuevo.

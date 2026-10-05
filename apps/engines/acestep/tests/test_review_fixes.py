@@ -12,6 +12,19 @@ import pytest
 from engine_common.runtime import CancelToken, EngineError
 
 
+@pytest.fixture
+def isolated_token_preflight(monkeypatch):
+    """Aísla conteo CPU; estos dobles prueban parser de semillas/errores VRAM."""
+    calls = []
+
+    def token_preflight(request, **kwargs):
+        calls.append((request, kwargs))
+        return {"kind": "planned", "request_sha256": adapter.digest(request)}
+
+    monkeypatch.setattr(adapter, "preflight", token_preflight)
+    return calls
+
+
 def real_seed_parser():
     root = Path("/opt/acestep/acestep")
     if not root.exists():
@@ -45,7 +58,9 @@ def real_seed_parser():
     return namespace["prepare_seeds"]
 
 
-def test_large_seeds_exact_distinct_after_real_parser(tmp_path):
+def test_large_seeds_exact_distinct_after_real_parser(
+    tmp_path, isolated_token_preflight
+):
     from types import MethodType
 
     parser = real_seed_parser()
@@ -88,10 +103,17 @@ def test_large_seeds_exact_distinct_after_real_parser(tmp_path):
     result = model.generate(request, tmp_path, lambda event: None, CancelToken())
     assert used == [base, base + 1]
     assert [item["meta"]["seed"] for item in result["artifacts"]] == used
+    assert [call[0]["seed"] for call in isolated_token_preflight] == used
+    assert all(call[0]["n_outputs"] == 1 for call in isolated_token_preflight)
+    assert all(
+        call[1]["checkpoint"] == model.checkpoint for call in isolated_token_preflight
+    )
 
 
 @pytest.mark.parametrize("phase", ["dit", "lm", "generate"])
-def test_cuda_oom_status_becomes_vram_exceeded(monkeypatch, tmp_path, phase):
+def test_cuda_oom_status_becomes_vram_exceeded(
+    monkeypatch, tmp_path, phase, isolated_token_preflight
+):
     private = "CUDA out of memory. token=do-not-expose /private/model"
     cuda = SimpleNamespace(
         is_available=lambda: True,
@@ -127,6 +149,7 @@ def test_cuda_oom_status_becomes_vram_exceeded(monkeypatch, tmp_path, phase):
                 "task": "music.instrumental",
                 "params": {"style": "jazz", "duration_s": 30},
                 "n_outputs": 1,
+                "seed": 42,
             },
             tmp_path,
             lambda event: None,
@@ -137,10 +160,16 @@ def test_cuda_oom_status_becomes_vram_exceeded(monkeypatch, tmp_path, phase):
         "do-not-expose" not in caught.value.message
         and "/private" not in caught.value.message
     )
+    assert [call[0]["seed"] for call in isolated_token_preflight] == (
+        [42] if phase == "generate" else []
+    )
+    assert all(call[0]["n_outputs"] == 1 for call in isolated_token_preflight)
 
 
 @pytest.mark.parametrize("phase", ["dit", "lm", "generate"])
-def test_cuda_oom_exception_becomes_vram_exceeded(monkeypatch, tmp_path, phase):
+def test_cuda_oom_exception_becomes_vram_exceeded(
+    monkeypatch, tmp_path, phase, isolated_token_preflight
+):
     def fail(**kwargs):
         raise RuntimeError("CUDA out of memory. token=do-not-expose /private/model")
 
@@ -173,6 +202,7 @@ def test_cuda_oom_exception_becomes_vram_exceeded(monkeypatch, tmp_path, phase):
                 "task": "music.instrumental",
                 "params": {"style": "jazz", "duration_s": 30},
                 "n_outputs": 1,
+                "seed": 42,
             },
             tmp_path,
             lambda event: None,
@@ -183,6 +213,10 @@ def test_cuda_oom_exception_becomes_vram_exceeded(monkeypatch, tmp_path, phase):
         "do-not-expose" not in caught.value.message
         and "/private" not in caught.value.message
     )
+    assert [call[0]["seed"] for call in isolated_token_preflight] == (
+        [42] if phase == "generate" else []
+    )
+    assert all(call[0]["n_outputs"] == 1 for call in isolated_token_preflight)
 
 
 def test_seed_overflow_rejected_before_any_generation(tmp_path):

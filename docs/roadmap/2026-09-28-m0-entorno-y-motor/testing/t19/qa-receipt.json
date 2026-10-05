@@ -1,0 +1,207 @@
+{
+  "status": "passed_cpu_no_ui",
+  "task": "T-19",
+  "base": "83fc652",
+  "independent": true,
+  "declared_suite": {
+    "passed": 146,
+    "skipped": 1,
+    "exit_code": 0
+  },
+  "workspace_suite": {
+    "passed": 381,
+    "skipped": 5,
+    "deselected": 1,
+    "warnings": 5,
+    "exit_code": 0
+  },
+  "coverage": {
+    "status": "passed",
+    "base": "83fc652",
+    "threshold": 80,
+    "files": [
+      {
+        "file": "apps/engines/acestep/preflight.py",
+        "covered": 133,
+        "statements": 147,
+        "percent": 90.47619047619048,
+        "full_file_fallback": false
+      },
+      {
+        "file": "apps/engines/acestep/input_profile.py",
+        "covered": 7,
+        "statements": 7,
+        "percent": 100.0,
+        "full_file_fallback": false
+      },
+      {
+        "file": "apps/engines/acestep/adapter.py",
+        "covered": 100,
+        "statements": 102,
+        "percent": 98.03921568627452,
+        "full_file_fallback": false
+      },
+      {
+        "file": "apps/engines/acestep/descriptor.py",
+        "covered": 30,
+        "statements": 30,
+        "percent": 100.0,
+        "full_file_fallback": true
+      },
+      {
+        "file": "apps/engines/acestep/engine_acestep.py",
+        "covered": 1,
+        "statements": 1,
+        "percent": 100.0,
+        "full_file_fallback": false
+      },
+      {
+        "file": "apps/engines/common/engine_common/server.py",
+        "covered": 7,
+        "statements": 8,
+        "percent": 87.5,
+        "full_file_fallback": false
+      },
+      {
+        "file": "scripts/generate.py",
+        "covered": 38,
+        "statements": 43,
+        "percent": 88.37209302325581,
+        "full_file_fallback": false
+      },
+      {
+        "file": "packages/audio-post/audio_post/manifest.py",
+        "covered": 64,
+        "statements": 69,
+        "percent": 92.7536231884058,
+        "full_file_fallback": false
+      }
+    ],
+    "covered": 350,
+    "statements": 377,
+    "percent": 92.83819628647215
+  },
+  "coverage_check": {
+    "applies": false,
+    "gwt_sin_id": 0,
+    "test_plan_na": true,
+    "marcador_no_canonico": null,
+    "eximidos": [
+      "T-00",
+      "T-01",
+      "T-02",
+      "T-03",
+      "T-04",
+      "T-05",
+      "T-06",
+      "T-07",
+      "T-08",
+      "T-09",
+      "T-10",
+      "T-11",
+      "T-12",
+      "T-13",
+      "T-14",
+      "T-15",
+      "T-16",
+      "T-17",
+      "T-18",
+      "T-19"
+    ],
+    "eximidos_exigidos": false,
+    "rutas_ui": [],
+    "rutas_ui_origen": {},
+    "rutas_ui_degradado": "el diff contra la base «merge-base main…HEAD (83fc652c)» no aporta ningún fichero: solo se han mirado los cambios sin comitear"
+  },
+  "ledger": {
+    "inconsistencies": 0,
+    "warnings": 8,
+    "exit_code": 0
+  },
+  "qa_gate": {
+    "applies": false,
+    "reason": "test-plan: n/a (sin UI)",
+    "executed": false
+  },
+  "existing_read_only": {
+    "status": "passed",
+    "native_receipts": 10,
+    "native_bytes_unchanged": true,
+    "original_contradictions": {
+      "baseline": "accepted",
+      "language": "INPUT_RECEIPT_INVALID",
+      "shift": "INPUT_RECEIPT_INVALID",
+      "cot_flags": "INPUT_RECEIPT_INVALID"
+    },
+    "corpus_prior_cases": 16,
+    "corpus_prior_accepted": 10,
+    "corpus_prior_rejected": 6,
+    "preserved_hashes": 32,
+    "verses": 72,
+    "tags": 9,
+    "preparation_rechecked_read_only": true,
+    "tokenizer_hashes_checked": 16,
+    "probe_hash_checked": true,
+    "parent_torch_imported": false
+  },
+  "health_read_only": {
+    "state": "idle",
+    "loaded": null,
+    "job_id": null,
+    "image_digest": "sha256:13326c0f3aab17230ab05ec88d0ddecd414740f02900cc76caf47b965bb07801"
+  },
+  "public_scan": {
+    "status": "passed",
+    "files_scanned": 38,
+    "local_links_checked": 252,
+    "privacy_issues": [],
+    "broken_links": [],
+    "scope": "T19 public reports and listed changed documentation/production; exact long lyric lines, real env secrets and absolute user paths; no external URLs fetched"
+  },
+  "anchors": {
+    "status": "passed",
+    "anchors_checked": 11,
+    "issues": []
+  },
+  "production_sha256": {
+    "apps/engines/acestep/preflight.py": "9e31f34569033456db2c9b5b1aba42e77112d1f49a2a4a776aa6b68d30eb0ffe",
+    "apps/engines/acestep/input_profile.py": "0934d27b7a49692540513fa3483b6cfd81bdf6ec67d4c656a1eaa558f30e9ed1",
+    "apps/engines/acestep/adapter.py": "46b4b82a6c43530640be3bd3cc5d008190bfea158f9126b11cab19e49c2ac0c2",
+    "apps/engines/acestep/descriptor.py": "3aa9392ef5d6ee457135859eede5b1f60748627e266f186a474802fad6988854",
+    "apps/engines/acestep/engine_acestep.py": "32450338743b687f5547a64776487dd86e14e709197e69c91947637ca98d2249",
+    "apps/engines/common/engine_common/server.py": "ff8cf3266fd1736107b958981d19d6576238ef9f60af6c4a45c6220acf055738",
+    "scripts/generate.py": "937df66ceb98f381821692693ce7d3cae5e372de161a254ee53a7f51c484e9d4",
+    "packages/audio-post/audio_post/manifest.py": "ebcc686a45c1dc1b1540238cd7e98bfcac1270b2a1c2fdf34f4899bdfdfb53e3"
+  },
+  "checks": {
+    "local_guardrail_exit": 0,
+    "contracts": true,
+    "examples": 4,
+    "private_cli_manifests": 14,
+    "ruff": true,
+    "format_python_files": 15,
+    "diff_check": true,
+    "cli_help": true
+  },
+  "prior_integration": {
+    "container_cpu_tests": 133,
+    "native_cases": 16,
+    "accepted": 10,
+    "rejected": 6,
+    "http_checks": 8,
+    "new_qa_execution": false
+  },
+  "limitations": [
+    "No E2E/UI",
+    "No GPU/model load/inference/audio",
+    "No musical compliance or listening approval",
+    "PDF pending: existing to-pdf dependencies unavailable",
+    "M0 remains open"
+  ],
+  "measurement": {
+    "source": "estimado",
+    "tokens": null,
+    "cost": null,
+    "ai_hours": null
+  }
+}

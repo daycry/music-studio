@@ -17,7 +17,7 @@ from urllib.parse import urlsplit
 import httpx
 import yaml
 from audio_post import process_audio, write_manifest
-from audio_post.manifest import safe_path
+from audio_post.manifest import safe_path, validate_input_receipt
 from engine_contract import Event, Health, JobRequest, JobStatus, ModelDescriptor
 from jsonschema import ValidationError, validate
 
@@ -320,6 +320,60 @@ def finish_job(call, job_id, model_id, mode, *, cancel, timeout_s=300):
         time.sleep(min(0.1, remaining))
 
 
+def publish_input_receipts(result, data, job_id, request, n_outputs):
+    """Publica solo referencias verificadas; los engines legados son compatibles."""
+    if result is None or "input_receipts" not in result:
+        return []
+    references = []
+    receipts = result["input_receipts"]
+    if not isinstance(receipts, list) or len(receipts) != n_outputs:
+        raise ValueError("INPUT_RECEIPT_INVALID")
+    seen = set()
+    for item in receipts:
+        if not isinstance(item, dict):
+            raise ValueError("INPUT_RECEIPT_INVALID")  # noqa: TRY004 - error de contrato público tipado y sanitizado
+        index = item.get("output_index")
+        if (
+            type(index) is not int
+            or not 0 <= index < n_outputs
+            or index in seen
+            or item.get("filename") != f"input-receipt-{index}.json"
+        ):
+            raise ValueError("INPUT_RECEIPT_INVALID")
+        seen.add(index)
+        source = safe_path(data, f"tmp/{job_id}/{item['filename']}")
+        payload = source.read_bytes()
+        value = hashlib.sha256(payload).hexdigest()
+        if value != item.get("sha256"):
+            raise ValueError("INPUT_RECEIPT_HASH_MISMATCH")
+        expected = {
+            "task": request["task"],
+            "seed": request["seed"] + index,
+            "params": request["params"],
+        }
+        validate_input_receipt(payload, expected, index, private_params=True)
+        destination = safe_path(data, f"preparations/native-{value}.json")
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if destination.exists():
+            if destination.read_bytes() != payload:
+                raise ValueError("INPUT_RECEIPT_HASH_MISMATCH")
+        else:
+            temporary = safe_path(data, f"preparations/.native-pending-{ulid()}.json")
+            try:
+                with temporary.open("xb") as stream:
+                    stream.write(payload)
+                try:
+                    # Link crea el destino completo de forma atómica sin overwrite.
+                    os.link(temporary, destination)
+                except FileExistsError:
+                    if destination.read_bytes() != payload:
+                        raise ValueError("INPUT_RECEIPT_HASH_MISMATCH") from None
+            finally:
+                temporary.unlink(missing_ok=True)
+        references.append({"sha256": value, "output_index": index})
+    return references
+
+
 def generate(request, *, config, root=ROOT, client=None):
     if "shift" in request["params"] and (
         type(request["params"]["shift"]) not in {int, float}
@@ -480,6 +534,9 @@ def generate(request, *, config, root=ROOT, client=None):
             if artifact["meta"].get("seed") != seed + artifact["output_index"]:
                 raise ValueError("ENGINE_SEED_MISMATCH")
             sources.append(source)
+        input_receipts = publish_input_receipts(
+            done.get("result"), data, job_id, job.model_dump(mode="json"), job.n_outputs
+        )
         # Release the engine before CPU processing; the finally block also covers failures.
         cleanup_attempted = True
         try:
@@ -507,7 +564,9 @@ def generate(request, *, config, root=ROOT, client=None):
                     ffmpeg=ffmpeg,
                 )
                 params = {
-                    k: v for k, v in job.params.items() if k not in {"lyrics", "style"}
+                    k: v
+                    for k, v in job.params.items()
+                    if k not in {"lyrics", "style", "negative_prompt"}
                 }
                 manifest = {
                     "preparation": reference,
@@ -586,6 +645,10 @@ def generate(request, *, config, root=ROOT, client=None):
                         }
                     ],
                 }
+                if input_receipts:
+                    manifest["input_receipts"] = [
+                        r for r in input_receipts if r["output_index"] == index
+                    ]
                 write_manifest(dest / "manifest.json", manifest)
                 destinations.append(parent / run_id)
             for dest in destinations:

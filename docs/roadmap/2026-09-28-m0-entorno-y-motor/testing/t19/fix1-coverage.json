@@ -1,0 +1,83 @@
+{
+  "status": "passed",
+  "base": "83fc652",
+  "threshold": 80,
+  "method": "added executable statements intersected with official coverage; all executable statements of new files; literal fallback uses whole file",
+  "files": [
+    {
+      "file": "apps/engines/acestep/input_profile.py",
+      "executed_changed_statements": 7,
+      "changed_statements": 7,
+      "changed_percent": 100.0,
+      "whole_percent": 100.0,
+      "whole_statements": 7,
+      "literal_without_new_statements": false
+    },
+    {
+      "file": "apps/engines/acestep/preflight.py",
+      "executed_changed_statements": 133,
+      "changed_statements": 147,
+      "changed_percent": 90.47619047619048,
+      "whole_percent": 90.47619047619048,
+      "whole_statements": 147,
+      "literal_without_new_statements": false
+    },
+    {
+      "file": "apps/engines/acestep/adapter.py",
+      "executed_changed_statements": 100,
+      "changed_statements": 102,
+      "changed_percent": 98.03921568627452,
+      "whole_percent": 85.45454545454545,
+      "whole_statements": 275,
+      "literal_without_new_statements": false
+    },
+    {
+      "file": "apps/engines/acestep/descriptor.py",
+      "executed_changed_statements": 0,
+      "changed_statements": 0,
+      "changed_percent": null,
+      "whole_percent": 100.0,
+      "whole_statements": 30,
+      "literal_without_new_statements": true
+    },
+    {
+      "file": "apps/engines/acestep/engine_acestep.py",
+      "executed_changed_statements": 1,
+      "changed_statements": 1,
+      "changed_percent": 100.0,
+      "whole_percent": 100.0,
+      "whole_statements": 8,
+      "literal_without_new_statements": false
+    },
+    {
+      "file": "apps/engines/common/engine_common/server.py",
+      "executed_changed_statements": 7,
+      "changed_statements": 8,
+      "changed_percent": 87.5,
+      "whole_percent": 87.2852233676976,
+      "whole_statements": 291,
+      "literal_without_new_statements": false
+    },
+    {
+      "file": "scripts/generate.py",
+      "executed_changed_statements": 37,
+      "changed_statements": 43,
+      "changed_percent": 86.04651162790698,
+      "whole_percent": 93.42723004694835,
+      "whole_statements": 426,
+      "literal_without_new_statements": false
+    },
+    {
+      "file": "packages/audio-post/audio_post/manifest.py",
+      "executed_changed_statements": 64,
+      "changed_statements": 69,
+      "changed_percent": 92.7536231884058,
+      "whole_percent": 93.03482587064677,
+      "whole_statements": 201,
+      "literal_without_new_statements": false
+    }
+  ],
+  "executed_changed_statements": 349,
+  "changed_statements": 377,
+  "changed_percent": 92.57294429708223
+}

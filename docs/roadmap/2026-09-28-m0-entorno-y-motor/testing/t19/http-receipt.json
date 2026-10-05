@@ -1,0 +1,140 @@
+{
+  "status": "passed",
+  "cpu_only": true,
+  "accepted_job_submitted": false,
+  "model_weights_loaded": false,
+  "image_digest": "sha256:13326c0f3aab17230ab05ec88d0ddecd414740f02900cc76caf47b965bb07801",
+  "cases": [
+    {
+      "case": "faithful_candidate",
+      "endpoint": "estimate",
+      "status": 200,
+      "input_budget": {
+        "kind": "planned",
+        "profile_revision": "dce621408bee8c31b4fcf4811682eb9359e1bc94",
+        "profile_sha256": "c64425d3bf528ab1e7246f701c051457d159741645b2e06c18dfe34a6a3170e8",
+        "request_sha256": "0c5f92d0b96583f40166816bcaf2a6a5168e782869744b9c707ce02681817ec5",
+        "effective_sha256": "9d4ac33b29de9a7105c704a98e5ce5aa9aeff1ed04c687519686acd74e9dc0bb",
+        "lm": {
+          "conditional": {
+            "count": 1131,
+            "input_sha256": "0ed1540dacbc9ecc801279ceba554cd3a935f0b8e3e10c79c6983d901de9faa2",
+            "tokens_sha256": "a73fa69b676723cdf861ab1715e6e32a29a6bc64247b3b95fd789938475ea002"
+          },
+          "unconditional": {
+            "count": 33,
+            "input_sha256": "1453ae5e5457ddb8c4c2379a67953c66c534324fb003eb298133648a6b1cb858",
+            "tokens_sha256": "2ffb931a81fd3dd54d6206c9d61b4c7a632f3b8555d88ba64d2192f79f3eaa7b"
+          },
+          "reserve_tokens": 1285,
+          "context_policy": 4096
+        },
+        "dit": {
+          "text": {
+            "count": 172,
+            "input_sha256": "5a73c2994cf0a249400ffb2e4cc500bd8e09c49fb7229150d7a2b0f3ecd7b969",
+            "tokens_sha256": "e988ea65ef8bd119654433ffe51af86e1ca2454e7f2d29ec852269dd28c7bed3"
+          },
+          "lyrics": {
+            "count": 970,
+            "input_sha256": "647063802b46f9f19128a66d6ed7e74a97141b008235305713430d9f5a1a931e",
+            "tokens_sha256": "e68a6f022e7ed8a58948245e6f450cf05f6c3c393e918b3f1129046b82ec7348"
+          }
+        }
+      }
+    },
+    {
+      "case": "caption_600_characters_fits",
+      "endpoint": "estimate",
+      "status": 200,
+      "input_budget": {
+        "kind": "planned",
+        "profile_revision": "dce621408bee8c31b4fcf4811682eb9359e1bc94",
+        "profile_sha256": "c64425d3bf528ab1e7246f701c051457d159741645b2e06c18dfe34a6a3170e8",
+        "request_sha256": "51ea5f87bc7620f7894ee59f29f95042218b42c2228c666319ddc9fe65946aa1",
+        "effective_sha256": "66099f1afe7b7ceb541dbab7a3f1ae4df3acf1d1ad357afeca00b381f67edebc",
+        "lm": {
+          "conditional": {
+            "count": 1090,
+            "input_sha256": "8e41750a5118088a099297911e771f3bd1bdaf779538a8c85a89b1141665d0a8",
+            "tokens_sha256": "7167d6a84321e6e135dbcf71044abe0a66bb993b8b7b78cc22a5c2207598660e"
+          },
+          "unconditional": {
+            "count": 33,
+            "input_sha256": "1453ae5e5457ddb8c4c2379a67953c66c534324fb003eb298133648a6b1cb858",
+            "tokens_sha256": "2ffb931a81fd3dd54d6206c9d61b4c7a632f3b8555d88ba64d2192f79f3eaa7b"
+          },
+          "reserve_tokens": 1285,
+          "context_policy": 4096
+        },
+        "dit": {
+          "text": {
+            "count": 131,
+            "input_sha256": "966af81194a2beeefbcc1b9bcebdd2fecaa1554d1453308bbc5b03ba877c444e",
+            "tokens_sha256": "e78e1ea6e148f33844d5833683612817982a3ae6675991f85dd39b0d4bc1416e"
+          },
+          "lyrics": {
+            "count": 970,
+            "input_sha256": "647063802b46f9f19128a66d6ed7e74a97141b008235305713430d9f5a1a931e",
+            "tokens_sha256": "e68a6f022e7ed8a58948245e6f450cf05f6c3c393e918b3f1129046b82ec7348"
+          }
+        }
+      }
+    },
+    {
+      "case": "original_over_budget",
+      "endpoint": "estimate",
+      "status": 422,
+      "code": "INVALID_PARAMS",
+      "job_registered": false,
+      "model_loaded": false
+    },
+    {
+      "case": "original_over_budget",
+      "endpoint": "jobs",
+      "status": 422,
+      "code": "INVALID_PARAMS",
+      "job_registered": false,
+      "model_loaded": false
+    },
+    {
+      "case": "oversized_caption",
+      "endpoint": "estimate",
+      "status": 422,
+      "code": "INVALID_PARAMS",
+      "job_registered": false,
+      "model_loaded": false
+    },
+    {
+      "case": "oversized_caption",
+      "endpoint": "jobs",
+      "status": 422,
+      "code": "INVALID_PARAMS",
+      "job_registered": false,
+      "model_loaded": false
+    },
+    {
+      "case": "duration_481",
+      "endpoint": "estimate",
+      "status": 422,
+      "code": "INVALID_PARAMS",
+      "job_registered": false,
+      "model_loaded": false
+    },
+    {
+      "case": "duration_481",
+      "endpoint": "jobs",
+      "status": 422,
+      "code": "INVALID_PARAMS",
+      "job_registered": false,
+      "model_loaded": false
+    }
+  ],
+  "final_health": {
+    "state": "idle",
+    "loaded": null,
+    "job_id": null,
+    "image_digest": "sha256:13326c0f3aab17230ab05ec88d0ddecd414740f02900cc76caf47b965bb07801"
+  },
+  "script_sha256": "5b854791c83298bd58946fa1294d2faf3d4261bcea5deb6b029dcb0c7eabaad0"
+}

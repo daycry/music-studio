@@ -3,7 +3,7 @@ documento: evaluacion-escucha
 titulo: Evaluación de escucha — elegir modelo y validar calidad
 estado: vigente
 fecha: 2026-09-28
-actualizado: 2026-09-28
+actualizado: 2026-10-06
 origen: simplificado de archive/…/gates/g1-protocolo.md
 ---
 
@@ -42,6 +42,16 @@ Todo 5 exige una frase de por qué no es un 4. Todo D5 ≥ 4 exige nombrar el us
 - **WER** de la letra con el transcriptor elegido en [`../arquitectura/modelos.md`](../arquitectura/modelos.md), sobre la letra sin etiquetas. Antes, medir el **suelo del transcriptor** con 2–3 grabaciones cantadas reales (para saber qué parte del WER es culpa del ASR).
 - **Similitud audio-texto (CLAP)** entre la pista y el prompt de estilo.
 - **Estética automática** (si hay modelo disponible con licencia adecuada).
+
+### 3.1. Fidelidad de instrucciones y naturalidad
+
+Antes de puntuar, comprobar la preparación y los recibos de entrada del candidato: original, cambios explícitos, texto efectivo, presupuesto y fronteras capturadas. Si una entrada se rechaza, no se genera ni se adapta silenciosamente para incluirla en la batería. Cualquier adaptación requiere una preparación explícita y conserva su diff; la comparación entre candidatos mantiene el mismo texto efectivo. Un modelo nuevo necesita comprobar su propio perfil, sin heredar los límites de ACE-Step ([ADR-0029](../decisiones/ADR-0029-presupuesto-operativo-de-texto-acestep.md)).
+
+La [rúbrica detallada de T-18](../roadmap/2026-09-28-m0-entorno-y-motor/testing/t18/preparation-report.md#rúbrica-para-la-evaluación-musical-posterior) añade observaciones por sección sobre texto, voces, ritmo, instrumentos, arco, carácter y final. Se aplica a lo pedido en cada brief, sin exigir los instrumentos o el dueto de «Libre» a otras canciones. Cumplimiento y naturalidad se anotan por separado, con tiempo del audio: que se oiga la voz solicitada no demuestra que suene natural.
+
+Registrar omisiones o añadidos de palabras, tags cantados accidentalmente, reparto vocal y rap/canto, encaje de sílabas, entradas de instrumentos y final. Las métricas de T-08 ayudan a localizar estos aspectos; no sustituyen la escucha. El WER usa las palabras efectivas que se pidió cantar, sin cabeceras de sección. Las cabeceras expresan intención y no aportan timestamps.
+
+Un recibo planned prueba que la entrada cabe; uno captured acredita las fronteras alcanzadas. Ninguno acredita obediencia musical. Un fragmento corto no verifica el desarrollo completo ni el outro: esos aspectos siguen pendientes hasta escuchar la toma correspondiente. La referencia Suno se escucha a nivel comparable y no se presenta como control causal. Estas anotaciones complementan D1–D5; los umbrales de §5 permanecen iguales.
 
 ## 4. Los 10 briefs
 

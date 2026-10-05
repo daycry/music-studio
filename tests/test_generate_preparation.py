@@ -6,6 +6,652 @@ from test_generate import module
 DIRECT = ["--task", "music.instrumental", "--style", "synthetic", "--duration", "30"]
 
 
+def test_native_receipt_publication_rejects_forgery(tmp_path):
+    m = module()
+    assert hasattr(m, "publish_input_receipts"), (
+        "CLI pierde captura efectiva del engine"
+    )
+    with pytest.raises(ValueError, match="INPUT_RECEIPT_INVALID"):
+        m.publish_input_receipts(
+            {
+                "input_receipts": [
+                    {
+                        "filename": "../private.json",
+                        "sha256": "a" * 64,
+                        "output_index": 0,
+                    }
+                ]
+            },
+            tmp_path,
+            "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+            {},
+            1,
+        )
+
+
+def _native_receipt_fixture():
+    """Recibo sintético consistente para comprobar integridad, sin afirmar inferencia."""
+    import hashlib
+    import json
+
+    def sha(value):
+        return hashlib.sha256(
+            json.dumps(
+                value, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+            ).encode()
+        ).hexdigest()
+
+    request = {
+        "task": "music.song",
+        "seed": 1,
+        "n_outputs": 1,
+        "params": {
+            "style": "synthetic",
+            "lyrics": "synthetic",
+            "duration_s": 30,
+            "language": "es",
+        },
+    }
+    effective = {
+        "params": {
+            "caption": "synthetic",
+            "lyrics": "synthetic",
+            "duration": 30,
+            "seed": 1,
+            "vocal_language": "es",
+            "instrumental": False,
+            "bpm": None,
+            "keyscale": "",
+            "enable_normalization": False,
+            "lm_negative_prompt": "NO USER INPUT",
+            "use_cot_caption": False,
+            "use_cot_language": False,
+            "use_cot_metas": False,
+        },
+        "thinking": True,
+        "shift": 1.0,
+        "guidance_scale": 7.0,
+        "inference_steps": 8,
+        "lm_cfg_scale": 2.0,
+        "audio_cover_strength": 1.0,
+        "legacy_cfg_prompt": False,
+        "lm_metadata": {"duration": 30, "language": "es"},
+    }
+    text = {"count": 100, "tokens_sha256": "a" * 64, "input_sha256": "b" * 64}
+    lyric = {"count": 10, "tokens_sha256": "c" * 64, "input_sha256": "d" * 64}
+    lm = {
+        "conditional": text,
+        "unconditional": lyric,
+        "reserve_tokens": 160,
+        "context_policy": 4096,
+    }
+    planned = {
+        "receipt_version": 1,
+        "kind": "planned",
+        "request": request,
+        "request_sha256": sha(request),
+        "effective": effective,
+        "effective_sha256": sha(effective),
+        "lm": lm,
+        "dit": {"text": text, "lyrics": lyric},
+    }
+    captured = {
+        "receipt_version": 1,
+        "kind": "captured",
+        "output_index": 0,
+        "planned_sha256": sha(planned),
+        "flags": {
+            "thinking": True,
+            "shift": 1.0,
+            "guidance_scale": 7.0,
+            "inference_steps": 8,
+            "lm_cfg_scale": 2.0,
+            "audio_cover_strength": 1.0,
+            "use_cot_caption": False,
+            "use_cot_language": False,
+            "use_cot_metas": False,
+        },
+        "boundaries": [
+            {"stage": "lm_arguments", "metadata": {"duration": 30, "language": "es"}},
+            {
+                "stage": "lm_formatted_prompt",
+                "conditional": text,
+                "unconditional": lyric,
+                "reserve_tokens": 160,
+            },
+            {"stage": "dit_arguments", "arguments_sha256": sha(effective)},
+            {
+                "stage": "dit_tokens",
+                "text": {k: text[k] for k in ("count", "tokens_sha256")},
+                "lyrics": {k: lyric[k] for k in ("count", "tokens_sha256")},
+            },
+        ],
+    }
+    return {"planned": planned, "captured": captured}, request
+
+
+def _rehash_native_receipt(receipt):
+    """Recalcula toda la integridad interna tras una alteración semántica."""
+    import hashlib
+    import json
+
+    def sha(value):
+        return hashlib.sha256(
+            json.dumps(
+                value, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+            ).encode()
+        ).hexdigest()
+
+    planned, captured = receipt["planned"], receipt["captured"]
+    planned["request_sha256"] = sha(planned["request"])
+    planned["effective_sha256"] = sha(planned["effective"])
+    captured["planned_sha256"] = sha(planned)
+    captured["generation_params_sha256"] = sha(planned["effective"]["params"])
+    captured["boundaries"][2]["arguments_sha256"] = sha(planned["effective"])
+
+
+SEMANTIC_MUTATIONS = [
+    "language",
+    "language_alias",
+    "language_conflict",
+    "shift",
+    "bpm",
+    "key",
+    "time_signature",
+    "invented_metadata",
+    "cot_flags",
+    "thinking",
+    "guidance_scale",
+    "inference_steps",
+    "lm_cfg_scale",
+    "audio_cover_strength",
+    "context_policy",
+    "reserve_tokens",
+    "captured_metadata",
+    "legacy_cfg_prompt",
+]
+
+
+def _mutate_native_semantics(receipt, mutation):
+    planned, captured = receipt["planned"], receipt["captured"]
+    effective = planned["effective"]
+    params = effective["params"]
+    requested = planned["request"]["params"]
+    if mutation in {"language", "language_alias", "language_conflict"}:
+        if mutation == "language_alias":
+            requested["vocal_language"] = requested.pop("language")
+        elif mutation == "language_conflict":
+            requested["vocal_language"] = "en"
+        params["vocal_language"] = "en"
+        effective["lm_metadata"]["language"] = "en"
+        captured["boundaries"][0]["metadata"]["language"] = "en"
+    elif mutation == "shift":
+        requested["shift"] = 3
+    elif mutation in {"bpm", "key", "time_signature", "invented_metadata"}:
+        key = {
+            "bpm": "bpm",
+            "key": "keyscale",
+            "time_signature": "timesignature",
+            "invented_metadata": "bpm",
+        }[mutation]
+        if mutation != "invented_metadata":
+            requested[mutation] = {
+                "bpm": 120,
+                "key": "C minor",
+                "time_signature": "3/4",
+            }[mutation]
+        params[key] = {"bpm": 90, "keyscale": "D minor", "timesignature": "4/4"}[key]
+        effective["lm_metadata"][key] = params[key]
+        captured["boundaries"][0]["metadata"][key] = params[key]
+    elif mutation == "cot_flags":
+        for key in ("use_cot_caption", "use_cot_language", "use_cot_metas"):
+            params[key] = captured["flags"][key] = True
+    elif mutation in {"context_policy", "reserve_tokens"}:
+        planned["lm"][mutation] += 1
+        if mutation == "reserve_tokens":
+            captured["boundaries"][1][mutation] += 1
+    elif mutation == "captured_metadata":
+        captured["boundaries"][0]["metadata"]["bpm"] = 90
+    elif mutation == "legacy_cfg_prompt":
+        effective["legacy_cfg_prompt"] = True
+    else:
+        effective[mutation] = captured["flags"][mutation] = (
+            False if mutation == "thinking" else effective[mutation] + 1
+        )
+    _rehash_native_receipt(receipt)
+
+
+@pytest.mark.parametrize("mutation", SEMANTIC_MUTATIONS)
+def test_native_receipt_rejects_rehashed_semantic_contradiction(mutation):
+    import copy
+    import json
+
+    from audio_post.manifest import validate_input_receipt
+
+    receipt, request = _native_receipt_fixture()
+    assert validate_input_receipt(json.dumps(receipt), request, 0) == receipt
+    _mutate_native_semantics(receipt, mutation)
+    request = copy.deepcopy(receipt["planned"]["request"])
+    with pytest.raises(ValueError, match="INPUT_RECEIPT_INVALID"):
+        validate_input_receipt(json.dumps(receipt), request, 0, private_params=True)
+
+
+@pytest.mark.parametrize("case", ["alias", "metadata", "omitted", "instrumental"])
+def test_native_receipt_preserves_requested_metadata_and_defaults(case):
+    import json
+
+    from audio_post.manifest import validate_input_receipt
+
+    receipt, request = _native_receipt_fixture()
+    effective = receipt["planned"]["effective"]
+    values = effective["params"]
+    metadata = effective["lm_metadata"]
+    if case == "alias":
+        request["params"]["vocal_language"] = request["params"].pop("language")
+    elif case == "metadata":
+        request["params"].update(bpm=120, key="C minor", time_signature="3/4", shift=3)
+        values.update(bpm=120, keyscale="C minor", timesignature="3/4", shift=3)
+        metadata.update(bpm=120, keyscale="C minor", timesignature="3/4")
+        effective["shift"] = receipt["captured"]["flags"]["shift"] = 3
+    elif case == "omitted":
+        request["params"].pop("language")
+        values["vocal_language"] = metadata["language"] = "unknown"
+    else:
+        request["task"] = "music.instrumental"
+        request["params"].pop("lyrics")
+        values.update(instrumental=True, lyrics="[Instrumental]")
+    receipt["captured"]["boundaries"][0]["metadata"] = dict(metadata)
+    _rehash_native_receipt(receipt)
+    assert validate_input_receipt(json.dumps(receipt), request, 0) == receipt
+
+
+@pytest.mark.parametrize("mutation", [None, "language", "shift", "cot_flags"])
+def test_generation_native_semantics_before_cas(tmp_path, monkeypatch, mutation):
+    import copy
+    import hashlib
+    import json
+
+    import httpx
+    from audio_post import verify_manifest
+    from test_generate import ROOT, publication_setup
+
+    monkeypatch.syspath_prepend(str(ROOT / "apps/engines/acestep"))
+    from descriptor import descriptor
+
+    m, request, config, transport, data = publication_setup(tmp_path, monkeypatch)
+    receipt, native_request = _native_receipt_fixture()
+    if mutation:
+        _mutate_native_semantics(receipt, mutation)
+    request.update(copy.deepcopy(native_request))
+    request.update(
+        lyrics_declaration="own", lyrics_sha256=hashlib.sha256(b"synthetic").hexdigest()
+    )
+    payload = json.dumps(receipt).encode()
+    digest = hashlib.sha256(payload).hexdigest()
+    original = transport.handle_request
+
+    def with_receipt(req):
+        response = original(req)
+        if req.url.path == "/v1/models":
+            models = response.json()
+            models[0]["tasks"]["music.song"] = {
+                **models[0]["tasks"]["music.instrumental"],
+                "params_schema": descriptor().tasks["music.song"].params_schema,
+            }
+            return httpx.Response(200, json=models)
+        if req.url.path.endswith("/events"):
+            event = json.loads(response.content)
+            job_id = event["job_id"]
+            (data / f"tmp/{job_id}/input-receipt-0.json").write_bytes(payload)
+            event["data"]["result"] = {
+                "input_receipts": [
+                    {
+                        "filename": "input-receipt-0.json",
+                        "sha256": digest,
+                        "output_index": 0,
+                    }
+                ]
+            }
+            return httpx.Response(200, content=json.dumps(event))
+        return response
+
+    monkeypatch.setattr(transport, "handle_request", with_receipt)
+    with httpx.Client(transport=transport) as client:
+        if mutation:
+            with pytest.raises(ValueError, match="INPUT_RECEIPT_INVALID"):
+                m.generate(request, config=config, client=client)
+            assert not (data / f"preparations/native-{digest}.json").exists()
+            assert not list(data.glob("cli/*/*/manifest.json"))
+        else:
+            destinations = m.generate(request, config=config, client=client)
+            path = destinations[0] / "manifest.json"
+            assert verify_manifest(path, path.parent)["valid"]
+            # A hostile CAS entry with all hashes refreshed must also fail verification.
+            changed = copy.deepcopy(receipt)
+            _mutate_native_semantics(changed, "language")
+            changed_payload = json.dumps(changed).encode()
+            changed_digest = hashlib.sha256(changed_payload).hexdigest()
+            (data / f"preparations/native-{changed_digest}.json").write_bytes(
+                changed_payload
+            )
+            manifest = json.loads(path.read_text())
+            manifest["input_receipts"][0]["sha256"] = changed_digest
+            with pytest.raises(ValueError, match="INPUT_RECEIPT_INVALID"):
+                verify_manifest(manifest, path.parent)
+
+
+def test_native_receipt_publishes_privately_and_is_bound_to_request(tmp_path):
+    import hashlib
+    import json
+
+    from audio_post.manifest import validate_input_receipt
+
+    receipt, request = _native_receipt_fixture()
+    payload = json.dumps(receipt).encode()
+    value = hashlib.sha256(payload).hexdigest()
+    job_id = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+    source = tmp_path / f"tmp/{job_id}"
+    source.mkdir(parents=True)
+    (source / "input-receipt-0.json").write_bytes(payload)
+    result = {
+        "input_receipts": [
+            {"filename": "input-receipt-0.json", "sha256": value, "output_index": 0}
+        ]
+    }
+    references = module().publish_input_receipts(result, tmp_path, job_id, request, 1)
+    assert references == [{"sha256": value, "output_index": 0}]
+    assert (tmp_path / f"preparations/native-{value}.json").read_bytes() == payload
+    assert "synthetic" not in json.dumps(references)
+    assert (
+        module().publish_input_receipts(result, tmp_path, job_id, request, 1)
+        == references
+    )
+    assert validate_input_receipt(payload, request, 0) == receipt
+    for changed in (
+        {**request, "seed": 2},
+        {**request, "params": {**request["params"], "style": "different"}},
+        {**request, "variant_index": 1},
+    ):
+        with pytest.raises(ValueError, match="INPUT_RECEIPT_INVALID"):
+            validate_input_receipt(payload, changed, 0)
+    (source / "input-receipt-0.json").write_bytes(payload + b" ")
+    with pytest.raises(ValueError, match="INPUT_RECEIPT_HASH_MISMATCH"):
+        module().publish_input_receipts(result, tmp_path, job_id, request, 1)
+
+
+@pytest.mark.parametrize(
+    "mutation", ["planned", "missing_boundary", "tokens", "reserve", "language"]
+)
+def test_native_receipt_rejects_internal_inconsistency(mutation):
+    import json
+
+    from audio_post.manifest import validate_input_receipt
+
+    receipt, request = _native_receipt_fixture()
+    if mutation == "planned":
+        receipt["planned"]["effective"]["params"]["caption"] = "changed"
+    elif mutation == "missing_boundary":
+        receipt["captured"]["boundaries"].pop()
+    elif mutation == "tokens":
+        receipt["captured"]["boundaries"][3]["text"]["tokens_sha256"] = "0" * 64
+    elif mutation == "reserve":
+        receipt["captured"]["boundaries"][1]["reserve_tokens"] -= 1
+    else:
+        receipt["captured"]["boundaries"][0]["metadata"]["language"] = "en"
+    with pytest.raises(ValueError, match="INPUT_RECEIPT_INVALID"):
+        validate_input_receipt(json.dumps(receipt), request, 0)
+
+
+def test_native_receipt_requires_captured_effective_defaults():
+    import json
+
+    from audio_post.manifest import validate_input_receipt
+
+    receipt, request = _native_receipt_fixture()
+    receipt["captured"].pop("flags", None)
+    with pytest.raises(ValueError, match="INPUT_RECEIPT_INVALID"):
+        validate_input_receipt(json.dumps(receipt), request, 0)
+
+
+def test_native_receipt_negative_prompt_matches_effective_input():
+    import hashlib
+    import json
+
+    from audio_post.manifest import validate_input_receipt
+
+    def digest(value):
+        return hashlib.sha256(
+            json.dumps(
+                value, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+            ).encode()
+        ).hexdigest()
+
+    receipt, request = _native_receipt_fixture()
+    request["params"]["negative_prompt"] = "private original"
+    planned = receipt["planned"]
+    planned["effective"]["params"]["lm_negative_prompt"] = "private substituted"
+    planned["request_sha256"] = digest(planned["request"])
+    planned["effective_sha256"] = digest(planned["effective"])
+    receipt["captured"]["planned_sha256"] = digest(planned)
+    with pytest.raises(ValueError, match="INPUT_RECEIPT_INVALID"):
+        validate_input_receipt(json.dumps(receipt), request, 0, private_params=True)
+
+
+def test_native_receipt_interrupted_write_cannot_leave_partial_cas(
+    tmp_path, monkeypatch
+):
+    import hashlib
+    import json
+    from pathlib import Path
+
+    receipt, request = _native_receipt_fixture()
+    payload = json.dumps(receipt).encode()
+    value = hashlib.sha256(payload).hexdigest()
+    job_id = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+    source = tmp_path / f"tmp/{job_id}"
+    source.mkdir(parents=True)
+    (source / "input-receipt-0.json").write_bytes(payload)
+    result = {
+        "input_receipts": [
+            {"filename": "input-receipt-0.json", "sha256": value, "output_index": 0}
+        ]
+    }
+    original = Path.open
+
+    class InterruptingFile:
+        def __init__(self, path, *args, **kwargs):
+            self.stream = original(path, *args, **kwargs)
+
+        def __enter__(self):
+            return self
+
+        def write(self, content):
+            self.stream.write(content[:20])
+            self.stream.flush()
+            raise OSError("interrupted fixture")
+
+        def __exit__(self, *args):
+            self.stream.close()
+
+    def open_file(path, *args, **kwargs):
+        if path.name.endswith(".json") and args and args[0] == "xb":
+            return InterruptingFile(path, *args, **kwargs)
+        return original(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", open_file)
+    with pytest.raises(OSError, match="interrupted fixture"):
+        module().publish_input_receipts(result, tmp_path, job_id, request, 1)
+    assert not (tmp_path / f"preparations/native-{value}.json").exists()
+    assert list((tmp_path / "preparations").iterdir()) == []
+    monkeypatch.setattr(Path, "open", original)
+    assert module().publish_input_receipts(result, tmp_path, job_id, request, 1) == [
+        {"sha256": value, "output_index": 0}
+    ]
+
+
+def test_native_receipt_malformed_reference_is_typed(tmp_path):
+    with pytest.raises(ValueError, match="INPUT_RECEIPT_INVALID"):
+        module().publish_input_receipts(
+            {"input_receipts": [None]}, tmp_path, "01ARZ3NDEKTSV4RRFFQ69G5FAV", {}, 1
+        )
+
+
+def test_manifest_checks_the_same_native_bytes_it_hashes(tmp_path, monkeypatch):
+    import hashlib
+    import json
+    from pathlib import Path
+
+    import audio_post.manifest as manifest_module
+
+    receipt, request = _native_receipt_fixture()
+    payload = json.dumps(receipt).encode()
+    value = hashlib.sha256(payload).hexdigest()
+    folder = tmp_path / "preparations"
+    folder.mkdir()
+    path = folder / f"native-{value}.json"
+    path.write_bytes(payload)
+    # Unidad de frontera IO; el schema público se comprueba en las pruebas de publicación.
+    manifest = {
+        "input_receipts": [{"sha256": value, "output_index": 0}],
+        "request": {
+            **request,
+            "params": {
+                k: v
+                for k, v in request["params"].items()
+                if k not in {"style", "lyrics"}
+            },
+        },
+        "models": [],
+        "tools": [],
+        "inputs": [],
+        "commercial_use": True,
+        "outputs": [],
+    }
+    monkeypatch.setattr(manifest_module, "_validate", lambda *a: None)
+    original = Path.read_bytes
+    reads = []
+
+    def read(path_to_read):
+        if path_to_read == path:
+            reads.append(path_to_read)
+        return original(path_to_read)
+
+    monkeypatch.setattr(Path, "read_bytes", read)
+    assert manifest_module.verify_manifest(manifest, tmp_path)["valid"]
+    assert reads == [path]
+
+
+def test_manifest_native_receipt_is_bound_to_private_preparation(tmp_path, monkeypatch):
+    import hashlib
+    import json
+
+    import audio_post.manifest as manifest_module
+
+    m = module()
+    native, request = _native_receipt_fixture()
+    # Preparación real alternativa; el recibo nativo sigue siendo internamente válido.
+    changed = {
+        **request,
+        "params": {**request["params"], "style": "different private caption"},
+    }
+    preparation = m.preparation.prepare(changed)
+    preparation["execution"] = {"seed": 1, "n_outputs": 1}
+    folder = tmp_path / "preparations"
+    folder.mkdir()
+    refs = {}
+    for name, value in (("native", native), ("preparation", preparation)):
+        payload = json.dumps(value).encode()
+        digest = hashlib.sha256(payload).hexdigest()
+        (
+            folder / (("native-" if name == "native" else "") + digest + ".json")
+        ).write_bytes(payload)
+        refs[name] = digest
+    manifest = {
+        "input_receipts": [{"sha256": refs["native"], "output_index": 0}],
+        "preparation": {"sha256": refs["preparation"]},
+        "request": {
+            **request,
+            "variant_index": 0,
+            "params": {
+                k: v
+                for k, v in request["params"].items()
+                if k not in {"style", "lyrics"}
+            },
+        },
+        "models": [],
+        "tools": [],
+        "inputs": [],
+        "commercial_use": True,
+        "outputs": [],
+    }
+    monkeypatch.setattr(manifest_module, "_validate", lambda *a: None)
+    with pytest.raises(ValueError, match="INPUT_RECEIPT_INVALID"):
+        manifest_module.verify_manifest(manifest, tmp_path)
+
+
+def test_negative_prompt_is_accepted_and_published_only_privately(
+    tmp_path, monkeypatch
+):
+    import json
+
+    import httpx
+    from audio_post import verify_manifest
+    from test_generate import ROOT
+
+    monkeypatch.syspath_prepend(str(ROOT / "apps/engines/acestep"))
+    from descriptor import descriptor
+    from engine_contract import JobRequest
+    from test_generate import publication_setup
+
+    m, request, config, transport, data = publication_setup(tmp_path, monkeypatch)
+    request["params"].update(
+        duration_s=30, negative_prompt="private excluded instruments"
+    )
+    JobRequest.model_validate(
+        {
+            **request,
+            "job_id": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+            "model_id": "mock",
+            "mode": "cpu",
+            "timeout_s": 60,
+            "output_dir": "tmp/01ARZ3NDEKTSV4RRFFQ69G5FAV",
+        }
+    )
+    original = transport.handle_request
+
+    def ace_schema(req):
+        response = original(req)
+        if req.url.path == "/v1/models":
+            models = response.json()
+            models[0]["tasks"]["music.instrumental"]["params_schema"] = (
+                descriptor().tasks["music.instrumental"].params_schema
+            )
+            return httpx.Response(200, json=models)
+        return response
+
+    monkeypatch.setattr(transport, "handle_request", ace_schema)
+    with httpx.Client(transport=transport) as client:
+        destinations = m.generate(request, config=config, client=client)
+    manifest = json.loads((destinations[0] / "manifest.json").read_text())
+    assert "negative_prompt" not in manifest["request"]["params"]
+    assert "private excluded instruments" not in json.dumps(manifest)
+    private = json.loads(
+        (
+            data / "preparations" / (manifest["preparation"]["sha256"] + ".json")
+        ).read_text()
+    )
+    assert (
+        private["effective"]["params"]["negative_prompt"]
+        == request["params"]["negative_prompt"]
+    )
+    assert verify_manifest(manifest, destinations[0])["valid"]
+    # Los recibos públicos antiguos se leen sin reescribirlos.
+    manifest["request"]["params"]["negative_prompt"] = request["params"][
+        "negative_prompt"
+    ]
+    assert verify_manifest(manifest, destinations[0])["valid"]
+
+
 def test_offline_prepare_and_metadata(tmp_path, monkeypatch, capsys):
     m = module()
     monkeypatch.setattr(m, "ROOT", tmp_path)

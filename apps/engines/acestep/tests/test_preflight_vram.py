@@ -56,7 +56,15 @@ def real_preflight(free_gb, cuda=True, offload=False):
 
 
 @pytest.mark.parametrize("batch,duration", [(1, 30), (2, 120)])
-def test_real_preflight_failure_classified_vram(tmp_path, batch, duration):
+def test_real_preflight_failure_classified_vram(tmp_path, monkeypatch, batch, duration):
+    native_calls = []
+
+    def token_preflight(request, **kwargs):
+        # Este doble aísla el presupuesto de tokens del preflight VRAM real probado.
+        native_calls.append((request, kwargs))
+        return {"kind": "planned", "request_sha256": adapter.digest(request)}
+
+    monkeypatch.setattr(adapter, "preflight", token_preflight)
     result = real_preflight(0.1)(batch, duration)
     assert result["success"] is False and result["error"].startswith(
         "Insufficient free VRAM:"
@@ -75,6 +83,7 @@ def test_real_preflight_failure_classified_vram(tmp_path, batch, duration):
                 "task": "music.instrumental",
                 "params": {"style": "jazz", "duration_s": 30},
                 "n_outputs": 1,
+                "seed": 42,
             },
             tmp_path,
             lambda event: None,
@@ -83,6 +92,10 @@ def test_real_preflight_failure_classified_vram(tmp_path, batch, duration):
     assert caught.value.code == "VRAM_EXCEEDED"
     assert caught.value.message == "VRAM insuficiente durante generación"
     assert list(tmp_path.iterdir()) == []
+    assert len(native_calls) == 1
+    assert native_calls[0][0]["seed"] == 42
+    assert native_calls[0][0]["n_outputs"] == 1
+    assert native_calls[0][1]["checkpoint"] == model.checkpoint
 
 
 def test_preflight_isolation_and_equivalent_statuses():

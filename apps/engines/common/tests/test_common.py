@@ -2,6 +2,45 @@ import engine_common as common
 import pytest
 
 
+@pytest.mark.parametrize("endpoint", ["/v1/estimate", "/v1/jobs"])
+def test_native_preflight_rejection_precedes_loading_and_queue(
+    tmp_path, endpoint, monkeypatch
+):
+    from engine_contract import ModelDescriptor
+    from engine_mock import create_mock_app
+    from fastapi.testclient import TestClient
+
+    with TestClient(create_mock_app(token="secret")) as old:
+        old.headers["X-Studio-Engine-Token"] = "secret"
+        descriptor = ModelDescriptor.model_validate(old.get("/v1/models").json()[0])
+    called = []
+
+    def reject(request):
+        called.append(request["params"])
+        raise common.EngineError("INVALID_PARAMS", "Entrada excede presupuesto nativo")
+
+    app = common.create_app(
+        [descriptor],
+        "engine_common.mock:MockAdapter",
+        token="secret",
+        data_dir=tmp_path,
+        gpu=common.CpuGpu(),
+        preflight=reject,
+    )
+    monkeypatch.setattr(
+        app.state.supervisor,
+        "load",
+        lambda *a, **k: pytest.fail("load after rejection"),
+    )
+    with TestClient(app) as client:
+        client.headers["X-Studio-Engine-Token"] = "secret"
+        response = client.post(endpoint, json=payload())
+        assert response.status_code == 422
+        assert called == [payload()["params"]]
+        assert client.get("/v1/health").json()["loaded"] is None
+        assert client.get("/v1/jobs/" + payload()["job_id"]).status_code == 404
+
+
 def test_endpoints():
     assert hasattr(common, "create_app"), "Servidor /v1 todavía no implementado"
     from engine_mock import create_mock_app

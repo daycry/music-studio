@@ -86,6 +86,21 @@ def verify_manifest(manifest, base_dir):
     if isinstance(manifest, (str, Path)):
         manifest = json.loads(Path(manifest).read_text(encoding="utf-8"))
     _validate(manifest)
+    native_payloads = []
+    effective = None
+    if "input_receipts" in manifest:
+        base = Path(base_dir).absolute()
+        data = next(
+            (p for p in (base, *base.parents) if (p / "preparations").is_dir()), base
+        )
+        for reference in manifest["input_receipts"]:
+            path = safe_path(data, f"preparations/native-{reference['sha256']}.json")
+            if not path.is_file():
+                raise ValueError("INPUT_RECEIPT_HASH_MISMATCH")
+            payload = path.read_bytes()
+            if hashlib.sha256(payload).hexdigest() != reference["sha256"]:
+                raise ValueError("INPUT_RECEIPT_HASH_MISMATCH")
+            native_payloads.append((reference, payload))
     if "preparation" in manifest:
         reference = manifest["preparation"]
         base = Path(base_dir).absolute()
@@ -126,12 +141,23 @@ def verify_manifest(manifest, base_dir):
                 k: v
                 for k, v in effective["params"].items()
                 if k not in {"lyrics", "style"}
+                and (k != "negative_prompt" or k in request["params"])
             }
             != request["params"]
             or effective.get("lyrics_declaration") != request.get("lyrics_declaration")
             or effective.get("lyrics_sha256") != request.get("lyrics_sha256")
         ):
             raise ValueError("PREPARATION_REQUEST_MISMATCH")
+    for reference, payload in native_payloads:
+        expected = manifest["request"]
+        if effective is not None:
+            expected = {**expected, "params": effective["params"]}
+        validate_input_receipt(
+            payload,
+            expected,
+            reference["output_index"],
+            private_params=effective is not None,
+        )
     permissions = [
         item.get("commercial_use")
         for key in ("models", "tools", "inputs")
@@ -156,6 +182,176 @@ def verify_manifest(manifest, base_dir):
         if "bytes" in output and path.stat().st_size != output["bytes"]:
             raise ValueError("SIZE_MISMATCH: " + output["path"])
     return {"valid": True, "outputs": len(manifest["outputs"])}
+
+
+def validate_input_receipt(payload, request, index, *, private_params=False):
+    """Comprueba la captura privada sin dependencias de engine/GPU."""
+
+    def sha(value):
+        return hashlib.sha256(
+            json.dumps(
+                value,
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+                allow_nan=False,
+            ).encode("utf-8")
+        ).hexdigest()
+
+    try:
+        receipt = json.loads(payload)
+        planned, captured = receipt["planned"], receipt["captured"]
+        native_request = planned["request"]
+        values = planned["effective"]["params"]
+        boundaries = {b["stage"]: b for b in captured["boundaries"]}
+        # La integridad interna no acredita correspondencia con la solicitud.
+        # Este perfil PT fijo se comprueba sin importar el runtime del engine.
+        requested = native_request["params"]
+        language = requested.get("vocal_language", requested.get("language", "unknown"))
+        if (
+            "language" in requested
+            and "vocal_language" in requested
+            and requested["language"] != requested["vocal_language"]
+        ):
+            raise ValueError()
+        expected_params = {
+            "vocal_language": language,
+            "instrumental": native_request["task"] == "music.instrumental",
+            "bpm": requested.get("bpm"),
+            "keyscale": requested.get("key", ""),
+            "enable_normalization": False,
+            "lm_negative_prompt": requested.get("negative_prompt", "NO USER INPUT"),
+            "use_cot_caption": False,
+            "use_cot_language": False,
+            "use_cot_metas": False,
+        }
+        if any(values[k] != v for k, v in expected_params.items()):
+            raise ValueError()
+        if values.get("timesignature", "") != requested.get("time_signature", ""):
+            raise ValueError()
+        expected_profile = {
+            "thinking": True,
+            "shift": requested.get("shift", 1.0),
+            "guidance_scale": 7.0,
+            "inference_steps": 8,
+            "lm_cfg_scale": 2.0,
+            "audio_cover_strength": 1.0,
+        }
+        if any(planned["effective"][k] != v for k, v in expected_profile.items()):
+            raise ValueError()
+        if planned["effective"].get("legacy_cfg_prompt", False) is not False:
+            raise ValueError()
+        if "shift" in values and values["shift"] != expected_profile["shift"]:
+            raise ValueError()
+        metadata = {"duration": int(requested["duration_s"]), "language": language}
+        for key in ("bpm", "keyscale", "timesignature"):
+            value = values.get(key)
+            if (
+                value is not None
+                and value != ""
+                and (key == "bpm" or value.lower() != "n/a")
+            ):
+                metadata[key] = value
+        if (
+            (
+                "lm_metadata" in planned["effective"]
+                and planned["effective"]["lm_metadata"] != metadata
+            )
+            or boundaries["lm_arguments"]["metadata"] != metadata
+            or planned["lm"]["context_policy"] != 4096
+            or planned["lm"]["reserve_tokens"] != int(requested["duration_s"] * 5) + 10
+        ):
+            raise ValueError()
+        expected_flags = {
+            k: planned["effective"][k]
+            for k in (
+                "thinking",
+                "shift",
+                "guidance_scale",
+                "inference_steps",
+                "lm_cfg_scale",
+                "audio_cover_strength",
+            )
+        }
+        expected_flags.update(
+            {
+                k: values[k]
+                for k in ("use_cot_caption", "use_cot_language", "use_cot_metas")
+            }
+        )
+        if (
+            planned["receipt_version"] != 1
+            or planned["kind"] != "planned"
+            or captured["receipt_version"] != 1
+            or captured["kind"] != "captured"
+            or captured["output_index"] != index
+            or type(index) is not int
+            or captured["planned_sha256"] != sha(planned)
+            or captured["flags"] != expected_flags
+            or planned["request_sha256"] != sha(native_request)
+            or planned["effective_sha256"] != sha(planned["effective"])
+            or native_request["task"] != request["task"]
+            or native_request["seed"] != request["seed"]
+            or native_request["n_outputs"] != 1
+            or values["seed"] != request["seed"]
+            or values["caption"] != native_request["params"]["style"]
+            or values["lyrics"]
+            != (
+                "[Instrumental]"
+                if native_request["task"] == "music.instrumental"
+                else native_request["params"]["lyrics"]
+            )
+            or values["duration"] != native_request["params"]["duration_s"]
+            or (
+                "negative_prompt" in native_request["params"]
+                and values.get("lm_negative_prompt")
+                != native_request["params"]["negative_prompt"]
+            )
+            or ("variant_index" in request and request["variant_index"] != index)
+            or {
+                k: v
+                for k, v in native_request["params"].items()
+                if k not in {"style", "lyrics"}
+                and (private_params or k != "negative_prompt" or k in request["params"])
+            }
+            != {
+                k: v
+                for k, v in request["params"].items()
+                if k not in {"style", "lyrics"}
+            }
+            or set(boundaries)
+            != {"lm_arguments", "lm_formatted_prompt", "dit_arguments", "dit_tokens"}
+            or len(captured["boundaries"]) != 4
+            or boundaries["lm_arguments"]["metadata"]["language"]
+            != values["vocal_language"]
+            or boundaries["lm_formatted_prompt"]["reserve_tokens"]
+            != planned["lm"]["reserve_tokens"]
+        ):
+            raise ValueError()
+        for name in ("style", "lyrics", "negative_prompt"):
+            if name in request["params"] and request["params"][name] != native_request[
+                "params"
+            ].get(name):
+                raise ValueError()
+        for branch in ("conditional", "unconditional"):
+            if boundaries["lm_formatted_prompt"][branch] != planned["lm"][branch]:
+                raise ValueError()
+            if (
+                planned["lm"][branch]["count"] + planned["lm"]["reserve_tokens"]
+                > planned["lm"]["context_policy"]
+            ):
+                raise ValueError()
+        for name, limit in (("text", 256), ("lyrics", 2048)):
+            expected = planned["dit"][name]
+            if (
+                boundaries["dit_tokens"][name]
+                != {k: expected[k] for k in ("count", "tokens_sha256")}
+                or expected["count"] > limit
+            ):
+                raise ValueError()
+        return receipt
+    except (KeyError, TypeError, ValueError, AttributeError, UnicodeError) as error:
+        raise ValueError("INPUT_RECEIPT_INVALID") from error
 
 
 def _preparation_effective(payload):

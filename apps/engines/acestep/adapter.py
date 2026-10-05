@@ -1,16 +1,21 @@
 """ACE-Step Python; se importa en el hijo, nunca CUDA en la factoría HTTP."""
 
+import io
+import json
 import math
 import os
 import re
 import secrets
 import sys
-from contextlib import contextmanager, redirect_stdout
+from contextlib import contextmanager, redirect_stderr, redirect_stdout
+from functools import wraps
 from types import SimpleNamespace
 
 from descriptor import CHECKPOINT, LM, MODEL_ID, locked_model, model_root
 from engine_common import EngineError
+from input_profile import MAX_DURATION, VALID_LANGUAGES
 from patches import enforce_safe_pretrained, install_safe_loader, verify_components
+from preflight import digest, preflight, token_record
 
 MAX_SEED = 2**64 - 1
 
@@ -88,6 +93,157 @@ def configure_handler(dit):
 
 
 @contextmanager
+def input_capture(runtime, planned, values, index):
+    """Envolturas temporales: solo se acredita una frontera cuando se ejecuta."""
+    captured = {
+        "receipt_version": 1,
+        "kind": "captured",
+        "output_index": index,
+        "boundaries": [],
+        "planned_sha256": digest(planned),
+    }
+    originals = []
+
+    def wrap(obj, name, callback):
+        original = getattr(obj, name, None)
+        if callable(original):
+            originals.append((obj, name, original))
+            setattr(obj, name, wraps(original)(callback(original)))
+
+    def arguments(original):
+        def call(*args, **kwargs):
+            metadata = dict(kwargs.get("user_metadata") or {})
+            metadata["language"] = values["vocal_language"]
+            kwargs["user_metadata"] = metadata
+            captured["boundaries"].append(
+                {
+                    "stage": "lm_arguments",
+                    "arguments_sha256": digest(
+                        {k: v for k, v in kwargs.items() if k != "progress"}
+                    ),
+                    "metadata": metadata,
+                }
+            )
+            return original(*args, **kwargs)
+
+        return call
+
+    def formatted(original):
+        def call(formatted_prompt, cfg, **kwargs):
+            lm = runtime.lm
+            conditional = token_record(lm.llm_tokenizer, formatted_prompt)
+            unconditional_prompt = lm._build_unconditional_prompt(
+                caption=cfg["caption"],
+                lyrics=cfg["lyrics"],
+                cot_text=cfg["cot_text"],
+                negative_prompt=cfg["negative_prompt"],
+                generation_phase=cfg["generation_phase"],
+                is_batch=False,
+            )
+            unconditional = token_record(lm.llm_tokenizer, unconditional_prompt)
+            if (
+                conditional != planned["lm"]["conditional"]
+                or unconditional != planned["lm"]["unconditional"]
+            ):
+                raise EngineError(
+                    "INVALID_PARAMS", "Entrada LM cambió tras el preflight"
+                )
+            reserve = lm._compute_max_new_tokens(
+                cfg["target_duration"], cfg["generation_phase"]
+            )
+            if reserve != planned["lm"]["reserve_tokens"]:
+                raise EngineError(
+                    "INVALID_PARAMS", "Reserva LM cambió tras el preflight"
+                )
+            captured["boundaries"].append(
+                {
+                    "stage": "lm_formatted_prompt",
+                    "conditional": conditional,
+                    "unconditional": unconditional,
+                    "reserve_tokens": reserve,
+                    "cfg_sha256": digest(cfg),
+                }
+            )
+            return original(formatted_prompt=formatted_prompt, cfg=cfg, **kwargs)
+
+        return call
+
+    def dit_arguments(original):
+        def call(*args, **kwargs):
+            for key, expected in (
+                ("captions", values["caption"]),
+                ("lyrics", values["lyrics"]),
+                ("vocal_language", values["vocal_language"]),
+                ("audio_duration", values["duration"]),
+                ("bpm", values["bpm"]),
+                ("key_scale", values["keyscale"]),
+                ("time_signature", values.get("timesignature", "")),
+            ):
+                if kwargs.get(key) != expected:
+                    raise EngineError(
+                        "INVALID_PARAMS", "Entrada DiT cambió tras el preflight"
+                    )
+            captured["boundaries"].append(
+                {
+                    "stage": "dit_arguments",
+                    "arguments_sha256": digest(
+                        {k: v for k, v in kwargs.items() if k != "progress"}
+                    ),
+                }
+            )
+            return original(*args, **kwargs)
+
+        return call
+
+    def dit_tokens(original):
+        def call(*args, **kwargs):
+            result = original(*args, **kwargs)
+            records = {}
+            for name, ids, mask in (
+                ("text", result[1], result[2]),
+                ("lyrics", result[3], result[4]),
+            ):
+                tokens = ids[0][mask[0].bool()].tolist()
+                expected = planned["dit"][name]
+                if (
+                    len(tokens) != expected["count"]
+                    or digest(tokens) != expected["tokens_sha256"]
+                ):
+                    raise EngineError(
+                        "INVALID_PARAMS", "Tokens DiT cambiaron tras el preflight"
+                    )
+                records[name] = {"count": len(tokens), "tokens_sha256": digest(tokens)}
+            captured["boundaries"].append({"stage": "dit_tokens", **records})
+            return result
+
+        return call
+
+    try:
+        wrap(runtime.lm, "generate_with_stop_condition", arguments)
+        wrap(runtime.lm, "generate_from_formatted_prompt", formatted)
+        wrap(runtime.dit, "generate_music", dit_arguments)
+        wrap(runtime.dit, "_prepare_text_conditioning_inputs", dit_tokens)
+        yield captured
+    finally:
+        for obj, name, original in reversed(originals):
+            setattr(obj, name, original)
+
+
+@contextmanager
+def private_upstream_output():
+    """Ámbito hijo: evita letras/prompts en stdout IPC y stderr de Docker."""
+    logger = getattr(sys.modules.get("loguru"), "logger", None)
+    if logger is not None:
+        logger.disable("acestep")
+    try:
+        with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+            yield
+    finally:
+        if logger is not None:
+            logger.enable("acestep")
+
+
+@contextmanager
 def step_hooks(runtime, token, progress, total):
     """El decoder fijado se llama una vez por paso Euler; hook real, no timer.
 
@@ -137,6 +293,20 @@ def load_options(mode, checkpoint):
 
 def generation_options(request, index):
     values = request["params"]
+    language = values.get("vocal_language", values.get("language", "unknown"))
+    if language not in VALID_LANGUAGES or (
+        "language" in values
+        and "vocal_language" in values
+        and values["language"] != values["vocal_language"]
+    ):
+        raise EngineError("INVALID_PARAMS", "Idioma no admitido o contradictorio")
+    if not 10 <= values["duration_s"] <= MAX_DURATION:
+        raise EngineError("INVALID_PARAMS", "Duración fuera del presupuesto LM tier4")
+    if "# Instruction" in values["style"] and "# Caption" in values["style"]:
+        raise EngineError("INVALID_PARAMS", "Caption con extracción SFT no explícita")
+    for name in ("key", "time_signature"):
+        if name in values and values[name] != values[name].strip():
+            raise EngineError("INVALID_PARAMS", "Metadata con limpieza no explícita")
     if "shift" in values and (
         type(values["shift"]) not in {int, float}
         or not 1 <= values["shift"] <= 5
@@ -297,9 +467,17 @@ class AceStepAdapter:
         runtime = self.runtime
         ipc_stdout = sys.stdout
         artifacts = []
+        receipts = []
         for index in range(request["n_outputs"]):
             token.check()
             values, config = generation_options(request, index)
+            variant_request = {**request, "seed": values["seed"], "n_outputs": 1}
+            planned = preflight(
+                variant_request,
+                checkpoints=self.checkpoints,
+                lm=self.lm,
+                checkpoint=self.checkpoint,
+            )
 
             def progress(value, desc=None, _index=index, **kwargs):
                 token.check()
@@ -321,14 +499,43 @@ class AceStepAdapter:
                         )
                     )
 
-            with redirect_stdout(sys.stderr), step_hooks(runtime, token, progress, 8):
+            params = runtime.GenerationParams(**values)
+            generation_config = runtime.GenerationConfig(**config)
+            with (
+                private_upstream_output(),
+                step_hooks(runtime, token, progress, 8),
+                input_capture(runtime, planned, values, index) as captured,
+            ):
+                actual_params = params if isinstance(params, dict) else vars(params)
+                actual_config = (
+                    generation_config
+                    if isinstance(generation_config, dict)
+                    else vars(generation_config)
+                )
+                captured["generation_params_sha256"] = digest(actual_params)
+                captured["generation_config_sha256"] = digest(actual_config)
+                captured["flags"] = {
+                    k: actual_params[k]
+                    for k in (
+                        "thinking",
+                        "use_cot_caption",
+                        "use_cot_language",
+                        "use_cot_metas",
+                        "shift",
+                        "guidance_scale",
+                        "inference_steps",
+                        "lm_cfg_scale",
+                        "audio_cover_strength",
+                    )
+                    if k in actual_params
+                }
                 result = upstream_call(
                     "generación",
                     runtime.generate_music,
                     runtime.dit,
                     runtime.lm,
-                    runtime.GenerationParams(**values),
-                    runtime.GenerationConfig(**config),
+                    params,
+                    generation_config,
                     save_dir=None,
                     progress=progress,
                 )
@@ -340,6 +547,19 @@ class AceStepAdapter:
                 raise upstream_error("generación", detail)
             if len(result.audios) != 1:
                 raise EngineError("INTERNAL", "ACE-Step no produjo el audio solicitado")
+            private = {"planned": planned, "captured": captured}
+            filename_receipt = f"input-receipt-{index}.json"
+            with (output_dir / filename_receipt).open("x", encoding="utf-8") as stream:
+                json.dump(private, stream, ensure_ascii=False, sort_keys=True)
+            receipts.append(
+                {
+                    "filename": filename_receipt,
+                    "sha256": digest(
+                        (output_dir / filename_receipt).read_text(encoding="utf-8")
+                    ),
+                    "output_index": index,
+                }
+            )
             filename = f"output-{index}.wav"
             audio = result.audios[0]
             write_wav(output_dir / filename, audio["tensor"], audio["sample_rate"])
@@ -358,5 +578,6 @@ class AceStepAdapter:
             )
         return {
             "artifacts": artifacts,
+            "result": {"input_receipts": receipts},
             "vram_peak_mb": runtime.torch.cuda.max_memory_allocated() / 1024**2,
         }

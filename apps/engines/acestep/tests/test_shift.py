@@ -89,6 +89,14 @@ def test_shift_reaches_generation_params(tmp_path, monkeypatch):
     adapter = module("adapter")
     model = adapter.AceStepAdapter()
     captured = []
+    native_calls = []
+
+    def token_preflight(variant, **kwargs):
+        native_calls.append((variant, kwargs))
+        return {"kind": "planned", "request_sha256": adapter.digest(variant)}
+
+    # Runtime sintético: la medición nativa real se cubre en test_preflight.
+    monkeypatch.setattr(adapter, "preflight", token_preflight)
 
     def generate_music(dit, lm, params, config, **kwargs):
         captured.append(params.shift)
@@ -107,3 +115,8 @@ def test_shift_reaches_generation_params(tmp_path, monkeypatch):
     monkeypatch.setattr(adapter, "write_wav", lambda *args: None)
     model.generate(request(3), tmp_path, lambda event: None, CancelToken())
     assert captured == [3]
+    assert len(native_calls) == 1
+    assert native_calls[0][0]["seed"] == 1
+    assert native_calls[0][0]["n_outputs"] == 1
+    assert native_calls[0][0]["params"]["shift"] == 3
+    assert native_calls[0][1]["checkpoint"] == model.checkpoint
