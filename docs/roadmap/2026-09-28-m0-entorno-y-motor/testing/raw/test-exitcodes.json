@@ -1,0 +1,30 @@
+﻿{
+    "pytest":  0,
+    "ruff_check":  0,
+    "ruff_format_changed":  0,
+    "python_files":  [
+                         "apps/engines/common/engine_common/__init__.py",
+                         "apps/engines/common/engine_common/runtime.py",
+                         "apps/engines/common/engine_common/server.py",
+                         "apps/engines/common/engine_common/worker.py",
+                         "apps/engines/common/tests/conftest.py",
+                         "apps/engines/common/tests/regression_adapter.py",
+                         "apps/engines/common/tests/test_common.py",
+                         "apps/engines/common/tests/test_review_regressions.py",
+                         "apps/engines/mock/engine_mock/__init__.py",
+                         "apps/engines/mock/tests/conftest.py",
+                         "apps/engines/mock/tests/test_mock.py",
+                         "conftest.py",
+                         "packages/audio-post/audio_post/__init__.py",
+                         "packages/audio-post/audio_post/manifest.py",
+                         "packages/audio-post/audio_post/pipeline.py",
+                         "packages/audio-post/tests/test_audio_post.py",
+                         "packages/audio-post/tests/test_manifest_errors.py",
+                         "packages/engine-contract/engine_contract/__init__.py",
+                         "packages/engine-contract/tests/test_contract.py",
+                         "scripts/export_contracts.py",
+                         "scripts/verify_manifest.py",
+                         "tests/conftest.py",
+                         "tests/test_no_pickle.py"
+                     ]
+}

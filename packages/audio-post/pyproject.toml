@@ -3,7 +3,7 @@ name = "audio-post"
 version = "0.1.0"
 description = "Validación de audio, loudness, true peak, transcodificación y picos (lo usa el server)."
 requires-python = ">=3.12,<3.13"
-dependencies = []
+dependencies = ["numpy>=2", "soundfile>=0.13", "pyloudnorm>=0.1.1", "jsonschema>=4.23"]
 
 [build-system]
 requires = ["hatchling"]

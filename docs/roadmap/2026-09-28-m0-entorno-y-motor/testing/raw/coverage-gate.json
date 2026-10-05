@@ -1,0 +1,30 @@
+{
+  "ok": true,
+  "exit": 0,
+  "stack": "pytest",
+  "detalle": {
+    "stack": "pytest",
+    "informe": "coverage.json",
+    "global": 72.81,
+    "modo": "changed-only",
+    "base": "1f30b1f66f4f7a469dbb4f2ece4e723b82f99677",
+    "ficheros": {
+      "apps/engines/common/engine_common/__init__.py": 100,
+      "apps/engines/common/engine_common/runtime.py": 88.8,
+      "apps/engines/common/engine_common/server.py": 90.24,
+      "apps/engines/common/engine_common/worker.py": 72.34,
+      "apps/engines/mock/engine_mock/__init__.py": 94.57,
+      "packages/audio-post/audio_post/__init__.py": 100,
+      "packages/audio-post/audio_post/manifest.py": 95.89,
+      "packages/audio-post/audio_post/pipeline.py": 96.84,
+      "packages/engine-contract/engine_contract/__init__.py": 98.97,
+      "scripts/export_contracts.py": 95,
+      "scripts/verify_manifest.py": 97.22
+    },
+    "porcentaje": 93.62,
+    "minimo": 80
+  },
+  "avisos": [
+    "sin datos de cobertura para: conftest.py (excluidos de la media)"
+  ]
+}

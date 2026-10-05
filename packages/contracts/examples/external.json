@@ -1,0 +1,90 @@
+{
+  "manifest_version": 1,
+  "kind": "image",
+  "subject": {
+    "type": "artwork",
+    "id": "01K6Q000000000000000000001"
+  },
+  "song_id": "01K6Q000000000000000000002",
+  "created_at": "2026-10-05T10:00:00.000Z",
+  "commercial_use": true,
+  "provider": {
+    "type": "external",
+    "name": "example-provider",
+    "model": "example-image",
+    "request_id": "example-request",
+    "cost_eur": 0.02
+  },
+  "models": [
+    {
+      "role": "dit",
+      "id": "ace-step-1.5-turbo",
+      "revision": "fixture-pinned-revision",
+      "license": "MIT",
+      "training_data": "declaracion del proveedor",
+      "weights": [],
+      "commercial_use": true
+    }
+  ],
+  "pipeline": {
+    "engine_id": "acestep",
+    "engine_version": "0.1.0",
+    "image_digest": null,
+    "workflow_id": null,
+    "workflow_sha256": null,
+    "custom_nodes": [],
+    "remote_code": []
+  },
+  "request": {
+    "task": "image.generate",
+    "params": {},
+    "seed": 42
+  },
+  "inputs": [
+    {
+      "role": "reference",
+      "ref": {
+        "type": "upload",
+        "id": "01K6Q000000000000000000003"
+      },
+      "sha256": "82818dbc55465979add95623a8a10de52474e5dbfaca531648cd40b5b0dfe620",
+      "rights": "consented",
+      "consent": "self",
+      "commercial_use": true
+    }
+  ],
+  "lineage": {
+    "parents": [],
+    "derivation": "original",
+    "section_map": null
+  },
+  "post": {},
+  "outputs": [
+    {
+      "role": "fixture",
+      "path": "fixture.txt",
+      "media_type": "text/plain",
+      "sha256": "82818dbc55465979add95623a8a10de52474e5dbfaca531648cd40b5b0dfe620",
+      "bytes": 21,
+      "meta": {}
+    }
+  ],
+  "run": {
+    "gpu": null,
+    "mode": "fixture",
+    "load_s": 0,
+    "run_s": 0,
+    "vram_peak_mb": 0,
+    "vram_cap_mb": 0,
+    "spilled": false
+  },
+  "tools": [
+    {
+      "name": "ffmpeg",
+      "version": "9.0",
+      "license": "LGPL-2.1",
+      "build": "lgpl",
+      "commercial_use": true
+    }
+  ]
+}

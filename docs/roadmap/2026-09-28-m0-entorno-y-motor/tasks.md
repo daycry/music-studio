@@ -22,10 +22,10 @@ verificacion: obligatoria   # cada T-XX lleva `- **Verificación**:`; lo exige l
 | Fase | Completadas | Total | Progreso | H. humanas (real/est) | H. IA ejec. (real/est) | Supervisión (real/est) | Tokens (real/est) |
 |------|------------|-------|----------|-----------------------|------------------------|------------------------|-------------------|
 | Fase 1 — Preparación | 2 | 2 | 100% | 0 / 6h | 0 / 2h | 0 / 0.5h | 0 / — |
-| Fase 2 — Cimientos compartidos | 1 | 3 | 33% | 0 / 26h | 0 / 13h | 0 / 3.3h | 0 / — |
+| Fase 2 — Cimientos compartidos | 3 | 3 | 100% | — / 26h | — / 13h | — / 3.3h | — / — |
 | Fase 3 — Motor musical | 0 | 3 | 0% | 0 / 19h | 0 / 9.5h | 0 / 2.4h | 0 / — |
 | Fase 4 — Medición y elección | 0 | 6 | 0% | 0 / 37h | 0 / 15h | 0 / 3.8h | 0 / — |
-| **TOTAL** | **3** | **14** | **21%** | **0 / 88h** | **0 / 39.5h** | **0 / 10h** | **0 / —** |
+| **TOTAL** | **5** | **14** | **36%** | **— / 88h** | **— / 39.5h** | **— / 10h** | **— / —** |
 
 > Horas orientativas (proyecto personal, sin presupuesto). La T-12 es opcional (8 h): sin ella son 80 h.
 
@@ -94,7 +94,7 @@ verificacion: obligatoria   # cada T-XX lleva `- **Verificación**:`; lo exige l
 
 ## Fase 2 — Cimientos compartidos
 
-**Estado**: en-progreso · **Estimado**: 26h · **Real**: —
+**Estado**: completado · **Estimado**: 26h · **Real**: —
 
 ### T-02 — `packages/weights`: lock, descarga verificada, auditor de pickle y herramientas
 
@@ -126,48 +126,79 @@ verificacion: obligatoria   # cada T-XX lleva `- **Verificación**:`; lo exige l
 ### T-03 — `packages/engine-contract` + `apps/engines/common` + `engine-mock`
 
 - **Descripción**: El contrato `/v1` de [contrato-engines.md](../../arquitectura/contrato-engines.md) como código compartido, el servidor base de cualquier engine y el mock. Al cerrar esta tarea **el contrato queda congelado**.
-- **Estado**: borrador
+- **Estado**: completado
 - **Tiempo humano**: est. 12h · real —
 - **Tiempo IA (ejec.)**: est. 6h · real —
 - **Supervisión**: est. 1.5h (≈25 % IA) · real —
 - **Dependencias**: T-02
 - **Tipo**: backend
-- **Archivos**: `packages/engine-contract/` (JobRequest, Event, Telemetry, ModelDescriptor, códigos de error), `packages/contracts/engine-v1.json` (generado), `scripts/export_contracts.py`, `apps/engines/common/` (servidor FastAPI `/v1`, supervisor del proceso hijo, VramGuard, CancelToken, token interno), `apps/engines/mock/`, tests
+- **Archivos**: `packages/engine-contract/` (JobRequest, Event, Telemetry, ModelDescriptor, códigos de error), `packages/contracts/engine-v1.json` (generado), `scripts/export_contracts.py`, `apps/engines/common/` (servidor FastAPI `/v1`, supervisor del proceso hijo, VramGuard, CancelToken, token interno), `apps/engines/mock/`, `tests/`, `conftest.py`, `pytest.ini`, `.gitignore`, `pyproject.toml`, `uv.lock`, `docs/legal/licencias.md`, `docs/arquitectura/contrato-engines.md`, `docs/README.md`, `CONTINUE-HERE.md`, `docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/`, `docs/roadmap/2026-09-28-m0-entorno-y-motor/improvement-plan.md`
+- **Alcance auxiliar**: dependencias y lock reproducibles, configuración de tests locales y registro de licencias necesarios para implementar y verificar el contrato; evidencias de QA y documentación de uso/reanudación. Sin nuevas funciones de producto.
+- **Trazabilidad de reanudación (2026-10-05)**: código heredado conservado; sus rojos iniciales no son verificables en esta sesión. Las correcciones de la revisión se ejecutan con TDD y evidencia por defecto; no se atribuye TDD retrospectivo al código heredado. El usuario pidió continuar tras la pausa de coordinación; se preservan los cambios existentes y se retoman las correcciones con responsables de ficheros definidos.
+- **Evidencia TDD de corrección A1**: RED: `packages/engine-contract/tests/test_contract.py::test_exported_event_schema_rejects_invalid_payload[progress-data1]` falló con `AssertionError: El esquema exportado debe rechazar el mismo payload que Pydantic` (esquema aceptó `fraction=2`) · 2026-10-05. GREEN: 9 variantes de evento inválido rechazadas; 14 tests del paquete en verde, referencias del esquema autónomo y campos opcionales comprobados. Contrato regenerado desde los modelos.
 - **Verificación**:
   - `uv run pytest packages/engine-contract apps/engines/common apps/engines/mock -q` → verde
   - `uv run scripts/export_contracts.py --check` → `engine-v1.json up to date`
   - `uv run pytest -q tests/test_no_pickle.py` → verde (búsqueda por **AST** de llamadas a `torch.load`, `pickle.load(s)` y `Unpickler` en `apps/` y `packages/`; permitido solo lo listado en `tests/no_pickle_allowlist.txt` con su motivo: el `Unpickler` restringido del auditor)
 
 **Criterios de aceptación**
-- [ ] Modelos Pydantic compatibles con Python 3.11 y 3.12, sin torch. `engine-v1.json` se genera a partir de ellos y un test comprueba que coincide con el versionado.
-- [ ] Servidor `/v1` con: health (incluye `contract_version`), models, load, unload, estimate, `jobs` (`202`/`409 BUSY`), `GET jobs/{id}`, eventos NDJSON con `seq` y reenganche mediante `?after=`, y `DELETE`. Exige `X-Studio-Engine-Token`.
-- [ ] El modelo corre en un **proceso hijo**; `unload` lo termina. El proceso padre no importa torch y lee la VRAM total y libre con **NVML** (`nvidia-ml-py`). `POST /v1/jobs` carga el modelo de forma implícita si no está cargado (evento `stage: loading_model`).
-- [ ] VramGuard: `cap = free − STUDIO_VRAM_MARGIN_MB` al cargar; registra `vram_peak_mb` y `spilled`; excederlo devuelve `VRAM_EXCEEDED`. Tests con una GPU simulada.
-- [ ] Cancelación cooperativa que limpia `data/tmp/<job_id>/`. Evento terminal único (`done`, `error` o `cancelled`).
-- [ ] `engine-mock` implementa **todas las tareas del catálogo** ([contrato-engines.md](../../arquitectura/contrato-engines.md) §5), cada una con su salida sintética: audio en barrido de 48 kHz con la duración pedida, `delta` de texto en streaming con letra etiquetada, PNG, MP4 y JSON. Declara todas las features, pone `audio.beats` con `device: cpu` y admite `MOCK_STAGE_DELAY_MS` y las directivas `@mock:fail=`, `@mock:fail_once=` y `@mock:retryable` (§7).
+- [x] Modelos Pydantic compatibles con Python 3.11 y 3.12, sin torch. `engine-v1.json` se genera a partir de ellos y un test comprueba que coincide con el versionado.
+- [x] Servidor `/v1` con: health (incluye `contract_version`), models, load, unload, estimate, `jobs` (`202`/`409 BUSY`), `GET jobs/{id}`, eventos NDJSON con `seq` y reenganche mediante `?after=`, y `DELETE`. Exige `X-Studio-Engine-Token`.
+- [x] El modelo corre en un **proceso hijo**; `unload` lo termina. El proceso padre no importa torch y lee la VRAM total y libre con **NVML** (`nvidia-ml-py`). `POST /v1/jobs` carga el modelo de forma implícita si no está cargado (evento `stage: loading_model`).
+- [x] VramGuard: `cap = free − STUDIO_VRAM_MARGIN_MB` al cargar; registra `vram_peak_mb` y `spilled`; excederlo devuelve `VRAM_EXCEEDED`. Tests con una GPU simulada.
+- [x] Cancelación cooperativa que limpia `data/tmp/<job_id>/`. Evento terminal único (`done`, `error` o `cancelled`).
+- [x] `engine-mock` implementa **todas las tareas del catálogo** ([contrato-engines.md](../../arquitectura/contrato-engines.md) §5), cada una con su salida sintética: audio en barrido de 48 kHz con la duración pedida, `delta` de texto en streaming con letra etiquetada, PNG, MP4 y JSON. Declara todas las features, pone `audio.beats` con `device: cpu` y admite `MOCK_STAGE_DELAY_MS` y las directivas `@mock:fail=`, `@mock:fail_once=` y `@mock:retryable` (§7).
+
+**Correcciones de revisión ejecutadas (2026-10-05)**
+- RED: `apps/engines/common/tests/test_review_regressions.py::test_timeout_includes_child_model_load` falló con `2,531 s >= 1,8 s` · 2026-10-05.
+- RED: `apps/engines/common/tests/test_review_regressions.py::test_health_during_cancel_cleanup_stays_busy` falló con `HTTP 500 != 200` · 2026-10-05.
+- RED: `apps/engines/common/tests/test_review_regressions.py::test_vram_telemetry_is_per_job` falló con `pico 2450 != 100 MB` · 2026-10-05.
+- RED: `apps/engines/common/tests/test_review_regressions.py::test_container_data_mount_is_accepted_without_allowing_host_paths` falló con `ValueError al aceptar montaje contractual` · 2026-10-05.
+- RED: `apps/engines/common/tests/test_review_regressions.py::test_load_does_not_block_async_events_loop` falló con `heartbeat 1,359 s >= 0,2 s` · 2026-10-05.
+- RED: `apps/engines/common/tests/test_review_regressions.py::test_health_reads_loaded_snapshot_once` falló con `HTTP 500 != 200` · 2026-10-05.
+- GREEN: regresiones 7 passed, con BUSY concurrente y cancelación durante carga; montaje contractual simulado, sin Docker/GPU.
+- **Verificación ejecutada**: `uv run pytest packages/engine-contract apps/engines/common apps/engines/mock -q` → `35 passed in 8.62s`; `uv run scripts/export_contracts.py --check` → `engine-v1.json up to date`; `uv run pytest -q tests/test_no_pickle.py` → `8 passed in 0.05s`.
+- **Corrección D2 (2026-10-05)**: RED: `test_submit_input_validation_does_not_block_async_events_loop` falló con `heartbeat 0.297 s >= 0.2 s`, `1 failed in 0.96s`, antes de editar el servidor. GREEN aislado: `1 passed in 0.98s`; regresiones: `12 passed in 7.60s`. Reserva BUSY bajo lock, validación fuera y liberación en `finally`; hash incremental de entradas y salidas. Verificación T-03: `40 passed in 10.56s`, contrato al día, AST `8 passed in 0.05s`; ruff verde y `2 files already formatted`. Cubiertos errores de hash/ausencia/E/S, reintento e idempotencia. La corrección reutilizó un agente disponible al rechazar la herramienta el despacho de otro hilo; el autor no revisará su cambio.
+- **Changelog**: Contrato /v1 compartido, ejecución en proceso hijo, eventos reanudables, cancelación y mock de todas las capacidades, con protección de VRAM y plazo de carga.
 
 ### T-04 — `packages/audio-post` + manifiesto v1 + verificador
 
 - **Descripción**: El post-proceso y el manifiesto que usarán el CLI (M0) y el worker del server (M1), según [pipeline-audio.md](../../arquitectura/pipeline-audio.md) y [datos.md](../../arquitectura/datos.md) §3.
-- **Estado**: borrador
+- **Estado**: completado
 - **Tiempo humano**: est. 6h · real —
 - **Tiempo IA (ejec.)**: est. 3h · real —
 - **Supervisión**: est. 0.8h (≈25 % IA) · real —
 - **Dependencias**: T-02 (ffmpeg en `tools/`)
 - **Tipo**: backend
-- **Archivos**: `packages/audio-post/`, `packages/contracts/manifest-v1.schema.json`, `packages/contracts/manifest_writer` (en `audio-post` o paquete propio), `scripts/verify_manifest.py`, tests
+- **Archivos**: `packages/audio-post/`, `packages/contracts/manifest-v1.schema.json`, `packages/contracts/examples/`, `packages/contracts/manifest_writer` (en `audio-post` o paquete propio), `scripts/verify_manifest.py`, `uv.lock`, tests, `docs/arquitectura/pipeline-audio.md`
+- **Alcance auxiliar**: ejemplos exigidos por la verificación y actualización del lock para las dependencias del post-proceso.
+- **Evidencia TDD de reanudación (2026-10-05)**:
+  - RED: `packages/audio-post/tests/test_audio_post.py::test_invalid_sample_rate[nan]` falló con `DID NOT RAISE ValueError` · 2026-10-05; corrección verificada en verde.
+  - RED: `packages/audio-post/tests/test_manifest_errors.py::test_photo_input_only_reference` falló con `DID NOT RAISE ValueError` · 2026-10-05; corrección verificada en verde.
+  - RED: `packages/audio-post/tests/test_manifest_errors.py::test_malformed_inputs_schema_error[None]` falló con `TypeError: NoneType is not iterable` · 2026-10-05; corrección verificada en verde.
+  - Código heredado conservado sin atribuirle evidencia TDD original. El fallo de staging observado dentro de la suite no se cuenta como rojo aislado.
 - **Verificación**:
   - `uv run pytest packages/audio-post -q` → verde
   - `uv run scripts/verify_manifest.py packages/contracts/examples/` → `all valid`
 
 **Criterios de aceptación**
-- [ ] Validación de duración (±5 %), NaN/Inf, silencio (RMS > −60 dBFS) y clipping sostenido.
-- [ ] `master.flac` (24 bit, frecuencia nativa, **sin normalizar**) y `listen.mp3` (320 kbps), llevado a −14 LUFS ±0,5 mediante **ganancia lineal**, con **true peak ≤ −1 dBTP medido con ffmpeg `ebur128=peak=true`**. Si hace falta, limitador, que queda anotado en `post`.
-- [ ] `peaks.json` con ~2.000 pares min/max por canal.
-- [ ] `manifest-v1.schema.json` con todos los campos de datos.md §3, más ejemplos: `audio_take`, `cli_run`, `image` y proveedor externo. El escritor calcula `commercial_use` como AND de todo lo usado.
-- [ ] `verify_manifest.py` valida el esquema y los hashes de las salidas, e ignora campos desconocidos.
+- [x] Validación de duración (±5 %), NaN/Inf, silencio (RMS > −60 dBFS) y clipping sostenido.
+- [x] `master.flac` (24 bit, frecuencia nativa, **sin normalizar**) y `listen.mp3` (320 kbps), llevado a −14 LUFS ±0,5 mediante **ganancia lineal**, con **true peak ≤ −1 dBTP medido con ffmpeg `ebur128=peak=true`**. Si hace falta, limitador, que queda anotado en `post`.
+- [x] `peaks.json` con ~2.000 pares min/max por canal.
+- [x] `manifest-v1.schema.json` con todos los campos de datos.md §3, más ejemplos: `audio_take`, `cli_run`, `image` y proveedor externo. El escritor calcula `commercial_use` como AND de todo lo usado.
+- [x] `verify_manifest.py` valida el esquema y los hashes de las salidas, e ignora campos desconocidos.
 
 ---
+
+**Correcciones de revisión ejecutadas (2026-10-05)**
+- RED: `packages/audio-post/tests/test_manifest_errors.py::test_audio_take_requires_song` falló con `DID NOT RAISE ValueError` · 2026-10-05.
+- RED: `packages/audio-post/tests/test_manifest_errors.py::test_verifier_rejects_commercial_permission_tampering[models]` falló con `DID NOT RAISE ValueError` · 2026-10-05.
+- RED: `packages/audio-post/tests/test_manifest_errors.py::test_verifier_rejects_false_aggregate` falló con `DID NOT RAISE ValueError` · 2026-10-05.
+- RED: `packages/audio-post/tests/test_manifest_errors.py::test_cli_directory_ignores_non_manifest_json` falló con `exit 1, esperado 0` · 2026-10-05.
+- RED: `packages/audio-post/tests/test_manifest_errors.py::test_cli_directory_does_not_hide_invalid_manifest[manifest-v2.json-{}]` falló con `exit 0, esperado 1` · 2026-10-05.
+- GREEN: directorio real con master/listen/peaks/manifiesto; detección de audio manipulado, JSON malformado y versión desconocida.
+- **Verificación ejecutada**: `uv run pytest packages/audio-post -q` → `53 passed in 2.33s`; `uv run scripts/verify_manifest.py packages/contracts/examples/` → `all valid (4 manifests)`; ruff → `All checks passed!` y `6 files already formatted`.
+- **Changelog**: Post-proceso con master FLAC de 24 bit sin normalizar, MP3 de escucha medido y picos de onda, más manifiestos inmutables y verificación de procedencia y hashes.
 
 ## Fase 3 — Motor musical
 
@@ -359,3 +390,89 @@ verificacion: obligatoria   # cada T-XX lleva `- **Verificación**:`; lo exige l
 - [ ] Sesión con los umbrales fijados antes de escuchar.
 - [ ] Veredicto: modelo aprobado / elección entre candidatos / replantear.
 - [ ] Nota en `docs/memory/` con la decisión y la fecha.
+
+
+## Revisión de dos lentes — intento 1: Fase 2 (T-03, T-04) — correcciones pendientes
+
+Revisión recuperada de la pasada provisional del 2026-10-05. Lentes ejecutadas: A+B+D; C no aplicó según selector automático. Contexto fresco y lectura completa del diff de producto: 41 ficheros, con hashes/mtime estables durante las reproducciones. Se mantuvo en pausa el cierre al detectar otro escritor; el usuario pidió retomar. No se han declarado completas las tareas.
+
+Puerta previa: scope-check exit 0, sin ficheros fuera de alcance. Evidencia de aquella pasada: 87 tests verdes; cobertura del diff 84,26 % (mínimo 80 %); contratos al día; 4 ejemplos de manifiesto válidos. Ese verde no sustituye las correcciones reproducidas por los revisores. Jira y Confluence desactivados.
+
+| ID | Grado | Tarea | Fichero:línea | Escenario reproducido | Veredicto |
+|---|---|---|---|---|---|
+| A1 | Important | T-03 | `packages/engine-contract/engine_contract/__init__.py:143` | `progress.fraction=2` pasa JSON Schema exportado, Pydantic lo rechaza | pendiente |
+| A2 | Important | T-04 | `packages/contracts/manifest-v1.schema.json:43` | `audio_take` con `song_id=null` es aceptado, contra datos.md §3 | pendiente |
+| B1 | Important | T-03 | `apps/engines/common/engine_common/server.py:223` | `timeout_s=1`, carga 2,2 s: sigue loading al vencer el plazo | pendiente |
+| B2 | Important | T-03 | `apps/engines/common/engine_common/server.py:332` | Cancelación con limpieza lenta hace que health devuelva 500 | pendiente |
+| B3 | Important | T-03 | `apps/engines/common/engine_common/server.py:252` | Dos jobs mismo modelo con picos 2450/100 MB informan ambos el pico/spill anterior | pendiente |
+| B4 | Important | T-03 | `apps/engines/common/engine_common/server.py:49` | `/data` del montaje contractual se rechaza por PROJECT_ROOT | pendiente |
+| B5 | Important | T-04 | `scripts/verify_manifest.py:14` | `peaks.json` se interpreta como manifiesto, bloqueando verificación recursiva del CLI | pendiente |
+| B6 | Important | T-04 | `packages/audio-post/audio_post/manifest.py:86` | Dependencia comercial=false y raíz commercial_use=true pasa el verificador | pendiente |
+| D1 | Important | T-03 | `apps/engines/common/engine_common/server.py:410` | RLock de precarga bloquea event loop: carga 300 ms retrasa heartbeat 10 ms a 300 ms | pendiente |
+
+Veredictos por criterio: T-03 contrato exportado ✗; endpoints/token/replay ✓; hijo/NVML/unload ✓; VRAM ✓; cancelación/terminal ✓; catálogo mock ✓. T-04 validación/audio/picos ✓; esquema de procedencia ✗; hashes y ejemplos ✓. Los gaps B/D limitan los verdes de comportamiento en escenarios no cubiertos previamente. TDD original heredado: no verificable; las correcciones llevarán RED real. No hay gaps Critical ni Minor de esta pasada.
+
+## Revisión de dos lentes — intento 2: Fase 2 (T-03, T-04) — un gap pendiente
+
+Lentes A+B+D con contexto fresco, 2026-10-05; C no aplica según selector. Scope-check: exit 0, 43 ficheros y 0 fuera de alcance. Jira desactivado. A verificó 96 tests de contrato/engine/audio/AST y 24 de pesos; B ejecutó 49 regresiones y la integración real audio/manifiesto; D reprodujo precarga y validación concurrentes.
+
+| Criterio | Veredicto | Evidencia |
+|---|---|---|
+| T-03 modelos y exportación | ✓ A1 corregido | 9 payloads de eventos inválidos rechazados por JSON Schema; referencias autónomas válidas; exportación al día |
+| T-03 endpoints, token, BUSY, replay y catálogo mock | ✓ conservado | Tests de conformidad y medios sintéticos verdes |
+| T-03 hijo, NVML, VRAM, cancelación y timeout | ✓ B1–B4 corregidos | Plazo durante carga, health durante limpieza, telemetría por job y montaje simulado verdes |
+| T-04 validación, master, MP3 medido y picos | ✓ conservado | ffmpeg real, LUFS, true peak y pares por canal comprobados |
+| T-04 esquema, procedencia, hashes y escaneo | ✓ A2/B5/B6 corregidos | audio_take exige canción; agregado comercial coherente; directorio real y manipulación detectados |
+| D1 precarga y event loop | ✓ corregido | Operación lenta fuera del lock; test de heartbeat verde |
+| Cobertura de los ficheros cambiados | ✓ | Gate oficial exit 0: 93,40 % ≥ 80 %; conftest sin dato declarado |
+| Compatibilidad y TDD históricos | no verificable en parte | AST 3.11 y ejecución 3.12; intérprete 3.11 no disponible. No se atribuye TDD retrospectivo al código heredado |
+| T-02 STACK_GLOBAL y layout | ✓ / pendiente T-06 | Rechazo fail-closed confirmado; layout contra upstream real requiere integración ACE-Step |
+
+| ID | Grado | Tarea | Fichero:línea | Escenario reproducido | Veredicto |
+|---|---|---|---|---|---|
+| A1, A2, B1–B6, D1 | Important | T-03, T-04 | ver intento 1 | Correcciones reevaluadas sin nuevos defectos de corrección | corregidos |
+| D2 | Important | T-03 | `apps/engines/common/engine_common/server.py:419` | Validación de entradas bajo RLock: lectura controlada de 300 ms retrasa heartbeat de 10 ms a 297 ms. Audio de 600 s PCM32 estéreo ≈230 MB retendría el lock ≈460 ms a un caudal ilustrativo de 500 MB/s, más hash | pendiente |
+
+No hay Critical ni Minor. D2 bloquea el cierre de T-03 y la fase. T-04 conserva sus verdes y queda en revisión hasta QA. El siguiente intento será el 3.º y último del bucle acotado.
+
+## Revisión de dos lentes — intento 3: Fase 2 (T-03, T-04) — sin gaps pendientes
+
+Lentes A+B+D, 2026-10-05. A en contexto fresco; B y D reutilizan contextos de revisión por límite de hilos de la herramienta, con revisores independientes del autor de D2. Se reevalúan los dos ficheros corregidos y se conservan los verdes previos. C no aplica según selector; no hay cambios nuevos de seguridad. Scope-check exit 0: 43 ficheros y 0 fuera antes de añadir los informes de QA. Jira desactivado.
+
+| Criterio | Veredicto | Evidencia |
+|---|---|---|
+| T-03 contrato, endpoints, hijo, VRAM, cancelación y catálogo | ✓ | A: 48 tests de contrato/common/mock/AST; exportador al día. Verdes del intento 2 conservados |
+| T-04 validación, formatos, medición, picos y manifiesto | ✓ conservado | Sin cambios desde intento 2; audio real y escaneo verificados allí |
+| D2 reserva BUSY, E/S y event loop | ✓ corregido | B: 12 regresiones verdes. D: 40 tests T-03, apertura retardada 300 ms con heartbeat <200 ms, operaciones competidoras rechazadas |
+| D2 errores, idempotencia y reintento | ✓ | Reserva liberada por finally ante hash incorrecto, ausencia y E/S; misma ID admite reintento |
+| D2 memoria del hash | ✓ | SHA-256 incremental. Benchmark sintético del revisor: 230 MiB, 0,109 s y pico Python 0,751 MiB; no representa caudal de disco |
+| Alcance, constitución y evidencia RED/GREEN | ✓ | Puerta de alcance sin gaps, principios contrastados y RED real registrado en T-03 |
+
+| ID | Grado original | Tarea | Veredicto |
+|---|---|---|---|
+| A1, B1–B4, D1 | Important | T-03 | corregidos en intento 2, conservados |
+| A2, B5, B6 | Important | T-04 | corregidos en intento 2, conservados |
+| D2 | Important | T-03 | corregido y reevaluado en intento 3 |
+
+Resultado: 0 Critical, 0 Important y 0 Minor pendientes. QA es la siguiente puerta. Se mantienen las limitaciones declaradas de Python 3.11 real, TDD heredado y Docker/GPU. Ventanas usage-meter de implementación/revisión cerradas: sin tokens ni horas IA medidos disponibles; las duraciones de reloj no se imputan como ejecución IA.
+
+## QA y cierre técnico de Fase 2 — 2026-10-05
+
+qa: sin UI por diseño (`test-plan: n/a (sin UI)`). Agente QA independiente: exit 0 por la excepción canónica sin UI. `qa-gate.py` de Playwright no aplica; no hay resultados E2E fabricados. [Informe](testing/report.md) y [evidencias](testing/raw/).
+
+- `uv run pytest -m "not gpu" -q` → `125 passed in 13.15s`, exit 0.
+- `uv run ruff check .` → `All checks passed!`, exit 0; formato de los 23 Python cambiados → `23 files already formatted`, exit 0.
+- Exportación → `engine-v1.json up to date`; ejemplos → `all valid (4 manifests)`; ambos exit 0.
+- Gate oficial unitario `--changed-only --min 80` → exit 0, 93,62 % de media de ficheros cambiados. Global 72,81 % incluye scripts históricos; `conftest.py` sin datos se excluye y se declara. [Recibo](testing/raw/coverage-gate.json).
+- `ledger-lint` → `0 incoherencias · 9 avisos`; avisos de Changelog de T-05…T-13 futuras.
+- `coverage-check` → exit 0 declarativo. Lista T-00…T-13 para revisión, `eximidos_exigidos=false`, sin criterios rastreables; `rutas_ui=[]`. Aviso: base main/HEAD sin commits propios, solo alcance y cambios sin comitear comprobados. No se confunde con cobertura de UI.
+
+El orquestador marca T-03/T-04 y Fase 2 como completadas técnicamente al cumplir sus verificaciones, revisión sin gaps y QA sin UI. M0 permanece en-progreso: 5/14 tareas. `—` en métricas significa que no existe medición completa; no se imputan como IA los minutos de reloj ni se inventan tokens.
+
+**Pendientes de entorno e integración:** `.git` es de solo lectura en este perfil: cambios sin commit, fast-forward ni publicación en `m0/t-03-engine-contract`. La separación de commits/ramas por tarea y su integración deberán hacerse en un entorno con escritura Git, preservando el árbol y los journals ajenos. Pre-commit completo no pudo crear su entorno (`WinError 5`, directorio 0700); lint directo y formato del alcance sí pasaron. Formato global muestra 14 ficheros históricos fuera de alcance, sin modificar.
+
+**Siguiente: T-05.** Brief determinista preparado en `.cache/dev-cycle/T-05-brief.md`. Docker devuelve acceso denegado al pipe `dockerDesktopLinuxEngine`; `wsl -d Ubuntu -e ollama ps` devuelve `Wsl/Service/E_ACCESSDENIED`. No se ha ejecutado trabajo GPU ni cambiado Ollama. T-05 permanece borrador hasta poder construir y verificar la imagen; no se sustituye su verificación por simulación. Python 3.11 real se comprobará en ese contenedor; ahora solo se ejecutó 3.12 y gramática AST 3.11. La congelación efectiva de `/v1` es la de este árbol verificado, pendiente de integración Git.
+
+**Documentación del tramo:** documenter actualizó índice, contrato congelado en el árbol y API/uso de audio-post; orquestador actualizó CONTINUE-HERE. 71 enlaces/anclas locales comprobados, comandos PowerShell parseados y ejemplo JobRequest validado; sin nuevas pruebas GPU ni generación de datos. Sin candidatos de conocimiento que curar. Changelog/retro y cierre completo del hito se mantienen pendientes hasta T-13 y la integración Git.
+
+**Comprobación final documental:** alcance exit 0, sin ficheros fuera tras incluir informes/documentación ([recibo](testing/raw/scope-final.json)); ledger-lint exit 0, `0 incoherencias · 9 avisos`; git diff --check exit 0. Otros 42 enlaces locales de reanudación/ledger/informe válidos y sin rutas personales. Sin cambios nuevos de código después de QA.

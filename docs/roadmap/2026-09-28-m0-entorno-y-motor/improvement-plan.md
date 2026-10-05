@@ -26,7 +26,7 @@ generacion:
 | Métrica | Estimado | Real | Confianza |
 |---|---|---|---|
 | Tiempo humano | **88 h** (80 h sin la T-12 opcional) | 0 h | Media |
-| Tareas | **14** (13 obligatorias) | 0 hechas | — |
+| Tareas | **14** (13 obligatorias) | [Ver ledger canónico](tasks.md) | — |
 
 ## Fases
 

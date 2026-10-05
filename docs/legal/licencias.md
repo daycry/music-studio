@@ -3,7 +3,7 @@ documento: licencias
 titulo: Registro de licencias de modelos y herramientas
 estado: vigente
 fecha: 2026-09-28
-actualizado: 2026-09-28
+actualizado: 2026-10-05
 ---
 
 # Registro de licencias
@@ -55,8 +55,18 @@ actualizado: 2026-09-28
 | allin1 | L | MIT | MIT (`.pth`) | — | ⚠️ depende de Demucs (pesos solo investigación) y madmom | 2026-09-28 |
 | madmom (modelos) | — | BSD | CC BY-NC-SA | — | ❌ | 2026-09-28 |
 | ComfyUI | P (motor) | **GPL-3.0** | — | — | ✅ uso personal como proceso aparte · ⚠️ revisar antes de comercializar | 2026-09-28 |
+| Pydantic, FastAPI, jsonschema | P (contrato y servidor engine) | MIT | — | — | ✅ | 2026-10-05 (metadatos instalados) |
+| Uvicorn, HTTPX | P (servidor y pruebas engine) | BSD-3-Clause | — | — | ✅ | 2026-10-05 (metadatos instalados) |
+| nvidia-ml-py | P (lectura NVML sin CUDA) | BSD | — | — | ✅ | 2026-10-05 (metadatos instalados) |
+| pytest-cov | P (verificación de cobertura) | MIT | — | — | ✅ | 2026-10-05 (metadatos instalados) |
 | **Audio y utilidades** | | | | | | |
 | FFmpeg (BtbN `win64-lgpl` en el server, `linux64-lgpl-shared` en engines; con lame, opus, soxr) | P | LGPL 2.1+ | — | — | ✅ (sin `--enable-gpl` ni `--enable-nonfree`) | 2026-09-28 |
+| FastAPI / Pydantic / JSON Schema (`jsonschema`) | P (contrato y validación) | MIT | — | — | ✅ | 2026-10-05 (metadatos de las distribuciones fijadas en `uv.lock`) |
+| Starlette / Uvicorn | P (servidor del engine) | BSD-3-Clause | — | — | ✅ | 2026-10-05 (metadatos locales) |
+| nvidia-ml-py (NVML) | P (VRAM sin contexto CUDA) | BSD | — | — | ✅ | 2026-10-05 (licencia de la distribución local) |
+| NumPy | P (audio y pesos) | BSD-3-Clause; el wheel incluye 0BSD, MIT, Zlib y CC0-1.0 | — | — | ✅ | 2026-10-05 (metadatos del wheel local) |
+| SciPy | P (dependencia de pyloudnorm) | BSD-3-Clause; bibliotecas incluidas con sus avisos y excepción GCC | — | — | ✅ | 2026-10-05 (licencia del wheel local) |
+| HTTPX / pytest-cov | Desarrollo (pruebas y cobertura) | BSD-3-Clause / MIT | — | — | ✅ | 2026-10-05 (metadatos locales) |
 | pyloudnorm | P | MIT | — | — | ✅ | 2026-09-28 |
 | soxr / python-soxr | P | LGPL 2.1+ | — | — | ✅ | 2026-09-28 |
 | librosa | P | ISC | — | — | ✅ | — |
