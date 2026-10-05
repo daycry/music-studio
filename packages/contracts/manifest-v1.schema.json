@@ -26,17 +26,39 @@
       "if": {
         "not": {
           "anyOf": [
-            {"properties": {"kind": {"const": "cli_run"}}},
             {
               "properties": {
-                "kind": {"not": {"const": "audio_take"}},
-                "subject": {"properties": {"type": {"const": "character"}}}
+                "kind": {
+                  "const": "cli_run"
+                }
+              }
+            },
+            {
+              "properties": {
+                "kind": {
+                  "not": {
+                    "const": "audio_take"
+                  }
+                },
+                "subject": {
+                  "properties": {
+                    "type": {
+                      "const": "character"
+                    }
+                  }
+                }
               }
             }
           ]
         }
       },
-      "then": {"properties": {"song_id": {"$ref": "#/$defs/id"}}}
+      "then": {
+        "properties": {
+          "song_id": {
+            "$ref": "#/$defs/id"
+          }
+        }
+      }
     }
   ],
   "properties": {
@@ -229,6 +251,11 @@
         },
         "seed": {
           "type": "integer"
+        },
+        "variant_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 63
         },
         "lyrics_sha256": {
           "anyOf": [
@@ -495,6 +522,18 @@
           }
         }
       }
+    },
+    "preparation": {
+      "type": "object",
+      "required": [
+        "sha256"
+      ],
+      "properties": {
+        "sha256": {
+          "$ref": "#/$defs/hash"
+        }
+      },
+      "additionalProperties": false
     }
   },
   "$defs": {

@@ -54,6 +54,8 @@ actualizado: 2026-09-28
 
 JSON en `data/logs/<proceso>.log`, rotación diaria y 14 días de retención. Cada línea lleva `ts`, `level`, `proc`, `job_id?`, `song_id?` y `msg`. No se registran letras completas ni rutas de fotos de personas reales (solo sus IDs).
 
+La preparación de instrucciones de M0 guarda originales, texto efectivo y diffs en recibos privados dentro de `data/preparations/` ([ADR-0028](../decisiones/ADR-0028-preparacion-fiel-de-instrucciones.md)). No se versionan esos textos ni se copian a logs o informes públicos. Un hash de bytes del archivo original y un hash de texto UTF-8 efectivo son conceptos distintos; la procedencia debe identificarlos por separado. La preparación offline no se presenta como validación de tokens ni como prueba de cumplimiento musical.
+
 ## 7. Git y proceso
 
 - La rama `main` siempre funciona. Se trabaja en una rama por tarea: `m0/t-04-engine-common`, `fix/<slug>`, `docs/<slug>`. Al cerrar la tarea: **merge fast-forward a `main` sin PR** y push (rebase antes si `main` avanzó) ([ADR-0021](../decisiones/ADR-0021-repositorio-publico.md)).

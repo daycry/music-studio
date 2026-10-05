@@ -1,0 +1,19 @@
+{
+  "status": "passed_cpu_preparation",
+  "generated": false,
+  "model_loaded": false,
+  "engine_url_unreachable": true,
+  "source_lyrics_file_had_markdown": false,
+  "markdown_input_is_explicit_test_derivation": true,
+  "verse_lines_preserved": 72,
+  "tags_preserved_complete": 9,
+  "preserved_hash_records": 32,
+  "preparation_sha256": "fa24e7c90335f47473ce2bff3d9af620c77a885e751c8c97060aae759e08acfc",
+  "repeated_preparation_immutable": true,
+  "original_style_bytes_sha256": "8646b46aa56525c26ff2ad780ee5931478a2e8db32ebcea6576fc4af9404082b",
+  "effective_style_sha256": "0595700afb888c041b22bf1138b4ef488bffae2f01176873d2a1dc06938bdb84",
+  "lyrics_source_bytes_sha256": "257d2703866cb7d4c8167cd923b479207b3bae4efb6e7e342a7e31afaf24a72b",
+  "lyrics_effective_sha256": "11166bbef6bff52aef1e992754576c5bf1326137e40e95e00d943b4c64e92ee2",
+  "engine_budget": "pending",
+  "musical_compliance_verified": false
+}

@@ -84,7 +84,7 @@ La [suite](../../packages/audio-post/tests/test_audio_post.py) usa ffmpeg real p
 
 ### Generar una canción con el CLI de M0
 
-Guarda la letra en un fichero UTF-8 dentro del proyecto y declara su autoría antes de encolar. El estilo se pasa como texto; el descriptor de ACE-Step limita este caption a 512 caracteres. Es un límite local, distinto de los presupuestos nativos de tokens. La CLI transmite los tags y cualquier Markdown presentes, sin normalizarlos. Para un engine local ya arrancado:
+Guarda la letra en un fichero UTF-8 dentro del proyecto y declara su autoría antes de encolar. El estilo se pasa como texto; el descriptor de ACE-Step limita este caption a 512 caracteres. Es un límite local, distinto de los presupuestos nativos de tokens. La letra se conserva por defecto; la limpieza explícita de tags se describe en el apartado de preparación. Para un engine local ya arrancado:
 
 ```powershell
 . .\scripts\env.ps1
@@ -144,4 +144,25 @@ Los stems se guardan como `asset` del take (`role=stem:vocals`, etc.); no genera
 
 La [auditoría CPU de T-17](../roadmap/2026-09-28-m0-entorno-y-motor/testing/t17/audit-report.md) distingue original, adaptación y entrada efectiva. El código instalado limita la plantilla completa de descripción del DiT a 256 tokens y la letra a 2048; estos presupuestos son distintos del límite local de 512 caracteres. Los originales rechazados solo se reprodujeron en CPU para medir tokens, sin generar audio.
 
-La entrada completa de Libre ya usaba un caption adaptado y cabeceras simplificadas antes de llegar a la CLI. Los versos se conservan. Se ha preparado un candidato privado que recupera indicaciones de las nueve cabeceras, sin generar una toma. Sigue pendiente implementar preflight, procedencia de la adaptación y controles de metadata; presencia de instrucciones en tokens no garantiza cumplimiento musical. T-16 permanece en borrador hasta atender esta prioridad.
+La entrada completa de Libre ya usaba un caption adaptado y cabeceras simplificadas antes de llegar a la CLI. Los versos se conservan. Se ha preparado un candidato privado que recupera indicaciones de las nueve cabeceras, sin generar una toma. T-18 añade preparación y procedencia; T-19 aborda el preflight y el idioma estructurado del LM. La presencia de instrucciones en tokens no garantiza cumplimiento musical. T-16 permanece en borrador hasta atender esta prioridad.
+
+### Preparación local antes de generar — T-18
+
+La [decisión ADR-0028](../decisiones/ADR-0028-preparacion-fiel-de-instrucciones.md) conserva el material de origen y la petición efectiva en un recibo privado. `--style` sigue siendo texto. `--source-style-file` declara un archivo con el estilo original cuando el texto de `--style` es una adaptación manual; se guardan ambos y sus diferencias, sin afirmar equivalencia semántica automática.
+
+```powershell
+. .\scripts\env.ps1
+uv run --frozen --all-packages scripts/generate.py --lyrics data/inputs/mi-cancion/lyrics.md --style "Hip hop luminoso, orquesta y piano en mayor" --source-style-file data/inputs/mi-cancion/style-original.txt --duration 255 --language es --bpm 94 --lyrics-declaration own --strip-tag-markdown --prepare-only
+```
+
+`--prepare-only` funciona offline: no consulta el catálogo ni el engine, no carga modelos, no encola audio y no necesita FFmpeg. Devuelve una referencia al recibo en `data/preparations/`. Sus textos y diffs se revisan localmente; no se imprimen las letras ni el prompt en la consola. Un recibo idéntico se reutiliza por hash sin sobrescribirlo. Al generar audio se utiliza la misma preparación y se vincula su procedencia a los manifiestos nuevos; los antiguos permanecen válidos.
+
+`--strip-tag-markdown` retira exclusivamente el envoltorio `**` de una línea de cabecera como `**[Verse - male rap, beat enters]**`. Conserva literalmente el interior, el orden, los versos y los asteriscos que formen parte del resto de la letra. Omitir el flag mantiene identidad. No traduce las cabeceras ni resume sus instrucciones; tampoco extrae automáticamente letra de un documento que incluya notas creativas.
+
+`--key` y `--time-signature` permiten declarar tonalidad y compás. Sus omisiones conservan los valores vacíos upstream: «en mayor» dentro del prompt no inventa una tónica y no se asume `4/4`. Los campos de un brief siguen siendo su fuente cuando se usa `--brief`; los conflictos directos se rechazan. El compás externo `time_signature` se transmite como `timesignature` al motor.
+
+Los cambios de descriptor/adaptador requieren actualizar la imagen del engine para usarlos en Docker. T-18 verifica su código en CPU; la imagen anterior de T-14 no se ha reconstruido en este tramo. La integración de estos controles con el runtime corresponde a T-19; no se presenta la imagen anterior como si incorporase el compás nuevo.
+
+El recibo distingue bytes de origen de texto efectivo, conserva las transformaciones y lleva hashes verificables. Preparar no valida aún los presupuestos del motor: `engine_budget=pending` señala el trabajo pendiente de T-19. Tampoco acredita obediencia ni naturalidad; esas conclusiones siguen en las tareas de evaluación musical.
+
+Al generar, un recibo nuevo añade `execution` con la base de semilla resuelta y el número de salidas. La preparación original permanece intacta; su `seed: null`, si lo había, sigue conservado. Cada manifiesto lleva `request.variant_index`, con semilla exactamente igual a base más índice. El verificador cruza esa correspondencia y el hash declarado de letra con sus bytes originales, incluidos BOM y finales de línea.

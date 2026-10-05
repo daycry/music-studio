@@ -171,6 +171,8 @@ def generation_options(request, index):
         "use_cot_metas": False,
         "lm_negative_prompt": values.get("negative_prompt", "NO USER INPUT"),
     }
+    if "time_signature" in values:
+        params["timesignature"] = values["time_signature"]
     if "shift" in values:
         params["shift"] = values["shift"]
     return params, {

@@ -30,6 +30,7 @@ Formato: `ADR-XXXX-slug.md` con **Estado** (propuesta · aceptada · sustituida 
 | [0024](ADR-0024-hashes-de-codigo-remoto-en-descriptores.md) | Campo opcional remote_code en el descriptor, con rutas relativas y SHA-256; ampliación compatible de /v1 | aceptada |
 | [0025](ADR-0025-limite-de-memoria-wsl.md) | WSL con límite de 16 GB, swap de 8 GB y recuperación de caché dropCache; perfil elegido por el propietario y aplicado | aceptada |
 | [0026](ADR-0026-comparacion-controlada-shift.md) | Comparación privada shift 1/3; parámetro opcional y default anterior conservado | aceptada |
+| [0028](ADR-0028-preparacion-fiel-de-instrucciones.md) | Preparación determinista original/efectiva, limpieza explícita de Markdown en tags y recibo privado inmutable | aceptada |
 
 ## Decisiones heredadas de la documentación archivada
 

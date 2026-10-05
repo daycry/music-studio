@@ -106,6 +106,8 @@ los descriptores existentes sin ese campo siguen siendo válidos.
 
 ## 5. Catálogo de tareas
 
+En la preparación de M0/T-18, ACE-Step admite además el parámetro opcional `time_signature`, que el adaptador transmite como `timesignature`; `key` sigue siendo opcional y llega como `keyscale`. La CLI expone `--time-signature` y `--key`. Omitirlos no inventa compás ni tónica. No se modifica la estructura obligatoria de `/v1` ni se activa una feature `verified` por transportar un campo. La limpieza de Markdown y los recibos privados pertenecen a la preparación del llamante, no a una reescritura silenciosa dentro del engine. [Pipeline y preparación](./pipeline-audio.md#preparación-local-antes-de-generar--t-18).
+
 | Tarea | Entradas | Salida | Hito | Engine por defecto |
 |---|---|---|---|---|
 | `music.song` | opcional `timbre` (feature `timbre_ref`) · letra y estilo en `params` · LoRA en `params.lora` (feature `lora`) | audio | M0 | acestep |

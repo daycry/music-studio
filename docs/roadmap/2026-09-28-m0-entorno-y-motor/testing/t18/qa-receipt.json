@@ -1,0 +1,191 @@
+{
+  "status": "passed_cpu_no_ui",
+  "task": "T-18",
+  "independent_qa": true,
+  "base": "08d6d82",
+  "targeted": {
+    "passed": 185,
+    "skipped": 1,
+    "warnings": 5,
+    "exit_code": 0
+  },
+  "workspace_configured": {
+    "passed": 236,
+    "warnings": 6,
+    "exit_code": 0,
+    "note": "pytest.ini excludes ACE-Step; supplementary explicit full suite also executed"
+  },
+  "workspace_full": {
+    "passed": 309,
+    "skipped": 5,
+    "deselected_gpu": 1,
+    "warnings": 5,
+    "exit_code": 0
+  },
+  "ledger_lint": {
+    "exit_code": 0,
+    "incoherences": 0,
+    "warnings": 9
+  },
+  "coverage_check": {
+    "applies": false,
+    "gwt_sin_id": 0,
+    "test_plan_na": true,
+    "marcador_no_canonico": null,
+    "eximidos": [
+      "T-00",
+      "T-01",
+      "T-02",
+      "T-03",
+      "T-04",
+      "T-05",
+      "T-06",
+      "T-07",
+      "T-08",
+      "T-09",
+      "T-10",
+      "T-11",
+      "T-12",
+      "T-13",
+      "T-14",
+      "T-15",
+      "T-16",
+      "T-17",
+      "T-18",
+      "T-19"
+    ],
+    "eximidos_exigidos": false,
+    "rutas_ui": [],
+    "rutas_ui_origen": {},
+    "rutas_ui_degradado": "el diff contra la base «merge-base main…HEAD (08d6d82d)» no aporta ningún fichero: solo se han mirado los cambios sin comitear"
+  },
+  "qa_gate": {
+    "applies": false,
+    "executed": false,
+    "reason": "test-plan: n/a (sin UI); no Playwright results fabricated"
+  },
+  "changed_production_coverage": {
+    "base": "08d6d82",
+    "threshold": 80,
+    "status": "passed",
+    "method": "added executable statements; all executable statements for new module; no forced imports",
+    "files": [
+      {
+        "file": "scripts/input_preparation.py",
+        "executed_changed_statements": 92,
+        "changed_statements": 95,
+        "changed_percent": 96.84210526315789,
+        "whole_covered_statements": 92,
+        "whole_statements": 95,
+        "whole_percent": 96.84210526315789,
+        "literal_without_new_statements": false
+      },
+      {
+        "file": "scripts/generate.py",
+        "executed_changed_statements": 44,
+        "changed_statements": 47,
+        "changed_percent": 93.61702127659575,
+        "whole_covered_statements": 362,
+        "whole_statements": 384,
+        "whole_percent": 94.27083333333333,
+        "literal_without_new_statements": false
+      },
+      {
+        "file": "apps/engines/acestep/adapter.py",
+        "executed_changed_statements": 2,
+        "changed_statements": 2,
+        "changed_percent": 100.0,
+        "whole_covered_statements": 137,
+        "whole_statements": 175,
+        "whole_percent": 78.28571428571429,
+        "literal_without_new_statements": false
+      },
+      {
+        "file": "apps/engines/acestep/descriptor.py",
+        "executed_changed_statements": 0,
+        "changed_statements": 0,
+        "changed_percent": null,
+        "whole_covered_statements": 30,
+        "whole_statements": 30,
+        "whole_percent": 100.0,
+        "literal_without_new_statements": true
+      },
+      {
+        "file": "packages/audio-post/audio_post/manifest.py",
+        "executed_changed_statements": 52,
+        "changed_statements": 59,
+        "changed_percent": 88.13559322033899,
+        "whole_covered_statements": 123,
+        "whole_statements": 132,
+        "whole_percent": 93.18181818181819,
+        "literal_without_new_statements": false
+      }
+    ],
+    "historic_directory_total": {
+      "covered_lines": 1237,
+      "num_statements": 1667,
+      "percent_covered": 74.20515896820636,
+      "percent_covered_display": "74",
+      "missing_lines": 430,
+      "excluded_lines": 0,
+      "percent_statements_covered": 74.20515896820636,
+      "percent_statements_covered_display": "74"
+    }
+  },
+  "checks": {
+    "contract_export": 0,
+    "legacy_example_manifests": {
+      "valid": 4,
+      "exit_code": 0
+    },
+    "cli_help": 0,
+    "probe": 0,
+    "ruff": 0,
+    "public_scan": 0
+  },
+  "preparation": {
+    "status": "passed_cpu_preparation",
+    "generated": false,
+    "model_loaded": false,
+    "engine_url_unreachable": true,
+    "source_lyrics_file_had_markdown": false,
+    "markdown_input_is_explicit_test_derivation": true,
+    "verse_lines_preserved": 72,
+    "tags_preserved_complete": 9,
+    "preserved_hash_records": 32,
+    "preparation_sha256": "fa24e7c90335f47473ce2bff3d9af620c77a885e751c8c97060aae759e08acfc",
+    "repeated_preparation_immutable": true,
+    "original_style_bytes_sha256": "8646b46aa56525c26ff2ad780ee5931478a2e8db32ebcea6576fc4af9404082b",
+    "effective_style_sha256": "0595700afb888c041b22bf1138b4ef488bffae2f01176873d2a1dc06938bdb84",
+    "lyrics_source_bytes_sha256": "257d2703866cb7d4c8167cd923b479207b3bae4efb6e7e342a7e31afaf24a72b",
+    "lyrics_effective_sha256": "11166bbef6bff52aef1e992754576c5bf1326137e40e95e00d943b4c64e92ee2",
+    "engine_budget": "pending",
+    "musical_compliance_verified": false
+  },
+  "public_scan": {
+    "status": "passed",
+    "files_scanned": 20,
+    "local_links_checked": 129,
+    "privacy_issues": [],
+    "broken_links": [],
+    "scope": "T18 public reports and listed changed documentation/production; exact long lyric lines, real env secrets and absolute user paths; no external URLs fetched"
+  },
+  "pdf": {
+    "generated": false,
+    "reason": "to-pdf dependencies absent; no installation permitted in task"
+  },
+  "limitations": [
+    "No GPU, build, model download, audio generation or artistic validation",
+    "T-19 engine token budgets and LM language transport pending",
+    "Review attempt 2 reused prior reviewer contexts due to agent limit; independent from fix implementation, not newly fresh",
+    "M0 remains open; root owns canonical ledger and closing actions"
+  ],
+  "usage": {
+    "source": "estimated",
+    "actual_hours": null,
+    "actual_tokens": null,
+    "actual_cost": null,
+    "measurement_owner": "root",
+    "note": "Root window starts 2026-10-05T21:40:08Z after dispatch; partial window"
+  }
+}

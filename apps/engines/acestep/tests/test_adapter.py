@@ -563,3 +563,35 @@ def test_descriptor_unverified():
         for feature in task.features.values()
     )
     assert {mode.id for mode in desc.modes} == {"bf16", "offload"}
+
+
+def test_time_signature_metadata_optional():
+    adapter = module("adapter")
+    request = {
+        "task": "music.instrumental",
+        "params": {
+            "style": "synthetic",
+            "duration_s": 30,
+            "key": "C minor",
+            "time_signature": "4/4",
+        },
+        "seed": 1,
+        "n_outputs": 1,
+    }
+    values, _ = adapter.generation_options(request, 0)
+    assert values.get("timesignature") == "4/4"
+    assert values["keyscale"] == "C minor"
+    del request["params"]["time_signature"]
+    assert "timesignature" not in adapter.generation_options(request, 0)[0]
+    desc = module("descriptor").descriptor()
+    assert "time_signature" in desc.tasks["music.song"].params_schema["properties"]
+
+
+@pytest.mark.parametrize("key", ["", "x" * 33])
+def test_key_descriptor_preserves_legacy_strings(key):
+    from jsonschema import validate
+
+    desc = module("descriptor").descriptor()
+    for task in ("music.song", "music.instrumental"):
+        schema = desc.tasks[task].params_schema["properties"]["key"]
+        validate(key, schema)

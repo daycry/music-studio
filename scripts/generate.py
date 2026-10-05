@@ -21,6 +21,14 @@ from audio_post.manifest import safe_path
 from engine_contract import Event, Health, JobRequest, JobStatus, ModelDescriptor
 from jsonschema import ValidationError, validate
 
+if __package__:
+    from . import input_preparation as preparation
+else:
+    try:
+        import input_preparation as preparation
+    except ModuleNotFoundError:
+        from scripts import input_preparation as preparation
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -35,6 +43,11 @@ def confined(path, root):
 
 def parser():
     result = argparse.ArgumentParser(description=__doc__)
+    result.add_argument("--prepare-only", action="store_true")
+    result.add_argument("--strip-tag-markdown", action="store_true")
+    result.add_argument("--source-style-file")
+    result.add_argument("--key")
+    result.add_argument("--time-signature")
     result.add_argument("--brief")
     result.add_argument("--lyrics")
     result.add_argument("--style")
@@ -65,6 +78,8 @@ def read_request(argv=None, *, root=ROOT):
                 args.duration,
                 args.language,
                 args.bpm,
+                args.key,
+                args.time_signature,
             )
         ):
             raise ValueError("BRIEF_ARGUMENT_CONFLICT")
@@ -117,6 +132,8 @@ def read_request(argv=None, *, root=ROOT):
             if not args.lyrics.is_file():
                 raise ValueError("BRIEF_LYRICS_MISSING")
         bpm = entry.get("bpm")
+        args.key = entry.get("key")
+        args.time_signature = entry.get("time_signature")
     args.task = args.task or "music.song"
     if not args.style or not args.style.strip() or args.duration is None:
         raise ValueError("INVALID_PARAMS")
@@ -135,6 +152,18 @@ def read_request(argv=None, *, root=ROOT):
         params["shift"] = args.shift
     if bpm is not None:
         params["bpm"] = bpm
+    for name, value in (("key", args.key), ("time_signature", args.time_signature)):
+        if value is not None:
+            if not isinstance(value, str) or not value.strip() or len(value) > 32:
+                raise ValueError("INVALID_PARAMS")
+            params[name] = value
+    if args.time_signature is not None and not re.fullmatch(
+        r"[1-9][0-9]?/(1|2|4|8|16|32)", args.time_signature
+    ):
+        raise ValueError("INVALID_PARAMS")
+    sources = {}
+    if args.source_style_file:
+        sources["style"] = confined(root / args.source_style_file, root).read_bytes()
     digest = None
     if args.task == "music.song":
         if not args.lyrics_declaration:
@@ -142,6 +171,7 @@ def read_request(argv=None, *, root=ROOT):
         if not args.lyrics or not args.language or not args.language.strip():
             raise ValueError("INVALID_PARAMS")
         payload = confined(root / args.lyrics, root).read_bytes()
+        sources["lyrics"] = payload
         lyrics = payload.decode("utf-8-sig")
         if not lyrics.strip():
             raise ValueError("INVALID_PARAMS")
@@ -149,7 +179,7 @@ def read_request(argv=None, *, root=ROOT):
         digest = hashlib.sha256(payload).hexdigest()
     elif args.lyrics or args.lyrics_declaration:
         raise ValueError("INSTRUMENTAL_HAS_LYRICS")
-    return {
+    request = {
         "task": args.task,
         "params": params,
         "seed": args.seed,
@@ -158,6 +188,12 @@ def read_request(argv=None, *, root=ROOT):
         "lyrics_declaration": args.lyrics_declaration,
         "lyrics_sha256": digest,
     }
+    receipt = preparation.prepare(
+        request, sources=sources, strip_tag_markdown=args.strip_tag_markdown
+    )
+    return dict(
+        receipt["effective"], _preparation=receipt, _prepare_only=args.prepare_only
+    )
 
 
 def ulid():
@@ -291,6 +327,19 @@ def generate(request, *, config, root=ROOT, client=None):
         or not math.isfinite(request["params"]["shift"])
     ):
         raise ValueError("INVALID_PARAMS")
+    data = confined(root / config.get("STUDIO_DATA_DIR", "data"), root)
+    request = dict(request)
+    receipt = request.pop("_preparation", None)
+    request.pop("_prepare_only", None)
+    reference = request.pop("preparation", None)
+    if reference is not None:
+        receipt = preparation.verify(reference, request, data)
+    else:
+        receipt = receipt or preparation.prepare(request)
+        preparation.validate_receipt(receipt)
+        if receipt["effective"] != request:
+            raise ValueError("PREPARATION_REQUEST_MISMATCH")
+        reference = preparation.publish(receipt, data)
     token = config.get("STUDIO_ENGINE_TOKEN")
     if not token:
         raise ValueError("ENGINE_TOKEN_REQUIRED")
@@ -299,7 +348,12 @@ def generate(request, *, config, root=ROOT, client=None):
     data.mkdir(parents=True, exist_ok=True)
     if client is None:
         with httpx.Client(timeout=30, follow_redirects=False, trust_env=False) as owned:
-            return generate(request, config=config, root=root, client=owned)
+            return generate(
+                dict(request, preparation=reference),
+                config=config,
+                root=root,
+                client=owned,
+            )
     headers = {"X-Studio-Engine-Token": token}
 
     def call(method, path, **kwargs):
@@ -333,6 +387,10 @@ def generate(request, *, config, root=ROOT, client=None):
     mode = "bf16" if "bf16" in modes else modes[0]
     job_id = ulid()
     seed = request["seed"] if request["seed"] is not None else secrets.randbits(32)
+    receipt = preparation.bind_execution(
+        receipt, seed=seed, n_outputs=request["n_outputs"]
+    )
+    reference = preparation.publish(receipt, data)
     timeout = max(300, math.ceil(request["params"]["duration_s"] * 20 + 300))
     job = JobRequest(
         job_id=job_id,
@@ -452,6 +510,7 @@ def generate(request, *, config, root=ROOT, client=None):
                     k: v for k, v in job.params.items() if k not in {"lyrics", "style"}
                 }
                 manifest = {
+                    "preparation": reference,
                     "manifest_version": 1,
                     "kind": "cli_run",
                     "subject": {"type": "cli_run", "id": run_id},
@@ -488,9 +547,9 @@ def generate(request, *, config, root=ROOT, client=None):
                         "task": job.task,
                         "params": params,
                         "seed": seed + index,
+                        "variant_index": index,
                         "lyrics_sha256": request["lyrics_sha256"],
                         "lyrics_declaration": request["lyrics_declaration"],
-                        "style_prompt": job.params["style"],
                     },
                     "inputs": (
                         [
@@ -565,6 +624,11 @@ def generate(request, *, config, root=ROOT, client=None):
 def main(argv=None):
     try:
         request = read_request(argv)
+        if request.pop("_prepare_only", False):
+            receipt = request.pop("_preparation")
+            ref = preparation.publish(receipt, confined(ROOT / "data", ROOT))
+            print("Preparaci?n local: " + ref["sha256"] + "; engine_budget=pending")
+            return 0
         for destination in generate(request, config=environment()):
             print("Resultado: " + destination.relative_to(ROOT).as_posix())
         return 0

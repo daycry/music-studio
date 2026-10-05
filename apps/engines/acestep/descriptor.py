@@ -69,6 +69,10 @@ def descriptor(lock_path=None, checkpoint=None, lm=None):
         "bpm": {"type": "integer", "minimum": 30, "maximum": 300},
         "shift": {"type": "number", "minimum": 1, "maximum": 5},
         "key": {"type": "string"},
+        "time_signature": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]?/(1|2|4|8|16|32)$",
+        },
         "negative_prompt": {"type": "string"},
     }
     return ModelDescriptor(

@@ -252,3 +252,9 @@ def test_cli_directory_only_non_manifests(tmp_path, capsys):
     (tmp_path / "song.json").write_text('{"title": "song"}')
     assert verifier_cli().main([str(tmp_path)]) == 1
     assert "MANIFEST_MISSING" in capsys.readouterr().err
+
+
+def test_preparation_reference_missing_rejected(manifest, tmp_path):
+    manifest["preparation"] = {"sha256": "a" * 64}
+    with pytest.raises(ValueError, match="PREPARATION_MISSING"):
+        verify_manifest(manifest, tmp_path)

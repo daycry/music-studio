@@ -24,8 +24,8 @@ verificacion: obligatoria   # cada T-XX lleva `- **Verificación**:`; lo exige l
 | Fase 1 — Preparación | 2 | 2 | 100% | 0 / 6h | 0 / 2h | 0 / 0.5h | 0 / — |
 | Fase 2 — Cimientos compartidos | 3 | 3 | 100% | — / 26h | — / 13h | — / 3.3h | — / — |
 | Fase 3 — Motor musical | 3 | 3 | 100% | — / 19h | — / 9.5h | — / 2.4h | — / — |
-| Fase 4 — Medición y elección | 3 | 10 | 30% | 0 / 37h | 0 / 15h | 0 / 3.8h | 0 / — |
-| **TOTAL** | **11** | **18** | **61%** | **— / 88h** | **— / 39.5h** | **— / 10h** | **— / —** |
+| Fase 4 — Medición y elección | 4 | 12 | 33% | 0 / 37h | 0 / 15h | 0 / 3.8h | 0 / — |
+| **TOTAL** | **12** | **20** | **60%** | **— / 88h** | **— / 39.5h** | **— / 10h** | **— / —** |
 
 > Horas orientativas (proyecto personal, sin presupuesto). La T-12 es opcional (8 h): sin ella son 80 h.
 
@@ -362,7 +362,7 @@ Se recuperaron master.flac (PCM24), listen.mp3, peaks.json y manifest.json desde
 - **Tiempo humano**: est. 5h · real —
 - **Tiempo IA (ejec.)**: est. 2h · real —
 - **Supervisión**: est. 0.5h (≈25 % IA) · real —
-- **Dependencias**: T-07
+- **Dependencias**: T-07, T-19 (entradas musicales verificadas)
 - **Tipo**: investigación
 - **Archivos**: `scripts/eval/benchmark.py`, `eval/results/benchmark-5070.md`
 - **Verificación**:
@@ -384,7 +384,7 @@ Se recuperaron master.flac (PCM24), listen.mp3, peaks.json y manifest.json desde
 - **Tiempo humano**: est. 6h · real —
 - **Tiempo IA (ejec.)**: est. 2.5h · real —
 - **Supervisión**: est. 0.6h (≈25 % IA) · real —
-- **Dependencias**: T-07
+- **Dependencias**: T-07, T-19 (entradas musicales verificadas)
 - **Tipo**: investigación
 - **Archivos**: `eval/results/capacidades-acestep.md`, `eval/capabilities/` (git-ignored), `apps/engines/acestep/descriptor.py`
 - **Verificación**:
@@ -403,7 +403,7 @@ Se recuperaron master.flac (PCM24), listen.mp3, peaks.json y manifest.json desde
 - **Tiempo humano**: est. 6h · real —
 - **Tiempo IA (ejec.)**: est. 3h · real —
 - **Supervisión**: est. 0.8h (≈25 % IA) · real —
-- **Dependencias**: T-07, T-08
+- **Dependencias**: T-07, T-08, T-19 (entradas musicales verificadas)
 - **Tipo**: investigación
 - **Archivos**: `scripts/eval/run.py`, `scripts/eval/metrics.py`, `eval/briefs/B-01…B-10.txt`, `eval/briefs/briefs.yaml`, `eval/results/sheet-<candidato>.md`
 - **Verificación**:
@@ -424,7 +424,7 @@ Se recuperaron master.flac (PCM24), listen.mp3, peaks.json y manifest.json desde
 - **Tiempo humano**: est. 8h · real —
 - **Tiempo IA (ejec.)**: est. 4h · real —
 - **Supervisión**: est. 1h (≈25 % IA) · real —
-- **Dependencias**: T-03, T-11
+- **Dependencias**: T-03, T-11, T-19 (entradas musicales verificadas)
 - **Tipo**: backend
 - **Archivos**: `apps/engines/heartmula/`, `models/models.lock.json`, `docs/legal/licencias.md`
 - **Verificación**:
@@ -442,7 +442,7 @@ Se recuperaron master.flac (PCM24), listen.mp3, peaks.json y manifest.json desde
 - **Tiempo humano**: est. 4h · real —
 - **Tiempo IA (ejec.)**: est. 0.5h · real —
 - **Supervisión**: est. 0.1h (≈25 % IA) · real —
-- **Dependencias**: T-09, T-10, T-11 (y T-12 si se hizo)
+- **Dependencias**: T-09, T-10, T-11 (y T-12 si se hizo), T-19 (entradas musicales verificadas)
 - **Tipo**: docs
 - **Archivos**: `eval/results/escucha-m0.md`, `docs/decisiones/ADR-0011-seleccion-de-modelos.md`, `docs/arquitectura/modelos.md`, `docs/memory/`
 - **Verificación**:
@@ -537,7 +537,7 @@ Privados: `data/eval/libre-prompt/01M46QBFERQBK6XCH2Z4QQP9B1/listen.html`, mapa 
 - **Tiempo humano**: est. — · real —
 - **Tiempo IA (ejec.)**: est. — · real —
 - **Supervisión**: est. — · real —
-- **Dependencias**: T-06, T-07, T-15
+- **Dependencias**: T-06, T-07, T-15, T-19 (entradas musicales verificadas)
 - **Tipo**: backend
 - **Archivos**: `apps/engines/acestep/descriptor.py`, `apps/engines/acestep/adapter.py`, `apps/engines/acestep/tests/test_inference_controls.py`, `scripts/generate.py`, `tests/test_generate_inference.py`, `apps/engines/acestep/README.md`, `docs/arquitectura/pipeline-audio.md`, `docs/arquitectura/modelos.md`, `docs/decisiones/ADR-0027-controles-de-inferencia-sft.md`, `docs/decisiones/README.md`, `CONTINUE-HERE.md`, `docs/roadmap/2026-09-28-m0-entorno-y-motor/improvement-plan.md`, `docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t16/`, `data/inputs/libre/sft-ab/`, `data/eval/libre-sft/`, `.cache/dev-cycle/t16/` (últimas tres rutas privadas/efímeras).
 - **Verificación**:
@@ -585,6 +585,94 @@ Privados: `data/eval/libre-prompt/01M46QBFERQBK6XCH2Z4QQP9B1/listen.html`, mapa 
 **Cierre técnico T-17 — 2026-10-05:** revisión A+B intento 2 conforme y [QA independiente CPU](testing/t17/report.md), status passed_cpu_documentation. Verificación de inventario y probe nativo exit 0: 16 casos; CLI/estimate 422 para original y 200 para tres adaptaciones, sin load/jobs. QA reconstruye fronteras/flags de 16 capturas, seis hashes de fuente, 16 archivos de tokenizer contra lock, 32 registros de hash preservados, 72 líneas idénticas y nueve tags del candidato. Alias T-14/control T-15 verificado por bytes/parámetros. Publicación: 17 archivos, cero fugas detectadas y 181 enlaces locales válidos. Ledger-lint exit 0, cero incoherencias; coverage-check exit 0 con applies=false por sin UI, degradación de lectura de base documentada y ninguna ruta UI en el alcance. No porcentaje ficticio, Playwright ni qa-gate aplicado; git diff --check exit 0. PDF no generado por dependencias ausentes. Costes/tokens/horas desconocidos (fuente estimado); no se infieren del reloj. Producto/pesos/takes/originales intactos. Preparación privada nueva sin audio, controles de producto pendientes; calidad musical no aprobada. Referencia de vídeo conservada a petición del propietario, sin iniciar M4. M0 abierto con 11/18 tareas completadas; T-16 borrador y T-08–T-13 pendientes. Integración preparada por allowlist, fast-forward y publicación conforme convenciones.
 
 ---
+
+
+### T-18 — Preparación fiel y procedencia privada de instrucciones
+
+- **Descripción**: Separar original y entrada efectiva, retirar únicamente decoración Markdown mediante acción explícita, exponer metadata opcional y guardar preparación/diff/hashes privados reutilizables por CLI y futuro M1. Sin resumir, traducir, sobrescribir letras ni generar audio en prepare-only.
+- **Estado**: completado
+- **Tiempo humano**: est. — · real —
+- **Tiempo IA (ejec.)**: est. — · real —
+- **Supervisión**: est. — · real —
+- **Tokens**: est. — · real — (sin medición disponible)
+- **Coste**: n/a económico, ADR-0001; consumo desconocido, no igualarlo a0tokens.
+- **Dependencias**: T-07, T-17
+- **Tipo**: backend
+- **Archivos**: `scripts/input_preparation.py`, `tests/test_input_preparation.py`, `apps/engines/acestep/descriptor.py`, `apps/engines/acestep/adapter.py`, `apps/engines/acestep/tests/test_adapter.py`, `packages/contracts/engine-v1.json`, `scripts/generate.py`, `tests/test_generate.py`, `tests/test_generate_shift.py`, `tests/test_generate_preparation.py`, `packages/contracts/manifest-v1.schema.json`, `packages/contracts/examples/cli_run.json`, `packages/audio-post/audio_post/manifest.py`, `packages/audio-post/tests/test_manifest_errors.py`, `scripts/verify_manifest.py`, `docs/arquitectura/pipeline-audio.md`, `docs/arquitectura/contrato-engines.md`, `docs/arquitectura/convenciones.md`, `docs/decisiones/ADR-0028-preparacion-fiel-de-instrucciones.md` (decisión del orquestador), `docs/decisiones/README.md`, `CONTINUE-HERE.md`, `docs/roadmap/2026-09-28-m0-entorno-y-motor/improvement-plan.md`, `docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t18/`, `.cache/dev-cycle/t18/`, `data/inputs/libre/` (originales solo lectura), `data/preparations/`, `data/cli/` (solo publicaciones nuevas).
+- **Verificación**: `uv run --frozen --all-packages pytest tests/test_input_preparation.py tests/test_generate.py tests/test_generate_shift.py tests/test_generate_preparation.py apps/engines/acestep/tests/test_adapter.py packages/audio-post/tests/test_manifest_errors.py -q -m "not gpu"` → verde; tests prueban cero HTTP/catalog/load/jobs/FFmpeg en prepare-only, defaults idénticos, hash bytes versus efectivo distinto y privacidad. `uv run --frozen scripts/export_contracts.py --check` →0. `uv run --frozen scripts/verify_manifest.py packages/contracts/examples/` → manifiestos antiguos y ejemplo opcional válidos. Probe privado `.cache/dev-cycle/t18/verify-preparation.py` →72 versos originales idénticos,9 tags íntegros, hashes anteriores intactos, adaptación con diff explícito. Comandos de entorno y basetemp local aplicados antes de ejecutar.
+
+**Criterios de aceptación**
+
+- [x] Original/efectivo separados; diff explícito por campo, transformaciones listadas y hashes verificables; no se sobrescriben originales ni takes/manifiestos existentes.
+- [x] Default conserva texto; retirada de envoltorio Markdown opt-in conserva cada verso y cada indicación de los9 tags de Libre. No hay traducción/resumen automático ni pérdida silenciosa.
+- [x] Key y compás opcionales se exponen en descriptor, CLI y generation_options (time_signature externo → timesignature upstream), sin inventar valores; briefs/conflictos/omisión y autoría cubiertos por tests. Transporte de idioma estructurado al LM queda para T-19.
+- [x] Prepare-only es offline, no consulta catálogo/engine ni carga modelos/encola jobs/requiere FFmpeg; distingue preparación local y presupuesto del motor aún pendiente. Recibo privado inmutable referenciado por manifiestos nuevos.
+- [x] CLI normal reutiliza preparación y publicación atómica; datos privados confinados, recibos públicos sin letras/prompt/rutas personales.
+- [x] RED real por comportamiento, implementación GREEN, revisión fresca A+B y lentes condicionales, QA CPU y >=80% de producción cambiada; no declara cumplimiento artístico.
+
+**Subtareas**
+
+- [x] Tests RED de preservación/transformación/diff/hash; módulo puro.
+- [x] Tests RED CLI optional fields/prepare-only/procedencia/conflictos; conexión al módulo.
+- [x] Schema opcional y verificadores si hay referencia nueva, fixtures sintéticos públicos.
+- [x] Preparación privada fiel y rúbrica de voz/rap/instrumentos/ritmo/crecimiento/outro; registrar límites.
+- [x] ADR/documentación, revisión y QA con preservación de originales.
+
+
+**Implementación T-18 — 2026-10-05:** subagente fresco, producción estable para revisión. [Informe y RED](testing/t18/implementation-report.md). Verificación declarada: 177 passed, 1 skipped, 5 warnings Starlette existentes; exportador `engine-v1.json up to date`; ejemplos `all valid (4 manifests)`; Ruff `All checks passed!`, todos exit 0. Probe CLI real: 72 líneas, nueve tags completos, 32 registros de hashes anteriores intactos, recibo privado inmutable; engine inaccesible, sin generación/GPU. Statements cambiados medidos: preparación 96,25 %, CLI 93,33 %, adaptador 100 %, manifiesto 86,54 %; descriptor literal en archivo con 100 %. Revisión fresca y QA aún pendientes; no se cierra por estos resultados.
+
+
+
+- RED: tests/test_input_preparation.py::test_identity_and_explicit_tags falló porque effective era None y no existía preparación fiel · 2026-10-05 (red-pure.txt). Criterios original/efectivo y limpieza opt-in.
+- RED: tests/test_input_preparation.py::test_receipt_integrity_and_immutable_publication falló porque publish no devolvía referencia SHA-256 · 2026-10-05 (red-receipt.txt). Integridad, procedencia/publicación inmutable.
+- RED: tests/test_generate_preparation.py::test_offline_prepare_and_metadata falló con SystemExit 2: opciones prepare-only/key/time-signature no reconocidas · 2026-10-05 (red-cli.txt). CLI offline y metadata.
+- RED: apps/engines/acestep/tests/test_adapter.py::test_time_signature_metadata_optional falló con None != '4/4' · 2026-10-05 (red-metadata.txt). Transporte opcional upstream.
+- RED: packages/audio-post/tests/test_manifest_errors.py::test_preparation_reference_missing_rejected falló DID NOT RAISE ValueError · 2026-10-05 (red-manifest.txt). Referencia opcional verificada.
+- RED: tests/test_input_preparation.py::test_lyrics_source_disagreement_rejected falló DID NOT RAISE ValueError · 2026-10-05 (red-source.txt). No pérdida silenciosa ni fuente de letra discordante.
+- RED: tests/test_input_preparation.py::test_effective_request_hash falló None != SHA-256 canónico de la petición · 2026-10-05 (red-request-hash.txt).
+- RED: tests/test_generate_preparation.py::test_malformed_receipt_with_matching_reference[structure/field_hash] falló KeyError task / DID NOT RAISE ValueError · 2026-10-05 (red-manifest-integrity.txt). Error tipado e integridad interna en verificador público.
+
+Los errores de import del entrypoint descubiertos por CLI real se corrigieron como fallo de integración; no se presentan como evidencia TDD contractual. Hay regresión subprocess del entrypoint. Tests adicionales cubren autoría, omisión/conflictos de brief, metadata inválida, conservación BOM/CRLF/asteriscos de versos, origen de estilo distinto, fallo atómico sin temporales, desacuerdo de petición antes de HTTP, manipulación de recibos y privacidad.
+
+
+
+**Fix1 — 2026-10-05:** [RED/GREEN y cobertura](testing/t18/fix1-report.md). A1 restaurado schema key; B1 binding exacto semilla/variante incluida base aleatoria; B2 hash fuente cruzado con bytes reales en preparación/verificador. RED: legacy key falló ValidationError; declared_lyrics_hash y manifest_false_source_hash fallaron DID NOT RAISE; execution_binding falló None frente a binding; variant_seed_binding explícita/nula fallaron DID NOT RAISE, todo antes del código correspondiente. GREEN: 185 passed/1 skipped/5 warnings existentes; exportador y cuatro ejemplos verdes, Ruff/diff-check0. Probe72/9/32 intacto. Statements cambiados 96,84/93,62/100/88,14 por ciento; descriptor literalarchivo100. El límite de agentes impidió reactivar/despachar implementer: fix ejecutado en contexto principal, degradación explícita; revisión y QA pendientes, sin cierre. Consumo estimado/null, no inferido del reloj.
+
+**Cierre técnico T-18 — 2026-10-05:** [QA independiente](testing/t18/report.md) y [recibo](testing/t18/qa-receipt.json): Verificación declarada **185 passed, 1 skipped**, exit 0; workspace completo explícito **309 passed, 5 skipped, 1 deselected**, exit 0. Cobertura añadida **190/203 = 93,60 %**, mínimo por archivo medible **88,14 %**; descriptor literal 30/30. Exportador, cuatro manifiestos legados, Ruff y CLI real conformes. Probe **72 versos, nueve tags y 32 hashes** preservados, recibo repetido sin alterar payload ni mtime. Revisión A+B intento 2 sin gaps; primer intento fresco y segunda pasada con contextos reutilizados por límite de threads, independientes del fix. Fix en contexto principal y degradación de revisión declarados. qa: sin UI por diseño (`test-plan: n/a (sin UI)`); ledger-lint 0 incoherencias, coverage-check exit 0/applies=false, sin E2E ficticio. 129 enlaces públicos comprobados; cero fugas en el alcance examinado. PDF pendiente por dependencias ausentes. Ventana QA parcial 21:40:08–21:46:16 UTC, fuente estimado; horas IA/tokens/coste reales desconocidos. Imagen Docker T-14 sin reconstruir: nuevas opciones acreditadas en fuente CPU, integración runtime pendiente de T-19. Sin audio nuevo ni cumplimiento artístico; M0 abierto, 12/20 tareas.
+- **Changelog**: El CLI conserva letra y estilo originales, permite preparar entradas offline y registra cambios explícitos y procedencia privada sin perder las indicaciones de los tags.
+
+### T-19 — Preflight nativo de tokens y captura de entradas efectivas
+
+- **Descripción**: Medir plantillas completas y reserva de salida LM con tokenizadores locales fijados; rechazar truncamiento, extracción o clamp no explícitos en estimate/jobs y adaptador directo; transportar idioma/metadata en formato entrenado y capturar recibo efectivo privado sin textos públicos.
+- **Estado**: borrador
+- **Tiempo humano**: est. — · real —
+- **Tiempo IA (ejec.)**: est. — · real —
+- **Supervisión**: est. — · real —
+- **Tokens**: est. — · real — (sin medición disponible)
+- **Coste**: n/a económico, ADR-0001; consumo desconocido.
+- **Dependencias**: T-06, T-18
+- **Tipo**: backend
+- **Archivos**: `apps/engines/acestep/preflight.py`, `apps/engines/acestep/input_profile.py`, `apps/engines/acestep/adapter.py`, `apps/engines/acestep/descriptor.py`, `apps/engines/acestep/engine_acestep.py`, `apps/engines/acestep/tests/test_preflight.py`, `apps/engines/acestep/tests/test_adapter.py`, `apps/engines/common/engine_common/server.py`, `apps/engines/common/engine_common/worker.py` (solo si recibo requiere IPC adicional), `apps/engines/common/tests/test_common.py`, `scripts/generate.py`, `tests/test_generate_preparation.py`, `packages/engine-contract/engine_contract/__init__.py` (solo campos opcionales si necesarios), `packages/engine-contract/tests/test_contract.py`, `packages/contracts/engine-v1.json`, `packages/contracts/openapi.json` (si el export genera cambios), `packages/contracts/manifest-v1.schema.json` (solo aditivo si se necesita), `packages/audio-post/audio_post/manifest.py`, `scripts/export_contracts.py`, `docs/arquitectura/contrato-engines.md`, `docs/arquitectura/pipeline-audio.md`, `docs/arquitectura/modelos.md`, `docs/decisiones/ADR-0029-presupuesto-operativo-de-texto-acestep.md` (reservado), `docs/decisiones/README.md`, `CONTINUE-HERE.md`, `docs/roadmap/2026-09-28-m0-entorno-y-motor/improvement-plan.md`, `docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t19/`, `.cache/dev-cycle/t19/`, `data/preparations/`, `data/tmp/`, `data/cli/` (recibos nuevos); locks/tokenizadores/fuente T-17 solo lectura.
+- **Verificación**: `uv run --frozen --all-packages pytest apps/engines/acestep/tests/test_preflight.py apps/engines/acestep/tests/test_adapter.py apps/engines/common/tests/test_common.py tests/test_generate_preparation.py packages/engine-contract/tests/test_contract.py -q -m "not gpu"` → límites exactos y +1 LM/DiT, bypass directo, idioma YAML, ausencia de CUDA/torch parent y cero load/jobs ante rechazo. `uv run --frozen scripts/export_contracts.py --check` →0. `uv run --frozen scripts/verify_manifest.py packages/contracts/examples/` →0. Probe nativo CPU `.cache/dev-cycle/t19/verify-native-preflight.py` → perfiles/hashes reales y conteos coinciden con captura del upstream fijado, original Libre bloqueado sin truncar y candidato fiel íntegro. Si requiere contenedor, ejecutar imagen existente con CUDA_VISIBLE_DEVICES vacío y sin build/GPU/model load; no instalar herramientas.
+
+**Criterios de aceptación**
+
+- [ ] Presupuesto nativo LM entrada+reserva real y DiT256/2048, incluye todas las cabeceras/metadatos/ramas activas; no infiere contexto de131072 ni duplica plantilla aproximada.
+- [ ] Estimate y jobs rechazan antes de carga/cola toda pérdida/truncamiento o duración limitada; adaptador directo protege el mismo criterio. Fallo de tokenizer/config/hash/timeout no se convierte en aceptación.
+- [ ] Caption largo que cabe se acepta, exceso nativo se rechaza; elevar límites administrativos solo cuando el preflight ya protege. Música instrumental y seeds/shift anteriores conservan comportamiento compatible.
+- [ ] Idioma validado llega como language al YAML entrenado LM y al DiT; key/compás opcionales viajan en formato upstream, sin valores inventados, conflictos ni reescritura por CoT.
+- [ ] Recibo planned/captured distingue estimate de frontera real, hashes token/input/flags y defaults efectivos, referencias privadas validables; logs/eventos/errores públicos no contienen letras ni prompts.
+- [ ] Tests diferenciales del upstream/tokenizadores fijados y regresión de16 casos auditados. Los casos que exceden presupuesto se bloquean; adaptaciones conservadas y nueva preparación cuentan íntegramente. Presencia de tags en tokens no se declara obediencia musical.
+- [ ] TDD, revisión fresca A+B+C/D cuando apliquen, QA CPU y >=80% producción cambiada, code-first aditivo compatible, padre sin torch/CUDA y server sin torch. Sin modelos/build/GPU/instalaciones nuevas en este tramo.
+
+**Subtareas**
+
+- [ ] RED perfil/hashes/ventana/reserva/limites; conteo local diferencial CPU.
+- [ ] RED estimate/jobs/directadapter y compatibilidad mock; hook opcional sin modelos.
+- [ ] RED idioma/compás/key/CFG/SFT extraction; wrapper mínimo y captura de frontera.
+- [ ] RED privacidad/publicación/recibo/integridad; logger ámbito hijo y procedencia CLI.
+- [ ] Exportar contratos aditivos, ADR/docs, ampliar dependencias/rúbrica T-08/T-12/T-13, revisión y QA.
+
 
 ## Revisión de dos lentes — intento 1: Fase 2 (T-03, T-04) — correcciones pendientes
 
@@ -872,3 +960,12 @@ A+B de contexto fresco; C/D=false por selector automático. Scope exit 0, cero a
 | A2 | Minor | Frase del candidato agrupa tres afirmaciones | T-17 | Corregido y revalidado | Preparación/conservación/traducción separadas, conclusiones conservadas |
 
 Fusión: 0 Critical / 0 Important / 0 Minor pendientes. Fuente de consumo estimado; tokens/horas/coste null. QA final sigue pendiente en esta puerta; no se declara calidad musical ni cierre de M0.
+
+## Revisión de dos lentes — intento 1: T-18 — tres correcciones pendientes
+
+A+B frescas; C/D=false por selector, alcance exit0 sin avisos ni exclusiones de usuario. Journals ajenos preservados. [Informe y evidencia](testing/t18/review-attempt1.md). A1 Important: descriptor key restringe schema legado (longitudes0/33); B1 Important: seed/variante sin vincular al recibo; B2 Important: lyrics_sha256 declarado puede discrepar de bytes fuente. Sin rebates, cero Critical/tres Important/cero Minor. A17 tests verdes, B177passed/1skipped y dos reproducciones; exportador y cuatro ejemplos verdes. T-18 vuelve a en-progreso para fix1TDD; QA pendiente. Medición estimada, consumo real desconocido; revisión cerrada antes del fix.
+
+
+## Revisión de dos lentes — intento 2: T-18 — correcciones conformes
+
+[Tabla y evidencia](testing/t18/review-attempt2.md). A1/B1/B2 corregidos y aprobados anteriores conservados; cero gaps pendientes. A7 regresiones/exportador/ejemplos verdes; B185passed/1skipped/5warnings y nueve casos de ejecución malformada rechazados. Alcance0 sin avisos ni exclusiones de usuario, C/Dfalse. Contextos de revisión reutilizados por límite de threads, independientes de implementación; degradación explícita. Journals ajenos preservados, sin promoción de conocimiento. QA pendiente; T-18 en-revision, no cierre. Consumo estimado/null; revisión cerrada antes de QA.

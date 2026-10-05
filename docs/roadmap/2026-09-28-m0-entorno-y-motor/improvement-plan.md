@@ -26,7 +26,7 @@ generacion:
 | Métrica | Estimado | Real | Confianza |
 |---|---|---|---|
 | Tiempo humano | **88 h** (80 h sin la T-12 opcional) | 0 h | Media |
-| Tareas | **18** (17 obligatorias; T-14–T-17 adicionales autorizadas por el propietario) | [Ver ledger canónico](tasks.md) | — |
+| Tareas | **20** (19 obligatorias; T-14–T-19 adicionales autorizadas por el propietario) | [Ver ledger canónico](tasks.md) | — |
 
 ## Fases
 
@@ -35,7 +35,7 @@ generacion:
 | Fase 1 — Preparación | T-00, T-01 | 6 | Máquina lista y repositorio con su esqueleto |
 | Fase 2 — Cimientos compartidos | T-02, T-03, T-04 | 26 | Pesos seguros, contrato `/v1` con engine-mock, audio-post y manifiesto |
 | Fase 3 — Motor musical | T-05, T-06, T-07 | 19 | **🎯 Primera canción por CLI** |
-| Fase 4 — Medición y elección | T-08 … T-13 y T-14–T-17 adicionales | 37 (alcance inicial) | Benchmark, matriz de capacidades, batería de evaluación, escucha y decisión de modelo |
+| Fase 4 — Medición y elección | T-08 … T-13 y T-14–T-19 adicionales | 37 (alcance inicial) | Benchmark, matriz de capacidades, batería de evaluación, escucha y decisión de modelo |
 
 El detalle, los criterios y las verificaciones están en [`tasks.md`](tasks.md), el registro canónico del progreso.
 
@@ -68,3 +68,8 @@ El propietario pide continuar la investigación: controles de pasos/CFG e identi
 ## Prioridad explícita — T-17, 2026-10-05
 
 Antes de perfeccionar o cambiar modelos, auditar qué instrucciones llegan realmente al LM y al DiT: adaptación, metadata, plantillas y tokens. T-16 queda en borrador, sin producción cambiada ni GPU. T-17 investiga el transporte y sus pérdidas, sin prometer cumplimiento artístico ni modificar el corpus original; detalle en el ledger. Presupuesto adicional no fijado.
+
+
+## Corrección de fidelidad — T-18/T-19, 2026-10-05
+
+El propietario autoriza implementar todo el roadmap y elegir las mejores alternativas. Se ejecutan las correcciones acreditadas por T-17 antes de cambiar modelos: preparación privada original/efectiva y diff (T-18), seguida de presupuesto nativo sin truncamiento y metadata efectiva (T-19). El detalle verificable queda en el ledger. T-16 y las comparaciones musicales requieren estos controles primero; T-08/T-12/T-13 conservan la evaluación de obediencia y naturalidad. Las horas originales corresponden al alcance inicial; el consumo adicional no está medido. No se declara calidad musical por pruebas de transporte.
