@@ -1,0 +1,27 @@
+{
+  "lente_c": true,
+  "modo": "auto",
+  "motivos": [
+    {
+      "tipo": "ruta",
+      "fichero": ".dockerignore",
+      "patron": "docker"
+    },
+    {
+      "tipo": "ruta",
+      "fichero": "apps/engines/acestep/Dockerfile",
+      "patron": "/Dockerfile"
+    },
+    {
+      "tipo": "ruta",
+      "fichero": "docker-compose.yml",
+      "patron": "docker"
+    }
+  ],
+  "lente_d": false,
+  "modo_d": "auto",
+  "motivos_d": [],
+  "base": "--base main",
+  "ficheros": 18,
+  "avisos": []
+}

@@ -1,0 +1,2 @@
+git diff --check exit=0
+warning: in the working copy of 'docs/roadmap/2026-09-28-m0-entorno-y-motor/spec.md', CRLF will be replaced by LF the next time Git touches it

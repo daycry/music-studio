@@ -1,0 +1,11 @@
+**
+!apps/
+!apps/engines/
+!apps/engines/acestep/**
+!apps/engines/common/**
+!packages/
+!packages/engine-contract/**
+!packages/contracts/**
+**/__pycache__/
+**/.venv/
+**/.cache/

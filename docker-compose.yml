@@ -1,0 +1,28 @@
+services:
+  engine-acestep:
+    image: music-studio/engine-acestep:m0-t05
+    build:
+      context: .
+      dockerfile: apps/engines/acestep/Dockerfile
+    profiles: [engines]
+    ports:
+      - "127.0.0.1:8101:8101"
+    environment:
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+      ACESTEP_LM_BACKEND: pt
+      ACESTEP_CHECKPOINTS_DIR: /models/ace-step-1.5/checkpoints
+      PYTORCH_CUDA_ALLOC_CONF: expandable_segments:True
+      STUDIO_ENGINE_TOKEN: ${STUDIO_ENGINE_TOKEN:?Ejecuta scripts/init_env.py para crear el token}
+      STUDIO_DATA_DIR: /data
+    volumes:
+      - ./models:/models:ro
+      - ./data:/data:ro
+      - ./data/tmp:/data/tmp:rw
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

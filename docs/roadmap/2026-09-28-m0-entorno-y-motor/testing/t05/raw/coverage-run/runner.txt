@@ -1,0 +1,16 @@
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+out = Path(__file__).resolve().parent
+root = out.parents[6]
+os.environ['COVERAGE_FILE'] = str(out / '.coverage')
+args = [sys.executable, '-m', 'pytest', '-c', str(root / 'pytest.ini'), '--rootdir=' + str(root)]
+args += [str(root / p) for p in ('packages/weights/tests', 'packages/engine-contract/tests', 'packages/audio-post/tests', 'apps/engines/common/tests', 'apps/engines/mock/tests', 'tests')]
+args += ['-m', 'not gpu', '--cov=' + str(root), '--cov-report=json:' + str(out / 'coverage.json'), '--basetemp=' + str(out / 'pytest-tmp'), '-p', 'no:cacheprovider']
+result = subprocess.run(args, cwd=root, capture_output=True, text=True, encoding='utf-8', errors='replace')
+content = (result.stdout + result.stderr).replace(str(root), '<workspace>').replace(root.as_posix(), '<workspace>')
+(out.parent / 'pytest-coverage.log').write_text(content + '\nexit_code=' + str(result.returncode) + '\n', encoding='utf-8')
+sys.exit(result.returncode)

@@ -1,0 +1,23 @@
+python.exe : coverage-gate: sin datos de cobertura para: runner.py (excluidos de la media)
+At line:29 char:9
++ $qaGate=& python <agent-cache>/plugins/cache/daycry/custom-a ...
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (coverage-gate: ...os de la media):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+{
+  "ok": true,
+  "exit": 0,
+  "stack": "pytest",
+  "detalle": {
+    "stack": "pytest",
+    "informe": "coverage.json",
+    "global": 25.39,
+    "modo": "changed-only",
+    "base": "main",
+    "ficheros": {}
+  },
+  "avisos": [
+    "sin datos de cobertura para: runner.py (excluidos de la media)"
+  ]
+}

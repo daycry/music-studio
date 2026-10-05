@@ -1,0 +1,21 @@
+[project]
+name = "engine-acestep"
+version = "0.1.0"
+description = "Entorno aislado del motor ACE-Step; adapter /v1 en T-06."
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "engine-contract",
+    "engine-common",
+    "pytest==9.1.1",
+    "httpx==0.28.1",
+    # Gradio 6.2.0 del lock upstream necesita Starlette anterior a 1.0.
+    "starlette>=0.52,<1.0",
+]
+
+[tool.uv.sources]
+engine-contract = { path = "../../../packages/engine-contract", editable = true }
+engine-common = { path = "../common", editable = true }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["gpu: requiere la GPU real"]

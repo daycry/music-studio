@@ -1,0 +1,9 @@
+ Container music-studio-engine-acestep-run-edd9aa2f885d Creating
+ Container music-studio-engine-acestep-run-edd9aa2f885d Created
+engine-acestep: attention=SDPA torch=2.10.0+cu128
+2026-10-05 11:22:20.828 | DEBUG    | acestep.core.generation.handler.init_service_memory_basic:_apply_malloc_mmap_threshold:50 - [memory] Set M_MMAP_THRESHOLD=131072 for immediate OS reclaim of large frees
+mkdir -p failed for path /studio/.config/matplotlib: [Errno 13] Permission denied: '/studio/.config'
+Matplotlib created a temporary cache directory at /tmp/matplotlib-07s0p4q5 because there was an issue with the default path (/studio/.config/matplotlib); it is highly recommended to set the MPLCONFIGDIR environment variable to a writable directory, in particular to speed up the import of Matplotlib and to better support multiprocessing.
+2026-10-05 11:22:26.599 | WARNING  | acestep.training.trainer:<module>:40 - bitsandbytes not installed. Using standard AdamW.
+
+exit_code=0

@@ -1,0 +1,123 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.14, pytest-9.1.1, pluggy-1.6.0
+cachedir: docs\roadmap\2026-09-28-m0-entorno-y-motor\testing\t05\raw\coverage-run\pytest-cache
+rootdir: <workspace>
+configfile: pytest.ini
+plugins: anyio-4.15.1, platformdirs-4.12.1, cov-7.1.0
+collected 125 items
+
+..\..\..\..\..\..\..\packages\weights\tests\test_audit_pickle.py .....   [  4%]
+..\..\..\..\..\..\..\packages\weights\tests\test_convert.py ....         [  7%]
+..\..\..\..\..\..\..\packages\weights\tests\test_hashing.py ..           [  8%]
+..\..\..\..\..\..\..\packages\weights\tests\test_safetensors_format.py . [  9%]
+..                                                                       [ 11%]
+..\..\..\..\..\..\..\packages\weights\tests\test_seal.py ....            [ 14%]
+..\..\..\..\..\..\..\packages\weights\tests\test_verify.py ......        [ 19%]
+..\..\..\..\..\..\..\packages\engine-contract\tests\test_contract.py F.. [ 21%]
+..........F                                                              [ 30%]
+..\..\..\..\..\..\..\packages\audio-post\tests\test_audio_post.py ...... [ 35%]
+.....                                                                    [ 39%]
+..\..\..\..\..\..\..\packages\audio-post\tests\test_manifest_errors.py . [ 40%]
+.........................................                                [ 72%]
+..\..\..\..\..\..\..\apps\engines\common\tests\test_common.py .......... [ 80%]
+.                                                                        [ 81%]
+..\..\..\..\..\..\..\apps\engines\common\tests\test_review_regressions.py . [ 82%]
+...........                                                              [ 91%]
+..\..\..\..\..\..\..\apps\engines\mock\tests\test_mock.py ...            [ 93%]
+..\..\..\..\..\..\..\tests\test_no_pickle.py ........                    [100%]
+
+================================== FAILURES ===================================
+___________________________ test_models_and_schema ____________________________
+
+    def test_models_and_schema():
+        assert hasattr(contract, "JobRequest"), (
+            "JobRequest y esquema todavía no implementados"
+        )
+        request = contract.JobRequest(
+            job_id="01ARZ3NDEKTSV4RRFFQ69G5FAV",
+            task="music.song",
+            model_id="mock",
+            inputs=[],
+            params={},
+            output_dir="tmp/01ARZ3NDEKTSV4RRFFQ69G5FAV/",
+            timeout_s=30,
+        )
+        assert request.n_outputs == 1
+        with pytest.raises(ValueError):
+            contract.JobRequest(**{**request.model_dump(), "output_dir": "../escape"})
+        versioned = Path("packages/contracts/engine-v1.json")
+>       assert json.loads(versioned.read_text()) == contract.contract_schema()
+                          ^^^^^^^^^^^^^^^^^^^^^
+
+..\..\..\..\..\..\..\packages\engine-contract\tests\test_contract.py:25:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\..\..\..\..\.cache\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:1027: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('packages/contracts/engine-v1.json'), mode = 'r'
+buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'packages\\contracts\\engine-v1.json'
+
+..\..\..\..\..\..\..\.cache\uv\python\cpython-3.12-windows-x86_64-none\Lib\pathlib.py:1013: FileNotFoundError
+____________ test_export_cli_generates_and_detects_stale_contract _____________
+
+tmp_path = WindowsPath('<workspace>/.cache/pytest-tmp/2f1168b98707424395fa20132bd2f0df')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001EA144E2C90>
+capsys = <_pytest.capture.CaptureFixture object at 0x000001EA144E15B0>
+
+    def test_export_cli_generates_and_detects_stale_contract(tmp_path, monkeypatch, capsys):
+        import importlib.util
+
+        source = Path("scripts/export_contracts.py").resolve()
+        spec = importlib.util.spec_from_file_location("export_contract_cli", source)
+        module = importlib.util.module_from_spec(spec)
+>       spec.loader.exec_module(module)
+
+..\..\..\..\..\..\..\packages\engine-contract\tests\test_contract.py:132:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+<frozen importlib._bootstrap_external>:995: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1132: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x000001EA144E0CB0>
+path = '<workspace>\\docs\\roadmap\\2026-09-28-m0-entorno-y-motor\\testing\\t05\\raw\\coverage-run\\scripts\\export_contracts.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '<workspace>\\docs\\roadmap\\2026-09-28-m0-entorno-y-motor\\testing\\t05\\raw\\coverage-run\\scripts\\export_contracts.py'
+
+<frozen importlib._bootstrap_external>:1190: FileNotFoundError
+============================== warnings summary ===============================
+..\..\..\..\..\..\..\.venv\Lib\site-packages\_pytest\cacheprovider.py:469
+  <workspace>\.venv\Lib\site-packages\_pytest\cacheprovider.py:469: PytestCacheWarning: could not create cache path <workspace>\docs\roadmap\2026-09-28-m0-entorno-y-motor\testing\t05\raw\coverage-run\pytest-cache\v\cache\nodeids: [WinError 5] Access is denied: '<workspace>\\docs\\roadmap\\2026-09-28-m0-entorno-y-motor\\testing\\t05\\raw\\coverage-run\\pytest-cache-files-uunwtps4'
+    config.cache.set("cache/nodeids", sorted(self.cached_nodeids))
+
+..\..\..\..\..\..\..\.venv\Lib\site-packages\_pytest\cacheprovider.py:423
+  <workspace>\.venv\Lib\site-packages\_pytest\cacheprovider.py:423: PytestCacheWarning: could not create cache path <workspace>\docs\roadmap\2026-09-28-m0-entorno-y-motor\testing\t05\raw\coverage-run\pytest-cache\v\cache\lastfailed: [WinError 5] Access is denied: '<workspace>\\docs\\roadmap\\2026-09-28-m0-entorno-y-motor\\testing\\t05\\raw\\coverage-run\\pytest-cache-files-jb88p5us'
+    config.cache.set("cache/lastfailed", self.lastfailed)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=============================== tests coverage ================================
+______________ coverage: platform win32, python 3.12.14-final-0 _______________
+
+Coverage JSON written to file coverage.json
+=========================== short test summary info ===========================
+FAILED ..\..\..\..\..\..\..\packages\engine-contract\tests\test_contract.py::test_models_and_schema
+FAILED ..\..\..\..\..\..\..\packages\engine-contract\tests\test_contract.py::test_export_cli_generates_and_detects_stale_contract
+================= 2 failed, 123 passed, 2 warnings in 26.28s ==================
+
+exit_code=1

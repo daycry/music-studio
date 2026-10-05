@@ -1,0 +1,10 @@
+Autorización del propietario: «autorizo esa prueba» · 2026-10-05.
+Excepción exclusivamente para la matmul BF16 64x64, sin cargar modelos.
+Ollama antes: NAME ID SIZE PROCESSOR CONTEXT UNTIL (sin filas).
+Baseline previo medido: 2950 MiB / 12227 MiB.
+Comando: docker compose run --rm engine-acestep python -c "import torch;assert 'sm_120' in torch.cuda.get_arch_list();a=torch.ones(64,64,device='cuda',dtype=torch.bfloat16);print((a@a).sum().item())"
+Container music-studio-engine-acestep-run-a45fb4b7d7c2 Created
+engine-acestep: attention=SDPA torch=2.10.0+cu128
+262144.0
+exit_code=0
+No se descargó ni cargó ningún modelo de Ollama; no había modelo que restaurar.

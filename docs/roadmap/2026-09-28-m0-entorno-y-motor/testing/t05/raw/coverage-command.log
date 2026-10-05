@@ -1,0 +1,7 @@
+Final: entorno . ./scripts/env.ps1; PYTHONUTF8=1; PYTHONDONTWRITEBYTECODE=1
+python testing/t05/raw/coverage-run/gate-driver.txt <plugin>/skills/unit-tests/scripts/coverage-gate.py
+El driver invoca el gate oficial con ruta raíz, --changed-only --base main --min 80 --json y runner.txt.
+Se reubica COV_FILE[pytest] solo para escribir JSON bajo testing/t05/raw/coverage-run.
+coverage-gate exit_code=0; sin ficheros de código en el diff: nada que evaluar.
+pytest exit_code=0; 125 passed, 1 warning in 19.62s.
+No se acredita el 80% para shell/config. Global 25.51% no es porcentaje de T05.

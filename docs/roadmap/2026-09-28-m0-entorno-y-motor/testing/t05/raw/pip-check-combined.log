@@ -1,0 +1,10 @@
+ Container music-studio-engine-acestep-run-75d63f755097 Creating
+ Container music-studio-engine-acestep-run-75d63f755097 Created
+engine-acestep: attention=SDPA torch=2.10.0+cu128
+Using Python 3.11.14 environment at: /opt/acestep/.venv
+Checked 152 packages in 31ms
+Found 1 incompatibility
+The package `nano-vllm` requires `flash-attn @ https://github.com/mjun0812/flash-attention-prebuild-wheels/releases/download/v0.7.12/flash_attn-2.8.3+cu128torch2.10-cp311-cp311-linux_x86_64.whl ; python_full_version == '3.11.*' and platform_machine == 'x86_64' and sys_platform == 'linux'`, but it's not installed
+
+
+exit_code=1

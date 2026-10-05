@@ -1,0 +1,4 @@
+Node: v22.23.2
+Dependencias to-pdf existentes: no (workspace, cache de usuario y scripts del plugin)
+PDF no generado: no hay markdown-it/mammoth/puppeteer instalados; prohibido instalar o escribir fuera del workspace.
+No se ha descargado Chromium ni abierto ningún navegador.

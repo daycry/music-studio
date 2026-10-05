@@ -1,0 +1,69 @@
+{
+  "task": "T-05",
+  "date": "2026-10-05",
+  "status": "verification-complete-awaiting-qa",
+  "pending": "Puerta QA e integración Git; ninguna verificación Docker/GPU de T-05 pendiente.",
+  "image_manifest_list": "sha256:d7c73b5f5ec76c63626905b029af2ae61b37aed0809c7f0826ffa8c3f41d5c18",
+  "upstream": {
+    "tag": "v0.1.8",
+    "commit": "dce621408bee8c31b4fcf4811682eb9359e1bc94",
+    "url": "https://github.com/ace-step/ACE-Step-1.5/tree/dce621408bee8c31b4fcf4811682eb9359e1bc94"
+  },
+  "ffmpeg": {
+    "release": "autobuild-2026-07-31-14-10",
+    "asset": "ffmpeg-n7.1.5-12-g1fdbca85aa-linux64-lgpl-shared-7.1.tar.xz",
+    "sha256": "f5f0ad52c6ee28a222eb10838c231469a10ad325f84063d3bc0aadf08164b3ec"
+  },
+  "checks": [
+    {
+      "command": "docker compose --profile engines build engine-acestep",
+      "exit_code": 0,
+      "evidence": "build-fixed-cache.log"
+    },
+    {
+      "command": "docker compose run --rm engine-acestep uv run pytest -m \"not gpu\" -q",
+      "exit_code": 0,
+      "output": "4 passed in 7.01s",
+      "evidence": "pytest-final.log"
+    },
+    {
+      "command": "docker compose run --rm engine-acestep python -c \"import torch;assert 'sm_120' in torch.cuda.get_arch_list();a=torch.ones(64,64,device='cuda',dtype=torch.bfloat16);print((a@a).sum().item())\"",
+      "executed": true,
+      "exit_code": 0,
+      "output": "262144.0",
+      "evidence": "bf16-final.log"
+    },
+    {
+      "command": "docker compose run --rm engine-acestep sh -c \"ffmpeg -buildconf | grep -c -e enable-gpl -e enable-nonfree\"",
+      "exit_code": 1,
+      "output": "0",
+      "interpretation": "grep -c devuelve exit 1 cuando no hay coincidencias; ausencia GPL/nonfree esperada",
+      "evidence": "ffmpeg-final.log"
+    },
+    {
+      "command": "CUDA_VISIBLE_DEVICES= python -c 'import acestep.handler'",
+      "exit_code": 0,
+      "evidence": "handler-import-cpu.log"
+    },
+    {
+      "command": "uv pip check --python /opt/acestep/.venv/bin/python",
+      "exit_code": 1,
+      "output": "152 packages; nano-vllm requires flash-attn",
+      "evidence": "pip-check-combined.log",
+      "interpretation": "Exclusión flash-attn exigida; backend pt no importa nano-vllm. Check completo sigue fallido."
+    }
+  ],
+  "tdd": "RED: tests/test_environment.py::test_startup_log falló: attention=SDPA torch=2.10.0+cu128 no estaba en stdout=command-executed · 2026-10-05. GREEN 1 passed in 5.13s. TDD n/a para ensamblado Docker, pyproject/locks y compose; config sin lógica de adapter.",
+  "limitations": [
+    "La suite verifica entorno real y mounts; adapter/conformidad/generación corresponden a T-06.",
+    "CMD engine_acestep:create_app no existe hasta T-06; no se afirma servicio HTTP operativo."
+  ],
+  "rollback": "Revertir exclusivamente fuentes de T-05 y reconstruir su imagen; no se han descargado pesos ni modificado datos persistentes.",
+  "gpu_authorization": {
+    "date": "2026-10-05",
+    "statement": "autorizo esa prueba",
+    "scope": "matmul BF16 64x64 con baseline 2950 MiB; no carga de modelos ni benchmarks",
+    "ollama_initial_models": [],
+    "ollama_restored_models": []
+  }
+}

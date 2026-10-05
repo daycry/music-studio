@@ -1,0 +1,285 @@
+ Image music-studio/engine-acestep:m0-t05 Building
+#1 [internal] load local bake definitions
+#1 reading from stdin 612B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 3.30kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/nvidia/cuda:12.8.1-runtime-ubuntu22.04@sha256:4a801ef9232d2b05e69df4eb8aa054dbbe2824e5499e1e6e857320bb01ac41a9
+#3 DONE 0.0s
+
+#4 [internal] load metadata for ghcr.io/astral-sh/uv:0.12.19@sha256:04d046b13e60d6bcec73cbc5e1cad25d680dea90c8573340950a0ac2d1aef424
+#4 DONE 1.9s
+
+#5 [internal] load .dockerignore
+#5 transferring context:
+#5 transferring context: 216B 0.0s done
+#5 DONE 0.4s
+
+#6 [internal] load build context
+#6 DONE 0.0s
+
+#7 [uv 1/1] FROM ghcr.io/astral-sh/uv:0.12.19@sha256:04d046b13e60d6bcec73cbc5e1cad25d680dea90c8573340950a0ac2d1aef424
+#7 resolve ghcr.io/astral-sh/uv:0.12.19@sha256:04d046b13e60d6bcec73cbc5e1cad25d680dea90c8573340950a0ac2d1aef424
+#7 ...
+
+#8 [stage-1  1/13] FROM docker.io/nvidia/cuda:12.8.1-runtime-ubuntu22.04@sha256:4a801ef9232d2b05e69df4eb8aa054dbbe2824e5499e1e6e857320bb01ac41a9
+#8 resolve docker.io/nvidia/cuda:12.8.1-runtime-ubuntu22.04@sha256:4a801ef9232d2b05e69df4eb8aa054dbbe2824e5499e1e6e857320bb01ac41a9 0.4s done
+#8 DONE 0.4s
+
+#7 [uv 1/1] FROM ghcr.io/astral-sh/uv:0.12.19@sha256:04d046b13e60d6bcec73cbc5e1cad25d680dea90c8573340950a0ac2d1aef424
+#7 resolve ghcr.io/astral-sh/uv:0.12.19@sha256:04d046b13e60d6bcec73cbc5e1cad25d680dea90c8573340950a0ac2d1aef424 0.4s done
+#7 DONE 0.5s
+
+#9 [stage-1  2/13] COPY --from=uv /uv /uvx /usr/local/bin/
+#9 CACHED
+
+#10 [stage-1  3/13] RUN apt-get update && apt-get install -y --no-install-recommends       ca-certificates curl git xz-utils libsndfile1 libgomp1     && rm -r /var/lib/apt/lists/*
+#10 CACHED
+
+#11 [stage-1  4/13] RUN uv python install 3.11.14
+#11 CACHED
+
+#6 [internal] load build context
+#6 transferring context: 5.33kB 0.0s done
+#6 DONE 0.2s
+
+#12 [stage-1  5/13] RUN --mount=type=cache,target=/studio/.cache/uv/cache     git init /opt/acestep && cd /opt/acestep     && git remote add origin https://github.com/ace-step/ACE-Step-1.5.git     && git fetch --depth 1 origin dce621408bee8c31b4fcf4811682eb9359e1bc94     && git checkout --detach FETCH_HEAD     && uv sync --frozen --no-dev --python 3.11.14       --no-install-package flash-attn --no-install-package xformers
+#12 2.563 hint: Using 'master' as the name for the initial branch. This default branch name
+#12 2.563 hint: is subject to change. To configure the initial branch name to use in all
+#12 2.563 hint: of your new repositories, which will suppress this warning, call:
+#12 2.563 hint:
+#12 2.563 hint: 	git config --global init.defaultBranch <name>
+#12 2.563 hint:
+#12 2.563 hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+#12 2.563 hint: 'development'. The just-created branch can be renamed via this command:
+#12 2.563 hint:
+#12 2.563 hint: 	git branch -m <name>
+#12 2.566 Initialized empty Git repository in /opt/acestep/.git/
+#12 4.235 From https://github.com/ace-step/ACE-Step-1.5
+#12 4.235  * branch            dce621408bee8c31b4fcf4811682eb9359e1bc94 -> FETCH_HEAD
+#12 4.415 HEAD is now at dce6214 fix(build): track uv.lock in git for reproducible Docker builds (#1213)
+#12 4.545 Using CPython 3.11.14
+#12 4.547 Creating virtual environment at: .venv
+#12 4.663    Building ace-step @ file:///opt/acestep
+#12 4.664    Building nano-vllm @ file:///opt/acestep/acestep/third_parts/nano-vllm
+#12 5.314       Built ace-step @ file:///opt/acestep
+#12 5.631       Built nano-vllm @ file:///opt/acestep/acestep/third_parts/nano-vllm
+#12 5.638 Prepared 2 packages in 982ms
+#12 5.640 warning: Failed to hardlink files; falling back to full copy. This may lead to degraded performance.
+#12 5.640          If the cache and target directories are on different filesystems, hardlinking may not be supported.
+#12 5.640          If this is intentional, set `export UV_LINK_MODE=copy` or use `--link-mode=copy` to suppress this warning.
+
+Warning: truncated output (original token count: 2294)
+Total output lines: 228
+
+#12 72.58 Installed 141 packages in 1m 06s
+#12 72.58  + absl-py==2.4.0
+#12 72.58  + accelerate==1.12.0
+#12 72.58  + ace-step==1.5.0 (from file:///opt/acestep)
+#12 72.58  + aiofiles==24.1.0
+#12 72.58  + aiohappyeyeballs==2.6.1
+#12 72.58  + aiohttp==3.13.3
+#12 72.58  + aiosignal==1.4.0
+#12 72.58  + annotated-doc==0.0.4
+#12 72.58  + annotated-types==0.7.0
+#12 72.58  + anyio==4.12.1
+#12 72.58  + attrs==25.4.0
+#12 72.58  + brotli==1.2.0
+#12 72.58  + certifi==2026.1.4
+#12 72.58  + cffi==2.0.0
+#12 72.58  + charset-normalizer==3.4.4
+#12 72.58  + click==8.3.1
+#12 72.58  + contourpy==1.3.3
+#12 72.58  + cuda-bindings==12.9.4
+#12 72.58  + cuda-pathfinder==1.3.3
+#12 72.58  + cycler==0.12.1
+#12 72.58  + diffusers==0.37.1
+#12 72.58  + diskcache==5.6.3
+#12 72.58  + einops==0.8.2
+#12 72.58  + einx==0.3.0
+#12 72.58  + fastapi==0.128.0
+#12 72.58  + ffmpy==1.0.0
+#12 72.58  + filelock==3.20.3
+#12 72.58  + fonttools==4.61.1
+#12 72.58  + frozendict==2.4.7
+#12 72.58  + frozenlist==1.8.0
+#12 72.58  + fsspec==2026.1.0
+#12 72.58  + gradio==6.2.0
+#12 72.58  + gradio-client==2.0.2
+#12 72.58  + groovy==0.1.2
+#12 72.58  + grpcio==1.78.0
+#12 72.58  + h11==0.16.0
+#12 72.58  + hf-xet==1.2.0
+#12 72.58  + httpcore==1.0.9
+#12 72.58  + httptools==0.7.1
+#12 72.58  + httpx==0.28.1
+#12 72.58  + huggingface-hub==0.36.0
+#12 72.58  + idna==3.11
+#12 72.58  + importlib-metadata==8.7.1
+#12 72.58  + jinja2==3.1.6
+#12 72.58  + kiwisolver==1.4.9
+#12 72.58  + lightning==2.6.1
+#12 72.58  + lightning-utilities==0.15.2
+#12 72.58  + llvmlite==0.46.0
+#12 72.58  + loguru==0.7.3
+#12 72.58  + lycoris-lora==3.4.0
+#12 72.58  + markdown==3.10.1
+#12 72.58  + markdown-it-py==4.0.0
+#12 72.58  + markupsafe==3.0.3
+#12 72.58  + matplotlib==3.10.8
+#12 72.58  + mdurl==0.1.2
+#12 72.58  + modelscope==1.34.0
+#12 72.58  + mpmath==1.3.0
+#12 72.58  + multidict==6.7.1
+#12 72.58  + nano-vllm==0.2.0 (from file:///opt/acestep/acestep/third_parts/nano-vllm)
+#12 72.58  + networkx==3.6.1
+#12 72.58  + numba==0.63.1
+#12 72.58  + numpy==2.3.5
+#12 72.58  + nvidia-cublas-cu12==12.8.4.1
+#12 72.58  + nvidia-cuda-cupti-cu12==12.8.90
+#12 72.58  + nvidia-cuda-nvrtc-cu12==12.8.93
+#12 72.58  + nvidia-cuda-runtime-cu12==12.8.90
+#12 72.58  + nvidia-cudnn-cu12==9.10.2.21
+#12 72.58  + nvidia-cufft-cu12==11.3.3.83
+#12 72.58  + nvidia-cufile-cu12==1.13.1.3
+#12 72.58  + nvidia-curand-cu12==10.3.9.90
+#12 72.59  + nvidia-cusolver-cu12==11.7.3.90
+#12 72.59  + nvidia-cusparse-cu12==12.5.8.93
+#12 72.59  + nvidia-cusparselt-cu12==0.7.1
+#12 72.59  + nvidia-nccl-cu12==2.27.5
+#12 72.59  + nvidia-nvjitlink-cu12==12.8.93
+#12 72.59  + nvidia-nvshmem-cu12==3.4.5
+#12 72.59  + nvidia-nvtx-cu12==12.8.90
+#12 72.59  + orjson==3.11.5
+#12 72.59  + packaging==26.0
+#12 72.59  + pandas==2.3.3
+#12 72.59  + peft==0.18.1
+#12 72.59  + pillow==12.1.0
+#12 72.59  + propcache==0.4.1
+#12 72.59  + protobuf==6.33.5
+#12 72.59  + psutil==7.2.1
+#12 72.59  + pycparser==3.0
+#12 72.59  + pydantic==2.12.5
+#12 72.59  + pydantic-core==2.41.5
+#12 72.59  + pydub==0.25.1
+#12 72.59  + pygments==2.19.2
+#12 72.59  + pyparsing==3.3.2
+#12 72.59  + python-dateutil==2.9.0.post0
+#12 72.59  + python-dotenv==1.2.1
+#12 72.59  + python-multipart==0.0.22
+#12 72.59  + pytorch-lightning==2.6.1
+#12 72.59  + pytorch-wavelets==1.3.0
+#12 72.59  + pytz==2025.2
+#12 72.59  + pywavelets==1.9.0
+#12 72.59  + pyyaml==6.0.3
+#12 72.59  + regex==2026.1.15
+#12 72.59  + requests==2.32.5
+#12 72.59  + rich==14.3.1
+#12 72.59  + safehttpx==0.1.7
+#12 72.59  + safetensors==0.7.0
+#12 72.59  + scipy==1.17.0
+#12 72.59  + semantic-version==2.10.0
+#12 72.59  + setuptools==71.1.0
+#12 72.59  + shellingham==1.5.4
+#12 72.59 …494 tokens truncated…M      0  0:00:04  0:00:01  0:00:03 15.8M
+ 76 48.1M   76 37.0M    0     0  14.0M      0  0:00:03  0:00:02  0:00:01 17.6M
+100 48.1M  100 48.1M    0     0  14.4M      0  0:00:03  0:00:03 --:--:-- 17.2M
+#13 4.456 /tmp/ffmpeg.tar.xz: OK
+#13 DONE 8.2s
+
+#14 [stage-1  7/13] COPY packages/engine-contract /studio/packages/engine-contract
+#14 DONE 0.2s
+
+#15 [stage-1  8/13] COPY packages/contracts /studio/packages/contracts
+#15 DONE 0.1s
+
+#16 [stage-1  9/13] COPY apps/engines/common /studio/apps/engines/common
+#16 DONE 0.1s
+
+#17 [stage-1 10/13] COPY apps/engines/acestep /studio/apps/engines/acestep
+#17 DONE 0.2s
+
+#18 [stage-1 11/13] WORKDIR /studio/apps/engines/acestep
+#18 DONE 0.2s
+
+#19 [stage-1 12/13] RUN --mount=type=cache,target=/studio/.cache/uv/cache     uv sync --frozen --no-dev --inexact --python 3.11.14     && python -c "import importlib.util; assert not any(importlib.util.find_spec(x) for x in ('xformers', 'flash_attn'))"
+#19 0.520    Building engine-contract @ file:///studio/packages/engine-contract
+#19 0.520    Building engine-common @ file:///studio/apps/engines/common
+#19 1.234       Built engine-contract @ file:///studio/packages/engine-contract
+#19 1.235       Built engine-common @ file:///studio/apps/engines/common
+#19 1.241 Prepared 2 packages in 730ms
+#19 1.391 Uninstalled 16 packages in 149ms
+#19 1.397 warning: Failed to hardlink files; falling back to full copy. This may lead to degraded performance.
+#19 1.397          If the cache and target directories are on different filesystems, hardlinking may not be supported.
+#19 1.397          If this is intentional, set `export UV_LINK_MODE=copy` or use `--link-mode=copy` to suppress this warning.
+#19 1.886 Installed 27 packages in 495ms
+#19 1.887  - annotated-doc==0.0.4
+#19 1.887  + annotated-doc==0.0.5
+#19 1.887  - annotated-types==0.7.0
+#19 1.887  + annotated-types==0.8.0
+#19 1.887  - anyio==4.12.1
+#19 1.887  + anyio==4.15.1
+#19 1.887  - attrs==25.4.0
+#19 1.887  + attrs==26.1.0
+#19 1.887  - certifi==2026.1.4
+#19 1.887  + certifi==2026.7.22
+#19 1.888  - click==8.3.1
+#19 1.888  + click==8.5.0
+#19 1.888  + engine-common==0.1.0 (from file:///studio/apps/engines/common)
+#19 1.888  + engine-contract==0.1.0 (from file:///studio/packages/engine-contract)
+#19 1.888  - fastapi==0.128.0
+#19 1.888  + fastapi==0.142.2
+#19 1.888  - idna==3.11
+#19 1.888  + idna==3.20
+#19 1.888  + iniconfig==2.3.0
+#19 1.888  + jsonschema==4.26.0
+#19 1.888  + jsonschema-specifications==2025.9.1
+#19 1.888  + nvidia-ml-py==13.615.71
+#19 1.888  + opentelemetry-api==1.45.0
+#19 1.888  - packaging==26.0
+#19 1.888  + packaging==26.3
+#19 1.888  + pluggy==1.6.0
+#19 1.888  - pydantic==2.12.5
+#19 1.888  + pydantic==2.13.5
+#19 1.888  - pydantic-core==2.41.5
+#19 1.888  + pydantic-core==2.46.5
+#19 1.888  - pygments==2.19.2
+#19 1.888  + pygments==2.21.0
+#19 1.888  + pytest==9.1.1
+#19 1.888  + referencing==0.37.0
+#19 1.888  + rpds-py==2026.9.1
+#19 1.888  - starlette==0.50.0
+#19 1.888  + starlette==0.52.1
+#19 1.888  - typing-extensions==4.15.0
+#19 1.888  + typing-extensions==4.16.0
+#19 1.888  - typing-inspection==0.4.2
+#19 1.888  + typing-inspection==0.4.4
+#19 1.888  - uvicorn==0.40.0
+#19 1.888  + uvicorn==0.54.0
+#19 DONE 2.0s
+
+#20 [stage-1 13/13] RUN /usr/sbin/useradd --uid 10001 --no-create-home --home-dir /studio engine     && chown -R engine:engine /studio/apps/engines/acestep     && chown -R engine:engine /studio/.cache/uv/cache     && mkdir -p /studio/.cache/huggingface /studio/.cache/torch     && chown engine:engine /studio/.cache/huggingface /studio/.cache/torch
+#20 DONE 0.6s
+
+#21 exporting to image
+#21 exporting layers
+
+#21 exporting layers 195.8s done
+#21 exporting manifest sha256:709c3e8cb8569143b86c6c998b36f529c977dfcec4a3e42039f30b0f8dbf0cd3 done
+#21 exporting config sha256:7e5f9f576078a247cc545b6ecc83054a4a9c5487864b1e38f5a96b22a6f2c68b done
+#21 exporting attestation manifest sha256:0e3c0c403ddeab0bd8c9b0607caaeea23ad97d89c4bd7dffc07e3aa18d3da225 0.0s done
+#21 exporting manifest list sha256:d7c73b5f5ec76c63626905b029af2ae61b37aed0809c7f0826ffa8c3f41d5c18 done
+#21 naming to docker.io/music-studio/engine-acestep:m0-t05 done
+#21 unpacking to docker.io/music-studio/engine-acestep:m0-t05
+
+#21 unpacking to docker.io/music-studio/engine-acestep:m0-t05 58.6s done
+#21 DONE 254.5s
+
+#22 resolving provenance for metadata file
+#22 DONE 0.0s
+ Image music-studio/engine-acestep:m0-t05 Built
+
+exit_code=0

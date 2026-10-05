@@ -1,0 +1,22 @@
+docker :  Network music-studio_default Creating
+At line:2 char:1
++ docker compose run --rm --entrypoint uv -e STUDIO_ENGINE_CONTAINER=1  ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ( Network music-studio_default Creating :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+ Network music-studio_default Creating
+ Network music-studio_default Created
+ Network music-studio_default Created
+ Container music-studio-engine-acestep-run-024dbb9a5004 Creating
+ Container music-studio-engine-acestep-run-024dbb9a5004 Created
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______________________________ test_startup_log _______________________________
+tests/test_environment.py:25: in test_startup_log
+    assert "attention=SDPA torch=2.10.0+cu128" in result.stdout
+E   assert 'attention=SDPA torch=2.10.0+cu128' in 'command-executed\n'
+E    +  where 'command-executed\n' = CompletedProcess(args=['sh', '/studio/apps/engines/acestep/entrypoint.sh', 'python', '-c', "print('command-executed')"], returncode=0, stdout='command-executed\n', stderr='').stdout
+=========================== short test summary info ============================
+FAILED tests/test_environment.py::test_startup_log - assert 'attention=SDPA t...
+1 failed in 0.10s

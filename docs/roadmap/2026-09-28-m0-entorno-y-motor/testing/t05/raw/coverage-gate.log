@@ -1,0 +1,23 @@
+python.exe : coverage-gate: sin ficheros de código en el diff: nada que evaluar
+At line:29 char:9
++ $qaGate=& python "$qaRun/gate-driver.txt" 2>&1
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (coverage-gate: ...ada que evaluar:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+{
+  "ok": true,
+  "exit": 0,
+  "stack": "pytest",
+  "detalle": {
+    "stack": "pytest",
+    "informe": "docs\\roadmap\\2026-09-28-m0-entorno-y-motor\\testing\\t05\\raw\\coverage-run\\coverage.json",
+    "global": 25.51,
+    "modo": "changed-only",
+    "base": "main",
+    "ficheros": {}
+  },
+  "avisos": [
+    "sin ficheros de código en el diff: nada que evaluar"
+  ]
+}

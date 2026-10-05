@@ -1,0 +1,15 @@
+import importlib.util
+from pathlib import Path
+import sys
+
+out = Path(__file__).resolve().parent
+root = out.parents[6]
+script = Path(sys.argv[1])
+spec = importlib.util.spec_from_file_location('official_coverage_gate', script)
+gate = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(gate)
+# Se reubica exclusivamente el fichero crudo esperado para respetar ownership.
+# No se modifica la selección, la métrica ni el umbral del gate oficial.
+gate.COV_FILE['pytest'] = str(out / 'coverage.json')
+runner = sys.executable.replace('\\', '/') + ' ' + (out / 'runner.txt').as_posix()
+sys.exit(gate.main([str(root), '--changed-only', '--base', 'main', '--min', '80', '--json', '--runner', runner]))

@@ -23,9 +23,9 @@ verificacion: obligatoria   # cada T-XX lleva `- **Verificación**:`; lo exige l
 |------|------------|-------|----------|-----------------------|------------------------|------------------------|-------------------|
 | Fase 1 — Preparación | 2 | 2 | 100% | 0 / 6h | 0 / 2h | 0 / 0.5h | 0 / — |
 | Fase 2 — Cimientos compartidos | 3 | 3 | 100% | — / 26h | — / 13h | — / 3.3h | — / — |
-| Fase 3 — Motor musical | 0 | 3 | 0% | 0 / 19h | 0 / 9.5h | 0 / 2.4h | 0 / — |
+| Fase 3 — Motor musical | 1 | 3 | 33% | — / 19h | — / 9.5h | — / 2.4h | — / — |
 | Fase 4 — Medición y elección | 0 | 6 | 0% | 0 / 37h | 0 / 15h | 0 / 3.8h | 0 / — |
-| **TOTAL** | **5** | **14** | **36%** | **— / 88h** | **— / 39.5h** | **— / 10h** | **— / —** |
+| **TOTAL** | **6** | **14** | **43%** | **— / 88h** | **— / 39.5h** | **— / 10h** | **— / —** |
 
 > Horas orientativas (proyecto personal, sin presupuesto). La T-12 es opcional (8 h): sin ella son 80 h.
 
@@ -202,29 +202,47 @@ verificacion: obligatoria   # cada T-XX lleva `- **Verificación**:`; lo exige l
 
 ## Fase 3 — Motor musical
 
-**Estado**: borrador · **Estimado**: 19h · **Real**: —
+**Estado**: en-progreso · **Estimado**: 19h · **Real**: —
 
 ### T-05 — Imagen `engine-acestep` para sm_120
 
 - **Descripción**: El contenedor del motor musical con las versiones de [entorno.md](../../arquitectura/entorno.md) §2.
-- **Estado**: borrador
+- **Estado**: completado
 - **Tiempo humano**: est. 6h · real —
 - **Tiempo IA (ejec.)**: est. 3h · real —
 - **Supervisión**: est. 0.8h (≈25 % IA) · real —
 - **Dependencias**: T-03
 - **Tipo**: devops
-- **Archivos**: `apps/engines/acestep/Dockerfile`, `apps/engines/acestep/pyproject.toml`, `docker-compose.yml` (perfil `engines`)
+- **Archivos**: `apps/engines/acestep/` (imagen, dependencias fijadas, arranque y pruebas de entorno; adapter funcional en T-06), `.dockerignore`, `docker-compose.yml` (perfil `engines`), `CONTINUE-HERE.md`, `docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/` (incluye recibo final de T-03/T-04 pendiente de integrar)
 - **Verificación**:
   - `docker compose --profile engines build engine-acestep` → build OK
-  - `docker compose run --rm engine-acestep uv run pytest -m "not gpu" -q` → verde (tests del adapter **dentro** del contenedor)
+  - `docker compose run --rm engine-acestep uv run pytest -m "not gpu" -q` → verde (pruebas de entorno **dentro** del contenedor; adapter funcional en T-06)
   - `docker compose run --rm engine-acestep python -c "import torch;assert 'sm_120' in torch.cuda.get_arch_list();a=torch.ones(64,64,device='cuda',dtype=torch.bfloat16);print((a@a).sum().item())"` → `262144.0`
   - `docker compose run --rm engine-acestep sh -c "ffmpeg -buildconf | grep -c -e enable-gpl -e enable-nonfree"` → `0`
 
 **Criterios de aceptación**
-- [ ] Base `nvidia/cuda:12.8.1-runtime-ubuntu22.04`, Python 3.11 instalado con `uv python install` y el repo de ACE-Step 1.5 fijado a un tag o commit, instalado con `uv sync --frozen --no-dev`.
-- [ ] ffmpeg BtbN `linux64-lgpl-shared`, con las `.so` en `LD_LIBRARY_PATH`. `-buildconf` incluye lame, soxr y opus.
-- [ ] La imagen copia e instala `packages/engine-contract` y `apps/engines/common` en su entorno Python 3.11. Mounts según [contrato-engines.md](../../arquitectura/contrato-engines.md) §6: `models/`→`/models` y `data/`→`/data` en solo lectura, y `data/tmp/`→`/data/tmp` en lectura/escritura. Variables: `HF_HUB_OFFLINE=1`, `TRANSFORMERS_OFFLINE=1`, `ACESTEP_LM_BACKEND=pt`, `ACESTEP_CHECKPOINTS_DIR`, `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` y el token del engine.
-- [ ] Puerto publicado como `127.0.0.1:8101:8101`. Sin xformers ni flash-attn. El log de arranque indica la atención (SDPA) y la versión de torch.
+- [x] Base `nvidia/cuda:12.8.1-runtime-ubuntu22.04`, Python 3.11 instalado con `uv python install` y el repo de ACE-Step 1.5 fijado a un tag o commit, instalado con `uv sync --frozen --no-dev`.
+- [x] ffmpeg BtbN `linux64-lgpl-shared`, con las `.so` en `LD_LIBRARY_PATH`. `-buildconf` incluye lame, soxr y opus.
+- [x] La imagen copia e instala `packages/engine-contract` y `apps/engines/common` en su entorno Python 3.11. Mounts según [contrato-engines.md](../../arquitectura/contrato-engines.md) §6: `models/`→`/models` y `data/`→`/data` en solo lectura, y `data/tmp/`→`/data/tmp` en lectura/escritura. Variables: `HF_HUB_OFFLINE=1`, `TRANSFORMERS_OFFLINE=1`, `ACESTEP_LM_BACKEND=pt`, `ACESTEP_CHECKPOINTS_DIR`, `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` y el token del engine.
+- [x] Puerto publicado como `127.0.0.1:8101:8101`. Sin xformers ni flash-attn. El log de arranque indica la atención (SDPA) y la versión de torch.
+
+**Reanudación — 2026-10-05:** T-03 (`af181de`) y T-04 (`9da20f0`) integradas mediante commits separados y fast-forward a `main`, con recibo final `6b371e9`; los tres commits están publicados. Trabajo actual en `m0/t-05-acestep-image`. Se han preservado los journals. Docker Desktop 4.92.0 / Engine 29.8.0 accesibles con escalación; WSL/Ollama accesible y sin modelos cargados. VRAM inicial: 1.400 / 12.227 MiB. No hubo que descargar ni recargar ningún modelo de Ollama. Brief regenerado por `task-brief.py` y subagente fresco. Ventana de implementación cerrada: `usage-meter` degradó a `fuente: estimado`, sin tokens ni horas IA medidos; 54 minutos de reloj no se atribuyen a ejecución IA. T-05 no se declara completada.
+
+**Verificación parcial ejecutada — 2026-10-05:**
+- Build exacto → `Image music-studio/engine-acestep:m0-t05 Built`, exit 0.
+- Pytest exacto en contenedor → `4 passed in 7.01s`, exit 0; arranque `engine-acestep: attention=SDPA torch=2.10.0+cu128`.
+- FFmpeg exacto → stdout `0`, exit 1 esperado de `grep` sin coincidencias. Los tests verifican LGPL shared, lame/soxr/opus e importación real de torchcodec.
+- Probe CPU adicional `CUDA_VISIBLE_DEVICES= python -c 'import acestep.handler'` → exit 0, sin cargar modelos. Matplotlib utiliza caché temporal en `/tmp` al no poder crear `/studio/.config/matplotlib`; bitsandbytes ausente usa AdamW estándar.
+- `uv pip check --python /opt/acestep/.venv/bin/python` → 152 paquetes, exit 1: única incompatibilidad `nano-vllm` → `flash-attn` no instalado, excluido explícitamente por el criterio SDPA/backend `pt`. No se declara check verde; su alcance se contrasta en revisión.
+- **RED:** `tests/test_environment.py::test_startup_log` falló porque `attention=SDPA torch=2.10.0+cu128` no estaba en stdout (`command-executed`) · 2026-10-05. **GREEN:** `1 passed in 5.13s`.
+- **TDD n/a:** ensamblado Docker, locks y compose (configuración); el comportamiento del log sí tiene RED/GREEN.
+- Recibos conservados en [testing/t05/raw](testing/t05/raw/), con códigos y comandos en [receipts.json](testing/t05/raw/receipts.json). La factoría HTTP y la generación no se acreditan: corresponden a T-06.
+- Revisión A+B+C, intento 1: sin gaps de corrección o seguridad pendientes; tabla al final del ledger. `pip check` sigue fallido, con incompatibilidad descartada como defecto para el backend `pt` documentado. Adenda GPU verificada después; QA en curso.
+
+**Condición GPU resuelta para esta prueba:** el uso en reposo subió hasta 2.950 MiB, Ollama sin modelos. El propietario respondió «autorizo esa prueba», concediendo excepción exclusivamente para la matmul BF16 de 64×64. Se ejecutó el comando exacto de Verificación: assert `sm_120` y cálculo CUDA BF16 → **`262144.0`**, exit 0 ([recibo](testing/t05/raw/bf16-final.log)). No se cerraron aplicaciones ni cargaron modelos; Ollama inicialmente vacío, sin modelo que restaurar. VRAM posterior 2.965 MiB. La excepción no cubre cargas de modelos ni benchmarks de T-06 en adelante; para ellos sigue vigente AGENTS.md §4 regla 8 / ADR-0022. T-05 pasa a en-revision, pendiente del informe QA.
+
+**Cierre técnico — 2026-10-05:** todas las verificaciones canónicas ejecutadas, revisión A+B+C sin gaps y [QA sin UI](testing/t05/report.md) conforme a la declaración del plan. Suite adicional 125 passed; lint y puertas del ledger exit 0. Gate unitario sin Python de producción medible: no se atribuye porcentaje al shell/config ni verde E2E. `pip check` conserva exit 1 y rebate limitado a backend pt. El PDF del informe queda pendiente por dependencias ausentes; el informe Markdown y los recibos están disponibles. T-05 completada; integración Git posterior con commit propio. La imagen acredita entorno y BF16, no servicio HTTP ni generación.
+- **Changelog**: Imagen local de ACE-Step con CUDA 12.8.1, Python 3.11, FFmpeg LGPL y cálculo BF16 comprobados en la RTX 5070; preparada para implementar el adaptador musical.
 
 ### T-06 — Adapter ACE-Step (`music.song`, `music.instrumental`)
 
@@ -476,3 +494,31 @@ El orquestador marca T-03/T-04 y Fase 2 como completadas técnicamente al cumpli
 **Documentación del tramo:** documenter actualizó índice, contrato congelado en el árbol y API/uso de audio-post; orquestador actualizó CONTINUE-HERE. 71 enlaces/anclas locales comprobados, comandos PowerShell parseados y ejemplo JobRequest validado; sin nuevas pruebas GPU ni generación de datos. Sin candidatos de conocimiento que curar. Changelog/retro y cierre completo del hito se mantienen pendientes hasta T-13 y la integración Git.
 
 **Comprobación final documental:** alcance exit 0, sin ficheros fuera tras incluir informes/documentación ([recibo](testing/raw/scope-final.json)); ledger-lint exit 0, `0 incoherencias · 9 avisos`; git diff --check exit 0. Otros 42 enlaces locales de reanudación/ledger/informe válidos y sin rutas personales. Sin cambios nuevos de código después de QA.
+
+## Revisión de dos lentes — intento 1: Fase 3 (T-05) — fuentes sin gaps; GPU pendiente
+
+**Fecha:** 2026-10-05. **Lentes ejecutadas:** A (conformidad), B (corrección) y C (seguridad), revisores de contexto fresco. C activada por Dockerfile, compose y contexto Docker; D no activada por el selector determinista. C se lanzó al liberarse un puesto de concurrencia. Base `main` = `6b371e9`, unión del diff y ficheros nuevos; journals preexistentes excluidos de alcance, sin código de producción oculto. [Alcance](testing/t05/raw/scope-review.json) sin salidas ni avisos; [selector](testing/t05/raw/lenses.json).
+
+| Criterio | Veredicto | Evidencia |
+|---|---|---|
+| T-05: CUDA 12.8.1 por digest, Python 3.11.14 gestionado y ACE-Step fijado por commit | ✓ | Dockerfile y build final exit 0, [recibo](testing/t05/raw/build-fixed-cache.log) |
+| T-05: FFmpeg 7 LGPL shared, lame/soxr/opus, torchcodec | ✓ | Test de entorno real y [FFmpeg](testing/t05/raw/ffmpeg-final.log): stdout 0, exit 1 esperado |
+| T-05: common/contrato, mounts y variables, usuario sin root y puerto localhost | ✓ | Compose y cuatro tests reales dentro del contenedor, [pytest](testing/t05/raw/pytest-final.log) |
+| T-05: sin xformers/flash-attn, log SDPA/torch | ✓ | Dockerfile, test de arranque con [RED](testing/t05/raw/red-startup.log) y [GREEN](testing/t05/raw/green-startup.log) |
+| T-05: importación CPU del handler | ✓ | [Probe](testing/t05/raw/handler-import-cpu.log), CUDA oculta, exit 0, sin carga de modelos |
+| T-05: consistencia completa de dependencias | ✗ | [pip check](testing/t05/raw/pip-check-combined.log), 152 paquetes, exit 1: nano-vllm requiere flash-attn |
+| Ausencia de flash-attn impide backend pt | Descartado (rebatido) | Upstream fijado `acestep/llm_inference.py:706-707` utiliza `_load_pytorch_model` para pt; import nano-vllm en rama vllm, línea 734. T-06 debe forzar pt: el argumento upstream por defecto es vllm. No se afirma pip check verde ni carga/generación probadas |
+| T-05: sm_120 y matmul BF16 real | ✓ (adenda posterior) | Autorización expresa del propietario; comando exacto → 262144.0, exit 0, [recibo](testing/t05/raw/bf16-final.log). Lente A verificó el recibo, sin cambios de código |
+| Constitución y seguridad introducida | ✓ | C: 110 artefactos HTTPS con SHA-256, 2 imágenes por digest, token externo obligatorio, contexto sin datos/env; sin inyección o nuevos lectores de pesos |
+| Servicio HTTP y autenticación efectiva ACE-Step | No verificable | Factoría pendiente de T-06; no se acredita motor operativo |
+| T-07: cambio documental por material privado | ✓ | ADR-0023, spec y protocolo mantienen B-02; letra privada no versionada, autoría pendiente, sin audio ni cierre |
+
+| # | Grado | Gap | Tarea | Corrección / veredicto | Evidencia |
+|---|---|---|---|---|---|
+| — | — | Sin gaps de requisitos, corrección o seguridad pendientes | T-05 | No requiere corrección de fuentes; no habilita cierre con BF16 pendiente | A y adenda CPU, B y adenda de dependencias, C sin hallazgos |
+
+**Evidencia ejecutada por los revisores:** lectura completa del diff y nuevos archivos por bloques, lock TOML válido, AST Python 3.11, `git diff --check` exit 0, `ledger-lint` 0 incoherencias y 9 avisos de Changelog futuro; C comprobó estáticamente hashes, digests, usuario, puertos y mounts. Docker ejecutado por implementer; los revisores leyeron los recibos, sin repetir GPU ni acceder a secretos/entrada privada. Matplotlib usa caché temporal en `/tmp`; el import CPU termina correctamente. Cobertura Python del shell no se inventa.
+
+**Medición:** ventana de revisión cerrada; `usage-meter` degradó a `fuente: estimado`, sin tokens, coste u horas IA medidos. 10 minutos de reloj no se imputan como IA. Jira/Confluence desactivados. No se han promovido journals ni candidatos ajenos. Tras la adenda GPU, T-05 pasa a **en-revision** hasta QA; M0 permanece abierto, 5/14 tareas completadas.
+
+**QA y cierre posterior:** [informe T-05](testing/t05/report.md), cuatro verificaciones canónicas acreditadas, 125 pruebas locales sin GPU verdes, lint/ledger sin incoherencias. QA sin UI por diseño (`test-plan: n/a (sin UI)`); sin qa-gate E2E fabricado y sin porcentaje de cobertura Python para shell/config. Ventana QA cerrada con degradación estimada, sin horas IA medidas; sus 11 minutos de reloj no se imputan como ejecución IA. T-05 marcada completado; M0 en-progreso, 6/14 tareas. PDF pendiente por herramientas ausentes, sin instalar ni escribir fuera del proyecto.
