@@ -1,0 +1,26 @@
+{
+  "command": [
+    "<workspace>\\.venv\\Scripts\\python.exe",
+    "-m",
+    "pytest",
+    "packages/weights/tests",
+    "packages/engine-contract/tests",
+    "packages/audio-post/tests",
+    "apps/engines/common/tests",
+    "apps/engines/mock/tests",
+    "tests",
+    "apps/engines/acestep/tests",
+    "-m",
+    "not gpu",
+    "-q",
+    "--tb=short",
+    "--cov=.",
+    "--cov-report=json",
+    "--basetemp=.cache/pytest/t14-qa",
+    "-o",
+    "cache_dir=.cache/pytest/cache"
+  ],
+  "CUDA_VISIBLE_DEVICES": "",
+  "COVERAGE_FILE": ".cache/dev-cycle/t14/qa/qa.coverage",
+  "exit": 0
+}

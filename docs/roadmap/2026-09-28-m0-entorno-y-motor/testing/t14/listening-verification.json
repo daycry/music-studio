@@ -1,0 +1,70 @@
+{
+  "status": "passed",
+  "session": "01M46K3MT0JNZB0DYC0F4DZADQ",
+  "http_media": [
+    {
+      "path": "reference-suno-original.mp3",
+      "http_status": 200,
+      "bytes": 5058060
+    },
+    {
+      "path": "P1A/listen.mp3",
+      "http_status": 200,
+      "bytes": 3601964
+    },
+    {
+      "path": "P1B/listen.mp3",
+      "http_status": 200,
+      "bytes": 3601964
+    },
+    {
+      "path": "P2A/listen.mp3",
+      "http_status": 200,
+      "bytes": 3601964
+    },
+    {
+      "path": "P2B/listen.mp3",
+      "http_status": 200,
+      "bytes": 3601964
+    },
+    {
+      "path": "P3A/listen.mp3",
+      "http_status": 200,
+      "bytes": 3601964
+    },
+    {
+      "path": "P3B/listen.mp3",
+      "http_status": 200,
+      "bytes": 3601964
+    }
+  ],
+  "browser": {
+    "page_title": "Libre · escucha comparada",
+    "media_count": 7,
+    "media_ready_state": 4,
+    "media_errors": 0,
+    "reference_duration_s": 227.640979,
+    "take_durations_s": [
+      90,
+      90,
+      90,
+      90,
+      90,
+      90
+    ],
+    "console_errors_or_warnings": 0,
+    "scores_initially_blank": true,
+    "export_button_present": true,
+    "export_button_clicked": false
+  },
+  "original_suno_source_sha256_verified_unchanged": true,
+  "engine_after": {
+    "state": "idle",
+    "loaded": null,
+    "job_id": null,
+    "image_digest": "sha256:ca67e3d08a79cab5ab4ace06ec3c6f98ba349270407028b94ee73ba0d40a0b79"
+  },
+  "ollama_empty_after": true,
+  "gpu_used_mib_after": 1409,
+  "scope": "recepción HTTP y metadatos de reproductores; sin audición ni aprobación musical; no es una puerta E2E de producto"
+}

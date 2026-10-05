@@ -1,0 +1,13 @@
+{
+  "technical_receipt_check_exit": 0,
+  "new_take_count": 6,
+  "cli_manifest_count": 8,
+  "derived_manifest_count": 6,
+  "all_spilled_false": true,
+  "all_unload_confirmed": true,
+  "wsl_peak_swap_used_mib": 0.4375,
+  "cpu_repeated": false,
+  "gpu_generated_by_qa": false,
+  "musical_quality_approved": false,
+  "winner": null
+}

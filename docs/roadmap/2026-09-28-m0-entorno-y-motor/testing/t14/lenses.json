@@ -1,0 +1,11 @@
+{
+  "lente_c": false,
+  "modo": "auto",
+  "motivos": [],
+  "lente_d": false,
+  "modo_d": "auto",
+  "motivos_d": [],
+  "base": "--base main",
+  "ficheros": 33,
+  "avisos": []
+}

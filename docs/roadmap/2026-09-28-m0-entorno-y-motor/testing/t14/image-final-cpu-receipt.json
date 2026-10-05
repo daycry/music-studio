@@ -1,0 +1,24 @@
+{
+  "image_digest": "sha256:ca67e3d08a79cab5ab4ace06ec3c6f98ba349270407028b94ee73ba0d40a0b79",
+  "build_exit": 0,
+  "cpu_exit": 0,
+  "passed": 75,
+  "gpu_deselected": 1,
+  "warnings": 5,
+  "pytest_s": 17.04,
+  "scope": "CPU imagen final corregida, sin carga de pesos",
+  "command": [
+    "docker",
+    "compose",
+    "-f",
+    "docker-compose.yml",
+    "-f",
+    ".cache/dev-cycle/t14/docker.override.yml",
+    "run",
+    "--rm",
+    "engine-acestep",
+    "sh",
+    "-c",
+    "CUDA_VISIBLE_DEVICES= uv run pytest -m 'not gpu' -q --tb=short -o cache_dir=/tmp/t14-pytest-cache"
+  ]
+}

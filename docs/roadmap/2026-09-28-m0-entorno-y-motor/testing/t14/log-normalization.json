@@ -1,0 +1,53 @@
+{
+  "scope": "UTF-8 y espacios finales; resultados conservados; Git normaliza LF al integrar",
+  "files": [
+    {
+      "file": "qa-cli-final-manifests.log",
+      "source_encoding": "utf-16",
+      "before_sha256": "def4f0239eff68556321b84e6d1be16cbd5ea01ec37f443e9b49a4a2e7ad56dc",
+      "after_sha256": "98043703117440273e4e78b90e4ef2a7996b80b9c914eba16af747944f32e87b"
+    },
+    {
+      "file": "qa-cli-manifests.log",
+      "source_encoding": "utf-16",
+      "before_sha256": "f6b38034e795af39d1235cd4f02e7b936226f69d8ba28850efeef3851e3681db",
+      "after_sha256": "25262df6514cb8cc6ddedd9a808efa0c6bf49198457fcab7fbb0ef031e3e6d42"
+    },
+    {
+      "file": "qa-contracts.log",
+      "source_encoding": "utf-16",
+      "before_sha256": "811b82e3c8c403acce420dc5493ea8c60ea777f3166c18b444f88ed505584542",
+      "after_sha256": "e6473c2b17b6c40c8fe8c50c4f6335aa0068caec7fd84c9d9bfb7bf68f863c8e"
+    },
+    {
+      "file": "qa-format.log",
+      "source_encoding": "utf-16",
+      "before_sha256": "48ef38934d2db9902a4fae125240ef21330a34a5fbd48dcc951ebae3918a8de9",
+      "after_sha256": "f57152af69ed696672a20f7a07dc500ce85005053092505a680768f611957e48"
+    },
+    {
+      "file": "qa-ledger.log",
+      "source_encoding": "utf-16",
+      "before_sha256": "c0c1b8b402c412ddd6d5abf224f71725fd39a4b61cc45de4ff2de7e80b0621c4",
+      "after_sha256": "16a57a65ec1130160d86a9a98781842ddfebfbc36df05241ab02d315adf8045a"
+    },
+    {
+      "file": "qa-listening-manifests.log",
+      "source_encoding": "utf-16",
+      "before_sha256": "d4dd0dac18d450e32c699771d5a05793495e64da33169ec1df72940922be7568",
+      "after_sha256": "767b755413ac3358523c08058046c5b834b80f9f7d9b44097866f4b936eab3bc"
+    },
+    {
+      "file": "qa-plan-coverage.log",
+      "source_encoding": "utf-16",
+      "before_sha256": "a830be63e86a7bfbdd0f07595b4860bd0a68c5d910b29be1e2201f136c713ad5",
+      "after_sha256": "3a411de0261b523610bbe83c83513da679ce717c58728ac2d0f7f36f216da028"
+    },
+    {
+      "file": "qa-ruff.log",
+      "source_encoding": "utf-16",
+      "before_sha256": "af352a86840ad0af3d37ea0d9197f868363a6dac6b1c2ef5d2722f6b41d2d9af",
+      "after_sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+    }
+  ]
+}

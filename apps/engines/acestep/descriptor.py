@@ -67,6 +67,7 @@ def descriptor(lock_path=None, checkpoint=None, lm=None):
         "language": {"type": "string", "minLength": 1},
         "vocal_language": {"type": "string", "minLength": 1},
         "bpm": {"type": "integer", "minimum": 30, "maximum": 300},
+        "shift": {"type": "number", "minimum": 1, "maximum": 5},
         "key": {"type": "string"},
         "negative_prompt": {"type": "string"},
     }

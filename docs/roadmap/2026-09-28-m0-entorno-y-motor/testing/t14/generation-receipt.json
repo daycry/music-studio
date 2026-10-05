@@ -1,0 +1,170 @@
+{
+  "session": "01M46K3MT0JNZB0DYC0F4DZADQ",
+  "created_at": "2026-10-05T17:52:23.391419Z",
+  "packaging_recovery": {
+    "reason": "derived manifest seed must be integer",
+    "normalization_seed_sentinel": 0,
+    "regenerated_gpu_takes": 0,
+    "wall_includes_recovery": true
+  },
+  "technical_status": "passed",
+  "musical_quality_approved": false,
+  "winner": null,
+  "groups": [
+    {
+      "exit_code": 0,
+      "wall_s": 225.0,
+      "preflight": {
+        "gpu_used_mib": 2374.0,
+        "gpu_total_mib": 12227.0,
+        "ollama_empty": true,
+        "state": "idle",
+        "loaded": null,
+        "image_digest": "sha256:ca67e3d08a79cab5ab4ace06ec3c6f98ba349270407028b94ee73ba0d40a0b79"
+      },
+      "unload_confirmed": true
+    },
+    {
+      "exit_code": 0,
+      "wall_s": 200.01600000000326,
+      "preflight": {
+        "gpu_used_mib": 1379.0,
+        "gpu_total_mib": 12227.0,
+        "ollama_empty": true,
+        "state": "idle",
+        "loaded": null,
+        "image_digest": "sha256:ca67e3d08a79cab5ab4ace06ec3c6f98ba349270407028b94ee73ba0d40a0b79"
+      },
+      "unload_confirmed": true
+    }
+  ],
+  "wall_s": 512.7670666809063,
+  "new_take_count": 6,
+  "duration_s": 90,
+  "all_six_manifests_valid": true,
+  "all_six_derived_manifests_valid": true,
+  "normalization_target_lufs": -16.470240718395125,
+  "reference_original_unchanged": true,
+  "reference_playback_gain_db": -3.2810789458983365,
+  "generation_inputs": {
+    "duration_s": 90,
+    "bpm": 94,
+    "language": "es",
+    "mode": "bf16",
+    "checkpoint": "acestep-v15-turbo",
+    "lm": "acestep-5Hz-lm-0.6B",
+    "inference_steps": 8,
+    "shifts": [
+      1,
+      3
+    ],
+    "seeds": [
+      1,
+      2,
+      3
+    ],
+    "lyrics_declaration": "own",
+    "fragment_sections": [
+      "Verse 1 - male rap",
+      "Chorus - duet"
+    ],
+    "wording_preserved": true,
+    "lyrics_line_count": 16,
+    "source_lyrics_sha256": "a7a5490bded55d043f5b53fed55a7706758917c7d63009ba0b17541a81753483",
+    "lyrics_sha256": "421a2aaa97998b38b71db4aa939f468e4f6fb54a0b3d0c895d93fbae7ad5e635",
+    "style_file_sha256": "bc86875aea3f663c4d28af38428f8d1b71d0b1ff2313ff1c1fa5d9854f059b7d",
+    "caption_sha256": "22471b4c4326638c937d5ac12347ca84ddc3b90407a590f3d5abcdc071e1757b",
+    "caption_characters": 415,
+    "winner": null,
+    "reference_role": "objetivo artistico Suno; no se envia como condicion al engine"
+  },
+  "reference_conditioning_used": false,
+  "gpu_authorization": {
+    "recorded_on": "2026-10-05",
+    "owner_reply": "Autorizo las seis tomas con la ocupacion actual y esos limites",
+    "baseline_measured_mib": 2613,
+    "baseline_ceiling_mib": 2613,
+    "scope": "seis tomas90s shift1/3, cap dinamico y parada si spilled",
+    "ollama_empty": true,
+    "desktop_variation_tolerance_mib": 64,
+    "tolerance_note": "margen operativo de lectura del escritorio sobre baseline2613, no permiso para cargar otros modelos; cap sigue calculado con VRAM libre real"
+  },
+  "memory_sample_count": 205,
+  "wsl_peak_used_excluding_available_mib": 4695.56640625,
+  "wsl_peak_swap_used_mib": 0.4375,
+  "telemetry": [
+    {
+      "duration_s": 90,
+      "load_s": 149.98063720500068,
+      "run_s": 203.79946841999845,
+      "rtf": null,
+      "vram_peak_mb": 7889.1640625,
+      "vram_cap_mb": 9057.6875,
+      "spilled": false,
+      "mode": "bf16",
+      "model_revision": "19671f406d603126926c1b7e2adc169acbcade22",
+      "extra": {}
+    },
+    {
+      "duration_s": 90,
+      "load_s": 149.98063720500068,
+      "run_s": 203.79946841999845,
+      "rtf": null,
+      "vram_peak_mb": 7889.1640625,
+      "vram_cap_mb": 9057.6875,
+      "spilled": false,
+      "mode": "bf16",
+      "model_revision": "19671f406d603126926c1b7e2adc169acbcade22",
+      "extra": {}
+    },
+    {
+      "duration_s": 90,
+      "load_s": 149.98063720500068,
+      "run_s": 203.79946841999845,
+      "rtf": null,
+      "vram_peak_mb": 7889.1640625,
+      "vram_cap_mb": 9057.6875,
+      "spilled": false,
+      "mode": "bf16",
+      "model_revision": "19671f406d603126926c1b7e2adc169acbcade22",
+      "extra": {}
+    },
+    {
+      "duration_s": 90,
+      "load_s": 124.57532519600136,
+      "run_s": 177.54194626999924,
+      "rtf": null,
+      "vram_peak_mb": 7889.1640625,
+      "vram_cap_mb": 10052.1875,
+      "spilled": false,
+      "mode": "bf16",
+      "model_revision": "19671f406d603126926c1b7e2adc169acbcade22",
+      "extra": {}
+    },
+    {
+      "duration_s": 90,
+      "load_s": 124.57532519600136,
+      "run_s": 177.54194626999924,
+      "rtf": null,
+      "vram_peak_mb": 7889.1640625,
+      "vram_cap_mb": 10052.1875,
+      "spilled": false,
+      "mode": "bf16",
+      "model_revision": "19671f406d603126926c1b7e2adc169acbcade22",
+      "extra": {}
+    },
+    {
+      "duration_s": 90,
+      "load_s": 124.57532519600136,
+      "run_s": 177.54194626999924,
+      "rtf": null,
+      "vram_peak_mb": 7889.1640625,
+      "vram_cap_mb": 10052.1875,
+      "spilled": false,
+      "mode": "bf16",
+      "model_revision": "19671f406d603126926c1b7e2adc169acbcade22",
+      "extra": {}
+    }
+  ],
+  "scope": "datos numericos; valoracion musical pendiente del propietario, sin audicion por el agente"
+}

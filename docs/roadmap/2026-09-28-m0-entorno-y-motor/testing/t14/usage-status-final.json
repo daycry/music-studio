@@ -1,0 +1,178 @@
+{
+  "marcadores": [
+    {
+      "artefacto": "m0-entorno-y-motor/T-03",
+      "inicio": "2026-10-05T08:16:58Z",
+      "cerrado": true,
+      "horas_desde_inicio": 9.7
+    },
+    {
+      "artefacto": "m0-entorno-y-motor/lote-1",
+      "inicio": "2026-10-05T08:32:27Z",
+      "cerrado": true,
+      "horas_desde_inicio": 9.4
+    },
+    {
+      "artefacto": "m0-entorno-y-motor/lote-2",
+      "inicio": "2026-10-05T09:05:39Z",
+      "cerrado": true,
+      "horas_desde_inicio": 8.9
+    },
+    {
+      "artefacto": "m0-entorno-y-motor/lote-3-fix1",
+      "inicio": "2026-10-05T09:28:21Z",
+      "cerrado": true,
+      "horas_desde_inicio": 8.5
+    },
+    {
+      "artefacto": "m0-entorno-y-motor/revision-2",
+      "inicio": "2026-10-05T09:36:25Z",
+      "cerrado": true,
+      "horas_desde_inicio": 8.4
+    },
+    {
+      "artefacto": "m0-entorno-y-motor/T-03-fix2",
+      "inicio": "2026-10-05T09:45:10Z",
+      "cerrado": true,
+      "horas_desde_inicio": 8.2
+    },
+    {
+      "artefacto": "m0-entorno-y-motor/revision-3",
+      "inicio": "2026-10-05T09:53:21Z",
+      "cerrado": true,
+      "horas_desde_inicio": 8.1
+    },
+    {
+      "artefacto": "m0-entorno-y-motor/T-05",
+      "inicio": "2026-10-05T10:21:45Z",
+      "cerrado": true,
+      "horas_desde_inicio": 7.6
+    },
+    {
+      "artefacto": "m0-entorno-y-motor/revision-t05-1",
+      "inicio": "2026-10-05T11:15:15Z",
+      "cerrado": true,
+      "horas_desde_inicio": 6.7
+    },
+    {
+      "artefacto": "m0-entorno-y-motor/qa-t05-parcial",
+      "inicio": "2026-10-05T11:25:39Z",
+      "cerrado": true,
+      "horas_desde_inicio": 6.5
+    },
+    {
+      "artefacto": "m0-entorno-y-motor/T-06",
+      "inicio": "2026-10-05T11:45:20Z",
+      "cerrado": true,
+      "horas_desde_inicio": 6.2
+    },
+    {
+      "artefacto": "m0-entorno-y-motor/revision-t06-1",
+      "inicio": "2026-10-05T12:30:29Z",
+      "cerrado": true,
+      "horas_desde_inicio": 5.5
+    },
+    {
+      "artefacto": "m0-entorno-y-motor/T-06-fix1",
+      "inicio": "2026-10-05T12:37:49Z",
+      "cerrado": true,
+      "horas_desde_inicio": 5.3
+    },
+    {
+      "artefacto": "m0-entorno-y-motor/revision-t06-2",
+      "inicio": "2026-10-05T12:53:46Z",
+      "cerrado": true,
+      "horas_desde_inicio": 5.1
+    },
+    {
+      "artefacto": "m0-entorno-y-motor/T-06-fix2",
+      "inicio": "2026-10-05T12:59:51Z",
+      "cerrado": true,
+      "horas_desde_inicio": 5.0
+    },
+    {
+      "artefacto": "m0-entorno-y-motor/revision-t06-3",
+      "inicio": "2026-10-05T13:09:51Z",
+      "cerrado": true,
+      "horas_desde_inicio": 4.8
+    },
+    {
+      "artefacto": "m0-entorno-y-motor/qa-t06",
+      "inicio": "2026-10-05T13:14:18Z",
+      "cerrado": true,
+      "horas_desde_inicio": 4.7
+    },
+    {
+      "artefacto": "m0-entorno-y-motor/T-07",
+      "inicio": "2026-10-05T13:41:23Z",
+      "cerrado": true,
+      "horas_desde_inicio": 4.3
+    },
+    {
+      "artefacto": "m0-entorno-y-motor/revision-t07-1",
+      "inicio": "2026-10-05T14:32:56Z",
+      "cerrado": true,
+      "horas_desde_inicio": 3.4
+    },
+    {
+      "artefacto": "m0-entorno-y-motor/T-07-fix1",
+      "inicio": "2026-10-05T14:38:43Z",
+      "cerrado": true,
+      "horas_desde_inicio": 3.3
+    },
+    {
+      "artefacto": "m0-entorno-y-motor/revision-t07-2",
+      "inicio": "2026-10-05T14:49:11Z",
+      "cerrado": true,
+      "horas_desde_inicio": 3.2
+    },
+    {
+      "artefacto": "m0-entorno-y-motor/T-07-fix2",
+      "inicio": "2026-10-05T14:56:45Z",
+      "cerrado": true,
+      "horas_desde_inicio": 3.0
+    },
+    {
+      "artefacto": "m0-entorno-y-motor/revision-t07-3",
+      "inicio": "2026-10-05T15:01:55Z",
+      "cerrado": true,
+      "horas_desde_inicio": 2.9
+    },
+    {
+      "artefacto": "m0-entorno-y-motor/qa-t07",
+      "inicio": "2026-10-05T15:12:24Z",
+      "cerrado": true,
+      "horas_desde_inicio": 2.8
+    },
+    {
+      "artefacto": "m0-entorno-y-motor/T-14",
+      "inicio": "2026-10-05T15:37:04Z",
+      "cerrado": true,
+      "horas_desde_inicio": 2.4
+    },
+    {
+      "artefacto": "m0-entorno-y-motor/revision-t14-1",
+      "inicio": "2026-10-05T15:47:20Z",
+      "cerrado": true,
+      "horas_desde_inicio": 2.2
+    },
+    {
+      "artefacto": "m0-entorno-y-motor/T-14-fix1",
+      "inicio": "2026-10-05T17:28:17Z",
+      "cerrado": true,
+      "horas_desde_inicio": 0.5
+    },
+    {
+      "artefacto": "m0-entorno-y-motor/revision-t14-2",
+      "inicio": "2026-10-05T17:32:36Z",
+      "cerrado": true,
+      "horas_desde_inicio": 0.4
+    },
+    {
+      "artefacto": "m0-entorno-y-motor/qa-t14",
+      "inicio": "2026-10-05T17:36:36Z",
+      "cerrado": true,
+      "horas_desde_inicio": 0.4
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "artefacto": "m0-entorno-y-motor/revision-t14-1",
+  "inicio": "2026-10-05T15:47:20Z",
+  "fin": "2026-10-05T17:28:17Z",
+  "fuente": "estimado",
+  "tokens_reales": null,
+  "eur": null,
+  "horas_ia": null,
+  "duracion": null,
+  "duracion_reloj": "1h 41m",
+  "ratio_usado": 300000,
+  "ratio_origen": "default no calibrado (300000)",
+  "nota": "estima tokens/horas a juicio y márcalo como estimado",
+  "avisos": [
+    "ventana sin respuestas del modelo (¿start y close seguidos?)"
+  ]
+}

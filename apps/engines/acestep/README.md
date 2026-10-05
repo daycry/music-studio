@@ -1,1 +1,3 @@
 Adapter y Dockerfile del engine de música ACE-Step; proyecto uv independiente, fuera del workspace de la raíz (torch propio) — pendiente de M0/T-0x.
+
+El adaptador admite `shift` opcional (número finito de 1 a 5) para comparar distribuciones de pasos de inferencia. Omitirlo conserva el default upstream 1; no cambia las capacidades `verified` ni el modelo. El CLI lo transmite con `--shift`. [ADR-0026](../../../docs/decisiones/ADR-0026-comparacion-controlada-shift.md) recoge la comparación privada de M0/T-14; la recomendación upstream de 3 para Turbo no constituye una aprobación de calidad local.

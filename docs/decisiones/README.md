@@ -29,6 +29,7 @@ Formato: `ADR-XXXX-slug.md` con **Estado** (propuesta · aceptada · sustituida 
 | [0023](ADR-0023-primera-cancion-con-material-privado.md) | Primera canción de M0 con «Libre» como entrada privada; B-02 mantiene su definición en la evaluación | aceptada |
 | [0024](ADR-0024-hashes-de-codigo-remoto-en-descriptores.md) | Campo opcional remote_code en el descriptor, con rutas relativas y SHA-256; ampliación compatible de /v1 | aceptada |
 | [0025](ADR-0025-limite-de-memoria-wsl.md) | WSL con límite de 16 GB, swap de 8 GB y recuperación de caché dropCache; perfil elegido por el propietario y aplicado | aceptada |
+| [0026](ADR-0026-comparacion-controlada-shift.md) | Comparación privada shift 1/3; parámetro opcional y default anterior conservado | aceptada |
 
 ## Decisiones heredadas de la documentación archivada
 

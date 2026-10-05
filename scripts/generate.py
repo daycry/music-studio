@@ -41,6 +41,7 @@ def parser():
     result.add_argument("--duration", type=float)
     result.add_argument("--language")
     result.add_argument("--bpm", type=int)
+    result.add_argument("--shift", type=float)
     result.add_argument("--seed", type=int)
     result.add_argument("--variants", type=int, default=1)
     result.add_argument("--task", choices=["music.song", "music.instrumental"])
@@ -125,7 +126,13 @@ def read_request(argv=None, *, root=ROOT):
         raise ValueError("INVALID_PARAMS")
     if bpm is not None and not 30 <= bpm <= 300:
         raise ValueError("INVALID_PARAMS")
+    if args.shift is not None and (
+        not math.isfinite(args.shift) or not 1 <= args.shift <= 5
+    ):
+        raise ValueError("INVALID_PARAMS")
     params = {"style": args.style, "duration_s": args.duration}
+    if args.shift is not None:
+        params["shift"] = args.shift
     if bpm is not None:
         params["bpm"] = bpm
     digest = None
@@ -278,6 +285,12 @@ def finish_job(call, job_id, model_id, mode, *, cancel, timeout_s=300):
 
 
 def generate(request, *, config, root=ROOT, client=None):
+    if "shift" in request["params"] and (
+        type(request["params"]["shift"]) not in {int, float}
+        or not 1 <= request["params"]["shift"] <= 5
+        or not math.isfinite(request["params"]["shift"])
+    ):
+        raise ValueError("INVALID_PARAMS")
     token = config.get("STUDIO_ENGINE_TOKEN")
     if not token:
         raise ValueError("ENGINE_TOKEN_REQUIRED")

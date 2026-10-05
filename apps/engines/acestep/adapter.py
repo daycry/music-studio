@@ -1,5 +1,6 @@
 """ACE-Step Python; se importa en el hijo, nunca CUDA en la factoría HTTP."""
 
+import math
 import os
 import re
 import secrets
@@ -136,6 +137,14 @@ def load_options(mode, checkpoint):
 
 def generation_options(request, index):
     values = request["params"]
+    if "shift" in values and (
+        type(values["shift"]) not in {int, float}
+        or not 1 <= values["shift"] <= 5
+        or not math.isfinite(values["shift"])
+    ):
+        raise EngineError(
+            "INVALID_PARAMS", "Shift requiere un número finito entre 1 y 5"
+        )
     seed = request.get("seed")
     if seed is not None and (
         seed < 0 or seed + max(index, request.get("n_outputs", 1) - 1) > MAX_SEED
@@ -162,6 +171,8 @@ def generation_options(request, index):
         "use_cot_metas": False,
         "lm_negative_prompt": values.get("negative_prompt", "NO USER INPUT"),
     }
+    if "shift" in values:
+        params["shift"] = values["shift"]
     return params, {
         "batch_size": 1,
         "use_random_seed": False,

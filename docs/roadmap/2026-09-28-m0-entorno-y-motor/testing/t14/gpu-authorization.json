@@ -1,0 +1,10 @@
+{
+  "recorded_on": "2026-10-05",
+  "owner_reply": "Autorizo las seis tomas con la ocupacion actual y esos limites",
+  "baseline_measured_mib": 2613,
+  "baseline_ceiling_mib": 2613,
+  "scope": "seis tomas90s shift1/3, cap dinamico y parada si spilled",
+  "ollama_empty": true,
+  "desktop_variation_tolerance_mib": 64,
+  "tolerance_note": "margen operativo de lectura del escritorio sobre baseline2613, no permiso para cargar otros modelos; cap sigue calculado con VRAM libre real"
+}

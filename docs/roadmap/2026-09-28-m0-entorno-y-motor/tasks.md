@@ -24,8 +24,8 @@ verificacion: obligatoria   # cada T-XX lleva `- **Verificación**:`; lo exige l
 | Fase 1 — Preparación | 2 | 2 | 100% | 0 / 6h | 0 / 2h | 0 / 0.5h | 0 / — |
 | Fase 2 — Cimientos compartidos | 3 | 3 | 100% | — / 26h | — / 13h | — / 3.3h | — / — |
 | Fase 3 — Motor musical | 3 | 3 | 100% | — / 19h | — / 9.5h | — / 2.4h | — / — |
-| Fase 4 — Medición y elección | 0 | 6 | 0% | 0 / 37h | 0 / 15h | 0 / 3.8h | 0 / — |
-| **TOTAL** | **8** | **14** | **57%** | **— / 88h** | **— / 39.5h** | **— / 10h** | **— / —** |
+| Fase 4 — Medición y elección | 1 | 7 | 14% | 0 / 37h | 0 / 15h | 0 / 3.8h | 0 / — |
+| **TOTAL** | **9** | **15** | **60%** | **— / 88h** | **— / 39.5h** | **— / 10h** | **— / —** |
 
 > Horas orientativas (proyecto personal, sin presupuesto). La T-12 es opcional (8 h): sin ella son 80 h.
 
@@ -334,7 +334,7 @@ Se recuperaron master.flac (PCM24), listen.mp3, peaks.json y manifest.json desde
 
 ## Fase 4 — Medición y elección
 
-**Estado**: borrador · **Estimado**: 37h · **Real**: —
+**Estado**: en-progreso · **Estimado**: 37h · **Real**: —
 
 ### T-08 — `engine-analysis` (transcripción, CLAP, estética y beats)
 
@@ -454,6 +454,47 @@ Se recuperaron master.flac (PCM24), listen.mp3, peaks.json y manifest.json desde
 - [ ] Veredicto: modelo aprobado / elección entre candidatos / replantear.
 - [ ] Nota en `docs/memory/` con la decisión y la fecha.
 
+
+### T-14 — Comparación privada de «Libre»: shift 1 frente a 3
+
+- **Descripción**: Prueba acotada autorizada por el propietario («adelante», 2026-10-05) para investigar ritmo, afinación y carácter de voz con sus referencias Suno. Se añade a M0 sin sustituir los criterios ni la batería de T-08–T-13. No se declara ganador sin escucha humana.
+- **Estado**: completado
+- **Tiempo humano**: est. — · real —
+- **Tiempo IA (ejec.)**: est. — · real —
+- **Supervisión**: est. — · real —
+- **Dependencias**: T-06, T-07
+- **Tipo**: backend
+- **Archivos**: `apps/engines/acestep/adapter.py`, `apps/engines/acestep/descriptor.py`, `apps/engines/acestep/tests/test_shift.py`, `scripts/generate.py`, `tests/test_generate_shift.py`, `docs/arquitectura/pipeline-audio.md`, `apps/engines/acestep/README.md`, `CONTINUE-HERE.md`, `docs/decisiones/ADR-0026-comparacion-controlada-shift.md`, `docs/decisiones/README.md`, `docs/roadmap/2026-09-28-m0-entorno-y-motor/improvement-plan.md`, `docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t14/`, `data/inputs/libre/shift-ab/` y `data/eval/libre-shift/` (privados), `.cache/dev-cycle/t14/` (orquestación efímera, excluida de Git).
+- **Verificación**:
+  - `uv run --no-sync --all-packages pytest tests/test_generate_shift.py apps/engines/acestep/tests/test_shift.py -q` → verde, RED previo registrado.
+  - `uv run --no-sync --all-packages python .cache/dev-cycle/t14/run-comparison.py` → seis tomas nuevas: tres semillas fijas por dos valores de shift, WAV/master/MP3/manifiestos válidos, eventos y unload confirmado. Audio y mapa de códigos privados; informe público sin letra, prompt ni rutas personales.
+  - `uv run --no-sync scripts/verify_manifest.py data/cli/` → all valid; recibo de igualación de volumen con ganancia lineal y hoja de escucha sin revelar shift.
+
+**Criterios de aceptación**
+- [x] Parámetro opcional `shift` 1–5 en descriptor, adaptador y CLI `--shift`; rechaza valores no finitos/fuera de rango. Si se omite, se conserva el comportamiento anterior (1). No cambia la API genérica /v1 ni se declara una capacidad verificada nueva. Los manifiestos conservan el parámetro explícito.
+- [x] Tres pares de tomas de 90 s sobre el primer verso y primer estribillo de «Libre», con las mismas palabras, etiquetas, caption, BPM 94, idioma es, modo BF16/PT, Turbo/LM0.6B y semillas 1/2/3; solo varía shift 1/3. Entradas y configuración identificadas por hash; original y tomas anteriores intactos. Autoría own ya declarada.
+- [x] Audios de escucha a volumen comparable por ganancia lineal, sin compresor, con códigos aleatorios y mapa privado; referencia Suno disponible como objetivo artístico. Hoja separa ritmo, afinación, carácter de voz y preferencia. No se presenta la referencia como control causal entre motores ni la prueba como entrenamiento.
+- [x] TDD, revisión adversarial y QA sin UI conformes; cobertura ≥80 % de los archivos de producción cambiados. GPU con comprobación de Ollama/VRAM libre y descarga real del hijo; telemetría y salidas acreditadas. Calidad y ganador pendientes de respuesta del propietario; no se genera la canción completa con una configuración elegida por suposición.
+
+**Arranque — 2026-10-05:** rama m0/t-14-libre-shift-ab, base cd9b79d. Alcance adicional aprobado por la respuesta del propietario al plan de seis tomas; no presupuesto ni replanificación del resto de M0. La omisión de shift conserva 1 hasta disponer de evidencia artística. Subagente fresco con TDD para parámetros/tests; root conserva ledger/documentación/custodia privada/GPU/Git. TDD n/a: prosa, preparación de entrada y orquestación efímera; el cambio de producto exige RED antes de implementación.
+
+**Entrega CPU — 2026-10-05:** subagente fresco DONE para alcance de parámetro/tests. [Informe RED/GREEN](testing/t14/cpu-implementation-report.md): Verificación exacta 35 passed/0,40 s; vecinos 149 passed, 1 skipped, 6 warnings/7,41 s. Cobertura real adapter 155/173, descriptor 30/30, generate 319/339; ruff/formato conformes. RED: test_descriptor_shift_optional falló KeyError shift; test_adapter_propagates_shift falló KeyError shift; test_adapter_rejects_invalid_shift falló DID NOT RAISE EngineError; test_shift_reaches_generation_params falló INTERNAL por ausencia de shift; test_direct_shift/test_brief_shift_override fallaron unrecognized arguments --shift; test_invalid_shift_rejected_before_enqueue falló ausencia de INVALID_PARAMS · 2026-10-05. Omisión/manifiesto preservan rutas existentes (cobertura adicional, sin RED inventado). Imagen nueva en construcción; no GPU repetida ni calidad atribuida a tests. Root prepara orquestación efímera y custodia de seis nuevas tomas.
+
+
+**Fix1 y GPU autorizada — 2026-10-05:** B1 corregido con rango antes de math.isfinite, tras validar tipo; RED: test_invalid_shift_rejected_before_enqueue[huge-positive/huge-negative] y test_adapter_rejects_invalid_shift[huge-positive/huge-negative] fallaron OverflowError · 2026-10-05; GREEN 4 casos, 39 tests shift; vecinos 153 passed, 1 skipped/16,05s. Cobertura adapter89,60%,descriptor100%,generate94,10%; ruff/formato verdes. [Informe](testing/t14/fix1-report.md). Imagen final construida, [75 tests CPU](testing/t14/image-final-cpu-receipt.json), digest ca67e3d…; engine recreado idle sin modelo. [Autorización expresa](testing/t14/gpu-authorization.json): seis tomas90s con baseline2613MiB, cap dinámico y parada si spilled; Ollama vacío. Aún no se generan las seis tomas ni se declara calidad. Marcador fix1 cerrado antes de revisión2; sin imputar reloj de pared como horasIA.
+
+- **Changelog**: Añade shift opcional validado a la CLI y ACE-Step, conservando su omisión; prepara seis tomas privadas comparables de Libre y una hoja de escucha a ciegas con referencia Suno. Calidad y ganador pendientes de escucha.
+
+
+**Cierre técnico T-14 — 2026-10-05:** revisión A+B, intento 2, sin gaps; [QA independiente](testing/t14/report.md) conforme: **282 passed, 5 skipped, 1 deselected**, 25,80 s, exit 0. Cobertura de lo cambiado **94,57 %** (adaptador 89,60 %, descriptor 100 %, CLI 94,10 %), mínimo 80 %. Ruff, formato, contratos y ledger conformes. Sin UI por diseño, sin resultados E2E ficticios.
+
+[Generación real y recibo](testing/t14/generation-receipt.json): seis tomas nuevas de **90 s**, tres semillas por dos valores de shift, con las mismas palabras y configuración identificadas por hash. WAV, master, MP3 y manifiestos válidos. Pico VRAM **7.889,16 MiB**, todos `spilled: false`; descarga del hijo confirmada entre tandas y al acabar. Swap WSL pico **0,4375 MiB**; tiempo total **512,77 s**, que incluye carga, postproceso y recuperación del empaquetado. `run_s` corresponde a cada tanda y está compartido por sus tomas: no se suma por toma ni se declara RTF. Ollama vacío antes y después, sin modelo que restaurar. Se corrigió exclusivamente la semilla del manifiesto derivado (entero 0 para una operación no estocástica); **no se regeneró ningún audio en GPU**.
+
+Seis copias privadas codificadas al nivel común **−16,47 LUFS**, mediante ganancia lineal sin limitador ni compresor; seis manifiestos derivados válidos. Referencia Suno original intacta, verificada también por SHA-256 en su origen: tema completo, sin sincronización de secciones, atenuado al reproducir en `listen.html`. [Verificación de escucha](testing/t14/listening-verification.json): siete recursos HTTP disponibles y siete reproductores con metadatos cargados, sin errores; seis duraciones de 90 s y referencia de 227,64 s. El botón de exportación está presente, pero no se ha probado su descarga. Esta comprobación no acredita audición ni calidad musical.
+
+Página, hoja de escucha y mapa de ajustes privados y separados. Calidad musical y ganador **pendientes del propietario** (`false`/`null`). No se genera una canción completa por suposición. T-08–T-13 y M0 siguen abiertos. [Ventana QA cerrada](testing/t14/qa-usage.json): fuente estimado, sin horas IA, tokens ni coste medidos; el tiempo de reloj no se imputa como IA. PDF pendiente de herramientas. Sin candidatos nuevos de conocimiento que curar; journals ajenos intactos.
+
+---
 
 ## Revisión de dos lentes — intento 1: Fase 2 (T-03, T-04) — correcciones pendientes
 
@@ -675,3 +716,23 @@ T-07 sigue en-progreso. 0 Critical / 1 Important / 0 Minor. Escucha humana pendi
 | B2/D2 | Important | Cleanup fallido reinicia presupuesto300→600 | T-07 | corregido fix2 | flag anteshelper yfinallyguard; B3cuatrorepros yD3regresión:300súnico/nooutputs/sentinelintacto |
 
 0 Critical / 0 Important pendiente / 0 Minor. Revisión cerrada sin gaps técnicos, no cierre de T-07: faltan QA y primera impresión del propietario. QA sin UI por diseño; no porcentaje E2E ficticio.
+
+## Revisión de dos lentes — intento 1: Fase 4 (T-14) — corrección pendiente
+
+Lentes A+B frescas, B recuperada después de interrupción sin veredicto previo duradero. Scope0/avisos[]; Cfalse/Dfalse. [Informe y criterios](testing/t14/review-attempt1.md). A conforme CPU/preparación con GPU/QA/escucha pendientes; B reproduce gap programático. Jira/Confluence desactivados; journals ajenos intactos.
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| B1 | Important | shift entero enorme desborda math.isfinite antes del rango | T-14 | pendiente fix1 | generate.py:290, adapter.py:142; 10**400→OverflowError en ambos helpers, no INVALID_PARAMS |
+
+0 Critical / 1 Important / 0 Minor; no GPU generada ni calidad aprobada. Fix acotado con TDD antes de revisión2.
+
+## Revisión de dos lentes — intento 2: Fase 4 (T-14) — sin gaps pendientes
+
+Lentes A+B frescas en paralelo, traspaso completo del intento1. [Criterios y evidencia](testing/t14/review-attempt2.md). Scope0sinavisos/usuarioexclusiones; Cfalse/Dfalse. B1 corregido y corroborado con entradas enormes/NaN/inf/tipos/válidos, error tipado y no POST. A39tests0,39s yB39tests0,41s verdes, sin nueva GPU ni privados. Jira/Confluence desactivados, journals ajenos preservados.
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| B1 | Important | Entero enorme desborda finitud antes de rango | T-14 | corregido fix1 | rango antes de finite tras tipo; RED4→GREEN4/39, reproducción B independiente INVALID_PARAMS |
+
+0 Critical / 0 Important pendiente / 0 Minor. T-14 permanece en-progreso para QA sin UI y seis tomas GPU autorizadas. Calidad y ganador siguen pendientes del propietario.

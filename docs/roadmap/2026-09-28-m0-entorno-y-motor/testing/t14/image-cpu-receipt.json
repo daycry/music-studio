@@ -1,0 +1,11 @@
+{
+  "image_digest": "sha256:d95bffaef64f672ccfd2c65325f2a6f97db5c3f96d88bebbab58205d7ba37f85",
+  "command": "docker compose -f docker-compose.yml -f .cache/dev-cycle/t14/docker.override.yml run --rm engine-acestep sh -c \"CUDA_VISIBLE_DEVICES= uv run pytest -m 'not gpu' -q --tb=short -o cache_dir=/tmp/t14-pytest-cache\"",
+  "exit": 0,
+  "passed": 73,
+  "gpu_deselected": 1,
+  "warnings": 5,
+  "pytest_s": 13.53,
+  "source": "salida real de la herramienta del turno anterior; sin repeticion",
+  "scope": "CPU imagen; no generacion musical"
+}
