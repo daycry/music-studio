@@ -67,6 +67,7 @@ actualizado: 2026-10-05
 | NumPy | P (audio y pesos) | BSD-3-Clause; el wheel incluye 0BSD, MIT, Zlib y CC0-1.0 | — | — | ✅ | 2026-10-05 (metadatos del wheel local) |
 | SciPy | P (dependencia de pyloudnorm) | BSD-3-Clause; bibliotecas incluidas con sus avisos y excepción GCC | — | — | ✅ | 2026-10-05 (licencia del wheel local) |
 | HTTPX / pytest-cov | Desarrollo (pruebas y cobertura) | BSD-3-Clause / MIT | — | — | ✅ | 2026-10-05 (metadatos locales) |
+| PyYAML (catálogo de briefs del CLI) | Desarrollo (M0 CLI) | [MIT](https://github.com/yaml/pyyaml/blob/main/LICENSE) | — | — | ✅ | 2026-10-05 (licencia upstream; parser safe_load) |
 | pyloudnorm | P | MIT | — | — | ✅ | 2026-09-28 |
 | soxr / python-soxr | P | LGPL 2.1+ | — | — | ✅ | 2026-09-28 |
 | librosa | P | ISC | — | — | ✅ | — |

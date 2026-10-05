@@ -1,0 +1,7 @@
+{
+    "reason":  "Dependencias to-pdf ausentes; instalación prohibida en este encargo",
+    "node_available":  true,
+    "skill_user_cache_node_modules":  false,
+    "pdf_generated":  false,
+    "local_cache_node_modules":  false
+}

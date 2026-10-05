@@ -1,0 +1,17 @@
+{
+  "artefacto": "m0-entorno-y-motor/T-07-fix2",
+  "inicio": "2026-10-05T14:56:45Z",
+  "fin": "2026-10-05T15:01:54Z",
+  "fuente": "estimado",
+  "tokens_reales": null,
+  "eur": null,
+  "horas_ia": null,
+  "duracion": null,
+  "duracion_reloj": "5m",
+  "ratio_usado": 300000,
+  "ratio_origen": "default no calibrado (300000)",
+  "nota": "estima tokens/horas a juicio y márcalo como estimado",
+  "avisos": [
+    "ventana sin respuestas del modelo (¿start y close seguidos?)"
+  ]
+}

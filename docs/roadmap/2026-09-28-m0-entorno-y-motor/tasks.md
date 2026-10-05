@@ -23,9 +23,9 @@ verificacion: obligatoria   # cada T-XX lleva `- **Verificación**:`; lo exige l
 |------|------------|-------|----------|-----------------------|------------------------|------------------------|-------------------|
 | Fase 1 — Preparación | 2 | 2 | 100% | 0 / 6h | 0 / 2h | 0 / 0.5h | 0 / — |
 | Fase 2 — Cimientos compartidos | 3 | 3 | 100% | — / 26h | — / 13h | — / 3.3h | — / — |
-| Fase 3 — Motor musical | 2 | 3 | 67% | — / 19h | — / 9.5h | — / 2.4h | — / — |
+| Fase 3 — Motor musical | 3 | 3 | 100% | — / 19h | — / 9.5h | — / 2.4h | — / — |
 | Fase 4 — Medición y elección | 0 | 6 | 0% | 0 / 37h | 0 / 15h | 0 / 3.8h | 0 / — |
-| **TOTAL** | **7** | **14** | **50%** | **— / 88h** | **— / 39.5h** | **— / 10h** | **— / —** |
+| **TOTAL** | **8** | **14** | **57%** | **— / 88h** | **— / 39.5h** | **— / 10h** | **— / —** |
 
 > Horas orientativas (proyecto personal, sin presupuesto). La T-12 es opcional (8 h): sin ella son 80 h.
 
@@ -202,7 +202,7 @@ verificacion: obligatoria   # cada T-XX lleva `- **Verificación**:`; lo exige l
 
 ## Fase 3 — Motor musical
 
-**Estado**: en-progreso · **Estimado**: 19h · **Real**: —
+**Estado**: completado · **Estimado**: 19h · **Real**: —
 
 ### T-05 — Imagen `engine-acestep` para sm_120
 
@@ -272,29 +272,63 @@ verificacion: obligatoria   # cada T-XX lleva `- **Verificación**:`; lo exige l
 
 **Verificación CPU T-06 — 2026-10-05:** imagen final `sha256:6fbddce9961c7ac6d3ae4e38dfdc39f947c5fe0607637d7215b03aa1ddc7a75e`; comando declarado `docker compose run --rm engine-acestep uv run pytest -m "not gpu" -q` → **35 passed, 1 deselected**, exit 0. Cobertura real Python 3.11.14 de adapter/patches/descriptor/factoría: **92,31 %**, todos los ficheros ≥80 %. Host adapter+contrato: **45 passed, 1 skipped**; lint, formato y esquema verdes. Hashes locales reales comprobados sin deserialización y factoría sin torch/proceso acreditada. [Recibo de implementación y RED/GREEN por criterio](testing/t06/implementation-report.md), con salidas individuales en `testing/t06/raw/`. RED adicional: `test_pretrained_loads_bf16_before_cuda_transfer` falló por falta de dtype en la deserialización · 2026-10-05; GREEN 1 passed y suite final verde. TDD n/a: configuración/empaquetado. **GPU no ejecutada**: Ollama vacío y baseline 2.874 MiB; resolución solicitada al propietario conforme AGENTS.md regla 8. No se acredita carga de modelos, audio ni liberación real de VRAM; T-06 sigue en-progreso. Medición de implementación cerrada 11:45:20–12:30:29 UTC, `fuente: estimado`, sin tokens/horas/coste medidos; 45 min son duración de reloj.
 
-**Cierre técnico T-06 — 2026-10-05:** revisión A+B+C intento 3 sin gaps y [QA CPU/GPU](testing/t06/report.md) conforme. CPU host 179 passed/5 skipped/1 deselected, gate del diff **94,58 %** (mínimo 80 %). Prueba real autorizada → **1 passed/58 deselected**, exit 0: 30 s, 48 kHz, estéreo FLOAT, sin NaN/silencio, RMS 0,17382145, 31 eventos. Carga implícita real de DiT/LM/VAE/text encoder BF16, pico VRAM 7.806,80 MiB bajo cap 8.810,31 MiB, spilled=false. Unload termina el proceso y loaded=null; free antes 9.322,31/después 10.512,50 MiB, diferencia afectada por actividad del escritorio. Ollama vacío, sin modelo que restaurar; nvidia-smi posterior 1.338/12.227 MiB. load_s=122,87 y run_s=142,50 (este último incluye carga); RTF null. [Salida y herramienta](testing/t06/raw/gpu-30s-tool-receipt.json). RAM WSL pico excluyendo memoria recuperable 4.567,90 MiB; swap pico 1,293 MiB, caché final 16.121,92 MiB. Se mide, sin cambiar .wslconfig. QA sin UI por diseño, sin gate E2E ficticio; PDF pendiente de herramientas. Ventana QA cerrada estimada sin horas/tokens/coste medidos. Capacidades verified:false hasta T-10; esta prueba no cierra T-07 ni la escucha de M0. Integración Git siguiente, con preparación T-07 preservada.
+**Cierre técnico T-06 — 2026-10-05:** revisión A+B+C intento 3 sin gaps y [QA CPU/GPU](testing/t06/report.md) conforme. CPU host 179 passed/5 skipped/1 deselected, gate del diff **94,58 %** (mínimo 80 %). Prueba real autorizada → **1 passed/58 deselected**, exit 0: 30 s, 48 kHz, estéreo FLOAT, sin NaN/silencio, RMS 0,17382145, 31 eventos. Carga implícita real de DiT/LM/VAE/text encoder BF16, pico VRAM 7.806,80 MiB bajo cap 8.810,31 MiB, spilled=false. Unload termina el proceso y loaded=null; free antes 9.322,31/después 10.512,50 MiB, diferencia afectada por actividad del escritorio. Ollama vacío, sin modelo que restaurar; nvidia-smi posterior 1.338/12.227 MiB. load_s=122,87 y run_s=142,50 (este último incluye carga); RTF null. [Salida y herramienta](testing/t06/raw/gpu-30s-tool-receipt.json). RAM WSL pico excluyendo memoria recuperable 4.567,90 MiB; swap pico 1,293 MiB, caché final 16.121,92 MiB. Se mide, sin cambiar .wslconfig. QA sin UI por diseño, sin gate E2E ficticio; PDF pendiente de herramientas. Ventana QA cerrada estimada sin horas/tokens/coste medidos. Capacidades verified:false hasta T-10; esta prueba no cierra T-07 ni la escucha de M0. Integrada con fast-forward a main y publicada en origin/main y rama de tarea, commit 11c1884; preparación T-07 y journals preexistentes preservados.
 
 **Cambio de perfil WSL posterior a la prueba GPU — 2026-10-05:** el propietario eligió y escribió 16 GB de RAM / 8 GB de swap / `autoMemoryReclaim=dropCache` y solicitó reiniciar. `wsl --shutdown` → exit 0; Ubuntu tras el arranque informa MemTotal 16.375.452 kB y swap 8.388.608 KiB, sin uso. Docker Desktop vuelve a responder. [ADR-0025](../../decisiones/ADR-0025-limite-de-memoria-wsl.md) y entorno E-03 actualizados. No se ha repetido audio con el nuevo límite; el recibo de 30 s corresponde a los 24 GB anteriores.
 
 ### T-07 — CLI `scripts/generate.py`: primera canción 🎯
 
 - **Descripción**: CLI que hace de «server» para M0: llama al engine, ejecuta audio-post y escribe el manifiesto. Hito: la **primera canción** del proyecto.
-- **Estado**: borrador
+- **Estado**: completado
 - **Tiempo humano**: est. 3h · real —
 - **Tiempo IA (ejec.)**: est. 1.5h · real —
 - **Supervisión**: est. 0.3h (≈25 % IA) · real —
 - **Dependencias**: T-04, T-06
 - **Tipo**: backend
-- **Archivos**: `scripts/generate.py`, `eval/briefs/B-02.txt`, `eval/briefs/briefs.yaml` (solo B-02)
+- **Archivos**: `scripts/generate.py`, `tests/test_generate.py`, `pyproject.toml`, `uv.lock` (herramientas CLI), `eval/briefs/B-02.txt`, `eval/briefs/briefs.yaml` (solo B-02), `data/inputs/libre/` (entrada privada, excluida de Git), `docs/decisiones/ADR-0023-primera-cancion-con-material-privado.md`, `docs/decisiones/README.md`, `docs/legal/licencias.md`, `docs/arquitectura/pipeline-audio.md` (uso del CLI), `docs/roadmap/2026-09-28-m0-entorno-y-motor/spec.md`, `docs/calidad/evaluacion-escucha.md`, `CONTINUE-HERE.md`, `docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t07/`
 - **Verificación**:
-  - `uv run scripts/generate.py --brief B-02 --seed 1` → carpeta en `data/cli/<fecha>/<run_id>/` con 4 ficheros (la letra, el estilo, la duración y el idioma se leen de `eval/briefs/briefs.yaml`)
+  - `uv run scripts/generate.py --lyrics data/inputs/libre/lyrics-acestep.txt --style (Get-Content -Raw -Encoding utf8 data/inputs/libre/style-acestep-compact.txt) --duration 255 --language es --bpm 94 --seed 1 --lyrics-declaration own` → carpeta en `data/cli/<fecha>/<run_id>/` con 4 ficheros (entrada privada de «Libre», [ADR-0023](../../decisiones/ADR-0023-primera-cancion-con-material-privado.md))
   - `uv run scripts/verify_manifest.py data/cli/` → `all valid`
   - lectura: se escucha la canción y se anotan en el ledger el tiempo total, `vram_peak_mb` y una primera impresión
 
 **Criterios de aceptación**
-- [ ] Letra de **B-02** escrita por el propietario, con su prompt de estilo, según [evaluacion-escucha.md](../../calidad/evaluacion-escucha.md) §4.
-- [ ] El CLI acepta dos formas: `--brief <ID>` (lee `eval/briefs/briefs.yaml` y `eval/briefs/<ID>.txt`) o `--lyrics <fichero> --style "…" --duration <s> --language <xx>`. Opcionales: `--seed`, `--variants`, `--task music.instrumental` y `--engine` (por defecto, `STUDIO_ENGINES`). Envía el token. Muestra el progreso por eventos y deja `master.flac`, `listen.mp3`, `peaks.json` y `manifest.json` (`kind: cli_run`).
-- [ ] **Hito cumplido**: B-02 de 3:00 en castellano generado y escuchado.
+- [x] Letra y estilo de **«Libre»** entregados por el propietario y preservados en una entrada privada, con declaración de autoría antes de generar. B-02 conserva su definición de evaluación; el CLI sigue admitiendo `--brief <ID>` ([ADR-0023](../../decisiones/ADR-0023-primera-cancion-con-material-privado.md)).
+- [x] El CLI acepta dos formas: `--brief <ID>` (lee `eval/briefs/briefs.yaml` y `eval/briefs/<ID>.txt`) o `--lyrics <fichero> --style "…" --duration <s> --language <xx>`. Opcionales: `--seed`, `--variants`, `--task music.instrumental` y `--engine` (por defecto, `STUDIO_ENGINES`). Envía el token. Muestra el progreso por eventos y deja `master.flac`, `listen.mp3`, `peaks.json` y `manifest.json` (`kind: cli_run`).
+- [x] **Hito cumplido**: «Libre» en castellano generado con objetivo 255 s y escuchado por el propietario; duración real y primera impresión registradas.
+
+**Material recibido — 2026-10-05:** el propietario entregó «Libre» con su letra, prompt y notas creativas, y aclaró «así las usaba para suno». Material guardado en `data/inputs/libre/` (excluido de Git): original y adaptación para ACE-Step con los mismos versos y nueve secciones. Preferencias recibidas: hip hop, orquesta y electrónica, dueto en castellano, 94 BPM, 240–270 s; duración de prueba propuesta: 255 s. La declaración de autoría está pendiente de respuesta; no se ha generado audio. B-02 mantiene su definición en la batería fija. Criterio de primera canción actualizado según ADR-0023; T-07 sigue en borrador y sus verificaciones no se han ejecutado.
+
+**Arranque CLI — 2026-10-05:** T-06 integrada y publicada (11c1884), dependencias técnicas completas. Rama m0/t-07-cli-first-song, subagente fresco con brief determinista y TDD. El perfil WSL 16/8 GB ya está aplicado; la generación de una canción completa con ese perfil no se ha verificado. La declaración de autoría de «Libre» sigue pendiente; se implementa y prueba el CLI con entradas sintéticas sin encolar esa letra. El orquestador mantiene documentos, ledger, datos privados, Git y prueba real. Brief determinista: exit 0, 13.259 caracteres; aviso de exceso preexistente frente al límite orientativo de 10.000, sin truncar criterios.
+
+**Contexto adicional resuelto:** el catálogo `eval/briefs/briefs.yaml` no existía. Se crea `version: 1`, `briefs` como mapping por ID, con estilo/duración/idioma/BPM/tarea y declaración de autoría; solo metadata B-02 del protocolo, sin crear su letra y con declaración null. El CLI usa `yaml.safe_load`; PyYAML se incorpora al grupo dev del workspace virtual y al lock, con licencia MIT registrada. Ownership ampliado al implementer solo para pyproject.toml/uv.lock. TDD n/a: catálogo y documentación; el parser y las validaciones siguen TDD de código.
+
+**Declaración recibida — 2026-10-05:** el propietario respondió expresamente «Es mi letra, con o sin ayuda de IA». Se registra own en data/inputs/libre/brief.json sin versionar texto ni datos privados. Declaración resuelta; generación real y escucha aún pendientes. La prueba real usará la misma letra, 255 s, idioma es, BPM 94 y caption en mayor.
+
+**Entrega CPU — 2026-10-05:** CLI directo/catálogo y postproceso con mock real implementados; 38 tests verdes, generate.py 94,86 % (240/253 statements), ruff y formato exit 0. [Informe](testing/t07/cpu-implementation-report.md), [RED/GREEN](testing/t07/cpu-tdd-evidence.md) y cobertura real conservados. RED: tests/test_generate.py::test_direct_request_and_rights falló con assert None is not None; integración mock/postproceso también antes de implementar. RED: test_brief_catalog falló BRIEF_CATALOG_REQUIRED; test_direct_bpm falló unrecognized arguments --bpm 94; test_long_stage_stream_timeout falló assert 30 > 300; test_song_manifest_privacy_and_rights falló assert True is False; test_engine_errors[no_modes-CAPABILITY_UNAVAILABLE] falló IndexError · 2026-10-05. GREEN final 38 passed. El informe identifica tests adicionales como cobertura, sin fabricar rojos. La entrega BLOCKED reservaba generación real y escucha a root; se valida código/CPU, sin cerrar esos criterios.
+
+**Validación de entrada real:** el primer intento del CLI terminó exit 1 antes de cargar modelos porque el caption adaptado tenía 755 caracteres frente a maxLength=512 del descriptor. Reproducción contra el JSON Schema real: style rechazado por maxLength 512. Root prepara style-acestep-compact.txt de 490 caracteres, validado con la misma letra/255 s/es/94 BPM. Letra, prompt Suno y adaptación anterior preservados; no se toca código para superar el límite. El nuevo intento está en curso, sin resultado acreditado todavía.
+
+**Primera toma real generada y postproceso recuperado — 2026-10-05:** GPU produjo WAV de 255 s (4:15), 48 kHz estéreo, semilla 1, BF16. Pico VRAM 8.463,03 MiB / cap 10.097,89 MiB, spilled=false; load_s=123,79 y run_s=175,55 (incluye carga, RTF null). WSL 16/8 aplicado: pico VM usado excluyendo MemAvailable 4.578,54 MiB, swap cero, 173 muestras. CLI exit 1 en publicación final de carpeta, Windows PermissionError errno13/winerror5; no se atribuye a falta de RAM/GPU. Reproducción CPU sin regenerar, mismo fallo en rename dentro/fuera del aislamiento; instrumentalizar stat/print antes permitió renombrar a la primera. No se identifica proceso externo del bloqueo. Hipótesis de robustez entregada al implementer para RED/regresión y reintento acotado; único re-despacho de validación.
+
+Se recuperaron master.flac (PCM24), listen.mp3, peaks.json y manifest.json desde el mismo WAV/eventos; verify_manifest.py data/cli/ → all valid (1 manifests), exit 0. Escucha -14,0045 LUFS / true peak -1,0 dBTP. [Recibo técnico público sin letra/prompt](testing/t07/first-song-technical-receipt.json). Se entregó enlace al MP3 al propietario y se solicitó primera impresión; pendiente. La verificación CLI original NO se declara verde con esta recuperación instrumentada. Fix, revisión, QA y nueva comprobación de publicación pendientes; T-07 sigue en-progreso.
+
+**Corrección de publicación — 2026-10-05:** reintento exclusivo Windows WinError 5/32, máximo cinco intentos con pausas 0,1/0,2/0,4/0,8 s; destino nuevo y sin sobrescritura. Ante fallo persistente de una variante se retiran solo carpetas propias y staging; un error de limpieza no sustituye al primario. RED: test_publication_transient_windows_lock[5] falló PermissionError WinError 5; test_publication_persistent_lock_rolls_back_variants falló por variante previa publicada; test_publication_cleanup_keeps_original_error falló porque cleanup sustituía el error original · 2026-10-05. GREEN: 50 tests CLI, 176 tests CPU sin GPU; cobertura generate.py 263/279 = 94,27 %, ruff/formato exit 0. [Informe y cuatro fases de depuración](testing/t07/fix-publication-report.md). No se identifica el proceso externo del bloqueo original. El candidato de gotcha queda en ese informe, sin aprobación ni publicación como conocimiento. La toma privada recuperada se conserva; una nueva ejecución GPU verifica el CLI sin instrumentación. Revisión/QA y escucha pendientes.
+
+**Verificación CLI completa sin instrumentación — 2026-10-05:** nueva toma 01M467F5TCCR83V5E2XR9MR6QK, anterior conservada. El comando de Verificación se ejecutó con --engine http://127.0.0.1:8101 y STUDIO_ALLOW_UNVERIFIED=1 explícito tanto en CLI como engine, ya que verified:false hasta T-10. Exit 0 en 170.22 s de reloj; 255 s de audio. Cuatro ficheros publicados y verify_manifest.py data/cli/ → all valid (2 manifests), exit 0. Pico VRAM 8463.03 MiB / cap 9970.62, spilled=False; run_s incluye load_s, RTF null. WSL pico excluyendo MemAvailable 4608.17 MiB, swap 0 MiB. [Recibo técnico](testing/t07/cli-full-generation-receipt.json). Ollama estaba vacío; unload se comprobó tras la ejecución. Escucha del propietario y revisión/QA siguen pendientes.
+
+**Medición implementación T-07:** marcador cerrado antes de revisión, 2026-10-05T13:41:23Z–2026-10-05T14:32:36Z; fuente estimado, horas/tokens/coste medidos None/None/None. Duración de reloj 51m no equivale a horas IA. [Recibo](testing/t07/implementation-usage.json).
+
+**Fix1 de revisión — 2026-10-05:** B1 corroborado y corregido con TDD. RED: tests/test_generate.py::test_ctrl_c_during_loading_waits_for_unload reprodujo main exit 1 / ENGINE_HTTP_409; GREEN Ctrl+C con mock real stage_delay_ms=1000 → exit 130, health idle/loaded=None. RED: tests/test_generate.py::test_cleanup_waits_beyond_ten_seconds falló ENGINE_CLEANUP_TIMEOUT con el plazo de 10 s · 2026-10-05; GREEN con carga sintética de 20 s y máximo 300 s. Se espera terminal/idle del job propio y se confirma unload; errores de limpieza preservan el error primario y muestran ENGINE_CLEANUP_UNCONFIRMED sin datos privados. No descarga jobs/modelos ajenos. 63 tests CLI, 189 CPU, cobertura 304/324=93,83 %, ruff/formato exit 0. [Informe RED/GREEN](testing/t07/fix1-cancellation-report.md). El mismo helper se aplica antes del postproceso normal. [Comprobación HTTP real solo lectura](testing/t07/cleanup-live-contract-receipt.json): contrato del job completado compatible, idle/loaded=None; no nueva generación ni cancelación GPU real. Los dos audios se conservan. Revisión intento 2 y QA pendientes; escucha pendiente.
+
+**Fix2 de revisión — 2026-10-05:** B2/D2 deduplicado corregido con una única ventana de limpieza por ejecución, marcada antes de iniciarse. RED: tests/test_generate.py::test_generate_has_one_cleanup_budget falló assert 600.0 <= (300 + 1e-9) · 2026-10-05, generate completo con done/unload409persistente y reloj sintético. GREEN una llamada finish_job, ≤300 s simulados, aviso/nota y error primario preservados, sentinel previo intacto y sin salidas parciales. 64 tests CLI/190 CPU verdes, cobertura 312/332=93,98 %, ruff/formato exit0. [Informe](testing/t07/fix2-cleanup-budget-report.md). No nueva GPU: el fix controla repetición de limpieza, las regresiones mock/FFmpeg/Ctrl+C y contrato real ya acreditados se mantienen. Escucha pendiente; revisión3última y QA pendientes.
+
+**Escucha del propietario — 2026-10-05:** escuchada la primera toma de 255 s, job 01M465ZQTFYQK9ATZNG2X63KYJ. Primera impresión literal: «la voz y la música parece que no van acorde». [Recibo](testing/t07/owner-first-impression.json). El criterio de primera canción y escucha está acreditado, con valoración negativa; NO se declara calidad musical aprobada. Se pregunta si el desajuste es de ritmo/letra, afinación o carácter de voz para investigar sin diagnosticar por suposición. T-07 espera QA técnica; la selección por calidad de M0 sigue pendiente de batería y T-13.
+
+**Cierre T-07 — 2026-10-05:** todos los criterios acreditados y Verificación ejecutada: CLI real exit 0 en 170,22 s, audio 255 s, pico VRAM 8.463,03 MiB, spilled=false, swap cero; cuatro salidas por toma y `verify_manifest.py data/cli/` → all valid (2 manifests), exit 0. Primera toma escuchada por el propietario con valoración negativa. [QA independiente](testing/t07/report.md): **243 passed, 5 skipped, 1 deselected**, exit 0; cobertura del fichero de producción cambiado **93,98 %** (312/332, mínimo 80 %), gate exit 0; ruff/formato/contratos/manifiestos/diffcheck conformes. Revisión A+B+D intento 3 sin gaps; qa: sin UI por diseño (`test-plan: n/a (sin UI)`), sin E2E ficticio. PDF pendiente de herramientas, sin bloquear CLI. [Medición QA cerrada](testing/t07/qa-usage.json): fuente estimado, sin horas IA/tokens/coste medidos. M0 sigue abierto; faltan T-08–T-13.
+
+**Aclaración de calidad — 2026-10-05:** el propietario concreta los tres desajustes: ritmo/encaje, afinación y carácter de voz, y aporta el corpus original de Suno. [Respuesta](testing/t07/owner-quality-details.json) y [diagnóstico inicial](testing/t07/prompt-model-diagnosis.md). El ajuste actual shift=1 difiere del recomendado 3 para Turbo; no hay prueba A/B ni causa artística demostrada todavía. El post-proceso WAV→master conserva la alineación de muestras. Originales preservados, copias privadas; ninguna audición por el agente. Calidad musical **no aprobada**, separada del cierre técnico del CLI.
+
+- **Changelog**: Generación local por CLI desde letra y estilo o catálogo de briefs, con progreso, cancelación y exportaciones inmutables de master, MP3, forma de onda y manifiesto; primera canción completa generada y escuchada.
 
 ---
 
@@ -609,3 +643,35 @@ El orquestador marca T-03/T-04 y Fase 2 como completadas técnicamente al cumpli
 | B2 | Important | OOM/preflight VRAM clasificado como INTERNAL | T-06 | Corregido y validado | Retorno upstream real ahora VRAM_EXCEEDED, 23 regresiones B verdes |
 
 **Evidencia independiente:** A regresiones+contrato 38 passed, exportador/ledger/alcance verdes; B regresiones fix1+fix2 23 passed; C preflight+regresiones+adapter+contrato **68 passed, 1 skipped**, SHA upstream coincidente, diff-check exit 0. Sin hallazgos de seguridad nuevos. No se repitió build ni ejecutó GPU por revisores. Ventana de revisión cerrada antes de QA, estimada sin horas/tokens/coste medidos. **0 gaps pendientes**; aún no habilita cerrar T-06 sin su verificación GPU.
+
+## Revisión de dos lentes — intento 1: Fase 3 (T-07) — corrección pendiente
+
+2026-10-05, base main=11c1884. Lentes A+B+D frescas; scope exit 0, sin avisos/exclusiones de usuario. C false, D true por espera en publicador síncrono. [Tabla completa y evidencia ejecutada](testing/t07/review-attempt1.md). A confirma criterios técnicos, TDD, 94,27 % y constitución; escucha pendiente correctamente declarada. D sin hallazgos, pruebas 1/8/64 variantes sintéticas con post stub. Journals ajenos preservados. Jira/Confluence desactivados; no promoción de conocimiento.
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| B1 | Important | generate.py:479 cancela y descarga antes del terminal; 409 reemplaza KeyboardInterrupt y conserva modelo | T-07 | pendiente, root corroboró; fix1 con TDD | mock real stage_delay_ms=1000: propagated=ValueError ENGINE_HTTP_409; después idle con loaded=mock/cpu |
+
+T-07 sigue en-progreso. 0 Critical / 1 Important / 0 Minor. Escucha humana pendiente separada del gap; no cierre por pruebas verdes parciales.
+
+## Revisión de dos lentes — intento 2: Fase 3 (T-07) — corrección pendiente
+
+2026-10-05, lentes A+B+D frescas; D secuencial tras A/B por límite de threads, sin degradar contexto fresco. Scope exit0 sinavisos, Cfalse Dtrue. [Tabla/evidencia completa](testing/t07/review-attempt2.md). Técnica/constitución/docs aprobados; B1 corregido con exit130 y loadedNone. Revisión solo del fix y evidencia nueva, aprobados anteriores conservados. Jira/Confluence desactivados; journals ajenos intactos.
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| B1 | Important | Cancelación inmediata y error primario | T-07 | corregido fix1 | 63CLI verdes, mockreal exit130/idle/loadedNone; cobertura93,83% |
+| B2 | Important | generate.py:412/413/536 duplica cleanup al fallar antes accepted=False | T-07 | pendiente fix2, deduplicado con D | jobdone+unload409persistente: 600s sintéticos/6001POST; dos deadlines300 |
+
+0 Critical / 1 Important pendiente / 0 Minor. T-07 permanece en-progreso. Revisión3 será última; escucha pendiente correctamente declarada.
+
+## Revisión de dos lentes — intento 3: Fase 3 (T-07) — sin gaps pendientes
+
+2026-10-05. Lentes A+B+D frescas y secuenciales por límite de threads; scope0 sinavisos niusuarioexclusiones, Cfalse Dtrue. [Tabla completa y evidencia](testing/t07/review-attempt3.md). A técnica/constitución/docs/alcance conforme; B confirma errorprimario/nooutputs y una ventana; D confirma presupuesto único y conserva escalado aprobado. 64CLI verdes, cobertura93,98%. Jira/Confluence desactivados; journals ajenos intactos, sin promoción de conocimiento.
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| B1 | Important | Cancelación inmediata/409/error primario/modelo cargado | T-07 | corregido fix1 | mockreal130 e idle/loadedNone; primario/sanitización/ajenos verdes |
+| B2/D2 | Important | Cleanup fallido reinicia presupuesto300→600 | T-07 | corregido fix2 | flag anteshelper yfinallyguard; B3cuatrorepros yD3regresión:300súnico/nooutputs/sentinelintacto |
+
+0 Critical / 0 Important pendiente / 0 Minor. Revisión cerrada sin gaps técnicos, no cierre de T-07: faltan QA y primera impresión del propietario. QA sin UI por diseño; no porcentaje E2E ficticio.

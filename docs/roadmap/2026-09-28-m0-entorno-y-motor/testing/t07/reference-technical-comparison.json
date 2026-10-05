@@ -1,0 +1,49 @@
+{
+  "source_prompt_matches_existing_private_prompt": true,
+  "metadata": {
+    "suno": {
+      "duration_s": 227.640979,
+      "sample_rate": 48000,
+      "channels": 2,
+      "codec": "mp3",
+      "bit_rate": 177755,
+      "tag_keys": [
+        "artist",
+        "comment",
+        "lyrics-eng",
+        "title"
+      ]
+    },
+    "acestep_first": {
+      "duration_s": 255.0,
+      "sample_rate": 48000,
+      "channels": 2,
+      "codec": "mp3",
+      "bit_rate": 320061,
+      "tag_keys": [
+        "encoder"
+      ]
+    },
+    "acestep_second": {
+      "duration_s": 255.0,
+      "sample_rate": 48000,
+      "channels": 2,
+      "codec": "mp3",
+      "bit_rate": 320061,
+      "tag_keys": [
+        "encoder"
+      ]
+    }
+  },
+  "first_take_raw_master_comparison": {
+    "frames_compared": 12240000,
+    "sample_alignment_unchanged": true,
+    "normalized_dot_product": 0.9999999999999774,
+    "max_absolute_sample_error": 5.960464477539063e-08,
+    "scope": "comparacion numerica del WAV crudo y master sin normalizar; no audicion ni separacion de voz/instrumentos"
+  },
+  "reference_originals_modified": false,
+  "reference_copies_kept_private": true,
+  "owner_reports_all_three_mismatches": true,
+  "suno_generation_model_version_not_established": true
+}

@@ -60,6 +60,10 @@ Todo 5 exige una frase de por qué no es un 4. Todo D5 ≥ 4 exige nombrar el us
 
 6 en castellano / 4 en inglés, de 30 s a 3:00, 10 géneros distintos. Las letras se guardan en `eval/briefs/B-XX.txt` (texto plano, sin etiquetas para el WER; con etiquetas para el modelo).
 
+La primera prueba personal de M0 usa «Libre», una entrada privada de 255 s, mediante la forma
+explícita del CLI ([ADR-0023](../decisiones/ADR-0023-primera-cancion-con-material-privado.md)).
+Es una prueba previa a esta batería: B-02 y los otros nueve briefs mantienen sus parámetros.
+
 ## 5. Decisión
 
 | Resultado | Criterio |

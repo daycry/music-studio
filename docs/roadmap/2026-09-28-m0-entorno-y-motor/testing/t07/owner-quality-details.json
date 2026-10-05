@@ -1,0 +1,14 @@
+{
+  "recorded_on": "2026-10-05",
+  "job_id": "01M465ZQTFYQK9ATZNG2X63KYJ",
+  "owner_reply": "los 3 puntos, es por el modelo o por los prompts?",
+  "reported_mismatches": [
+    "ritmo y encaje de la letra",
+    "afinacion",
+    "caracter de la voz"
+  ],
+  "specific_mismatch_pending_clarification": false,
+  "musical_quality_approved": false,
+  "reference_provided_by_owner": true,
+  "scope": "valoracion humana de la primera toma; no se atribuye a la segunda"
+}

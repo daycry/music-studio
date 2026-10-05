@@ -1,0 +1,12 @@
+version: 1
+briefs:
+  B-02:
+    task: music.song
+    style: >-
+      Cantautor y folk-pop melancólico, guitarra acústica, contrabajo,
+      escobillas y coros, voz femenina cercana en castellano.
+      Estructura verso, estribillo, verso, estribillo, puente, estribillo.
+    duration_s: 180
+    language: es
+    bpm: 84
+    lyrics_declaration: null

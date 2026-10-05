@@ -8,7 +8,7 @@ actualizado: 2026-10-05
 
 # Pipeline de audio
 
-El paquete [`audio_post`](../../packages/audio-post/audio_post/__init__.py) procesa la salida cruda del engine sin torch ni acceso a la BD. T-04 implementa sus funciones y el manifiesto v1. El **worker CPU del server** lo integrará en M1 ([ADR-0017](../decisiones/ADR-0017-postproceso-y-manifiesto-en-el-server.md)). El CLI `scripts/generate.py` corresponde a T-07 y aún no está disponible.
+El paquete [`audio_post`](../../packages/audio-post/audio_post/__init__.py) procesa la salida cruda del engine sin torch ni acceso a la BD. T-04 implementa sus funciones y el manifiesto v1. El **worker CPU del server** lo integrará en M1 ([ADR-0017](../decisiones/ADR-0017-postproceso-y-manifiesto-en-el-server.md)). El [CLI de T-07](../../scripts/generate.py) conecta el engine local con este postproceso; su revisión, QA y escucha se registran en el [ledger](../roadmap/2026-09-28-m0-entorno-y-motor/tasks.md).
 
 ## 1. Etapas tras la inferencia
 
@@ -80,7 +80,27 @@ uv run --frozen --all-packages scripts/verify_manifest.py packages/contracts/exa
 uv run --frozen --all-packages pytest packages/audio-post/tests -q
 ```
 
-La [suite](../../packages/audio-post/tests/test_audio_post.py) usa ffmpeg real para master, MP3, limitador y remuestreo. Prueba también manifiestos inmutables y detección de alteraciones. El [informe de QA](../roadmap/2026-09-28-m0-entorno-y-motor/testing/report.md) conserva las salidas. Esto no acredita todavía una canción ACE-Step ni el CLI de T-07.
+La [suite](../../packages/audio-post/tests/test_audio_post.py) usa ffmpeg real para master, MP3, limitador y remuestreo. Prueba también manifiestos inmutables y detección de alteraciones. El [informe de QA](../roadmap/2026-09-28-m0-entorno-y-motor/testing/report.md) conserva las salidas de T-04. La primera canción ACE-Step tiene su [recibo técnico separado](../roadmap/2026-09-28-m0-entorno-y-motor/testing/t07/first-song-technical-receipt.json); sus mediciones no sustituyen la escucha del propietario.
+
+### Generar una canción con el CLI de M0
+
+Guarda la letra en un fichero UTF-8 dentro del proyecto y declara su autoría antes de encolar. El estilo se pasa como texto; el descriptor de ACE-Step limita este caption a 512 caracteres. Para un engine local ya arrancado:
+
+```powershell
+. .\scripts\env.ps1
+uv run --frozen --all-packages scripts/generate.py --lyrics data/inputs/mi-cancion/lyrics.txt --style "Hip hop luminoso, orquesta y piano en mayor" --duration 255 --language es --bpm 94 --seed 1 --lyrics-declaration own --engine http://127.0.0.1:8101
+uv run --frozen --all-packages scripts/verify_manifest.py data/cli/
+```
+
+`--lyrics-declaration` admite `own`, `assistant`, `public_domain` o `licensed`. Una licencia externa no basta para marcar automáticamente uso comercial. Para una pieza instrumental, usa `--task music.instrumental` y omite letra y declaración. `--variants N` admite de 1 a 64 salidas; cada variante recibe una carpeta nueva. Sin `--engine`, se elige la primera entrada de `STUDIO_ENGINES` en `.env`. El token sale del entorno o de ese fichero y no se imprime.
+
+La otra entrada es `--brief B-02`: lee [briefs.yaml](../../eval/briefs/briefs.yaml) y `eval/briefs/B-02.txt`. El catálogo fija estilo, duración, idioma y BPM; la letra de B-02 aún requiere aportación del propietario. No se sustituye por la letra privada de «Libre» ([ADR-0023](../decisiones/ADR-0023-primera-cancion-con-material-privado.md)).
+
+El CLI muestra etapas y progreso, descarga el modelo antes de procesar audio y publica `master.flac`, `listen.mp3`, `peaks.json` y `manifest.json` en `data/cli/<fecha UTC>/<run_id>/`. El manifiesto `cli_run` guarda procedencia, parámetros, declaración y hash de letra; el contenido literal de la letra queda fuera. Los datos y el estilo del manifiesto son privados y no se versionan. Una salida anterior nunca se sobrescribe. Los bloqueos transitorios Windows 5/32 se reintentan como máximo cinco veces; un fallo persistente retira solo las carpetas nuevas de ese intento.
+
+Ctrl+C solicita cancelar y espera el terminal del trabajo propio antes de descargar. Se realiza una sola limpieza por ejecución, con un plazo máximo de 300 s, peticiones HTTP de hasta 5 s y confirmación de `loaded: null`; puede esperar a que termine una carga ya iniciada. La interrupción conserva exit 130. Si no se acredita la descarga, imprime `ENGINE_CLEANUP_UNCONFIRMED` y conserva el error original; revisa el estado del engine antes de cargar otro modelo. Nunca cancela ni descarga un trabajo ajeno.
+
+Hasta T-10, ACE-Step mantiene sus capacidades `verified: false`. Una evaluación explícita requiere `STUDIO_ALLOW_UNVERIFIED=1` tanto en el CLI como en el engine; no es el valor de fábrica. Antes de cada carga se aplica la comprobación de Ollama y VRAM del [entorno](./entorno.md).
 
 ## 3. Exportación a demanda (M3)
 

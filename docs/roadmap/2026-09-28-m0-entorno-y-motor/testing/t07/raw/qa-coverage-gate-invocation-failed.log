@@ -1,0 +1,27 @@
+uv.exe : coverage-gate: la ejecución de cobertura falló (FileNotFoundError: [WinError 2] The system cannot find the
+file specified)
+At line:2 char:164
++ ... $gateOutput=& uv run --no-sync --all-packages python <user>/. ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (coverage-gate: ...file specified):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+coverage-gate: sin datos de cobertura para:
+docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t07/raw/qa-cpu-runner.py, scripts/generate.py (excluidos de la
+media)
+{
+  "ok": true,
+  "exit": 0,
+  "stack": "pytest",
+  "detalle": {
+    "stack": "pytest",
+    "informe": "coverage.json",
+    "global": 26.29,
+    "modo": "changed-only",
+    "base": "main",
+    "ficheros": {}
+  },
+  "avisos": [
+    "sin datos de cobertura para: docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t07/raw/qa-cpu-runner.py, scripts/generate.py (excluidos de la media)"
+  ]
+}

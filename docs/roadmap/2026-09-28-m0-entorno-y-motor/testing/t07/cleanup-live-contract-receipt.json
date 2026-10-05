@@ -1,0 +1,27 @@
+{
+  "exit_code": 0,
+  "job_id": "01M467F5TCCR83V5E2XR9MR6QK",
+  "final_state": "idle",
+  "loaded": null,
+  "calls": [
+    [
+      "GET",
+      "/v1/health"
+    ],
+    [
+      "GET",
+      "/v1/jobs/01M467F5TCCR83V5E2XR9MR6QK"
+    ],
+    [
+      "GET",
+      "/v1/health"
+    ],
+    [
+      "GET",
+      "/v1/health"
+    ]
+  ],
+  "gpu_generation_repeated": false,
+  "only_read_requests": true,
+  "scope": "helper nuevo contra contrato HTTP real de un job ya completado; no prueba cancelacion GPU ni repite generacion"
+}

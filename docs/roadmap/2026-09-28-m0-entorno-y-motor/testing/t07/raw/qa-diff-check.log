@@ -1,0 +1,15 @@
+git.exe : warning: in the working copy of 'CONTINUE-HERE.md', CRLF will be replaced by LF the next time Git touches it
+At line:2 char:140
++ ... ve-Check($name,$program,$argv) { $lines=& $program @argv 2>&1; $code= ...
++                                             ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (warning: in the... Git touches it:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+warning: in the working copy of 'docs/arquitectura/pipeline-audio.md', CRLF will be replaced by LF the next time Git
+touches it
+warning: in the working copy of 'docs/roadmap/2026-09-28-m0-entorno-y-motor/spec.md', CRLF will be replaced by LF the
+next time Git touches it
+warning: in the working copy of 'docs/roadmap/2026-09-28-m0-entorno-y-motor/tasks.md', CRLF will be replaced by LF the
+next time Git touches it
+
+EXIT=0

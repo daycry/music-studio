@@ -1,0 +1,18 @@
+{
+  "lente_c": false,
+  "modo": "auto",
+  "motivos": [],
+  "lente_d": true,
+  "modo_d": "auto",
+  "motivos_d": [
+    {
+      "tipo": "contenido",
+      "fichero": "scripts/generate.py",
+      "patron": "sleep-bloqueante",
+      "linea": 218
+    }
+  ],
+  "base": "--base main",
+  "ficheros": 39,
+  "avisos": []
+}

@@ -26,6 +26,7 @@ Formato: `ADR-XXXX-slug.md` con **Estado** (propuesta · aceptada · sustituida 
 | [0020](ADR-0020-seguridad-local.md) | Seguridad local: Host/Origin, puertos en 127.0.0.1, token de engines, subidas validadas | aceptada |
 | [0021](ADR-0021-repositorio-publico.md) | Remoto público `daycry/music-studio` (todos los derechos reservados); código anterior en `archive/legacy-main`; auth con `gh`; merge ff a `main` por tarea | aceptada |
 | [0022](ADR-0022-memoria-tecnica-kwipu-graphiti.md) | Memoria técnica en Kwipu (export) y Graphiti (`shadow`, grupo `music-studio`) como MCP locales; liberar la VRAM de Ollama antes de trabajar con GPU | aceptada |
+| [0023](ADR-0023-primera-cancion-con-material-privado.md) | Primera canción de M0 con «Libre» como entrada privada; B-02 mantiene su definición en la evaluación | aceptada |
 | [0024](ADR-0024-hashes-de-codigo-remoto-en-descriptores.md) | Campo opcional remote_code en el descriptor, con rutas relativas y SHA-256; ampliación compatible de /v1 | aceptada |
 | [0025](ADR-0025-limite-de-memoria-wsl.md) | WSL con límite de 16 GB, swap de 8 GB y recuperación de caché dropCache; perfil elegido por el propietario y aplicado | aceptada |
 

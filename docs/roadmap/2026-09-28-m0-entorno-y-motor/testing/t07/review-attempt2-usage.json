@@ -1,0 +1,17 @@
+{
+  "artefacto": "m0-entorno-y-motor/revision-t07-2",
+  "inicio": "2026-10-05T14:49:11Z",
+  "fin": "2026-10-05T14:56:45Z",
+  "fuente": "estimado",
+  "tokens_reales": null,
+  "eur": null,
+  "horas_ia": null,
+  "duracion": null,
+  "duracion_reloj": "8m",
+  "ratio_usado": 300000,
+  "ratio_origen": "default no calibrado (300000)",
+  "nota": "estima tokens/horas a juicio y márcalo como estimado",
+  "avisos": [
+    "ventana sin respuestas del modelo (¿start y close seguidos?)"
+  ]
+}

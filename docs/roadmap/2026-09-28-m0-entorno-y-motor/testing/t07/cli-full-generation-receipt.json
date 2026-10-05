@@ -1,0 +1,39 @@
+{
+  "exit_code": 0,
+  "wall_s": 170.21900000000096,
+  "requested_duration_s": 255,
+  "language": "es",
+  "bpm": 94,
+  "seed": 1,
+  "lyrics_declaration": "own",
+  "lyrics_and_style_kept_private": true,
+  "sample_count": 159,
+  "wsl_total_mib": 15991.65234375,
+  "wsl_peak_used_excluding_available_mib": 4608.16796875,
+  "wsl_peak_swap_used_mib": 0.0,
+  "job_id": "01M467F5TCCR83V5E2XR9MR6QK",
+  "actual_duration_s": 255.0,
+  "run": {
+    "load_s": 105.64489239700015,
+    "run_s": 156.30270505399994,
+    "rtf": null,
+    "vram_peak_mb": 8463.025390625,
+    "vram_cap_mb": 9970.625,
+    "spilled": false,
+    "mode": "bf16",
+    "model_revision": "19671f406d603126926c1b7e2adc169acbcade22",
+    "extra": {}
+  },
+  "post": {
+    "lufs_in": -14.670642469897658,
+    "lufs_out": -14.002060686327212,
+    "gain_db": 0.6761771724420242,
+    "limiter": true,
+    "true_peak_dbtp": -1.1
+  },
+  "manifest_verifier_exit_code": 0,
+  "manifest_verifier_stdout": "all valid (2 manifests)",
+  "original_take_preserved": true,
+  "cli_without_diagnostic_instrumentation": true,
+  "owner_listening_pending": true
+}
