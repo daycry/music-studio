@@ -26,7 +26,7 @@ generacion:
 | Métrica | Estimado | Real | Confianza |
 |---|---|---|---|
 | Tiempo humano | **88 h** (80 h sin la T-12 opcional) | 0 h | Media |
-| Tareas | **16** (15 obligatorias; T-14 y T-15 añadidas con autorización del propietario) | [Ver ledger canónico](tasks.md) | — |
+| Tareas | **18** (17 obligatorias; T-14–T-17 adicionales autorizadas por el propietario) | [Ver ledger canónico](tasks.md) | — |
 
 ## Fases
 
@@ -35,7 +35,7 @@ generacion:
 | Fase 1 — Preparación | T-00, T-01 | 6 | Máquina lista y repositorio con su esqueleto |
 | Fase 2 — Cimientos compartidos | T-02, T-03, T-04 | 26 | Pesos seguros, contrato `/v1` con engine-mock, audio-post y manifiesto |
 | Fase 3 — Motor musical | T-05, T-06, T-07 | 19 | **🎯 Primera canción por CLI** |
-| Fase 4 — Medición y elección | T-08 … T-13, T-14 y T-15 adicionales | 37 (alcance inicial) | Benchmark, matriz de capacidades, batería de evaluación, escucha y decisión de modelo |
+| Fase 4 — Medición y elección | T-08 … T-13 y T-14–T-17 adicionales | 37 (alcance inicial) | Benchmark, matriz de capacidades, batería de evaluación, escucha y decisión de modelo |
 
 El detalle, los criterios y las verificaciones están en [`tasks.md`](tasks.md), el registro canónico del progreso.
 
@@ -60,3 +60,11 @@ El propietario autoriza una comparación privada de tres pares de «Libre»: shi
 ## Ampliación autorizada — T-15, 2026-10-05
 
 Continúa la evaluación privada de naturalidad con una comparación de captions y una revisión de candidatos locales solicitada durante el trabajo. Detalle y verificaciones en el ledger; presupuesto adicional no fijado, las 88 h siguen correspondiendo al alcance inicial. La investigación no cambia el motor por defecto ni sustituye T-08–T-13.
+
+## Ampliación autorizada — T-16, 2026-10-05
+
+El propietario pide continuar la investigación: controles de pasos/CFG e identidad de SFT, y tres nuevas tomas privadas frente a los comparadores Turbo de control ya existentes. Es una comparación de configuraciones, con presupuesto adicional no fijado; no cambia el motor por defecto ni cierra la selección de M0. La comparación de captions T-15 sigue sin valoración en la pestaña disponible.
+
+## Prioridad explícita — T-17, 2026-10-05
+
+Antes de perfeccionar o cambiar modelos, auditar qué instrucciones llegan realmente al LM y al DiT: adaptación, metadata, plantillas y tokens. T-16 queda en borrador, sin producción cambiada ni GPU. T-17 investiga el transporte y sus pérdidas, sin prometer cumplimiento artístico ni modificar el corpus original; detalle en el ledger. Presupuesto adicional no fijado.

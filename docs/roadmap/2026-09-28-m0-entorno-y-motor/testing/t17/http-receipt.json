@@ -1,0 +1,48 @@
+{
+  "status": "passed",
+  "records": [
+    {
+      "case_id": "libre_original",
+      "cli_style_unchanged": true,
+      "cli_lyrics_unchanged": true,
+      "estimate_http_status": 422,
+      "caption_sha256": "002103232d07b2c51f56f8ce46c1496b21b3d53769e5ebde35aa3444ffb61e5a",
+      "lyrics_sha256": "11166bbef6bff52aef1e992754576c5bf1326137e40e95e00d943b4c64e92ee2",
+      "error_code": "INVALID_PARAMS"
+    },
+    {
+      "case_id": "libre_complete_adapter",
+      "cli_style_unchanged": true,
+      "cli_lyrics_unchanged": true,
+      "estimate_http_status": 200,
+      "caption_sha256": "0595700afb888c041b22bf1138b4ef488bffae2f01176873d2a1dc06938bdb84",
+      "lyrics_sha256": "a7a5490bded55d043f5b53fed55a7706758917c7d63009ba0b17541a81753483"
+    },
+    {
+      "case_id": "libre_t15_control",
+      "cli_style_unchanged": true,
+      "cli_lyrics_unchanged": true,
+      "estimate_http_status": 200,
+      "caption_sha256": "22471b4c4326638c937d5ac12347ca84ddc3b90407a590f3d5abcdc071e1757b",
+      "lyrics_sha256": "421a2aaa97998b38b71db4aa939f468e4f6fb54a0b3d0c895d93fbae7ad5e635"
+    },
+    {
+      "case_id": "libre_t15_natural",
+      "cli_style_unchanged": true,
+      "cli_lyrics_unchanged": true,
+      "estimate_http_status": 200,
+      "caption_sha256": "79104170ef608618132f5134051751d73b2345df3fafc6a7dce5de66aa988bed",
+      "lyrics_sha256": "421a2aaa97998b38b71db4aa939f468e4f6fb54a0b3d0c895d93fbae7ad5e635"
+    }
+  ],
+  "methods_used": [
+    "GET /v1/health",
+    "POST /v1/estimate"
+  ],
+  "load_or_job_calls": 0,
+  "before_idle_unloaded": true,
+  "after_idle_unloaded": true,
+  "preservation_records": 32,
+  "preserved": true,
+  "model_inference_executed": false
+}

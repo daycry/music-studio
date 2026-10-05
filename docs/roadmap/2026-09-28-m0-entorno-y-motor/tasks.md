@@ -24,8 +24,8 @@ verificacion: obligatoria   # cada T-XX lleva `- **Verificación**:`; lo exige l
 | Fase 1 — Preparación | 2 | 2 | 100% | 0 / 6h | 0 / 2h | 0 / 0.5h | 0 / — |
 | Fase 2 — Cimientos compartidos | 3 | 3 | 100% | — / 26h | — / 13h | — / 3.3h | — / — |
 | Fase 3 — Motor musical | 3 | 3 | 100% | — / 19h | — / 9.5h | — / 2.4h | — / — |
-| Fase 4 — Medición y elección | 2 | 8 | 25% | 0 / 37h | 0 / 15h | 0 / 3.8h | 0 / — |
-| **TOTAL** | **10** | **16** | **63%** | **— / 88h** | **— / 39.5h** | **— / 10h** | **— / —** |
+| Fase 4 — Medición y elección | 3 | 10 | 30% | 0 / 37h | 0 / 15h | 0 / 3.8h | 0 / — |
+| **TOTAL** | **11** | **18** | **61%** | **— / 88h** | **— / 39.5h** | **— / 10h** | **— / —** |
 
 > Horas orientativas (proyecto personal, sin presupuesto). La T-12 es opcional (8 h): sin ella son 80 h.
 
@@ -530,6 +530,62 @@ Privados: `data/eval/libre-prompt/01M46QBFERQBK6XCH2Z4QQP9B1/listen.html`, mapa 
 
 ---
 
+### T-16 — Controles de inferencia y comparación privada SFT frente a Turbo
+
+- **Descripción**: Continuación autorizada de la investigación de naturalidad. Habilitar SFT con su identidad, pasos y CFG correctos y comparar tres fragmentos nuevos con las tres tomas Turbo de control existentes; no se atribuye mejora sin escucha humana.
+- **Estado**: borrador
+- **Tiempo humano**: est. — · real —
+- **Tiempo IA (ejec.)**: est. — · real —
+- **Supervisión**: est. — · real —
+- **Dependencias**: T-06, T-07, T-15
+- **Tipo**: backend
+- **Archivos**: `apps/engines/acestep/descriptor.py`, `apps/engines/acestep/adapter.py`, `apps/engines/acestep/tests/test_inference_controls.py`, `scripts/generate.py`, `tests/test_generate_inference.py`, `apps/engines/acestep/README.md`, `docs/arquitectura/pipeline-audio.md`, `docs/arquitectura/modelos.md`, `docs/decisiones/ADR-0027-controles-de-inferencia-sft.md`, `docs/decisiones/README.md`, `CONTINUE-HERE.md`, `docs/roadmap/2026-09-28-m0-entorno-y-motor/improvement-plan.md`, `docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t16/`, `data/inputs/libre/sft-ab/`, `data/eval/libre-sft/`, `.cache/dev-cycle/t16/` (últimas tres rutas privadas/efímeras).
+- **Verificación**:
+  - `uv run --no-sync --all-packages pytest tests/test_generate_inference.py apps/engines/acestep/tests/test_inference_controls.py -q` → validación, defaults, identidad, propagación y progreso correctos; RED previo registrado.
+  - QA sin UI: tests vecinos CPU, ruff/formato, contratos y cobertura ≥80 % de producción cambiada; imagen final con tests CPU del adaptador; revisión A+B y lentes condicionales conformes.
+  - `uv run --no-sync --all-packages python .cache/dev-cycle/t16/run-comparison.py` → tres nuevas tomas SFT de90s/semillas1,2,3/50pasos/CFG7, con LM0,6B/BF16/PT y shift1; tres comparadores Turbo existentes de T-15/control, sin regenerarlos.
+  - `uv run --no-sync scripts/verify_manifest.py data/cli/` y carpeta de escucha → salidas/manifiestos/telemetría/unload/HTTP válidos; hashes de tomas anteriores conservados.
+
+**Criterios de aceptación**
+- [ ] Descriptor distingue SFT (`ace-step-1.5-sft`) de Turbo; factoría/adapter usan identidad coherente. Turbo mantiene su identidad y defaults; no cambia /v1 ni se activa `verified`. Pasos opcionales enteros1–8 Turbo y1–200 SFT; CFG opcional finito1–20 solo SFT. Adaptador rechaza inválidos también sin HTTP y usa defaults SFT50/CFG7. CLI expone `--inference-steps` y `--guidance-scale`, también sobre briefs, con validación y manifiesto del pedido explícito. Progreso Euler/cancelación usan número efectivo de pasos.
+- [ ] TDD con RED por comportamiento, revisión fresca y QA CPU conformes, cobertura ≥80 % de los archivos de producción cambiados. Registro ADR/documentos en castellano; sin cambios de pesos, locks, dependencias ni motor por defecto.
+- [ ] Tres nuevas tomas SFT90s con caption de control T-15 y misma letra por hash, BPM94/es, semillas1/2/3, shift1/LM0,6B/BF16/PT. Comparadores Turbo correspondientes ya existentes, ocho pasos y mismo caption; la prueba compara configuraciones completas, no solo el checkpoint. Hashes/identidad/50pasos/CFG7/telemetría/unload acreditados. Ollama descargado y VRAM≤1600MiB; cap dinámico, parada conservadora y sin excepción de T-14.
+- [ ] Pares privados ciegos y referencia Suno original conservada; ganancia lineal con nivel común, sin compresor, sin sobrescribir takes/manifiestos/valoraciones previos. Valorar ritmo/afinación/voz/instrumentos; no declarar ganador ni generar canción completa por suposición. M0 y T-08–T-13 siguen abiertos.
+
+**Arranque — 2026-10-05:** «continua» después de recoger otra valoración de la página8766 (T-14: P1B/P2B/Ninguna, campos numéricos/comentarios vacíos). La página8767 de T-15 permanece sin valorar en la pestaña disponible; no se interpreta como empate ni aprobación. Recibo privado nuevo con timestamp, anterior intacto. Investigación propone SFT como siguiente prueba local. Rama m0/t-16-libre-sft; presupuesto adicional no fijado. TDD activo para producto; TDD n/a para prosa/config/orquestación efímera. Subagente fresco implementa controles; root conserva ledger/documentación/GPU/Git.
+
+**Cambio de prioridad explícito — 2026-10-05:** el propietario pide asegurar primero los prompts y revisar qué llega al LM, antes de perfeccionar o cambiar modelo. T-16 vuelve a borrador. Sin producto cambiado, build ni GPU. El subagente conserva el test parcial fuera de la colección pytest en `.cache/dev-cycle/t16/test_inference_controls.deferred.py`: RED real `test_descriptor_sft_identity_and_limits` falló AssertionError por identidad Turbo en descriptor SFT, 1 failed/0,18s; sin GREEN, no se declara implementación. Ventana inicial cerrada, fuente estimado; horas/tokens/coste medidos null. La auditoría se registra en T-17 y condiciona retomar SFT.
+
+### T-17 — Auditoría de fidelidad de prompts hasta LM y DiT
+
+- **Descripción**: Revisar el recorrido real de las instrucciones musicales entregadas por el propietario: originales/adaptaciones, petición CLI/HTTP, GenerationParams, plantilla del LM, texto/metadata del DiT y tokenización. Identificar pérdidas, presupuestos y controles ausentes antes de cambiar modelos. Auditoría CPU, sin generación ni aprobación artística.
+- **Estado**: completado
+- **Tiempo humano**: est. — · real —
+- **Tiempo IA (ejec.)**: est. — · real —
+- **Supervisión**: est. — · real —
+- **Dependencias**: T-06, T-07, T-15
+- **Tipo**: investigación
+- **Changelog**: Audita el transporte de prompts, tags y metadata hasta LM/DiT con evidencia CPU; documenta pérdidas y conserva las propuestas de vídeo para M4, sin cambiar modelos ni producto.
+- **Archivos**: `docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t17/`, `docs/arquitectura/modelos.md`, `docs/arquitectura/pipeline-audio.md`, `docs/arquitectura/video.md`, `docs/roadmap/referencias/2026-10-05-video-local-por-planos.md`, `CONTINUE-HERE.md`, `docs/roadmap/2026-09-28-m0-entorno-y-motor/improvement-plan.md`, `.cache/dev-cycle/t17/` y `data/inputs/libre/` (privados; originales/manifiestos de solo lectura; candidato nuevo en `prompt-faithful/`). La nota de vídeo recoge la aportación posterior del propietario como investigación para M4, sin implementar ni cambiar decisiones.
+- **Verificación**:
+  - `uv run --no-sync --all-packages python .cache/dev-cycle/t17/audit-prompts.py` → informe privado de longitudes/hashes y comparación de originales frente a entradas locales.
+  - Probe CPU con fuente y tokenizadores fijados del contenedor → captura de fronteras LM/DiT y tokenización real; sin CUDA ni carga de pesos musicales; distingue captura reproducida CPU de una inferencia nueva.
+  - Revisión A+B y QA sin UI → fuentes/capturas/recibos/publicación sin letras/rutas personales/secrets; preservación de originales y modelos existentes; ledger coherente.
+
+**Criterios de aceptación**
+- [x] Trazabilidad de Libre: original, adaptación de canción completa y fragmentos T-14/T-15; diferencias explícitas de instrucciones, letra/etiquetas y parámetros. Inventario privado del corpus Suno aportado, sin atribuir generaciones a canciones no ejecutadas. No confundir límite local de caracteres con presupuestos nativos de tokens.
+- [x] Verificar en fuente realmente instalada y con probe CPU qué caption/letra/metadata llegan a `generate_with_stop_condition`, qué plantilla/token IDs recibe el LM y qué recibe/tokeniza el text encoder del DiT. Medir truncamiento con tokenizadores locales fijados. Registrar thinking y CoT explícitos/efectivos; no se afirma ejecutar inferencia GPU ni audición.
+- [x] Informe en castellano con pérdidas/controles ausentes y prioridades de corrección para transportar íntegramente las instrucciones; separar transporte verificable de cumplimiento musical no garantizado. Pesos/producto/contratos/manifiestos/takes sin cambios. SFT aplazado; sin entrenamiento, servicios externos ni subida del corpus.
+- [x] Revisión fresca y QA CPU sin UI conformes; salidas públicas solo hashes, cantidades, fuentes y conclusiones. TDD/cobertura n/a para prosa y probe efímero; no se fabrican tests de producto ni métricas de cobertura/calidad. M0 permanece abierto.
+
+**Arranque — 2026-10-05:** prioridad literal del propietario: «sobretodo los prompts de las canciones, tienes que asegurarte de que se cumplen, revisa que le llega al llm, luego podremos ir perfeccionando el modelo, o cambiarlo». Se audita el LM musical de ACE-Step y su DiT; el LLM de composición de letras es otra función futura. TDD n/a: auditoría/prosa/probe efímero sin producto cambiado. No se ejecuta GPU. Código upstream instalado copiado a caché privada para lectura; no se actualiza el upstream.
+
+**Evidencia de implementación — 2026-10-05:** inventario CPU completado; run-cpu-audit.ps1 exit 0 con 16 casos, CUDA oculta y tokenizadores/plantillas instalados; commit dce621408bee8c31b4fcf4811682eb9359e1bc94 verificado. CLI y POST /v1/estimate: 422 INVALID_PARAMS para original de Libre, 200 para tres adaptaciones; cero load/jobs, engine idle/unloaded, 32 registros de hash preservados. Recibos públicos en testing/t17; textos/capturas/candidato privados. Fuente de consumo estimado, horas/tokens/eur null; 38m de reloj no se convierten en horas IA. Los controles de producto identificados siguen pendientes. Nota de vídeo y referencia Markdown conservada por petición posterior del propietario para M4; sin adopción ni implementación. Revisión A+B y QA pendientes.
+
+**Cierre técnico T-17 — 2026-10-05:** revisión A+B intento 2 conforme y [QA independiente CPU](testing/t17/report.md), status passed_cpu_documentation. Verificación de inventario y probe nativo exit 0: 16 casos; CLI/estimate 422 para original y 200 para tres adaptaciones, sin load/jobs. QA reconstruye fronteras/flags de 16 capturas, seis hashes de fuente, 16 archivos de tokenizer contra lock, 32 registros de hash preservados, 72 líneas idénticas y nueve tags del candidato. Alias T-14/control T-15 verificado por bytes/parámetros. Publicación: 17 archivos, cero fugas detectadas y 181 enlaces locales válidos. Ledger-lint exit 0, cero incoherencias; coverage-check exit 0 con applies=false por sin UI, degradación de lectura de base documentada y ninguna ruta UI en el alcance. No porcentaje ficticio, Playwright ni qa-gate aplicado; git diff --check exit 0. PDF no generado por dependencias ausentes. Costes/tokens/horas desconocidos (fuente estimado); no se infieren del reloj. Producto/pesos/takes/originales intactos. Preparación privada nueva sin audio, controles de producto pendientes; calidad musical no aprobada. Referencia de vídeo conservada a petición del propietario, sin iniciar M4. M0 abierto con 11/18 tareas completadas; T-16 borrador y T-08–T-13 pendientes. Integración preparada por allowlist, fast-forward y publicación conforme convenciones.
+
+---
+
 ## Revisión de dos lentes — intento 1: Fase 2 (T-03, T-04) — correcciones pendientes
 
 Revisión recuperada de la pasada provisional del 2026-10-05. Lentes ejecutadas: A+B+D; C no aplicó según selector automático. Contexto fresco y lectura completa del diff de producto: 41 ficheros, con hashes/mtime estables durante las reproducciones. Se mantuvo en pausa el cierre al detectar otro escritor; el usuario pidió retomar. No se han declarado completas las tareas.
@@ -795,3 +851,24 @@ Lentes A+B de contexto fresco; C/D=false. [Informe](testing/t15/review-attempt2.
 | R2 (B2) | Important | MP3 parcial certificado como 90 s | T-15 | Corregido: ffprobe duración/layout, checkpoint de hashes/procedencia/ganancia antes de rename, archivos exclusivos | MP3 real de 10 s rechazado; 90 s/48 kHz/estéreo aceptado; checkpoint ausente/hash distinto rechazados |
 
 Fusión: 0 Critical / 0 Important / 0 Minor pendientes, sin rebates. TDD/cobertura n/a para prosa/config/orquestación efímera; sin suite de producto nueva. Journals ajenos preservados, sin promoción de conocimiento. Coste/tokens/horas IA desconocidos, ventanas estimadas; no se infieren a partir del reloj.
+
+## Revisión de dos lentes — intento 1: T-17 — trazabilidad pendiente de revalidación
+
+A+B de contexto fresco; selector C/D=false. Scope exit 0, sin avisos ni exclusiones de usuario; siete journals ajenos excluidos por regla predeterminada y preservados. [Informe](testing/t17/review-attempt1.md). A/B verificaron 16 casos, seis hashes de fuente, 16 archivos de tokenizadores/configuración, 32 hashes preservados y 72 líneas cantadas; cuatro recibos coinciden con las fuentes privadas. Ningún cambio de producto ni inferencia. QA final aún pendiente.
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| A1 | Important | Equivalencia T-14/control T-15 no publicada | T-17 | Recibo de alias y diferencias de parámetros añadidos; pendiente revalidar | Archivos caption/letra idénticos por bytes; T-14 shifts 1/3, T-15 shift 1 |
+| A2 | Minor | Frase del candidato agrupa tres afirmaciones | T-17 | Separadas preparación, conservación y traducción; pendiente revalidar | Informe actualizado, sin cambio de conclusión |
+
+B sin defectos. Sin rebates. Ventana revisión inicial fuente estimado, tokens/horas/eur null; corrección documental iniciada durante la revisión, sin atribuir duración de reloj a consumo IA. No se declara cierre hasta revalidación y QA.
+## Revisión de dos lentes — intento 2: T-17 — correcciones conformes
+
+A+B de contexto fresco; C/D=false por selector automático. Scope exit 0, cero avisos y exclusiones de usuario; journals ajenos preservados. [Informe](testing/t17/review-attempt2.md). A1 y A2 corregidos; no se reabren criterios aprobados ni hay rebates. A y B reconstruyeron independientemente el recibo de linaje en memoria, sin ejecutar sus escrituras: identidad de caption/letra, ocho parámetros comunes, hashes de configuración, diferencias de shift y alias único entre 16 casos, PASS/exit 0.
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| A1 | Important | Trazabilidad explícita T-14/control T-15 omitida | T-17 | Corregido y revalidado | fragment-lineage-receipt.json y párrafo de equivalencia; ambas reconstrucciones independientes coinciden |
+| A2 | Minor | Frase del candidato agrupa tres afirmaciones | T-17 | Corregido y revalidado | Preparación/conservación/traducción separadas, conclusiones conservadas |
+
+Fusión: 0 Critical / 0 Important / 0 Minor pendientes. Fuente de consumo estimado; tokens/horas/coste null. QA final sigue pendiente en esta puerta; no se declara calidad musical ni cierre de M0.

@@ -84,7 +84,7 @@ La [suite](../../packages/audio-post/tests/test_audio_post.py) usa ffmpeg real p
 
 ### Generar una canción con el CLI de M0
 
-Guarda la letra en un fichero UTF-8 dentro del proyecto y declara su autoría antes de encolar. El estilo se pasa como texto; el descriptor de ACE-Step limita este caption a 512 caracteres. Para un engine local ya arrancado:
+Guarda la letra en un fichero UTF-8 dentro del proyecto y declara su autoría antes de encolar. El estilo se pasa como texto; el descriptor de ACE-Step limita este caption a 512 caracteres. Es un límite local, distinto de los presupuestos nativos de tokens. La CLI transmite los tags y cualquier Markdown presentes, sin normalizarlos. Para un engine local ya arrancado:
 
 ```powershell
 . .\scripts\env.ps1
@@ -139,3 +139,9 @@ Hay dos vías, según [modelos.md](./modelos.md) §4:
 - un separador dedicado, que se carga después de descargar el generador de la VRAM.
 
 Los stems se guardan como `asset` del take (`role=stem:vocals`, etc.); no generan un take nuevo. **Prueba de conformidad:** la suma de los stems se compara con la mezcla y el error debe quedar por debajo de −30 dB.
+
+## 6. Fidelidad de instrucciones — auditoría T-17
+
+La [auditoría CPU de T-17](../roadmap/2026-09-28-m0-entorno-y-motor/testing/t17/audit-report.md) distingue original, adaptación y entrada efectiva. El código instalado limita la plantilla completa de descripción del DiT a 256 tokens y la letra a 2048; estos presupuestos son distintos del límite local de 512 caracteres. Los originales rechazados solo se reprodujeron en CPU para medir tokens, sin generar audio.
+
+La entrada completa de Libre ya usaba un caption adaptado y cabeceras simplificadas antes de llegar a la CLI. Los versos se conservan. Se ha preparado un candidato privado que recupera indicaciones de las nueve cabeceras, sin generar una toma. Sigue pendiente implementar preflight, procedencia de la adaptación y controles de metadata; presencia de instrucciones en tokens no garantiza cumplimiento musical. T-16 permanece en borrador hasta atender esta prioridad.

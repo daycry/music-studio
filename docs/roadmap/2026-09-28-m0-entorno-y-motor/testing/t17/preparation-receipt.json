@@ -1,0 +1,130 @@
+{
+  "status": "prepared",
+  "corpus_documents": 10,
+  "local_cases": 4,
+  "cases": [
+    {
+      "case_id": "C001",
+      "caption_characters": 516,
+      "lyrics_characters": 3121,
+      "section_tags": 7,
+      "caption_sha256": "6a2321287511a5260d192a9a919f7f8ac1419460c361726965678e53ce502a9b",
+      "lyrics_sha256": "02873d0f784529c0c6e2c80e4d01e5932330d8db28bd3e5ed0d9abd237389f62"
+    },
+    {
+      "case_id": "C002",
+      "caption_characters": 515,
+      "lyrics_characters": 3121,
+      "section_tags": 7,
+      "caption_sha256": "10e7ec1c8f7ff276f1cf4c373395017e59b33e2487d8a2775d35e719e97232dd",
+      "lyrics_sha256": "0fb9cf69a596df77a84ffa77ea3956ab1c181ef023565cea9782ecc60163b3ca"
+    },
+    {
+      "case_id": "C003",
+      "caption_characters": 520,
+      "lyrics_characters": 2745,
+      "section_tags": 7,
+      "caption_sha256": "4da97a2567d17b7d8efc9e8da80069e9342ebb4b1487a95eea51cd4292e4beea",
+      "lyrics_sha256": "435998009f9027c3e4692ca647ba356b105875cda31400f899710aaac05ba118"
+    },
+    {
+      "case_id": "C004",
+      "caption_characters": 574,
+      "lyrics_characters": 3496,
+      "section_tags": 7,
+      "caption_sha256": "64cd2356b253800e43b27b380bf6c7c7e933b2b55fc48b0b47e83ecd32a7ed6d",
+      "lyrics_sha256": "dfbf91396a6bb4af6c0181f10195368781bba59a1d1cd15a3fbbd6f7197d54ca"
+    },
+    {
+      "case_id": "C005",
+      "caption_characters": 489,
+      "lyrics_characters": 2951,
+      "section_tags": 7,
+      "caption_sha256": "cc0e6abef0f2cfb2b4f644c01cb98be4dfb6e45fe5230bfd6653ea2681c29db5",
+      "lyrics_sha256": "a40d20ab6919bddf83924e5d8fbac591c5c490dc7adba661791426baec26c4f6"
+    },
+    {
+      "case_id": "C006",
+      "caption_characters": 527,
+      "lyrics_characters": 2829,
+      "section_tags": 7,
+      "caption_sha256": "fe03244d632f93248764ecdf4d9afcd27c63daca9c3be4489693e9dc7484134e",
+      "lyrics_sha256": "f7d0390384e318c9d89d950bd2922d15ff7ea6b251d3cd1092621481712b2e29"
+    },
+    {
+      "case_id": "C007",
+      "caption_characters": 886,
+      "lyrics_characters": 3310,
+      "section_tags": 11,
+      "caption_sha256": "9dbe604933e6a5b3180dcd5de11c0ab812fa016fef1879ccb2cf9afccd0bdfb0",
+      "lyrics_sha256": "db827fb459640c2fd891e8479229605b88f2728119c94b3ba3754fcbf01a1fb1"
+    },
+    {
+      "case_id": "C008",
+      "caption_characters": 840,
+      "lyrics_characters": 3175,
+      "section_tags": 9,
+      "caption_sha256": "5e0289ebb027c01132827656e1dd1c7d611d08775a0233048605bd4bc280952a",
+      "lyrics_sha256": "c5af5c2e17d4ed1c4f063f805fc79c00179d8db1d94e984271c56d8087eaff14"
+    },
+    {
+      "case_id": "C009",
+      "caption_characters": 844,
+      "lyrics_characters": 3715,
+      "section_tags": 10,
+      "caption_sha256": "50992646a460a7a15c0ee8cf03067bfde5002233ceb7943e89666cf87346552c",
+      "lyrics_sha256": "75ec5a8200fba342e418cd9f7cdef3d8cbfbabd5b86d13f4ee43f065715ae3b2"
+    },
+    {
+      "case_id": "C010",
+      "caption_characters": 867,
+      "lyrics_characters": 3300,
+      "section_tags": 9,
+      "caption_sha256": "002103232d07b2c51f56f8ce46c1496b21b3d53769e5ebde35aa3444ffb61e5a",
+      "lyrics_sha256": "915fc405126d83721293372821db83ded54bd80264cc817377354020815bcc66"
+    },
+    {
+      "case_id": "libre_markdown_tags",
+      "caption_characters": 867,
+      "lyrics_characters": 3425,
+      "section_tags": 9,
+      "caption_sha256": "002103232d07b2c51f56f8ce46c1496b21b3d53769e5ebde35aa3444ffb61e5a",
+      "lyrics_sha256": "7f0fcd1e8fb56e14366c39c46fdd4b2a2f9950bfe0da42fa5643b84c0c2ad809"
+    },
+    {
+      "case_id": "libre_original",
+      "caption_characters": 867,
+      "lyrics_characters": 3189,
+      "section_tags": 9,
+      "caption_sha256": "002103232d07b2c51f56f8ce46c1496b21b3d53769e5ebde35aa3444ffb61e5a",
+      "lyrics_sha256": "11166bbef6bff52aef1e992754576c5bf1326137e40e95e00d943b4c64e92ee2"
+    },
+    {
+      "case_id": "libre_complete_adapter",
+      "caption_characters": 489,
+      "lyrics_characters": 3154,
+      "section_tags": 9,
+      "caption_sha256": "0595700afb888c041b22bf1138b4ef488bffae2f01176873d2a1dc06938bdb84",
+      "lyrics_sha256": "a7a5490bded55d043f5b53fed55a7706758917c7d63009ba0b17541a81753483"
+    },
+    {
+      "case_id": "libre_t15_control",
+      "caption_characters": 415,
+      "lyrics_characters": 826,
+      "section_tags": 2,
+      "caption_sha256": "22471b4c4326638c937d5ac12347ca84ddc3b90407a590f3d5abcdc071e1757b",
+      "lyrics_sha256": "421a2aaa97998b38b71db4aa939f468e4f6fb54a0b3d0c895d93fbae7ad5e635"
+    },
+    {
+      "case_id": "libre_t15_natural",
+      "caption_characters": 426,
+      "lyrics_characters": 826,
+      "section_tags": 2,
+      "caption_sha256": "79104170ef608618132f5134051751d73b2345df3fafc6a7dce5de66aa988bed",
+      "lyrics_sha256": "421a2aaa97998b38b71db4aa939f468e4f6fb54a0b3d0c895d93fbae7ad5e635"
+    }
+  ],
+  "preservation_records": 32,
+  "no_gpu": true,
+  "model_inference_executed": false
+}

@@ -1,0 +1,23 @@
+{
+  "records": [
+    {
+      "case_id": "libre_original",
+      "historical_lm_prompt_present": false
+    },
+    {
+      "case_id": "libre_complete_adapter",
+      "historical_lm_prompt_present": false
+    },
+    {
+      "case_id": "libre_t15_control",
+      "historical_lm_prompt_present": false
+    },
+    {
+      "case_id": "libre_t15_natural",
+      "historical_lm_prompt_present": false
+    }
+  ],
+  "log_bytes": 16550,
+  "matching_normalization": "CRLF to LF for text comparison; hashes remain private originals",
+  "new_model_inference_executed": false
+}

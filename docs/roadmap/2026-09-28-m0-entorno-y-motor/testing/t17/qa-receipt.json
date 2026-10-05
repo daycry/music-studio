@@ -1,0 +1,109 @@
+{
+  "status": "passed_cpu_documentation",
+  "ui": false,
+  "qa_gate": {
+    "applies": false,
+    "reason": "sin UI por diseño; no Playwright ni results.json ficticio"
+  },
+  "checks": {
+    "public_receipts_identical": 4,
+    "native_cases": 16,
+    "original_corpus_cases": 10,
+    "schema_rejected_originals": 9,
+    "dit_truncated_originals": 4,
+    "captured_inputs_verified": 16,
+    "effective_flags_verified": true,
+    "source_files_verified": 6,
+    "tokenizer_lock_files_verified": 16,
+    "preservation_records_verified": 32,
+    "sung_lines_preserved": 72,
+    "candidate_tags_verified": 9,
+    "fragment_lineage_verified": true,
+    "public_files_privacy_scanned": 17,
+    "privacy_leaks": 0,
+    "local_links_verified": 181,
+    "video_reference_link_verified": true
+  },
+  "gates": {
+    "ledger_lint": {
+      "exit_code": 0,
+      "stdout": "⚠️  T-08: sin campo **Changelog** (otras tareas lo declaran) — su bullet del CHANGELOG degradará al título\n⚠️  T-09: sin campo **Changelog** (otras tareas lo declaran) — su bullet del CHANGELOG degradará al título\n⚠️  T-10: sin campo **Changelog** (otras tareas lo declaran) — su bullet del CHANGELOG degradará al título\n⚠️  T-11: sin campo **Changelog** (otras tareas lo declaran) — su bullet del CHANGELOG degradará al título\n⚠️  T-12: sin campo **Changelog** (otras tareas lo declaran) — su bullet del CHANGELOG degradará al título\n⚠️  T-13: sin campo **Changelog** (otras tareas lo declaran) — su bullet del CHANGELOG degradará al título\n⚠️  T-16: sin campo **Changelog** (otras tareas lo declaran) — su bullet del CHANGELOG degradará al título\n⚠️  T-17: sin campo **Changelog** (otras tareas lo declaran) — su bullet del CHANGELOG degradará al título\nledger-lint: 0 incoherencias · 8 avisos (tasks.md)",
+      "stderr": ""
+    },
+    "coverage_check": {
+      "exit_code": 0,
+      "stdout": "ℹ️  test-plan: n/a (sin UI) declarado en improvement-plan.md: iniciativa sin UI por diseño, la puerta de cobertura NO se ha ejecutado (no es «cobertura OK»)\nℹ️  se listan para la revisión 18 tarea(s) del ledger (la spec no aporta criterios rastreables) (T-00, T-01, T-02, T-03, T-04, T-05, T-06, T-07, T-08, T-09, T-10, T-11, T-12, T-13, T-14, T-15, T-16, T-17): la puerta no exigía cobertura de estos (solo la exige de los [GWT]), así que aquí no se exime nada — su evidencia es el campo `Verificación` de la tarea que los cierra en tasks.md\n⚠️  no se ha podido mirar el DIFF entero (el diff contra la base «merge-base main…HEAD (84929192)» no aporta ningún fichero: solo se han mirado los cambios sin comitear): la búsqueda de rutas de interfaz se apoya en el alcance declarado en los campos `Archivos` (más lo que haya sin comitear), que NO incluye lo que scope-check excluye — un `.tsx` excluido no se vería aquí\n{\"applies\": false, \"gwt_sin_id\": 0, \"test_plan_na\": true, \"marcador_no_canonico\": null, \"eximidos\": [\"T-00\", \"T-01\", \"T-02\", \"T-03\", \"T-04\", \"T-05\", \"T-06\", \"T-07\", \"T-08\", \"T-09\", \"T-10\", \"T-11\", \"T-12\", \"T-13\", \"T-14\", \"T-15\", \"T-16\", \"T-17\"], \"eximidos_exigidos\": false, \"rutas_ui\": [], \"rutas_ui_origen\": {}, \"rutas_ui_degradado\": \"el diff contra la base «merge-base main…HEAD (84929192)» no aporta ningún fichero: solo se han mirado los cambios sin comitear\"}",
+      "stderr": "",
+      "json": {
+        "applies": false,
+        "gwt_sin_id": 0,
+        "test_plan_na": true,
+        "marcador_no_canonico": null,
+        "eximidos": [
+          "T-00",
+          "T-01",
+          "T-02",
+          "T-03",
+          "T-04",
+          "T-05",
+          "T-06",
+          "T-07",
+          "T-08",
+          "T-09",
+          "T-10",
+          "T-11",
+          "T-12",
+          "T-13",
+          "T-14",
+          "T-15",
+          "T-16",
+          "T-17"
+        ],
+        "eximidos_exigidos": false,
+        "rutas_ui": [],
+        "rutas_ui_origen": {},
+        "rutas_ui_degradado": "el diff contra la base «merge-base main…HEAD (84929192)» no aporta ningún fichero: solo se han mirado los cambios sin comitear"
+      }
+    },
+    "git_diff_check": {
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "warning: in the working copy of 'docs/arquitectura/video.md', CRLF will be replaced by LF the next time Git touches it"
+    }
+  },
+  "new_model_inference_executed": false,
+  "new_http_calls": 0,
+  "product_tests_rerun": false,
+  "coverage_percent": null,
+  "pdf": {
+    "generated": false,
+    "reason": "dependencias ausentes; no se instalaron ni se generó PDF en esta auditoría"
+  },
+  "usage": {
+    "started_at": "2026-10-05T20:53:49Z",
+    "finished_at": "2026-10-05T20:57:26.554260+00:00",
+    "source": "estimated",
+    "tokens": null,
+    "hours": null,
+    "eur": null
+  },
+  "public_paths": [
+    "CONTINUE-HERE.md",
+    "docs/arquitectura/modelos.md",
+    "docs/arquitectura/pipeline-audio.md",
+    "docs/arquitectura/video.md",
+    "docs/roadmap/referencias/2026-10-05-video-local-por-planos.md",
+    "docs/roadmap/2026-09-28-m0-entorno-y-motor/tasks.md",
+    "docs/roadmap/2026-09-28-m0-entorno-y-motor/improvement-plan.md",
+    "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t17/audit-report.md",
+    "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t17/native-receipt.json",
+    "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t17/http-receipt.json",
+    "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t17/runtime-log-receipt.json",
+    "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t17/preparation-receipt.json",
+    "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t17/fragment-lineage-receipt.json",
+    "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t17/review-attempt1.md",
+    "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t17/review-attempt2.md",
+    "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t17/report.md",
+    "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t17/qa-receipt.json"
+  ]
+}

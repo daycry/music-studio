@@ -1,0 +1,39 @@
+{
+  "status": "passed",
+  "cpu_only": true,
+  "new_model_inference_executed": false,
+  "byte_identical_caption_files": true,
+  "byte_identical_lyrics_files": true,
+  "caption_file_sha256": "bc86875aea3f663c4d28af38428f8d1b71d0b1ff2313ff1c1fa5d9854f059b7d",
+  "caption_trimmed_sha256": "22471b4c4326638c937d5ac12347ca84ddc3b90407a590f3d5abcdc071e1757b",
+  "lyrics_file_sha256": "421a2aaa97998b38b71db4aa939f468e4f6fb54a0b3d0c895d93fbae7ad5e635",
+  "common_configuration": {
+    "duration_s": 90,
+    "bpm": 94,
+    "language": "es",
+    "mode": "bf16",
+    "checkpoint": "acestep-v15-turbo",
+    "lm": "acestep-5Hz-lm-0.6B",
+    "inference_steps": 8,
+    "seeds": [
+      1,
+      2,
+      3
+    ]
+  },
+  "t14_shifts": [
+    1,
+    3
+  ],
+  "t15_shift": 1,
+  "t15_backend": "pt",
+  "configuration_sha256": {
+    "T-14": "edcf8451738d0d85cae1585f1d9b00651a3974dc036cc773fb46c4df8e59f933",
+    "T-15": "2d79ff237cd5d76aa74024d0ab769c8ef12523be56dbf6c96f3d7c5d2b4c7bf9"
+  },
+  "probe_alias": {
+    "T-14": "libre_t15_control",
+    "native_probe_cases": 16
+  },
+  "historical_runtime_capture_claimed": false
+}

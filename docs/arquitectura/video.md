@@ -3,8 +3,8 @@ documento: video
 titulo: Vídeo musical — pipeline, niveles y modelos
 estado: vigente — a validar con el spike de vídeo (M4)
 fecha: 2026-09-28
-actualizado: 2026-09-28
-fuentes-consultadas: 2026-09-28
+actualizado: 2026-10-05
+fuentes-consultadas: 2026-10-05 (nota §9; resto consultado 2026-09-28)
 ---
 
 # Vídeo musical
@@ -140,3 +140,25 @@ Ver [`datos.md`](./datos.md) §4: `video_project` (formato, estilo visual, trata
 - Render: https://ffmpeg.org/ffmpeg-filters.html · Remotion (no se usa por defecto): https://github.com/remotion-dev/remotion/blob/main/LICENSE.md
 - Blackwell/ComfyUI: https://github.com/thu-ml/SageAttention · https://blog.comfy.org/p/new-comfyui-optimizations-for-nvidia · https://github.com/Comfy-Org/ComfyUI/issues/11531 · https://github.com/Comfy-Org/ComfyUI/issues/15679 · https://github.com/deepbeepmeep/Wan2GP
 - Sondo (referencia de producto): https://www.sondo.ai/ · https://www.sondo.ai/mv-creation
+
+## 9. Aportación del propietario — investigación para M4 (2026-10-05)
+
+El [chat aportado y conservado para M4](../roadmap/referencias/2026-10-05-video-local-por-planos.md) encaja con los niveles y el pipeline anteriores: clips independientes, personaje de referencia, aprobación por plano, borrador antes del render final y recuperación tras una interrupción. Son ideas para contrastar al especificar M4, sin sustituir la arquitectura vigente ni incorporar modelos ahora. ComfyUI sigue detrás de `/v1`; el server conserva BD, cola y montaje FFmpeg. No se añade Redis ni un motor nuevo por esta nota.
+
+Para cuatro minutos, planos de 5–6 s implican aproximadamente 40–48 posiciones en el montaje. Las posiciones no equivalen a generaciones únicas: pueden contener imágenes animadas o recursos reutilizados. Los tiempos se obtienen del audio maestro y de la letra alineada; los tags marcan intención/secciones, pero no son timestamps. La mezcla completa permanece como banda sonora continua. Un clip de cantante utiliza el fragmento vocal correspondiente, sin reemplazar el audio final por el generado por el modelo de vídeo.
+
+Al reanudar, la existencia de un archivo no basta para saltar un trabajo: habrá que comprobar resultado terminal, integridad, procedencia y referencias vigentes. Una aprobación se vincula a una versión del plano. Un cambio de audio, prompt, referencia o workflow requiere resolver la invalidación de dependencias. Son criterios propuestos para la spec de M4, compatibles con `shot_version`, linaje y `timeline.rev` existentes.
+
+| Fuente primaria revisada | Qué permite concluir | Consecuencia para la 5070 de 12 GB |
+|---|---|---|
+| [ComfyUI: Wan 2.2](https://docs.comfy.org/tutorials/video/wan/wan2_2) | El workflow TI2V-5B declara funcionamiento con 8 GB mediante offload nativo | Candidato inicial del spike; consumo, RAM, duración y calidad locales pendientes |
+| [Wan 2.2 oficial](https://github.com/Wan-Video/Wan2.2) | S2V-14B usa imagen, audio y prompt; su receta de referencia declara al menos 80 GB | Esa receta no es viable directamente aquí. Cualquier variante optimizada necesita evaluación propia, incluyendo canto y dueto |
+| [LTX Desktop oficial](https://github.com/Lightricks/LTX-Desktop) | LTX 2.5 Fast ofrece T2V/I2V/A2V local; Windows/Linux requieren al menos 16 GB de VRAM | Desktop deja esta GPU en modo API. No prueba que otra ruta ComfyUI cuantizada sea imposible, ni acredita que funcione aquí |
+
+Dividir reduce el coste de regenerar y la memoria de activaciones frente a clips largos, pero no reduce el tamaño de los pesos. El presupuesto real incluye los 16 GB de RAM asignados actualmente a WSL, no los 32 GB totales del host. No se cambian esos límites automáticamente ni se prometen tiempos a partir del chat.
+
+La [licencia vigente LTX-2.x](https://raw.githubusercontent.com/Lightricks/LTX-2/main/LICENSE-2_x), aplicable a versiones LTX-2.5 desde el 11 de agosto de 2026, conserva condiciones de ingresos, transparencia y competencia (Attachment A, punto 20); sigue como candidato de laboratorio. HunyuanVideo 1.5 mantiene la exclusión territorial de la UE en su [licencia oficial](https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5/blob/main/LICENSE), por lo que el chat no cambia su descarte para este proyecto. No se incorporan pesos ni herramientas sin revisar su versión exacta y registrar licencia/lock.
+
+Draft/preview/final son calidades por plano, distintas de N0–N3, que indican cómo se construye el vídeo. No se fuerza una progresión universal 480p→720p→1080p: depende del workflow validado. Reescalar a 4K no convierte el origen en generación 4K nativa. La proporción de cantante, narrativa y recursos se decidirá por canción; los porcentajes del chat son ejemplos.
+
+Prioridad actual: terminar la auditoría de fidelidad musical T-17 y corregir preparación/metadata antes de cambiar modelos. El vídeo sigue en M3/M4; no se inicia M4 ni se abre un ledger paralelo.
