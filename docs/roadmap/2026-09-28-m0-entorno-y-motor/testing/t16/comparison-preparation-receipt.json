@@ -1,0 +1,93 @@
+{
+  "status": "prepared_cpu",
+  "gpu_executed": false,
+  "weights_downloaded": false,
+  "control_bytes_identical": true,
+  "lyrics_bytes_identical": true,
+  "weights_verified": [
+    {
+      "component": "acestep-v15-turbo",
+      "sha256": "3f6e0797fad420a39bd33979eb6e840e30989e34a3794e843d23b60ec6e422d7",
+      "bytes": 4787825604
+    },
+    {
+      "component": "acestep-v15-turbo",
+      "sha256": "3c9d1758b016fa80778981a4c1ecac50b75e10d2367ec193982801be5ac32632",
+      "bytes": 3840136
+    },
+    {
+      "component": "vae",
+      "sha256": "da17edb604c40deaf09e9b24974e590d1ca83a374070e5d0884cfa4bed9a99b0",
+      "bytes": 337431388
+    },
+    {
+      "component": "Qwen3-Embedding-0.6B",
+      "sha256": "0437e45c94563b09e13cb7a64478fc406947a93cb34a7e05870fc8dcd48e23fd",
+      "bytes": 1191586416
+    },
+    {
+      "component": "acestep-5Hz-lm-0.6B",
+      "sha256": "5d92a60806e2e88c04de58ddc6dde93f2bc8f1336162b3ad5853886c9bcc6b82",
+      "bytes": 1325804024
+    },
+    {
+      "component": "acestep-v15-sft",
+      "sha256": "d4dd3a93870f06720027965b90771f529ab02094b3d29e2518f1d5e097e1af7e",
+      "bytes": 4787825604
+    },
+    {
+      "component": "acestep-v15-sft",
+      "sha256": "3c9d1758b016fa80778981a4c1ecac50b75e10d2367ec193982801be5ac32632",
+      "bytes": 3840136
+    }
+  ],
+  "plan": {
+    "task": "M0/T-16",
+    "takes": 6,
+    "pairs": 3,
+    "duration_s": 90,
+    "seeds": [
+      1,
+      2,
+      3
+    ],
+    "shift": 1,
+    "bpm": 94,
+    "language": "es",
+    "mode": "bf16",
+    "backend": "pt",
+    "lm": "acestep-5Hz-lm-0.6B",
+    "configurations": [
+      {
+        "id": "turbo",
+        "checkpoint": "acestep-v15-turbo",
+        "model_id": "ace-step-1.5-turbo",
+        "inference_steps": 8,
+        "guidance_scale_input": 7,
+        "guidance_scale_internal": 1
+      },
+      {
+        "id": "sft",
+        "checkpoint": "acestep-v15-sft",
+        "model_id": "ace-step-1.5-sft",
+        "inference_steps": 50,
+        "guidance_scale_input": 7,
+        "guidance_scale_internal": 7
+      }
+    ],
+    "image_digest": "sha256:9e4fc86fe17269ef80ad6649d9f80b02f8d1f0c7af160f3f9d0fde362dfd8f84",
+    "lyrics_declaration": "own",
+    "lyrics_sha256": "421a2aaa97998b38b71db4aa939f468e4f6fb54a0b3d0c895d93fbae7ad5e635",
+    "style_file_sha256": "bc86875aea3f663c4d28af38428f8d1b71d0b1ff2313ff1c1fa5d9854f059b7d",
+    "caption_sha256": "22471b4c4326638c937d5ac12347ca84ddc3b90407a590f3d5abcdc071e1757b",
+    "baseline_ceiling_mib": 1600,
+    "margin_mib": 512,
+    "ollama_must_be_empty": true,
+    "stop_on_spill": true,
+    "reference_conditioning_used": false,
+    "normalization": "linear_gain_no_limiter",
+    "historical_controls_are_matched": false,
+    "musical_quality_approved": false,
+    "winner": null
+  }
+}

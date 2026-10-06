@@ -150,6 +150,85 @@ def _rehash_native_receipt(receipt):
     captured["boundaries"][2]["arguments_sha256"] = sha(planned["effective"])
 
 
+@pytest.mark.parametrize(
+    "checkpoint,params,steps,cfg",
+    [
+        ("acestep-v15-sft", {}, 50, 7),
+        ("acestep-v15-sft", {"inference_steps": 41, "guidance_scale": 3}, 41, 3),
+        ("acestep-v15-turbo", {"inference_steps": 4}, 4, 7),
+    ],
+)
+def test_native_receipt_checkpoint_controls(checkpoint, params, steps, cfg):
+    import json
+
+    from audio_post.manifest import validate_input_receipt
+
+    receipt, request = _native_receipt_fixture()
+    request["params"].update(params)
+    request["model_id"] = (
+        "ace-step-1.5-sft" if checkpoint.endswith("sft") else "ace-step-1.5-turbo"
+    )
+    receipt["planned"]["checkpoint"] = {"id": checkpoint}
+    effective = receipt["planned"]["effective"]
+    effective.update(inference_steps=steps, guidance_scale=cfg)
+    effective["params"].update(inference_steps=steps, guidance_scale=cfg)
+    receipt["captured"]["flags"].update(inference_steps=steps, guidance_scale=cfg)
+    _rehash_native_receipt(receipt)
+    assert (
+        validate_input_receipt(json.dumps(receipt), request, 0, private_params=True)
+        == receipt
+    )
+    # Integridad recalculada no legitima parámetros/capturas incoherentes.
+    effective["params"]["inference_steps"] += 1
+    _rehash_native_receipt(receipt)
+    with pytest.raises(ValueError, match="INPUT_RECEIPT_INVALID"):
+        validate_input_receipt(json.dumps(receipt), request, 0, private_params=True)
+
+
+@pytest.mark.parametrize(
+    "mismatch", ["checkpoint", "native_identity", "published_identity"]
+)
+def test_native_receipt_checkpoint_identity_mismatch(mismatch):
+    import copy
+    import json
+
+    from audio_post.manifest import validate_input_receipt
+
+    receipt, request = _native_receipt_fixture()
+    request["model_id"] = "ace-step-1.5-turbo"
+    receipt["planned"]["checkpoint"] = {"id": "acestep-v15-turbo"}
+    expected = copy.deepcopy(request)
+    if mismatch == "checkpoint":
+        receipt["planned"]["checkpoint"]["id"] = "acestep-v15-sft"
+    elif mismatch == "native_identity":
+        request["model_id"] = "ace-step-1.5-sft"
+    else:
+        expected["model_id"] = "ace-step-1.5-sft"
+    _rehash_native_receipt(receipt)
+    with pytest.raises(ValueError, match="INPUT_RECEIPT_INVALID"):
+        validate_input_receipt(json.dumps(receipt), expected, 0, private_params=True)
+
+
+@pytest.mark.parametrize("control", ["inference_steps", "guidance_scale"])
+def test_native_receipt_rejects_boolean_control_capture(control):
+    import json
+
+    from audio_post.manifest import validate_input_receipt
+
+    receipt, request = _native_receipt_fixture()
+    request["model_id"] = "ace-step-1.5-sft"
+    request["params"].update(inference_steps=1, guidance_scale=1)
+    receipt["planned"]["checkpoint"] = {"id": "acestep-v15-sft"}
+    effective = receipt["planned"]["effective"]
+    effective.update(inference_steps=1, guidance_scale=1)
+    effective["params"].update(inference_steps=1, guidance_scale=1)
+    receipt["captured"]["flags"].update(inference_steps=1, guidance_scale=1)
+    effective[control] = receipt["captured"]["flags"][control] = True
+    _rehash_native_receipt(receipt)
+    with pytest.raises(ValueError, match="INPUT_RECEIPT_INVALID"):
+        validate_input_receipt(json.dumps(receipt), request, 0, private_params=True)
+
+
 SEMANTIC_MUTATIONS = [
     "language",
     "language_alias",

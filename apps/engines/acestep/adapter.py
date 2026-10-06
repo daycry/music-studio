@@ -11,9 +11,17 @@ from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from functools import wraps
 from types import SimpleNamespace
 
-from descriptor import CHECKPOINT, LM, MODEL_ID, locked_model, model_root
+from descriptor import (
+    CHECKPOINT,
+    LM,
+    locked_model,
+    model_root,
+)
+from descriptor import (
+    model_id as checkpoint_model_id,
+)
 from engine_common import EngineError
-from input_profile import MAX_DURATION, VALID_LANGUAGES
+from input_profile import MAX_DURATION, VALID_LANGUAGES, inference_controls
 from patches import enforce_safe_pretrained, install_safe_loader, verify_components
 from preflight import digest, preflight, token_record
 
@@ -178,6 +186,10 @@ def input_capture(runtime, planned, values, index):
                 ("bpm", values["bpm"]),
                 ("key_scale", values["keyscale"]),
                 ("time_signature", values.get("timesignature", "")),
+            ) + tuple(
+                (key, values[key])
+                for key in ("inference_steps", "guidance_scale")
+                if key in values
             ):
                 if kwargs.get(key) != expected:
                     raise EngineError(
@@ -291,8 +303,24 @@ def load_options(mode, checkpoint):
     }
 
 
-def generation_options(request, index):
+def generation_options(request, index, checkpoint=None):
     values = request["params"]
+    identity = (
+        checkpoint_model_id(checkpoint)
+        if checkpoint
+        else request.get("model_id", checkpoint_model_id(CHECKPOINT))
+    )
+    if request.get("model_id", identity) != identity or identity not in {
+        "ace-step-1.5-turbo",
+        "ace-step-1.5-sft",
+    }:
+        raise EngineError("MODEL_NOT_FOUND")
+    try:
+        controls = inference_controls(values, sft=identity == "ace-step-1.5-sft")
+    except ValueError:
+        raise EngineError(
+            "INVALID_PARAMS", "Controles de inferencia no admitidos"
+        ) from None
     language = values.get("vocal_language", values.get("language", "unknown"))
     if language not in VALID_LANGUAGES or (
         "language" in values
@@ -325,6 +353,7 @@ def generation_options(request, index):
     seed = secrets.randbelow(2**31) if seed is None else seed + index
     instrumental = request["task"] == "music.instrumental"
     params = {
+        **controls,
         "caption": values["style"],
         "lyrics": "[Instrumental]" if instrumental else values["lyrics"],
         "instrumental": instrumental,
@@ -416,7 +445,7 @@ class AceStepAdapter:
         self.runtime = None
 
     def load(self, model_id, mode, cap_mb, total_mb):
-        if model_id != MODEL_ID:
+        if model_id != checkpoint_model_id(self.checkpoint):
             raise EngineError("MODEL_NOT_FOUND")
         options = load_options(mode, self.checkpoint)
         if total_mb <= 0 or not 0 < cap_mb <= total_mb:
@@ -470,7 +499,7 @@ class AceStepAdapter:
         receipts = []
         for index in range(request["n_outputs"]):
             token.check()
-            values, config = generation_options(request, index)
+            values, config = generation_options(request, index, self.checkpoint)
             variant_request = {**request, "seed": values["seed"], "n_outputs": 1}
             planned = preflight(
                 variant_request,
@@ -503,7 +532,7 @@ class AceStepAdapter:
             generation_config = runtime.GenerationConfig(**config)
             with (
                 private_upstream_output(),
-                step_hooks(runtime, token, progress, 8),
+                step_hooks(runtime, token, progress, values["inference_steps"]),
                 input_capture(runtime, planned, values, index) as captured,
             ):
                 actual_params = params if isinstance(params, dict) else vars(params)

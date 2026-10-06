@@ -16,6 +16,10 @@ TRAINING_DATA = (
 )
 
 
+def model_id(checkpoint):
+    return "ace-step-1.5-sft" if checkpoint == "acestep-v15-sft" else MODEL_ID
+
+
 def model_root():
     return (
         Path("/models")
@@ -74,9 +78,16 @@ def descriptor(lock_path=None, checkpoint=None, lm=None):
             "pattern": "^[1-9][0-9]?/(1|2|4|8|16|32)$",
         },
         "negative_prompt": {"type": "string"},
+        "inference_steps": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200 if checkpoint == "acestep-v15-sft" else 8,
+        },
     }
+    if checkpoint == "acestep-v15-sft":
+        properties["guidance_scale"] = {"type": "number", "minimum": 1, "maximum": 20}
     return ModelDescriptor(
-        id=MODEL_ID,
+        id=model_id(checkpoint),
         family="ace-step",
         version="1.5",
         revision=components[checkpoint]["revision"],

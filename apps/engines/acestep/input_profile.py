@@ -1,5 +1,24 @@
 """Política operativa del backend PT auditado; no es la ventana arquitectónica."""
 
+import math
+
+
+def inference_controls(params, *, sft=False):
+    """Valores efectivos; validación también para llamadas fuera de HTTP."""
+    steps = params.get("inference_steps", 50 if sft else 8)
+    guidance = params.get("guidance_scale", 7.0)
+    if (
+        type(steps) is not int
+        or not 1 <= steps <= (200 if sft else 8)
+        or (not sft and "guidance_scale" in params)
+        or type(guidance) not in {int, float}
+        or not 1 <= guidance <= 20
+        or not math.isfinite(guidance)
+    ):
+        raise ValueError("INVALID_PARAMS")
+    return {"inference_steps": steps, "guidance_scale": guidance}
+
+
 LM_CONTEXT = 4096
 DIT_TEXT_LIMIT = 256
 DIT_LYRICS_LIMIT = 2048

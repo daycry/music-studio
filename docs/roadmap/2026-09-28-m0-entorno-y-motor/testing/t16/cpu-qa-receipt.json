@@ -1,0 +1,250 @@
+{
+  "status": "passed_cpu_only",
+  "task": "T-16",
+  "date_utc": "2026-10-05T23:52:48.706398+00:00",
+  "branch": "m0/t-16-libre-sft",
+  "base": "ef66a36bedf08fb996f88ef6cb9633b5f51f13b8",
+  "ownership": "QA reports and private evidence only",
+  "checks": [
+    {
+      "command": "uv run --frozen --all-packages pytest tests/test_generate_inference.py apps/engines/acestep/tests/test_inference_controls.py -q -m \"not gpu\" --basetemp=.cache/dev-cycle/t16/qa/tmp-declared -o cache_dir=.cache/dev-cycle/t16/qa/pytest-cache",
+      "exit_code": 0,
+      "passed": 41,
+      "evidence": ".cache/dev-cycle/t16/qa/declared.txt"
+    },
+    {
+      "command": "uv run --frozen --all-packages pytest tests packages apps/engines -q -m \"not gpu\" --basetemp=.cache/dev-cycle/t16/qa/tmp-full -o cache_dir=.cache/dev-cycle/t16/qa/pytest-cache-full --cov=apps/engines/acestep --cov=scripts --cov=packages/audio-post/audio_post --cov-report=json:.cache/dev-cycle/t16/qa/coverage.json",
+      "exit_code": 0,
+      "passed": 430,
+      "skipped": 5,
+      "deselected": 1,
+      "warnings": 6,
+      "evidence": ".cache/dev-cycle/t16/qa/full.txt"
+    },
+    {
+      "command": "uv run --frozen --all-packages python scripts/export_contracts.py --check",
+      "result": "engine-v1.json up to date"
+    },
+    {
+      "command": "uv run --frozen --all-packages python scripts/verify_manifest.py packages/contracts/examples",
+      "result": "all valid (4 manifests)"
+    },
+    {
+      "command": "uv run --frozen --all-packages python scripts/verify_manifest.py data/cli",
+      "result": "all valid (14 manifests)"
+    },
+    {
+      "command": "uv run --frozen --all-packages ruff check .",
+      "result": "All checks passed!"
+    },
+    {
+      "command": "uv run --frozen --all-packages ruff format --check [ten changed Python files listed in report]",
+      "result": "10 files already formatted"
+    },
+    {
+      "command": "git diff --check",
+      "result": "no whitespace errors; CRLF normalization warnings for CONTINUE-HERE/tasks"
+    },
+    {
+      "command": "docker image inspect music-studio/engine-acestep:m0-t16-controls --format {{.Id}}",
+      "exit_code": 0,
+      "result": "sha256:9e4fc86fe17269ef80ad6649d9f80b02f8d1f0c7af160f3f9d0fde362dfd8f84"
+    }
+  ],
+  "coverage": {
+    "source": "new QA pytest-cov JSON",
+    "base": "ef66a36bedf08fb996f88ef6cb9633b5f51f13b8",
+    "files": [
+      {
+        "file": "apps/engines/acestep/adapter.py",
+        "source_sha256": "b054b140b375ef591fa4489694e5092fe4599af5dd38c390ab5a0df1ef9e3324",
+        "covered": 12,
+        "statements": 13,
+        "changed_percent": 92.3076923076923,
+        "file_percent": 92.57950530035336,
+        "missing": [
+          317
+        ]
+      },
+      {
+        "file": "apps/engines/acestep/descriptor.py",
+        "source_sha256": "882d8aef7b4fc3162afa62932a2c5f662cfe1544192e95fb7f932f78f8d78cd0",
+        "covered": 4,
+        "statements": 4,
+        "changed_percent": 100.0,
+        "file_percent": 100.0,
+        "missing": []
+      },
+      {
+        "file": "apps/engines/acestep/input_profile.py",
+        "source_sha256": "2e5bab950034c9e22b27bac4e86062a234ecc6971c4e819666223b7703116eb7",
+        "covered": 7,
+        "statements": 7,
+        "changed_percent": 100.0,
+        "file_percent": 100.0,
+        "missing": []
+      },
+      {
+        "file": "apps/engines/acestep/preflight.py",
+        "source_sha256": "2531aeaf0132705cfe220e503a54d7c5d273ac9f55defba635f06372dbafb9dc",
+        "covered": 2,
+        "statements": 2,
+        "changed_percent": 100.0,
+        "file_percent": 90.47619047619048,
+        "missing": []
+      },
+      {
+        "file": "packages/audio-post/audio_post/manifest.py",
+        "source_sha256": "0f9c1739b3c5ee0ae6e3b5274322f21b9206c776c34115ac0a8cfcd83b2e6777",
+        "covered": 19,
+        "statements": 22,
+        "changed_percent": 86.36363636363636,
+        "file_percent": 92.37668161434978,
+        "missing": [
+          161,
+          237,
+          284
+        ]
+      },
+      {
+        "file": "scripts/generate.py",
+        "source_sha256": "2bb268dd1ef32a0a07af199424d9541645a50c153e4a8834d247ffd5d82e9e76",
+        "covered": 15,
+        "statements": 15,
+        "changed_percent": 100.0,
+        "file_percent": 93.87755102040816,
+        "missing": []
+      }
+    ],
+    "covered": 59,
+    "statements": 63,
+    "changed_percent": 93.65079365079364,
+    "minimum_changed_file": 86.36363636363636
+  },
+  "native_validation": {
+    "validated_records": 13,
+    "native_sha256_before": "1624b5e8824e82faa521746b0549f602a759827313ff8ddd3aa8efa839c2e753",
+    "native_sha256_after": "1624b5e8824e82faa521746b0549f602a759827313ff8ddd3aa8efa839c2e753",
+    "contradictions_rejected": [
+      "checkpoint",
+      "identity",
+      "steps_flags",
+      "cfg_flags",
+      "steps_effective_bool",
+      "cfg_effective_bool",
+      "steps_request_bool"
+    ],
+    "paired_lm_dit_metadata_equal": true,
+    "controls_steps": [
+      8,
+      50
+    ],
+    "boundary_structure": [
+      "stage",
+      "arguments_sha256"
+    ],
+    "baseline_valid": true
+  },
+  "preservation": {
+    "preserved_prior_hashes": 32,
+    "verses": 72,
+    "tags": 9,
+    "tokenizer_hashes": 16,
+    "scope": "32 recorded originals/corpus/control paths from T17 inventory; not every private artifact"
+  },
+  "documents": {
+    "files": 17,
+    "local_file_links": 237,
+    "failures": [],
+    "checked_files": [
+      "apps/engines/acestep/README.md",
+      "CONTINUE-HERE.md",
+      "docs/arquitectura/modelos.md",
+      "docs/arquitectura/pipeline-audio.md",
+      "docs/decisiones/ADR-0027-controles-de-inferencia-sft.md",
+      "docs/decisiones/README.md",
+      "docs/roadmap/2026-09-28-m0-entorno-y-motor/improvement-plan.md",
+      "docs/roadmap/2026-09-28-m0-entorno-y-motor/tasks.md",
+      "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t16/cpu-implementation-report.md",
+      "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t16/cpu-integration-report.md",
+      "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t16/cpu-qa-receipt.json",
+      "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t16/cpu-qa-report.md",
+      "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t16/http-controls-receipt.json",
+      "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t16/implementation-coverage.json",
+      "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t16/native-integrated-receipt.json",
+      "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t16/review-1-a.md",
+      "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t16/review-1.md"
+    ],
+    "privacy_scope": "full private lyrics/style/negative_prompt of 13 native requests plus personal Windows paths and token patterns; not line-fragment or exhaustive secret audit",
+    "anchors_checked": false
+  },
+  "ledger_lint": {
+    "inconsistencies": 0,
+    "warnings": 7
+  },
+  "coverage_check": {
+    "applies": false,
+    "gwt_sin_id": 0,
+    "test_plan_na": true,
+    "marcador_no_canonico": null,
+    "eximidos": [
+      "T-00",
+      "T-01",
+      "T-02",
+      "T-03",
+      "T-04",
+      "T-05",
+      "T-06",
+      "T-07",
+      "T-08",
+      "T-09",
+      "T-10",
+      "T-11",
+      "T-12",
+      "T-13",
+      "T-14",
+      "T-15",
+      "T-16",
+      "T-17",
+      "T-18",
+      "T-19"
+    ],
+    "eximidos_exigidos": false,
+    "rutas_ui": [],
+    "rutas_ui_origen": {},
+    "rutas_ui_degradado": "el diff contra la base «merge-base main…HEAD (ef66a36b)» no aporta ningún fichero: solo se han mirado los cambios sin comitear"
+  },
+  "qa_gate": {
+    "applies": false,
+    "reason": "canonical test-plan: n/a (sin UI); no Playwright results generated"
+  },
+  "acceptance": {
+    "CA1": "CPU conforming",
+    "CA2": "CPU checks conforming; antecedent TDD/review distinguished",
+    "CA3": "pending six real paired generations/telemetry/unload",
+    "CA4": "pending private blind listening"
+  },
+  "antecedents": {
+    "review": "review-1.md fresh A+B; C/D selector false",
+    "image_tests": "156 passed, 1 deselected, 5 warnings; read only, not rerun QA",
+    "native_capture": "real CPU upstream orchestration/templates/tokenizers with forward stubbed; no inference/audio",
+    "http": "two ephemeral CPU containers; CpuGpu synthetic, not NVML; valid jobs not submitted; prior logs read only"
+  },
+  "restrictions": {
+    "gpu_used": false,
+    "models_loaded": false,
+    "installation": false,
+    "valid_jobs_submitted": false,
+    "build_repeated": false,
+    "ledger_or_git_changed": false,
+    "states_closed": false
+  },
+  "limits": [
+    "Turbo CFG7 is input boundary, internal handler CFG1; SFT CFG7",
+    "privacy checks do not cover arbitrary fragments or all secrets",
+    "local document anchors not checked",
+    "32 recorded private hashes verified, not every private artifact",
+    "PDF pending: renderer dependencies unavailable in project or prior user cache; no install and PDF outside owned output scope"
+  ],
+  "task_and_milestone_remain_open": true
+}

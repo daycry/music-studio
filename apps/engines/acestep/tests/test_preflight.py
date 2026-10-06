@@ -488,6 +488,8 @@ def _capture_fixture():
         "bpm": 94,
         "key_scale": "C minor",
         "time_signature": "4/4",
+        "inference_steps": values["inference_steps"],
+        "guidance_scale": values["guidance_scale"],
     }
     lm_kwargs = {
         "caption": "synthetic",

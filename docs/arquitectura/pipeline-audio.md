@@ -144,7 +144,11 @@ Los stems se guardan como `asset` del take (`role=stem:vocals`, etc.); no genera
 
 La [auditoría CPU de T-17](../roadmap/2026-09-28-m0-entorno-y-motor/testing/t17/audit-report.md) distingue original, adaptación y entrada efectiva. El código instalado limita la plantilla completa de descripción del DiT a 256 tokens y la letra a 2048; estos presupuestos son distintos del límite local de 512 caracteres. Los originales rechazados solo se reprodujeron en CPU para medir tokens, sin generar audio.
 
-La entrada completa de Libre ya usaba un caption adaptado y cabeceras simplificadas antes de llegar a la CLI. Los versos se conservan. Se ha preparado un candidato privado que recupera indicaciones de las nueve cabeceras, sin generar una toma. T-18 añade preparación y procedencia; T-19 aborda el preflight y el idioma estructurado del LM. La presencia de instrucciones en tokens no garantiza cumplimiento musical. T-16 permanece en borrador hasta atender esta prioridad.
+La entrada completa de Libre ya usaba un caption adaptado y cabeceras simplificadas antes de llegar a la CLI. Los versos se conservan. Se ha preparado un candidato privado que recupera indicaciones de las nueve cabeceras, sin generar una toma. T-18 añade preparación y procedencia; T-19 aporta el preflight y el idioma estructurado del LM. La presencia de instrucciones en tokens no garantiza cumplimiento musical. La comparación de T-16 requiere estos controles antes de generar.
+
+Las tomas anteriores al transporte corregido conservan su valor histórico, pero no son controles emparejados de una configuración nueva. [ADR-0027](../decisiones/ADR-0027-controles-de-inferencia-sft.md) exige producir Turbo y SFT con el mismo texto/metadata efectiva y recibos actuales, manteniendo intactos los audios anteriores. La comparación cambia checkpoint y pasos/CFG declarados; no permite atribuir diferencias al checkpoint aislado.
+
+Los controles opcionales del CLI son `--inference-steps` y `--guidance-scale`, en entrada directa y briefs. El checkpoint del engine decide el rango: Turbo1–8/default8; SFT1–200/default50 y CFG1–20/default7. CFG explícito se admite únicamente para SFT. El pedido conserva los valores explícitos; el perfil y las capturas validan los defaults usados. Progreso y cancelación siguen el número efectivo de pasos. La captura DiT acredita argumentos a la entrada: Turbo fuerza CFG interno1 después de esa frontera, aunque GenerationParams conserve7. No se describe ese7 como CFG aplicado por Turbo.
 
 ### Preparación local antes de generar — T-18
 

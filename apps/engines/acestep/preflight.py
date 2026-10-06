@@ -132,11 +132,11 @@ def enforce_budget(lm, dit, reserve):
         raise EngineError("INVALID_PARAMS", "Entrada excede el presupuesto DiT")
 
 
-def native_plan(request, lm_tokenizer, dit_tokenizer, source):
+def native_plan(request, lm_tokenizer, dit_tokenizer, source, checkpoint=None):
     from adapter import generation_options
 
     values, config = generation_options(
-        {**request, "seed": request.get("seed") or 0}, 0
+        {**request, "seed": request.get("seed") or 0}, 0, checkpoint
     )
     lm, dit = native_templates(source)
     lm.llm_tokenizer = lm_tokenizer
@@ -194,8 +194,8 @@ def native_plan(request, lm_tokenizer, dit_tokenizer, source):
         "lm_metadata": metadata,
         "lm_cfg_scale": 2.0,
         "thinking": True,
-        "inference_steps": 8,
-        "guidance_scale": 7.0,
+        "inference_steps": values["inference_steps"],
+        "guidance_scale": values["guidance_scale"],
         "shift": values.get("shift", 1.0),
         "audio_cover_strength": 1.0,
         "legacy_cfg_prompt": False,
@@ -312,7 +312,7 @@ def worker(
 ):
     checkpoint_profile = verified_checkpoint_profile(Path(checkpoints), checkpoint)
     tokenizers, hashes = verified_tokenizers(Path(checkpoints), lm)
-    result = native_plan(request, *tokenizers, source)
+    result = native_plan(request, *tokenizers, source, checkpoint)
     result["tokenizer_hashes"] = hashes
     result["checkpoint"] = checkpoint_profile
     return result

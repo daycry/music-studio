@@ -1,0 +1,13 @@
+{
+  "status": "passed_cpu_packer_child",
+  "audio": "existing synthetic sine 90s, not a generated song",
+  "ast_python311": true,
+  "parent_unchanged": true,
+  "generation_receipts_not_misattributed_to_child": true,
+  "child_manifest_valid": true,
+  "linear_gain_db": 0,
+  "limiter": false,
+  "gpu_executed": false,
+  "real_comparison_packed": false,
+  "packer_sha256": "bd054d20a33c4c532a7b1727619d3b29c26020a0fd7fa55fa6dcbeb64f8f4413"
+}

@@ -5,6 +5,7 @@ import copy
 import difflib
 import hashlib
 import json
+import math
 import re
 from pathlib import Path, PureWindowsPath
 
@@ -150,6 +151,14 @@ def verify_manifest(manifest, base_dir):
             raise ValueError("PREPARATION_REQUEST_MISMATCH")
     for reference, payload in native_payloads:
         expected = manifest["request"]
+        generators = [
+            m["id"] for m in manifest["models"] if m.get("role") == "generator"
+        ]
+        if len(generators) == 1 and generators[0] in {
+            "ace-step-1.5-sft",
+            "ace-step-1.5-turbo",
+        }:
+            expected = {**expected, "model_id": generators[0]}
         if effective is not None:
             expected = {**expected, "params": effective["params"]}
         validate_input_receipt(
@@ -207,6 +216,25 @@ def validate_input_receipt(payload, request, index, *, private_params=False):
         # La integridad interna no acredita correspondencia con la solicitud.
         # Este perfil PT fijo se comprueba sin importar el runtime del engine.
         requested = native_request["params"]
+        checkpoint = planned.get("checkpoint", {}).get("id", "acestep-v15-turbo")
+        sft = checkpoint == "acestep-v15-sft"
+        identity = "ace-step-1.5-sft" if sft else "ace-step-1.5-turbo"
+        if native_request.get("model_id", identity) != identity or (
+            request.get("model_id") in {"ace-step-1.5-sft", "ace-step-1.5-turbo"}
+            and request["model_id"] != identity
+        ):
+            raise ValueError()
+        steps = requested.get("inference_steps", 50 if sft else 8)
+        guidance = requested.get("guidance_scale", 7.0)
+        if (
+            type(steps) is not int
+            or not 1 <= steps <= (200 if sft else 8)
+            or (not sft and "guidance_scale" in requested)
+            or type(guidance) not in {int, float}
+            or not 1 <= guidance <= 20
+            or not math.isfinite(guidance)
+        ):
+            raise ValueError()
         language = requested.get("vocal_language", requested.get("language", "unknown"))
         if (
             "language" in requested
@@ -232,8 +260,8 @@ def validate_input_receipt(payload, request, index, *, private_params=False):
         expected_profile = {
             "thinking": True,
             "shift": requested.get("shift", 1.0),
-            "guidance_scale": 7.0,
-            "inference_steps": 8,
+            "guidance_scale": guidance,
+            "inference_steps": steps,
             "lm_cfg_scale": 2.0,
             "audio_cover_strength": 1.0,
         }
@@ -243,6 +271,17 @@ def validate_input_receipt(payload, request, index, *, private_params=False):
             raise ValueError()
         if "shift" in values and values["shift"] != expected_profile["shift"]:
             raise ValueError()
+        for key in ("inference_steps", "guidance_scale"):
+            types = {int} if key == "inference_steps" else {int, float}
+            for actual in (planned["effective"][key], captured["flags"][key]):
+                if type(actual) not in types or actual != expected_profile[key]:
+                    raise ValueError()
+            if key in values and (
+                type(values[key]) not in types or values[key] != expected_profile[key]
+            ):
+                raise ValueError()
+            if (sft or key in requested) and key not in values:
+                raise ValueError()
         metadata = {"duration": int(requested["duration_s"]), "language": language}
         for key in ("bpm", "keyscale", "timesignature"):
             value = values.get(key)

@@ -1,0 +1,35 @@
+{
+  "status": "passed_cpu_guards",
+  "gpu_executed": false,
+  "models_loaded": false,
+  "scenarios": [
+    {
+      "scenario": "budget",
+      "stop_reason": "consumed_budget_conservative",
+      "owned_job_only": true,
+      "unload_confirmed": true
+    },
+    {
+      "scenario": "network",
+      "stop_reason": "monitor_failed",
+      "owned_job_only": true,
+      "unload_confirmed": true
+    },
+    {
+      "scenario": "foreign",
+      "stop_reason": "foreign_job_detected",
+      "owned_job_only": true,
+      "unload_confirmed": false
+    },
+    {
+      "scenario": "missing_job",
+      "stop_reason": "monitor_failed",
+      "owned_job_only": true,
+      "unload_confirmed": true
+    }
+  ],
+  "baseline_loaded_model_rejected": true,
+  "baseline_1601_rejected": true,
+  "ast_python311": true,
+  "runner_sha256": "4bd5050a2741629988462e8bde2a8ee409c1b219db32f6d8e76ad04401bd44d7"
+}

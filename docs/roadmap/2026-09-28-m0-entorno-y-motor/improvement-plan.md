@@ -65,6 +65,8 @@ Continúa la evaluación privada de naturalidad con una comparación de captions
 
 El propietario pide continuar la investigación: controles de pasos/CFG e identidad de SFT, y tres nuevas tomas privadas frente a los comparadores Turbo de control ya existentes. Es una comparación de configuraciones, con presupuesto adicional no fijado; no cambia el motor por defecto ni cierra la selección de M0. La comparación de captions T-15 sigue sin valoración en la pestaña disponible.
 
+**Ajuste tras T-19, 2026-10-06:** el transporte actual añade idioma al YAML del LM, ausente en los controles históricos. Conforme a la autorización para elegir alternativas, [ADR-0027](../../decisiones/ADR-0027-controles-de-inferencia-sft.md) sustituye esos comparadores por tres Turbo nuevos junto a tres SFT nuevas, con la misma entrada y recibos actuales. Los anteriores se preservan como referencia histórica separada. Son seis generaciones nuevas, consumo adicional sin medir; no se modifica el motor por defecto ni se adelanta la selección de M0. El cambio evita atribuir al modelo una diferencia causada por transporte.
+
 ## Prioridad explícita — T-17, 2026-10-05
 
 Antes de perfeccionar o cambiar modelos, auditar qué instrucciones llegan realmente al LM y al DiT: adaptación, metadata, plantillas y tokens. T-16 queda en borrador, sin producción cambiada ni GPU. T-17 investiga el transporte y sus pérdidas, sin prometer cumplimiento artístico ni modificar el corpus original; detalle en el ledger. Presupuesto adicional no fijado.

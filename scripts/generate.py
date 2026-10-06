@@ -55,6 +55,8 @@ def parser():
     result.add_argument("--language")
     result.add_argument("--bpm", type=int)
     result.add_argument("--shift", type=float)
+    result.add_argument("--inference-steps", type=int)
+    result.add_argument("--guidance-scale", type=float)
     result.add_argument("--seed", type=int)
     result.add_argument("--variants", type=int, default=1)
     result.add_argument("--task", choices=["music.song", "music.instrumental"])
@@ -148,6 +150,11 @@ def read_request(argv=None, *, root=ROOT):
     ):
         raise ValueError("INVALID_PARAMS")
     params = {"style": args.style, "duration_s": args.duration}
+    for name in ("inference_steps", "guidance_scale"):
+        value = getattr(args, name)
+        if value is not None:
+            params[name] = value
+    validate_inference_controls(params)
     if args.shift is not None:
         params["shift"] = args.shift
     if bpm is not None:
@@ -351,6 +358,8 @@ def publish_input_receipts(result, data, job_id, request, n_outputs):
             "seed": request["seed"] + index,
             "params": request["params"],
         }
+        if "model_id" in request:
+            expected["model_id"] = request["model_id"]
         validate_input_receipt(payload, expected, index, private_params=True)
         destination = safe_path(data, f"preparations/native-{value}.json")
         destination.parent.mkdir(parents=True, exist_ok=True)
@@ -374,7 +383,23 @@ def publish_input_receipts(result, data, job_id, request, n_outputs):
     return references
 
 
+def validate_inference_controls(params):
+    """Límites CLI generales; el descriptor aplica el límite del checkpoint."""
+    if "inference_steps" in params and (
+        type(params["inference_steps"]) is not int
+        or not 1 <= params["inference_steps"] <= 200
+    ):
+        raise ValueError("INVALID_PARAMS")
+    if "guidance_scale" in params and (
+        type(params["guidance_scale"]) not in {int, float}
+        or not 1 <= params["guidance_scale"] <= 20
+        or not math.isfinite(params["guidance_scale"])
+    ):
+        raise ValueError("INVALID_PARAMS")
+
+
 def generate(request, *, config, root=ROOT, client=None):
+    validate_inference_controls(request["params"])
     if "shift" in request["params"] and (
         type(request["params"]["shift"]) not in {int, float}
         or not 1 <= request["params"]["shift"] <= 5

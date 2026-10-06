@@ -1,0 +1,117 @@
+{
+  "source": "pytest-cov JSON",
+  "files": [
+    {
+      "file": "apps/engines/acestep/adapter.py",
+      "summary": {
+        "covered_lines": 262,
+        "num_statements": 283,
+        "percent_covered": 92.57950530035336,
+        "percent_covered_display": "93",
+        "missing_lines": 21,
+        "excluded_lines": 0,
+        "percent_statements_covered": 92.57950530035336,
+        "percent_statements_covered_display": "93"
+      },
+      "changed_executable": 13,
+      "changed_covered": 12,
+      "changed_percent": 92.3076923076923,
+      "changed_missing": [
+        317
+      ]
+    },
+    {
+      "file": "apps/engines/acestep/descriptor.py",
+      "summary": {
+        "covered_lines": 34,
+        "num_statements": 34,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "changed_executable": 4,
+      "changed_covered": 4,
+      "changed_percent": 100.0,
+      "changed_missing": []
+    },
+    {
+      "file": "apps/engines/acestep/input_profile.py",
+      "summary": {
+        "covered_lines": 14,
+        "num_statements": 14,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "changed_executable": 7,
+      "changed_covered": 7,
+      "changed_percent": 100.0,
+      "changed_missing": []
+    },
+    {
+      "file": "apps/engines/acestep/preflight.py",
+      "summary": {
+        "covered_lines": 133,
+        "num_statements": 147,
+        "percent_covered": 90.47619047619048,
+        "percent_covered_display": "90",
+        "missing_lines": 14,
+        "excluded_lines": 0,
+        "percent_statements_covered": 90.47619047619048,
+        "percent_statements_covered_display": "90"
+      },
+      "changed_executable": 2,
+      "changed_covered": 2,
+      "changed_percent": 100.0,
+      "changed_missing": []
+    },
+    {
+      "file": "packages/audio-post/audio_post/manifest.py",
+      "summary": {
+        "covered_lines": 197,
+        "num_statements": 223,
+        "percent_covered": 88.34080717488789,
+        "percent_covered_display": "88",
+        "missing_lines": 26,
+        "excluded_lines": 0,
+        "percent_statements_covered": 88.34080717488789,
+        "percent_statements_covered_display": "88"
+      },
+      "changed_executable": 22,
+      "changed_covered": 19,
+      "changed_percent": 86.36363636363636,
+      "changed_missing": [
+        161,
+        237,
+        284
+      ]
+    },
+    {
+      "file": "scripts/generate.py",
+      "summary": {
+        "covered_lines": 411,
+        "num_statements": 441,
+        "percent_covered": 93.19727891156462,
+        "percent_covered_display": "93",
+        "missing_lines": 30,
+        "excluded_lines": 0,
+        "percent_statements_covered": 93.19727891156462,
+        "percent_statements_covered_display": "93"
+      },
+      "changed_executable": 15,
+      "changed_covered": 15,
+      "changed_percent": 100.0,
+      "changed_missing": []
+    }
+  ],
+  "changed_executable": 63,
+  "changed_covered": 59,
+  "changed_percent": 93.65079365079364,
+  "minimum_per_file": 88.34080717488789
+}
