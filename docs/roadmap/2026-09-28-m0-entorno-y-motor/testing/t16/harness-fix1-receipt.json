@@ -1,0 +1,35 @@
+{
+  "status": "passed_cpu_harness_fix1",
+  "red": {
+    "failed": 7,
+    "exit_code": 1,
+    "warning": "cacheprovider disabled causes unknown cache_dir warning"
+  },
+  "green": {
+    "passed": 12,
+    "exit_code": 0,
+    "warnings": 0
+  },
+  "ast_python311": true,
+  "prepare_only": {
+    "status": "ready_cpu",
+    "takes": 6,
+    "exit_code": 0
+  },
+  "sources_before": {
+    "run-comparison.py": "4bd5050a2741629988462e8bde2a8ee409c1b219db32f6d8e76ad04401bd44d7",
+    "pack-comparison.py": "bd054d20a33c4c532a7b1727619d3b29c26020a0fd7fa55fa6dcbeb64f8f4413"
+  },
+  "sources_after": {
+    "run-comparison.py": "58af0f7266404985d331bf39795084480cddf9848dc3942eb01f4434dae4ee85",
+    "pack-comparison.py": "226b312267c89dba6bf3691220f1375f6be4414ee515ddff84953fe461454780",
+    "cli-controlled-job.py": "211cfb11cf4982342ec4855e0c8e8a005401e4e863f144173483459ca280abd5",
+    "test_harness_fix1.py": "6a4f4cde08f1fbb7129c10a38b926e7a2adbc697e669bc6eb898db8eee18eadc"
+  },
+  "real_ffprobe": "existing synthetic sine 90s; no generated song or original Suno audio",
+  "docker": "doubles only; cleanup by captured ID after label/image checks",
+  "gpu_executed": false,
+  "real_comparison_packed": false,
+  "review_pending": true,
+  "musical_quality_approved": false
+}

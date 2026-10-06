@@ -1058,3 +1058,33 @@ Fusión: cero gaps pendientes. A 26 regresiones verdes; B 264 passed/1 skipped y
 | — | — | Sin hallazgos en el tramo CPU | T-16 | no necesaria | Revisión fresca A/B y reproducciones independientes |
 
 Fusión: cero Critical/Important/Minor pendientes, sin rebates. Se pasa a QA CPU independiente; T-16 sigue en-progreso, CA3/4 sin ejecutar ni marcar completas. Imagen HTTP aislada acreditada con sonda CPU sintética, no telemetría GPU. Jira/Confluence desactivados, sin nuevos candidatos ni promoción de journals. Fuente estimado y consumo real desconocido; cerrar revisión antes de abrir QA.
+
+## Revisión de dos lentes — intento 1: T-16 — arnés privado, cuatro correcciones pendientes
+
+[Tabla completa](testing/t16/harness-review-1.md). A+B frescas, B antes de A por límite de threads; no reabre la revisión/QA CPU de producto. Scope0, selectorC/Dfalse sobre Git; privados declarados y leídos expresamente, sin hallazgos adicionales concretos de seguridad/rendimiento. Se conserva snapshot previo al fix en caché.
+
+| ID | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| H1 | Important | Timeouts de arranque/logs omiten limpieza | T-16 | pendiente | Dobles B, run-comparison.py:116/162 |
+| H2 | Important | Referencia parcial bloquea recuperación | T-16 | pendiente | Doble B, pack-comparison.py:165/167 |
+| H3 | Important | Validación MP3 sin import math | T-16 | pendiente | Doble A reproduce NameError |
+| H4 | Important | Stop indirecto de job ajeno detectado | T-16 | pendiente | Lectura A del finally tras supervise |
+
+Verificaciones CPU independientes, sin Docker/GPU/audio original ni escrituras por revisores. Ventana de revisión00:16:45–00:22:14 UTC; fuente estimado, tokens/coste/horas IA reales null. Investigación CPU de prerrequisitos T-08 realizada por root durante la espera de revisores, sin ventana propia ni consumo atribuido a esa tarea. T-16 sigue en-progreso; corrección del arnés por root (TDD n/a: orquestación efímera), con regresiones CPU antes de segunda revisión fresca. No ejecutar modelos por el paso de guardas anteriores. Jira/Confluence desactivados, journals ajenos intactos.
+
+**Fix1 del arnés — 2026-10-06:** [informe y evidencia](testing/t16/harness-fix1-report.md), [recibo de fuentes](testing/t16/harness-fix1-receipt.json). Siete fallos reproducidos antes de código (limpieza, job ajeno, copia parcial y math); primer GREEN7, ampliado12passed/exit0/sinavisos root. Labels de sesión/imagen e ID preciso, stop/rm independientes de logs, cleanup diferido ante job ajeno, publicación atómica de referencia sin overwrite, import math. FFprobe real sobre senoide existente, ningún audio original/generado nuevo. Prepare-only0/AST3.11 conforme. Ventana00:22:14–00:26:14 UTC, estimado/null; fuentes/recibos anteriores conservados, gates CPU de producto no reabiertos. Segunda revisión fresca y QA del arnés pendientes. Lectura real posterior: Ollama vacío,2676MiB usados/9268libres de12227; sigue faltando baseline≤1600 o respuesta a excepción específica ya solicitada, sin nueva pregunta ni carga.
+
+## Revisión de dos lentes — intento 2: T-16 — arnés privado conforme CPU
+
+[Veredictos completos](testing/t16/harness-review-2.md). A+B frescas y secuenciales por límite de threads, traspaso completo del intento1; sin rebates ni reapertura de aprobados. C/Dfalse sobre Git; privados leídos expresamente. Scope0 previo, sin hallazgos adicionales de seguridad/rendimiento.
+
+| ID | Grado previo | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| H1 | Important | Timeouts de arranque/logs/stop | T-16 | corregido y revalidado | Finally y cleanup por etiqueta/imagen/ID; tres escenarios CPU |
+| H2 | Important | Referencia parcial irrecuperable | T-16 | corregido y revalidado | Publicación atómica sin sustitución, retry/preservación |
+| H3 | Important | math ausente al validar MP3 | T-16 | corregido y revalidado | Import, doble y FFprobe real sobre senoide existente |
+| H4 | Important | Contenedor con job ajeno detenido | T-16 | corregido y revalidado | Deferred sin stop/rm en dos escenarios, sin nueva configuración |
+
+Fusión: cero gaps pendientes. A12passed/sinavisos y B12passed/unavisoWinError5cache, exit0; hashes actuales/históricos conformes, AST3.11/diff-check0. Se pasa a QA CPU dirigida del arnés; no repetir suite de producto sin cambios. CA3/4 siguen abiertas, sin modelos/audio original ni paquete musical real. Consumo estimado/null; marcador de revisión se cierra antes de abrir QA. Journals ajenos intactos, sin promociones; Jira/Confluence desactivados.
+
+**QA del arnés — 2026-10-06:** [informe independiente](testing/t16/harness-qa-report.md), [recibo](testing/t16/harness-qa-receipt.json):12passed/ceroavisos/exit0; cuatro fuentes actuales, dos snapshots y supervisión T-15 coinciden; seis fuentes de producto sin cambios. AST3.11/prepare-only0 y ledger0incoherencias/7avisosChangelog. Coverage-check applies=false por marcador sinUI; cobertura de código efímero n/a, no se sustituye por porcentaje de producto. Qa-gateE2E n/a sin UI por diseño; ninguna salida inventada, fullpack real/sintético no ejecutado, PDF pendiente. Cuatro documentos/cuatro enlaces y privacidad en alcance acotado comprobados. VentanaQA00:29:44–00:33:03 UTC, fuente estimado; tokens/coste/horas IA reales null. Ni GPU ni modelos ni audio original; CA3/4 y T-16 siguen en-progreso, M0 abierto13/20. Entrega documental en rama T-16, sin merge a main. No repetir pruebas/builds de producto por estas correcciones privadas.
