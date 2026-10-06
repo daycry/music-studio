@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "date": "2026-10-06",
+  "scope": "T-16 private harness fix3, CPU only",
+  "fix2_review_attempt": 1,
+  "review_attempt": 2,
+  "gap": "A-F2-01",
+  "before_runner_sha256": "30f56aaf56cb0a9ff9831b92b4caa2a7025fa00fb3babb35f6c102867e66ec54",
+  "sources": {
+    ".cache/dev-cycle/t16/run-comparison.py": "e412df614b4e5f608d747f78a97e84a6691e5d112ceb059b9be8cdaa3e9a92a2",
+    ".cache/dev-cycle/t16/pack-comparison.py": "226b312267c89dba6bf3691220f1375f6be4414ee515ddff84953fe461454780",
+    ".cache/dev-cycle/t16/cli-controlled-job.py": "211cfb11cf4982342ec4855e0c8e8a005401e4e863f144173483459ca280abd5",
+    ".cache/dev-cycle/t16/test_harness_fix1.py": "6a4f4cde08f1fbb7129c10a38b926e7a2adbc697e669bc6eb898db8eee18eadc",
+    ".cache/dev-cycle/t16/test_harness_fix2.py": "4a3cd58469c5e75635ebf31d3402d064559c8e94282728146f32fb488236b3c7",
+    ".cache/dev-cycle/t16/test_harness_fix3.py": "562b7749581273c455d29a5c6e03c7f197e946bc20aa6580bf25e86b6ac3561a",
+    ".cache/dev-cycle/t16/harness-fix2/before-runner.py": "58af0f7266404985d331bf39795084480cddf9848dc3942eb01f4434dae4ee85",
+    ".cache/dev-cycle/t16/harness-fix3/before-runner.py": "30f56aaf56cb0a9ff9831b92b4caa2a7025fa00fb3babb35f6c102867e66ec54",
+    ".cache/dev-cycle/t15/run-comparison.py": "5ec6d9b14f8e38e84bc14b2dbce60112dde3705089b0b6bc71c8469a96d187ae"
+  },
+  "red": {
+    "test": "test_preflight_requires_explicit_null_job_and_model",
+    "failed_cases": 6,
+    "error": "DID NOT RAISE ValueError",
+    "exit_code": 1,
+    "warnings": 1,
+    "warning": "Unknown config option: cache_dir with cacheprovider disabled"
+  },
+  "green": {
+    "full_private_harness_suite": 26,
+    "warnings": 0,
+    "exit_code": 0
+  },
+  "review_complete": false,
+  "qa_complete": false,
+  "gpu_retry_executed": false,
+  "takes_completed": 0,
+  "quality_approved": false,
+  "review_context_reused": true,
+  "fresh_review_claimed": false,
+  "measurement_source": "estimated",
+  "actual_tokens": null,
+  "actual_cost_eur": null,
+  "actual_ai_hours": null
+}

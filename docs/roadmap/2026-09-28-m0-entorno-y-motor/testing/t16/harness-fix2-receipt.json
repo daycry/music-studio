@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "date": "2026-10-06",
+  "scope": "T-16 private harness fix2, CPU only",
+  "before_runner_sha256": "58af0f7266404985d331bf39795084480cddf9848dc3942eb01f4434dae4ee85",
+  "sources": {
+    ".cache/dev-cycle/t16/run-comparison.py": "30f56aaf56cb0a9ff9831b92b4caa2a7025fa00fb3babb35f6c102867e66ec54",
+    ".cache/dev-cycle/t16/pack-comparison.py": "226b312267c89dba6bf3691220f1375f6be4414ee515ddff84953fe461454780",
+    ".cache/dev-cycle/t16/cli-controlled-job.py": "211cfb11cf4982342ec4855e0c8e8a005401e4e863f144173483459ca280abd5",
+    ".cache/dev-cycle/t16/test_harness_fix1.py": "6a4f4cde08f1fbb7129c10a38b926e7a2adbc697e669bc6eb898db8eee18eadc",
+    ".cache/dev-cycle/t16/test_harness_fix2.py": "4a3cd58469c5e75635ebf31d3402d064559c8e94282728146f32fb488236b3c7",
+    ".cache/dev-cycle/t15/run-comparison.py": "5ec6d9b14f8e38e84bc14b2dbce60112dde3705089b0b6bc71c8469a96d187ae"
+  },
+  "aborted_session": "01M47AYMT21MACX62R4VXTXBP7",
+  "aborted_groups": [
+    {
+      "configuration": "sft",
+      "job_id": "01M47AYR94PNXXV3Y6HCJPJVH8",
+      "exit_code": 1,
+      "wall_s": 2.0469999999986612,
+      "preflight": {
+        "gpu_used_mib": 1361.0,
+        "gpu_total_mib": 12227.0,
+        "ollama_empty": true,
+        "state": "idle",
+        "loaded": null,
+        "image_digest": "sha256:9e4fc86fe17269ef80ad6649d9f80b02f8d1f0c7af160f3f9d0fde362dfd8f84"
+      },
+      "stop_reason": "monitor_failed",
+      "unload_confirmed": false
+    }
+  ],
+  "cleanup": {
+    "status": "removed",
+    "container_id": "2ae6ec92de8141adf6ff905a293d6ebd60ec97b52c5ad07ee69b1ec744a66c0a",
+    "logs_exit_code": 0,
+    "stop_exit_code": 0,
+    "remove_exit_code": 0
+  },
+  "takes_completed": 0,
+  "red": {
+    "test": "test_real_preflight_loading_without_cap_does_not_abort",
+    "error": "ValueError: INVALID_GPU_MONITOR_DATA",
+    "valid_gpu_snapshot": [
+      12000,
+      11000
+    ],
+    "preflight_loading": true,
+    "accepted_job": false,
+    "child_alive": false
+  },
+  "green": {
+    "directed": 1,
+    "full_private_harness_suite": 20,
+    "warnings": 0,
+    "exit_code": 0
+  },
+  "review_complete": false,
+  "qa_complete": false,
+  "gpu_retry_executed": false,
+  "quality_approved": false,
+  "measurement_source": "estimated",
+  "actual_tokens": null,
+  "actual_cost_eur": null,
+  "actual_ai_hours": null
+}
