@@ -749,3 +749,35 @@ T05/M1 permanecen abiertos. La elección y esta concreción no liberan implement
 ROOT autentica313payloads,34inputs,107imports y herramientas fijadas;28pinsprivados/27guardascanónicas sin cambio. Revisión1 A/B sin gaps; QA documental119/119 y gatesledger/coverage/qa0. Se adopta el contrato O1 como concreción de ADR0081/C2; ninguna implementación ni autoridad nativa se concede por este acto. El cuerpo describe el corte histórico del arquitecto: K1 actualmente está aceptado y publicado en ddc509b, por encima del estado candidato citado en ese corte. Metadata anterior de elección se preserva y sólo revisión/adopción se actualizan.
 
 El informe QA fue escrito directamente por su actor en la ruta nueva autorizada; no se afirma un CAS ROOT anterior de dicho informe. PDF disponible sólo local, inspección first/last HTMLprintpreview; sin rasterización de sus páginas. T05/M1 abiertos y K4aissuer/principal/pin/G1real/K3/K4b/K5/rotación/store/ACK/recovery/bootstrap/lifecycle/ext4/E2E/manuales pendientes. Nada de RootContext/fullchain por prosa. Uso realnull.
+
+
+## Coordinación candidata K4a — ADR0084 propuesta
+
+Apéndice normativo candidato para revisión; no incorporado al runtime existente. [Contrato principal](storage-journal-principal-design.md) y [decisión propuesta](../../decisiones/ADR-0084-frontera-nativa-y-admision-del-principal-windows.md) condicionan su adopción. Prefijo histórico íntegro. Fuente3c20d078, extracciónbyteexacta del diseño seleccionadoO1; elecciónno grantnativo niK1actualconforme automáticamente.
+
+Esta subsección propone la coordinación necesaria para integrar K4a. No modifica bytes canónicos ni afirma que el runtime K1 actual ya la implemente. ROOT deberá ratificarla como concreción antes del RED que dependa de ella.
+
+El poison único es el módulo canónico `scripts.storage_journal_windows_io` ya importado y su `_KERNEL_POISONED`, bajo `_REGISTRY_LOCK`. Identity importa esa instancia por nombre relativo normal; no crea otra copia por spec_from_file_location, import alias o snapshot runtime alternativo. No hay `_IDENTITY_POISONED` sano independiente.
+
+Se proponen en el mismo módulo K1 `_NATIVE_BOUNDARY_LOCK:RLock` y los seams `_kernel_domain()`, `_kernel_domain_poison_identity(session)` y `_kernel_identity_bootstrap_claim()`. El primero toma ese lock de frontera, comprueba poison con una sección breve `_REGISTRY_LOCK` y emite `_KernelBoundaryLease` exacta de ese thread/PID. Mantiene sólo el lock de frontera durante la operación. El segundo valida sesión identity registrada, pone ese mismo `_KERNEL_POISONED=True` y retiene la sesión incierta. El tercero consume la latch de bootstrap antes de DLL. Ninguno recibe un dictionary, flag trusted o backend del caller.
+
+`_LIVE_IDENTITY_SESSIONS`, `_QUARANTINED_IDENTITY_SESSIONS`, `_CLOSED_IDENTITY_SESSIONS` y la latch viven junto a `_QUARANTINED_MEMORY_CONTEXTS`, bajo el registry común. Retienen session/issuer/bindings/workspace/calls/outputs/tokens/pins/admissions/owner_refs fuertes. La validación usa `_registered_native_session(session)` exacto, sin callback del caller. El registro no es una factory. Recargar identity no elimina esa custodia ni permite otro bootstrap; capabilities de clases recargadas no coincidentes rechazan y exigen retirada.
+
+El orden propuesto será `_NATIVE_BOUNDARY_LOCK` → owner K2.RLock, si existe → session K4a.RLock → context K1.RLock. El registry sólo sirve para lookup/estado/pins breves y siempre se suelta antes de esperar un RLock. Se retiene el lock de frontera durante query o pin/backend/postcheck. Reentradas internas usan RLock en el mismo thread; no invocan callbacks públicos.
+
+K2 §4.11 ya exige owner.RLock alrededor de cada backend/reconocimiento y suelta el registry antes de esperarlo. El nuevo preludio del guard K2 toma boundary antes de su lookup/owner lock; no cambia esa regla. `_pin_current_acquisition_admission` recibe el owner ya bloqueado y exige una lease boundary auténtica en el call frame preregistrado. No toma boundary ni owner después. Sólo toma session lock. Frame/lease faltante devuelve CAPABILITY_INVALID/calls0; no intenta arreglar el orden tomando locks inversos.
+
+Bootstrap/issue/revoke/close toman boundary y session, sin esperar un owner lock desde session. Revocar cambia records identity/epoch/admission; no escribe records K2 sin su owner lock. K2 descubre la revocación bajo su propio guard. Cerrar authority consulta únicamente resúmenes terminales de owners vinculados, sin tomar sus locks; si no constan cerrados, retira/rechaza. Así no hay ciclo session→owner frente a owner→session.
+
+La integración K1 debe anteponer boundary a sus factories y a `_pinned` cuando una operación pueda invocar backend nativo. Conserva lookup registry breve, después context lock, y mismo poison. K1 de memoria no pide principal/admission K4a ni privilegios adicionales. Sus info puros pueden seguir sin boundary. Esta coordinación no existe hoy; exige TDD causal y regresión whole de K1 al implementarla.
+
+El workspace usa sin relajar C2 `_allocate_aligned(context, length=131584, alignment=512)`: carga K1 `(count=1,logical_bytes=131584,requested_bytes=132095)` y conserva un único backing compartido con la sesión K4a. Aquí logical_bytes de K1 significa longitud de arena, distinta de los131328 bytes SDK lógicos. El pin identity limita sus rangos al layout SDK de §4.5; ni el tail256 ni el margen de alineación511 son outputs, ReturnLength o destinos SID. Los resúmenes K4a referencian esa misma carga; sumarla otra vez por ser compartida inventaría un segundo backing. Unknown conserva toda la carga y custodia; sólo rollback/free conocido puede retirarla. El apéndice añade coordinación futura, sin cambiar la policy de alineación, cuotas, overflow o custodia K1 ya aceptada.
+
+Con el apéndice implementado, las ENTRY nativas K1/K2/K4a usan boundary y el mismo poison. Poison K1 impide bootstrap/query/pin K4a y factories/backend K2. Poison K4a impide alloc/copy/free K1, opens/closes K2 y refresh. Tras poison sólo info, revocación y outcomes puros; ningún nuevo close/free/query ni reset del latch. El runtime K1 actual comparte flag, pero no se atribuye este lock nuevo a sus caminos existentes.
+
+K2 valida admission antes de cargar sus bindings. Sin issuer/admission auténticos: `ADMISSION_REQUIRED`, DLL K2 calls0 y backend calls0. Una vez registrado owner building, K2 registra el vínculo exacto antes del primer pin. Cada frame backend K2 retiene su `_AdmissionPin`; scope/profile y guard parent CREATE se comprueban bajo ese mismo dominio y owner lock.
+
+Los pins no son capabilities K1 de memoria ni grants de archivo. K4a no emite `_ParentS1Admission`, RootContext, ChainLease, OwnedFile, WriterLease o ACK. Guard K4b live actual sigue obligatorio para CREATE_FILE/CREATE_DIRECTORY. El scope read sólo permite ANCHOR_CANDIDATE/PARENT_EXISTING/READ_EXISTING, conforme K2 §4.2.
+
+
+Ratificación documental ROOT (2026-10-11T20:45:39.188502+00:00): el apéndice K4a y ADR0084 quedan aceptados tras revisión2 y QA232/232. La nota candidata anterior conserva el estado histórico de la propuesta. Su implementación y la comprobación actual del código quedan pendientes.

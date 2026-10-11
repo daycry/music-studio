@@ -120,6 +120,8 @@ Formato: `ADR-XXXX-slug.md` con **Estado** (propuesta · aceptada · sustituida 
 
 | [0082](ADR-0082-peticion-privada-de-produccion-y-autoridad-por-resultado.md) | Petición privada de producción y autoridad discriminada por resultado | aceptada por ROOT; PR-O1, revisión1 A/B sin gaps y QA documental403/403; implementación M3 pendiente |
 
+| [0084](ADR-0084-frontera-nativa-y-admision-del-principal-windows.md) | Frontera nativa y admisión del principal Windows | aceptada; O1 elegida, ratificada tras revisión2 y QA documental; runtime pendiente |
+
 ## Decisiones heredadas de la documentación archivada
 
 
