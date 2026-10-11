@@ -70,6 +70,8 @@ Evento {seq: int, ts: ISO-8601, job_id, type, data}
 Telemetry {load_s, run_s, rtf?, vram_peak_mb, vram_cap_mb, spilled: bool, mode, model_revision, extra{}}
 ```
 
+**Medición de T-09 ([ADR-0033](../decisiones/ADR-0033-perfiles-y-medicion-directa-del-benchmark.md), implementación pendiente):** `run_s` conserva su duración de job, incluida la carga. El adapter medirá inferencia directamente con reloj monotónico y sincronización CUDA; sus tiempos, duración real y ámbito irán en `extra`, y `rtf` existente solo se rellenará con ese cociente válido. Campos opcionales; ninguna obligación nueva de `/v1`. El informe distinguirá memoria compartida WDDM de VRAM/NVML, RAM WSL y la heurística `spilled`.
+
 - `spilled` es `true` si el pico se acercó al tope o si el RTF cayó por encima de 1,5× el valor de referencia medido. En ese caso la UI avisa de un posible desbordamiento a RAM.
 - **Códigos de error** (estables): `INVALID_PARAMS`, `MODEL_NOT_FOUND`, `WEIGHTS_MISMATCH`, `VRAM_EXCEEDED`, `BUSY`, `CANCELLED`, `TIMEOUT`, `PROVIDER_ERROR`, `INTERNAL`. Si `retryable` es `true`, el server puede reintentar hasta 2 veces.
 
@@ -110,6 +112,10 @@ En la preparación de M0/T-18, ACE-Step admite además el parámetro opcional `t
 
 M0/T-19 incorpora un preflight opcional a la factoría común: ACE-Step debe comprobar las plantillas/tokenizadores fijados antes de cargar o encolar, tanto en `estimate` como en `jobs`, y proteger también su adaptador directo. Otros engines conservan la validación existente cuando no conectan ese hook. No se añade un endpoint ni se hace obligatorio un campo de `/v1`. El padre permanece sin torch/CUDA; conteo offline en proceso CPU, errores sanitizados y rechazo ante una comprobación fallida. [ADR-0029](../decisiones/ADR-0029-presupuesto-operativo-de-texto-acestep.md) y [presupuesto del pipeline](./pipeline-audio.md#presupuesto-operativo--t-19-en-integración). Los recibos planned/captured y la integración de imagen se acreditan al cerrar T-19, sin asumir obediencia artística.
 
+M0/T-08 prepara el engine de análisis según [ADR-0030](../decisiones/ADR-0030-analisis-local-y-alineacion-secuencial.md) y [ADR-0031](../decisiones/ADR-0031-transcripcion-segmentada-con-tiempos-globales.md): `audio.transcribe` conserva hasta600s, reconoce fragmentos contiguos≤180s y después alinea sus propios textos/idiomas sobre esos mismos fragmentos. Libera ASR una vez antes de cargar el alineador una vez; los tiempos locales se recomponen con offsets reales y se validan. La letra esperada no condiciona la transcripción. `audio.align_lyrics`, con texto aportado, permanece sin verificar hastaM3 y declara límite180s hasta validar la asociación de letras completas con fragmentos; no se inventa esa asociación por longitud. Idioma/audio inválidos producen `INVALID_PARAMS` sin ocultar fallos internos o VRAM. beat_this se ejecuta enCPU desde safetensors y configuración auditada. El padre sigue ligero y la salida es JSON crudo privado; implementación, imports e inferencia se acreditan por separado en el ledger, sin declarar capacidad verificada por esta nota.
+
+En este pipeline de transcripción, `loaded.model_id` identifica el descriptor compuesto solicitado (ASR y dependencia de alineación); las etapas, pesos y revisiones efectivas se identifican en eventos y JSON de salida. Las dos etapas no están residentes a la vez. Antes de otra transcripción se libera la etapa anterior y se recarga ASR; `unload` sigue terminando el hijo completo. No se añade un campo obligatorio ni cambia `/v1`.
+
 El resultado de `estimate` puede añadir `input_budget` con `kind=planned`, hashes de perfil/petición/entrada efectiva y conteos LM/DiT. No contiene letra ni caption. El `result` opcional del terminal `done` puede incluir `input_receipts`: referencias a JSON crudos privados por variante, con `output_index`, `filename` y SHA-256. Los nombres son `input-receipt-<índice>.json`, dentro del directorio de salida del trabajo. El llamante verifica y publica esos recibos; el engine conserva su obligación de escribir solo en `data/tmp/<job_id>/`. Engines y manifiestos legados sin estas ampliaciones siguen válidos.
 
 | Tarea | Entradas | Salida | Hito | Engine por defecto |
@@ -143,7 +149,7 @@ Añadir una tarea **no rompe** `/v1`: basta con declararla en el descriptor. El 
 |---|---|---|---|
 | `engine-acestep` | 8101 | `nvidia/cuda:12.8.1-runtime-ubuntu22.04` + Python 3.11 (uv) + `torch 2.10+cu128` | `music.*`, `audio.stems` |
 | `engine-comfy` | 8110 | `pytorch/pytorch:2.14.0-cuda13.0-cudnn9-runtime` + ComfyUI fijado | `image.*`, `video.*` |
-| `engine-llm` | 8120 | llama.cpp (build CUDA) fijado | `text.generate` |
+| `engine-llm` | 8120 | Adaptador `/v1` Docker hacia Ollama compartido en WSL2 ([ADR-0035](../decisiones/ADR-0035-despliegue-docker-y-ollama-wsl.md)); implementación M2 pendiente | `text.generate` |
 | `engine-analysis` | 8130 | `pytorch/pytorch:2.14.0-cuda13.0-cudnn9-runtime` | `audio.beats`, `audio.key`, `audio.transcribe`, `audio.align_lyrics`, `audio.clap`, `audio.aesthetics` |
 | `engine-mock` | 8199 | Python 3.12 (sin GPU) | Todas las tareas, con salidas sintéticas (§7) |
 | Adapters externos | — (dentro del server, carril `remote`) | — | Los que se activen ([ADR-0014](../decisiones/ADR-0014-local-por-defecto.md)) |
@@ -197,9 +203,9 @@ Las secciones anteriores fijan el contrato y los destinos previstos. T-03 implem
 
 `create_mock_app` admite `token`, `data_dir`, `stage_delay_ms`, `gpu` y `margin_mb`. Usa `CpuGpu` por defecto. El descriptor ofrece el modelo `mock`, modo `cpu`; todas sus tareas son CPU. El audio sintético es WAV PCM de 16 bits, 48 kHz y dos canales. Las imágenes son PNG de 64 × 64 y el vídeo MP4 requiere el ffmpeg local. `train.lora` devuelve un safetensors sintético; no entrena pesos.
 
-El servidor exige `X-Studio-Engine-Token` en las rutas. La factoría usa `STUDIO_ENGINE_TOKEN` si no recibe `token` y rechaza un valor vacío. Los trabajos y eventos viven en memoria: la idempotencia y la reanudación duran hasta reiniciar el proceso. Esto respeta la ausencia de persistencia del engine; la cola duradera corresponderá al server.
+El servidor exige `X-Studio-Engine-Token` en las rutas. La factoría usa `STUDIO_ENGINE_TOKEN` si no recibe `token` y rechaza un valor vacío. Los trabajos y eventos viven en memoria: la idempotencia y la reanudación duran hasta reiniciar el proceso. Esto respeta la ausencia de persistencia del engine; la cola duradera corresponderá al server. Un ID retenido devuelve el resultado anterior aunque esté fallido, y unload no borra ese registro. El reintento confirmado usa un nuevo ID de intento; el acuse perdido reutiliza el vigente. La relación con el job lógico se define en [ADR-0043](../decisiones/ADR-0043-identidad-durable-de-intentos.md), sin alterar este contrato `/v1`.
 
-Las entradas se verifican por SHA-256. `output_dir` debe coincidir con `tmp/<job_id>/`; el servidor rechaza rutas inseguras y salidas preexistentes. En el host, `STUDIO_DATA_DIR` debe quedar dentro del proyecto; en Docker se admite el montaje contractual `/data`. Véase [server.py](../../apps/engines/common/engine_common/server.py).
+Las entradas se verifican por SHA-256. `output_dir` debe coincidir con `tmp/<job_id>/`; el servidor rechaza rutas inseguras. El código actual crea el directorio con `exist_ok=True`; no garantiza rechazar una salida preexistente. El server debe reconciliar la propiedad y el estado antes de un relanzamiento ([ADR-0043](../decisiones/ADR-0043-identidad-durable-de-intentos.md)). En el host, `STUDIO_DATA_DIR` debe quedar dentro del proyecto; en Docker se admite el montaje contractual `/data`. Véase [server.py](../../apps/engines/common/engine_common/server.py).
 
 ### Arrancar el mock en local
 
@@ -239,3 +245,24 @@ uv run --frozen --all-packages pytest packages/engine-contract/tests apps/engine
 ```
 
 El [informe de QA de Fase 2](../roadmap/2026-09-28-m0-entorno-y-motor/testing/report.md) recoge las comprobaciones y sus límites. El arranque HTTP descrito es reproducible con la API existente; la QA independiente no abrió un host ni probó Docker o una GPU real.
+
+
+## Apéndice normativo M3 — ProductionRequest y autoridad D-02 (candidato seleccionado)
+
+ROOT eligió PR-O1 el2026-10-11T18:10:35.263982+00:00 bajo delegación vigente. El [contrato completo](../roadmap/2026-10-11-m3-produccion-portada-video-letra/production-request-contract.md) concreta19parejas operation/subject, campos/tipos/versiones/owner/terminal/CAS/fallos y casos por7sujetos. La selección requiere revisión/QA/adopción ROOT; no cierra T-02 ni acredita capacidad runtime. Este apéndice añade requisitos para implementación futura y conserva íntegro el prefijo histórico.
+
+ProductionRequest1/ProductionRecipe1/ProductionReceipt1 son contratos privados nuevos del server. No son engine/v1, PostPlan1, CreativeRequestV1, private_context1 ni manifest1/2. La única selección privada está dentro recipe: fuentes/padres/letra/rights/perfiles/revisiones y ejecución efectiva; el envelope conserva identidad/discriminantes/result_key y recipe/hash. Contexto runtime de intención/expected_revision/lease/custodia queda separado y no es autoridad importable.
+
+| Frontera | Obligación M3 |
+|---|---|
+| Captura | Copia validada inmutable, JSON UTF-8 canónico nuevo sin BOM/duplicate keys/extras/no finitos/coerción; versiones int estrictos. Límites ratificados: request2MiB, recipe1MiB, profundidad32, listas sources/parents/roles64, profiles16 de64KiB, lyrics64 versiones de32768caracteres; budgets agregados también aplican. Overflow rechaza antes enqueue sin truncado. Históricos no se reescriben ni reinterpretan |
+| Proyección a /v1 | Sólo server resuelve inputs reales y captura intento real. No envía recipe/owner/sujetos/rights/leases al engine ni modifica required/tipos /v1. Descriptor/params/roles/capacidad efectiva y conversión explícita deben estar ratificados/liberados |
+| Raw / ACK | JobRequest usa ID de intento real para tmp/<attempt_id>. Se conserva seq/terminal/hash/bytes autorizados; respuesta perdida reconcilia el mismo intento. Terminal raw no certifica post/render/import/publicación |
+| CPU / upload | Herramientas/ejecución o copia/rights propias; no ganador, modelo, seed o terminal de inferencia dummy. PostPlan1 mantiene su autoridad histórica |
+| Publicación | Intención propia por resultado o set requerido antes de efectos, CAS activo de owner/scope/request/result/revisión/estado y custodia real. Committed durable gana frente ACK perdido o cancel tardío; no regenerar éxito, double publish ni serving parcial |
+| UNKNOWN | Bloquea efectos/publicación/serving/cleanup/liberación slot/staging; conserva evidencia hasta reconciliación real. Hash/path/DTO no concede custodia |
+| Import / backup | Receipts y autoridad propios por closure/corte exclusivo, nunca engine attempts ficticios. Los gates D-08/D-09 se cierran antes del RED de sus ramas |
+
+Engine sigue sin estado de dominio, con salida cruda tmp y contrato /v1 compatible; sólo el server postprocesa/renderiza/escribe SQLite. Cola/locks existentes, GPU1/CPU2 y un modelo en VRAM se conservan. Los campos nuevos /v1, si fueran necesarios, serán opcionales y code-first; esta tarea no los añade. Un nombre de task/pin o verified falso no habilita ejecución.
+
+Commercial_use es conjunción de entradas/padres/letra/tools y modelo sólo si intervino; derechos/consent y licencias reales permanecen exigibles. Nuevos readers despachan explícitamente versiones y conservan historia v1/v2 sin defaults actuales ni rewrite. D-03/D-04 y perfiles/readers D-05–09 no ratificados bloquean rama, sin dict genérico ni fallback. O1/ADR-0080 y D-12 siguen ratificados; K1 candidato no prueba store/ext4/grant/published/runtime. M1formal0/17, M2=4/30, M3contractual1/42 y funcionesM3=0 en este corte.
