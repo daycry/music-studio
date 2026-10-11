@@ -11,6 +11,999 @@ from pathlib import Path
 
 import pytest
 
+
+@pytest.mark.parametrize(
+    "index,field,expected", [(0, 2, 28), (1, 2, 4), (0, 3, 11), (1, 3, 17)]
+)
+def test_geometry_exact_query_arguments_functional(index, field, expected):
+    child, fake = geometry_subject()
+
+    def query(number, handle, iosb, buffer, size, kind):
+        # Synthetic transport copies only the real allocation size, independently
+        # of supplied Length/class. It never dereferences a released buffer.
+        fake.queries.append((number, handle, size, kind))
+        iosb._obj.Status, iosb._obj.Information = 0, size
+        ctypes.memmove(buffer, fake.payloads[number], len(fake.payloads[number]))
+        return 0
+
+    fake.query = query
+    try:
+        observed = security.read_handle_geometry(child)
+        assert fake.queries[index][field] == expected, fake.queries
+        assert fake.queries == [(0, 202, 28, 11), (1, 202, 4, 17)]
+        assert security.derive_geometry_candidate(observed).candidate_b == 4096
+        assert security._RETAINED is None
+    finally:
+        assert child.close().state == "closed"
+
+
+@pytest.mark.parametrize(
+    "target,field,value",
+    [
+        ("sector", "flags", 15),
+        ("alignment", "alignment_mask", 0),
+        ("self", "source", "changed"),
+        ("diagnostic", "candidate_b", 512),
+    ],
+)
+def test_geometry_all_four_dto_mutations_rejected(target, field, value):
+    from dataclasses import FrozenInstanceError
+
+    observed = geometry_fixture()
+    objects = {
+        "self": observed,
+        "sector": observed.sector,
+        "alignment": observed.alignment,
+        "diagnostic": security.derive_geometry_candidate(observed),
+    }
+    subject = objects[target]
+    original = getattr(subject, field)
+    with pytest.raises(FrozenInstanceError):
+        setattr(subject, field, value)
+    assert getattr(subject, field) == original
+    assert security.derive_geometry_candidate(observed).candidate_b == 4096
+
+
+def test_geometry_struct_abi():
+    assert hasattr(security, "_FileFsSectorSizeInformation"), "Sector ABI ausente"
+    sector = security._FileFsSectorSizeInformation
+    assert ctypes.sizeof(sector) == 28 and ctypes.alignment(sector) == 4
+    assert [getattr(sector, name).offset for name, _ in sector._fields_] == list(
+        range(0, 28, 4)
+    )
+    assert ctypes.sizeof(security._FileAlignmentInformation) == 4
+    assert ctypes.alignment(security._FileAlignmentInformation) == 4
+
+
+@pytest.mark.parametrize("mode", ["owner", "handle", "owner-same-handle"])
+def test_geometry_parent_acquisition_fixed_before_reader_child(mode):
+    geometry_fault_child(f"""
+child, fake = geometry_subject()
+original_owner = child.parent.owner
+mode = {mode!r}
+if mode == "handle":
+    original_owner.handle = 303
+else:
+    replacement = ObservationOwner()
+    replacement.handle = 303 if mode == "owner" else 101
+    child.parent.owner = replacement
+original = fake.base.GetFileInformationByHandleEx
+def metadata(handle, kind, buffer, size):
+    returned = original(101 if handle == 303 else handle, kind, buffer, size)
+    if handle == child.parent._handle and kind == 18:
+        buffer._obj.FileId.Identifier[:] = b'P' * 16
+    return returned
+fake.base.GetFileInformationByHandleEx = metadata
+result = None
+try:
+    result = security.read_handle_geometry(child)
+except security.NativeObservationError:
+    pass
+print(json.dumps({{"mode": mode, "queries": fake.queries, "accepted": result is not None, "parent_handle": child.parent._handle}}), flush=True)
+assert result is None, "Parent cambiado antes de lector aceptado"
+assert not fake.queries and not fake.calls, "Syscall después de revocar adquisición original"
+assert security._RETAINED is None
+assert child.close().state == "closed" and fake.closed == [202]
+""")
+
+
+@pytest.mark.parametrize("mode", ["exception", "false997", "direct-u2b1"])
+def test_geometry_postmetadata_native_buffer_retained_child(mode):
+    geometry_fault_child(f"""
+child, fake = geometry_subject()
+refs = []
+mode = {mode!r}
+original = fake.base.GetFileInformationByHandleEx
+def metadata(handle, kind, buffer, size):
+    if len(fake.queries) == 2 or mode == "direct-u2b1":
+        refs.append(weakref.ref(buffer._obj))
+        if mode == "false997":
+            ctypes.set_last_error(997)
+            return 0
+        raise KeyboardInterrupt("postmetadata buffer uncertain")
+    return original(handle, kind, buffer, size)
+fake.base.GetFileInformationByHandleEx = metadata
+try:
+    if mode == "direct-u2b1":
+        security.read_handle_metadata(child)
+    else:
+        security.read_handle_geometry(child)
+except security.IOCompletionUnaccreditedError:
+    pass
+else:
+    raise AssertionError("Incertidumbre no contenida")
+gc.collect()
+alive = bool(refs) and refs[0]() is not None
+arena = security._RETAINED[1]
+print(json.dumps({{"mode": mode, "metadata_buffer_alive": alive, "queries": fake.queries, "composite": hasattr(arena, "buffers")}}), flush=True)
+assert alive, "Buffer nativo de metadata incierta liberado"
+if mode != "direct-u2b1":
+    assert len(arena.buffers) == len(arena.iosbs) == 2
+    assert len(fake.queries) == 2
+else:
+    assert hasattr(arena, "identity") and not fake.queries
+calls, queries = list(fake.calls), list(fake.queries)
+assert child.close().state == "unknown" and child.close().state == "unknown"
+assert not fake.closed
+other, other_fake = observation_parent()
+try:
+    security.read_handle_metadata(other)
+except security.IOCompletionUnaccreditedError:
+    pass
+else:
+    raise AssertionError("Poison global no bloqueó otro contexto")
+assert not other_fake.calls and calls == fake.calls and queries == fake.queries
+""")
+
+
+def geometry_fixture(values=(512, 4096, 4096, 4096, 3, 0, 0), mask=511):
+    sector = security.NtSectorSizeObservation(
+        11, 28, 0, 0, 28, struct.pack("<7I", *values), *values
+    )
+    alignment = security.NtAlignmentObservation(
+        17, 4, 0, 0, 4, struct.pack("<I", mask), mask
+    )
+    meta = security.MetadataObservation(
+        73,
+        bytes(range(16)),
+        "\\\\?\\C:\\private\\child",
+        "file",
+        32,
+        0,
+        1,
+        False,
+        17,
+        4096,
+        (),
+    )
+    return security.GeometryObservation(
+        "nt-volume-sector11+nt-file-alignment17/v1",
+        sector,
+        alignment,
+        meta,
+        meta,
+        meta,
+        meta,
+    )
+
+
+def test_geometry_pure_control():
+    derive = getattr(security, "derive_geometry_candidate", lambda value: None)
+    result = derive(geometry_fixture())
+    assert result == security.GeometryDiagnostic(
+        "nt-volume-sector11+nt-file-alignment17/v1", 4096, ()
+    ), "Derivación B ausente"
+
+
+@pytest.mark.parametrize("index", range(4))
+@pytest.mark.parametrize(
+    "value,cause",
+    [
+        (0, "GEOMETRY_SIZE_UNKNOWN"),
+        (511, "GEOMETRY_SIZE_INVALID"),
+        (513, "GEOMETRY_SIZE_INVALID"),
+        (131072, "GEOMETRY_SIZE_INVALID"),
+    ],
+)
+def test_geometry_size_rejections(index, value, cause):
+    values = [512, 4096, 4096, 4096, 3, 0, 0]
+    values[index] = value
+    result = security.derive_geometry_candidate(geometry_fixture(values))
+    assert result.candidate_b is None and cause in result.causes
+
+
+@pytest.mark.parametrize(
+    "values", [(4096, 512, 4096, 4096, 3, 0, 0), (8192, 16384, 4096, 16384, 3, 0, 0)]
+)
+def test_geometry_size_relations(values):
+    result = security.derive_geometry_candidate(geometry_fixture(values))
+    assert result.candidate_b is None and result.causes == ("GEOMETRY_SIZE_INCOHERENT",)
+
+
+@pytest.mark.parametrize("mask", [2, 512, 1023, 0xFFFFFFFF])
+def test_geometry_mask_closed(mask):
+    result = security.derive_geometry_candidate(geometry_fixture(mask=mask))
+    assert result.candidate_b is None and result.causes == (
+        "GEOMETRY_ALIGNMENT_MASK_INVALID",
+    )
+
+
+@pytest.mark.parametrize("flags", [0, 1, 2, 4, 8, 12, 19, 0x80000003])
+def test_geometry_flags_closed(flags):
+    result = security.derive_geometry_candidate(
+        geometry_fixture((512, 4096, 4096, 4096, flags, 0, 0))
+    )
+    cause = (
+        "GEOMETRY_FLAGS_UNKNOWN"
+        if flags & ~15
+        else "GEOMETRY_ALIGNMENT_NOT_CORROBORATED"
+    )
+    assert result.candidate_b is None and result.causes == (cause,)
+
+
+@pytest.mark.parametrize("index", [5, 6])
+@pytest.mark.parametrize("offset", [0xFFFFFFFF, 1, 4096])
+@pytest.mark.parametrize("flags", [0, 3])
+def test_geometry_offsets_closed(index, offset, flags):
+    values = [512, 4096, 4096, 4096, flags, 0, 0]
+    values[index] = offset
+    result = security.derive_geometry_candidate(geometry_fixture(values))
+    expected = []
+    if offset == 0xFFFFFFFF:
+        expected.append("GEOMETRY_OFFSET_UNKNOWN")
+    else:
+        if index == 5 and flags & 1:
+            expected.append("GEOMETRY_ALIGNMENT_CONTRADICTION")
+        expected.append("GEOMETRY_OFFSET_NOT_ACCREDITED")
+    if flags & 3 != 3:
+        expected.append("GEOMETRY_ALIGNMENT_NOT_CORROBORATED")
+    assert result.candidate_b is None and result.causes == tuple(expected)
+
+
+@pytest.mark.parametrize(
+    "target,field,value",
+    [
+        ("self", "source", "win32"),
+        ("self", "sector", None),
+        ("sector", "logical_bytes_per_sector", True),
+        ("alignment", "alignment_mask", True),
+        ("sector", "raw", bytearray(28)),
+        ("alignment", "raw", b"\0" * 3),
+        ("sector", "information_class", 17),
+        ("alignment", "requested_bytes", 28),
+        ("sector", "ntstatus", True),
+        ("alignment", "iosb_status", 259),
+        ("sector", "information", 27),
+        ("sector", "flags", 7),
+        ("alignment", "alignment_mask", 0),
+        ("sector", "sector_alignment_offset", -1),
+    ],
+)
+def test_geometry_raw_integrity(target, field, value):
+    from dataclasses import replace
+
+    observed = geometry_fixture()
+    if target == "self":
+        observed = replace(observed, **{field: value})
+    else:
+        observed = replace(
+            observed, **{target: replace(getattr(observed, target), **{field: value})}
+        )
+    result = security.derive_geometry_candidate(observed)
+    assert result.candidate_b is None and result.causes == ("RAW_INVALID",)
+
+
+class GeometryDouble:
+    def __init__(self):
+        self.base = ObservationDouble()
+        self.queries = []
+        self.statuses = [0, 0]
+        self.completions = [0, 0]
+        self.informations = [28, 4]
+        self.write_status = [True, True]
+        self.write_information = [True, True]
+        self.payloads = [
+            struct.pack("<7I", 512, 4096, 4096, 4096, 3, 0, 0),
+            struct.pack("<I", 511),
+        ]
+        self.query_hook = None
+
+    def __getattr__(self, name):
+        return getattr(self.base, name)
+
+    def query(self, index, handle, iosb, buffer, size, kind):
+        self.queries.append((index, handle, size, kind))
+        assert (handle, size, kind) == (202, [28, 4][index], [11, 17][index])
+        assert iosb._obj.Status != 0 and iosb._obj.Information != size
+        assert bytes(buffer._obj) == b"\xa5" * size
+        if self.write_status[index]:
+            iosb._obj.Status = self.completions[index]
+        if self.write_information[index]:
+            iosb._obj.Information = self.informations[index]
+        ctypes.memmove(buffer, self.payloads[index], size)
+        if self.query_hook:
+            self.query_hook(index)
+        return self.statuses[index]
+
+    def NtQueryVolumeInformationFile(self, *args):
+        return self.query(0, *args)
+
+    def NtQueryInformationFile(self, *args):
+        return self.query(1, *args)
+
+
+def geometry_subject():
+    fake = GeometryDouble()
+    parent, _ = observation_parent(fake)
+    child = security._open_relative_existing(parent, "file", "file")
+    fake.calls.clear()
+    return child, fake
+
+
+def test_geometry_reader_two_queries_control():
+    child, fake = geometry_subject()
+    try:
+        reader = getattr(security, "read_handle_geometry", lambda value: None)
+        observed = reader(child)
+        assert type(observed) is security.GeometryObservation, (
+            "Lectura NT compuesta ausente"
+        )
+        assert fake.queries == [(0, 202, 28, 11), (1, 202, 4, 17)]
+        assert (
+            observed.sector.raw == fake.payloads[0]
+            and observed.alignment.raw == fake.payloads[1]
+        )
+        assert observed.parent_before == observed.parent_after
+        assert observed.object_before == observed.object_after
+        assert security.derive_geometry_candidate(observed).candidate_b == 4096
+    finally:
+        assert child.close().state == "closed"
+
+
+@pytest.mark.parametrize("index", [0, 1])
+@pytest.mark.parametrize("status", [-1073741823, -2147483643, 1])
+def test_geometry_nt_error_does_not_read_outputs(index, status, monkeypatch):
+    child, fake = geometry_subject()
+    fake.statuses[index] = status
+    original = security.__dict__.get("bytes", bytes)
+
+    def forbidden(buffer):
+        if len(fake.queries) == index + 1 and type(buffer) in (
+            security._FileFsSectorSizeInformation,
+            security._FileAlignmentInformation,
+        ):
+            raise AssertionError("Payload leído tras error NT")
+        return original(buffer)
+
+    monkeypatch.setattr(security, "bytes", forbidden, raising=False)
+    try:
+        with pytest.raises(security.NativeObservationError):
+            security.read_handle_geometry(child)
+        assert len(fake.queries) == index + 1 and security._RETAINED is None
+    finally:
+        assert child.close().state == "closed"
+
+
+@pytest.mark.parametrize("index", [0, 1])
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("completions", 259),
+        ("completions", -1),
+        ("informations", 0),
+        ("informations", 27),
+        ("informations", 29),
+        ("informations", 2**64 - 1),
+        ("write_status", False),
+        ("write_information", False),
+    ],
+)
+def test_geometry_completion_exact_before_payload(index, field, value):
+    child, fake = geometry_subject()
+    getattr(fake, field)[index] = value
+    try:
+        with pytest.raises(security.NativeObservationError):
+            security.read_handle_geometry(child)
+        assert len(fake.queries) == index + 1 and security._RETAINED is None
+    finally:
+        assert child.close().state == "closed"
+
+
+@pytest.mark.parametrize(
+    "mode", ["pending1", "pending2", "typed-call", "copy", "freeze", "postreturn"]
+)
+def test_geometry_uncertain_composite_child(mode):
+    geometry_fault_child(f"""
+child, fake = geometry_subject()
+mode = {mode!r}
+if mode.startswith("pending"):
+    fake.statuses[int(mode[-1]) - 1] = 259
+elif mode == "typed-call":
+    def fail(index):
+        raise security.NativeObservationError("entered double")
+    fake.query_hook = fail
+elif mode == "copy":
+    def copy(buffer):
+        if type(buffer) is security._FileFsSectorSizeInformation:
+            raise KeyboardInterrupt("transfer")
+        return bytes(buffer)
+    security.bytes = copy
+elif mode == "freeze":
+    def freeze(*args):
+        raise KeyboardInterrupt("freeze")
+    security.GeometryObservation = freeze
+else:
+    tree = ast.parse(SOURCE.read_text(encoding="utf8"))
+    fn = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "read_handle_geometry")
+    node = next(n for n in ast.walk(fn) if isinstance(n, ast.If) and ast.unparse(n.test) == "status != STATUS_SUCCESS")
+    def trace(frame, event, arg):
+        if event == "line" and frame.f_code.co_filename == str(SOURCE) and frame.f_lineno == node.lineno:
+            sys.settrace(None)
+            raise KeyboardInterrupt("postreturn")
+        return trace
+    sys.settrace(trace)
+error = None
+try:
+    security.read_handle_geometry(child)
+except BaseException as failure:
+    error = type(failure).__name__
+finally:
+    sys.settrace(None)
+assert error == "IOCompletionUnaccreditedError", error
+assert security._RETAINED is not None, "Composite no retenido"
+arena = security._RETAINED[1]
+assert arena.owner is child and arena.parent is child.parent and arena.context is child.context
+assert len(arena.buffers) == len(arena.iosbs) == 2
+refs = [weakref.ref(x) for x in (*arena.buffers, *arena.iosbs, child.parent.owner)]
+gc.collect()
+assert all(ref() is not None for ref in refs)
+queries, calls = list(fake.queries), list(fake.calls)
+assert child.close().state == "unknown" and child.close().state == "unknown"
+assert not fake.closed
+other, other_fake = observation_parent()
+try:
+    security.read_handle_metadata(other)
+except security.IOCompletionUnaccreditedError:
+    pass
+else:
+    raise AssertionError("Otro contexto no bloqueado")
+assert not other_fake.calls and fake.queries == queries and fake.calls == calls
+if mode == "pending1":
+    assert len(fake.queries) == 1
+if mode == "pending2":
+    assert len(fake.queries) == 2
+print(json.dumps({{"mode": mode, "retained": True, "queries": queries, "close_calls": fake.closed}}))
+""")
+
+
+def test_geometry_postmetadata_uncertainty_keeps_both_arenas_child():
+    geometry_fault_child("""
+child, fake = geometry_subject()
+original = fake.base.GetFileType
+def metadata(handle):
+    if len(fake.queries) == 2:
+        raise KeyboardInterrupt("postmetadata entered")
+    return original(handle)
+fake.base.GetFileType = metadata
+try:
+    security.read_handle_geometry(child)
+except security.IOCompletionUnaccreditedError:
+    pass
+else:
+    raise AssertionError("Incertidumbre no contenida")
+arena = security._RETAINED[1]
+assert hasattr(arena, "buffers") and len(arena.buffers) == 2, "Retención perdió composite al entrar en metadata posterior"
+assert len(arena.iosbs) == 2 and arena.owner is child
+assert child.close().state == "unknown" and not fake.closed
+print(json.dumps({"scope": "double-own-child-reaped", "composite_postmetadata": True}))
+""")
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        "int",
+        "borrowed",
+        "closed",
+        "not-owned",
+        "parent",
+        "context",
+        "missing-binding",
+        "abi",
+        "platform",
+    ],
+)
+def test_geometry_preentry_rejects_without_query(mode, monkeypatch):
+    child, fake = geometry_subject()
+    subject = child
+    if mode == "int":
+        subject = 202
+    elif mode == "borrowed":
+        subject = child.parent
+    elif mode == "closed":
+        child.close()
+    elif mode == "not-owned":
+        child.context.owned.remove(child)
+    elif mode == "parent":
+        child.parent = object()
+    elif mode == "context":
+        child.context = security._ObservationContext(fake)
+    elif mode == "missing-binding":
+        fake.NtQueryInformationFile = None
+    elif mode == "abi":
+        monkeypatch.setattr(security, "_FileAlignmentInformation", ctypes.c_uint64)
+    else:
+        from types import SimpleNamespace
+
+        monkeypatch.setattr(security, "os", SimpleNamespace(name="posix"))
+    with pytest.raises(
+        (security.NativeObservationError, security.PlatformUnsupportedError)
+    ):
+        security.read_handle_geometry(subject)
+    assert not fake.queries and security._RETAINED is None
+    # Mutated wrappers are not closed by the reader; restore local fixture ownership.
+    if mode == "context":
+        child.context = child.parent.context
+    if mode == "parent":
+        child.parent = security._BorrowedDirectory(ObservationOwner(), child.context)
+    child.context.owned.add(child)
+    if child._handle is not None:
+        assert child.close().state == "closed"
+
+
+@pytest.mark.parametrize("role", ["object", "parent"])
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("volume_serial", 74),
+        ("file_id", b"X" * 16),
+        ("final_path", "\\\\?\\C:\\other"),
+        ("kind", "other"),
+        ("attributes", 34),
+        ("reparse_tag", 1),
+        ("links", 2),
+        ("delete_pending", True),
+        ("eof", 18),
+        ("allocation", 8192),
+    ],
+)
+def test_geometry_identity_pairs_reject_drift(role, field, value, monkeypatch):
+    from dataclasses import replace
+
+    child, fake = geometry_subject()
+    original = security.read_handle_metadata
+
+    def metadata(subject):
+        result = original(subject)
+        if len(fake.queries) == 2 and ((subject is child) == (role == "object")):
+            return replace(result, **{field: value})
+        return result
+
+    monkeypatch.setattr(security, "read_handle_metadata", metadata)
+    try:
+        with pytest.raises(security.NativeObservationError):
+            security.read_handle_geometry(child)
+        assert security._RETAINED is None and len(fake.queries) == 2
+    finally:
+        child.close()
+
+
+@pytest.mark.parametrize(
+    "field", ["_handle", "parent", "context", "owned", "parent-handle", "parent-owner"]
+)
+def test_geometry_wrapper_revocation_between_queries_child(field):
+    geometry_fault_child(f"""
+child, fake = geometry_subject()
+field = {field!r}
+def revoke(index):
+    if index == 0:
+        if field == "owned":
+            child.context.owned.remove(child)
+        elif field == "_handle":
+            child._handle = 303
+        elif field == "parent":
+            child.parent = security._BorrowedDirectory(ObservationOwner(), child.context)
+        elif field == "parent-handle":
+            child.parent.owner.handle = 404
+        elif field == "parent-owner":
+            child.parent.owner = ObservationOwner()
+        else:
+            child.context = security._ObservationContext(fake)
+fake.query_hook = revoke
+try:
+    security.read_handle_geometry(child)
+except security.NativeObservationError:
+    pass
+else:
+    raise AssertionError("Wrapper revocado aceptado")
+assert len(fake.queries) == 1, "Query2 entró tras revocación"
+assert security._RETAINED is None, "Rechazo completo no debe poison"
+print(json.dumps({{"field": field, "queries": fake.queries, "rejected": True}}))
+""")
+
+
+@pytest.mark.parametrize("field", ["_handle", "parent", "context"])
+def test_geometry_original_acquisition_cannot_be_replaced_child(field):
+    geometry_fault_child(f"""
+child, fake = geometry_subject()
+field = {field!r}
+if field == "_handle":
+    child._handle = 303
+    def query(*args):
+        fake.queries.append(args)
+        raise AssertionError("Query entered on substituted scalar")
+    fake.NtQueryVolumeInformationFile = query
+elif field == "parent":
+    child.parent = security._BorrowedDirectory(ObservationOwner(), child.context)
+else:
+    context = security._ObservationContext(fake)
+    child.context = context
+    child.parent = security._BorrowedDirectory(ObservationOwner(), context)
+    context.owned.add(child)
+try:
+    security.read_handle_geometry(child)
+except security.NativeObservationError:
+    pass
+else:
+    raise AssertionError("Adquisición original sustituida aceptada")
+assert not fake.queries and security._RETAINED is None
+print(json.dumps({{"field": field, "query_calls": 0, "rejected": True}}))
+""")
+
+
+def test_geometry_binding_signatures(monkeypatch):
+    from types import SimpleNamespace
+
+    functions = {}
+
+    class Library:
+        def __getattr__(self, name):
+            return functions.setdefault(name, SimpleNamespace())
+
+    monkeypatch.setattr(
+        ctypes, "WinDLL", lambda *args, **kwargs: Library(), raising=False
+    )
+    binding = security._ObservationApi()
+    for name in ("NtQueryVolumeInformationFile", "NtQueryInformationFile"):
+        assert hasattr(binding, name), "Binding NT geométrico ausente"
+        function = getattr(binding, name)
+        assert function.argtypes == [
+            ctypes.c_void_p,
+            ctypes.POINTER(security._IoStatusBlock),
+            ctypes.c_void_p,
+            ctypes.c_uint32,
+            ctypes.c_int32,
+        ]
+        assert function.restype is ctypes.c_int32
+
+
+def test_geometry_native_file_and_directory(observation_native_fixture):
+    from dataclasses import asdict
+
+    parent, own, _kernel = observation_native_fixture
+    for name, kind in (("file", "file"), ("sub", "directory")):
+        with security._open_relative_existing(parent, name, kind) as child:
+            result = security.read_handle_geometry(child)
+            assert result.sector.ntstatus == result.sector.iosb_status == 0
+            assert result.alignment.ntstatus == result.alignment.iosb_status == 0
+            assert result.sector.information == 28 and result.alignment.information == 4
+            assert result.parent_before == result.parent_after
+            assert result.object_before == result.object_after
+            diagnostic = security.derive_geometry_candidate(result)
+            record = {
+                "scope": "two-native-nt-queries-own-ordinary-not-admission",
+                "kind": kind,
+                "observation": asdict(result),
+                "diagnostic": asdict(diagnostic),
+                "abi": {
+                    "iosb": ctypes.sizeof(security._IoStatusBlock),
+                    "sector": 28,
+                    "alignment": 4,
+                },
+                "functions": ["NtQueryVolumeInformationFile", "NtQueryInformationFile"],
+            }
+            (own / ("geometry-" + kind + ".json")).write_text(
+                json.dumps(record, default=lambda value: value.hex(), indent=2),
+                encoding="utf8",
+            )
+
+
+@pytest.mark.parametrize("mask", [0, 1, 3, 7, 15, 31, 63, 127, 255, 511])
+@pytest.mark.parametrize("flags", [3, 7, 11, 15])
+@pytest.mark.parametrize(
+    "sizes,expected",
+    [
+        ((512, 4096, 4096, 4096), 4096),
+        ((512, 65536, 4096, 4096), 65536),
+        ((512, 1024, 2048, 4096), 4096),
+    ],
+)
+def test_geometry_controls_characterization(mask, flags, sizes, expected):
+    result = security.derive_geometry_candidate(
+        geometry_fixture((*sizes, flags, 0, 0), mask)
+    )
+    assert result.candidate_b == expected and not result.causes
+
+
+def test_geometry_causes_unique_order_characterization():
+    result = security.derive_geometry_candidate(
+        geometry_fixture((0, 513, 4096, 4096, 16, 0xFFFFFFFF, 4096), 2)
+    )
+    assert result.candidate_b is None
+    assert result.causes == (
+        "GEOMETRY_SIZE_UNKNOWN",
+        "GEOMETRY_SIZE_INVALID",
+        "GEOMETRY_ALIGNMENT_MASK_INVALID",
+        "GEOMETRY_FLAGS_UNKNOWN",
+        "GEOMETRY_OFFSET_UNKNOWN",
+        "GEOMETRY_OFFSET_NOT_ACCREDITED",
+        "GEOMETRY_ALIGNMENT_NOT_CORROBORATED",
+    )
+
+
+def test_geometry_portable_rejects_reader_without_dll(monkeypatch):
+    from types import SimpleNamespace
+
+    child, fake = geometry_subject()
+    monkeypatch.setattr(security, "os", SimpleNamespace(name="posix"))
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("DLL portable")
+
+    monkeypatch.setattr(ctypes, "WinDLL", forbidden, raising=False)
+    with pytest.raises(security.PlatformUnsupportedError):
+        security.read_handle_geometry(child)
+    assert not fake.queries
+    assert security.derive_geometry_candidate(geometry_fixture()).candidate_b == 4096
+    child.close()
+
+
+def test_geometry_public_results_frozen_without_effects():
+    from dataclasses import FrozenInstanceError
+
+    observed = geometry_fixture()
+    result = security.derive_geometry_candidate(observed)
+    with pytest.raises(FrozenInstanceError):
+        result.candidate_b = 512
+    with pytest.raises(FrozenInstanceError):
+        observed.sector.flags = 15
+    for value in (observed, result, observed.sector, observed.alignment):
+        assert not any(
+            hasattr(value, name)
+            for name in (
+                "handle",
+                "_handle",
+                "writer",
+                "admission",
+                "commit",
+                "accepted",
+                "trusted",
+                "close",
+                "ack",
+            )
+        )
+
+
+@pytest.mark.parametrize(
+    "field", ["parent_before", "object_before", "object_after", "parent_after"]
+)
+def test_geometry_pure_metadata_type_closed(field):
+    from dataclasses import replace
+
+    observed = replace(geometry_fixture(), **{field: None})
+    result = security.derive_geometry_candidate(observed)
+    assert result.candidate_b is None and result.causes == ("RAW_INVALID",)
+
+
+def test_geometry_preentry_allocation_failure_characterization(monkeypatch):
+    child, fake = geometry_subject()
+    original = security._CallArena
+
+    def allocate(owner):
+        if owner is child and len(fake.calls) == 10:
+            raise MemoryError("synthetic allocation failure")
+        return original(owner)
+
+    # The parent/object before metadata consists of five calls each.
+    monkeypatch.setattr(security, "_CallArena", allocate)
+    with pytest.raises(MemoryError):
+        security.read_handle_geometry(child)
+    assert not fake.queries and security._RETAINED is None
+    monkeypatch.undo()
+    child.close()
+
+
+@pytest.mark.parametrize("index", [0, 1])
+@pytest.mark.parametrize("status", [259, -1073741823])
+def test_geometry_uncertain_or_error_never_reads_outputs_child(index, status):
+    geometry_fault_child(f"""
+child, fake = geometry_subject()
+index, status = {index}, {status}
+active = [False]
+original_iosb = security._IoStatusBlock
+class GuardedIosb(original_iosb):
+    def __getattribute__(self, name):
+        if active[0] and name in ("Status", "Information"):
+            raise AssertionError("IOSB read after uncertain/error return")
+        return super().__getattribute__(name)
+security._IoStatusBlock = GuardedIosb
+original_query = fake.query
+def query(i, *args):
+    value = original_query(i, *args)
+    if i == index:
+        active[0] = True
+    return value
+fake.query = query
+fake.statuses[index] = status
+try:
+    security.read_handle_geometry(child)
+except security.NativeObservationError as error:
+    assert isinstance(error, security.IOCompletionUnaccreditedError) == (status == 259)
+else:
+    raise AssertionError("Unusable response accepted")
+assert len(fake.queries) == index + 1 and len(fake.calls) == 10
+if status == 259:
+    assert security._RETAINED is not None and len(security._RETAINED[1].buffers) == 2
+    assert child.close().state == "unknown" and not fake.closed
+else:
+    assert security._RETAINED is None and child.close().state == "closed" and fake.closed == [202]
+print(json.dumps({{"index": index, "status": status, "zero_output_reads": True, "metadata_calls": len(fake.calls)}}))
+""")
+
+
+def test_geometry_postpending_transfer_characterization_child():
+    geometry_fault_child("""
+child, fake = geometry_subject()
+fake.statuses[0] = 259
+tree = ast.parse(SOURCE.read_text(encoding="utf8"))
+function = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "call")
+node = next(n for n in ast.walk(function) if isinstance(n, ast.If) and "pending" in ast.unparse(n.test))
+injected = []
+def trace(frame, event, arg):
+    if event == "line" and frame.f_code.co_filename == str(SOURCE) and frame.f_lineno == node.lineno and frame.f_locals.get("returned") == 259:
+        injected.append(True)
+        sys.settrace(None)
+        raise KeyboardInterrupt("single postpending transfer")
+    return trace
+sys.settrace(trace)
+try:
+    security.read_handle_geometry(child)
+except security.IOCompletionUnaccreditedError:
+    pass
+finally:
+    sys.settrace(None)
+assert len(injected) == 1
+assert security._RETAINED is not None and len(security._RETAINED[1].buffers) == 2
+assert child.close().state == "unknown" and not fake.closed and len(fake.queries) == 1
+print(json.dumps({"postpending_single_fault": True, "composite": True}))
+""")
+
+
+def test_geometry_custody_clear_interruption_retains_child():
+    geometry_fault_child("""
+child, fake = geometry_subject()
+tree = ast.parse(SOURCE.read_text(encoding="utf8"))
+fn = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "read_handle_geometry")
+node = next(n for n in ast.walk(fn) if isinstance(n, ast.Delete))
+injected = []
+def trace(frame, event, arg):
+    if event == "line" and frame.f_code.co_filename == str(SOURCE) and frame.f_lineno == node.lineno and not injected:
+        injected.append(True)
+        sys.settrace(None)
+        raise KeyboardInterrupt("custody-clear transfer")
+    return trace
+sys.settrace(trace)
+error = None
+try:
+    security.read_handle_geometry(child)
+except BaseException as failure:
+    error = type(failure).__name__
+finally:
+    sys.settrace(None)
+assert len(injected) == 1
+assert error == "IOCompletionUnaccreditedError", error
+assert security._RETAINED is not None and len(security._RETAINED[1].buffers) == 2
+assert child.close().state == "unknown" and not fake.closed
+print(json.dumps({"custody_clear_fault": True, "composite": True}))
+""")
+
+
+def test_geometry_wrong_signed_sector_abi_rejects_before_query(monkeypatch):
+    child, fake = geometry_subject()
+
+    class WrongSector(ctypes.Structure):
+        _fields_ = [(name, ctypes.c_int32) for name in security._SECTOR_FIELDS]
+
+    monkeypatch.setattr(security, "_FileFsSectorSizeInformation", WrongSector)
+    try:
+        with pytest.raises(security.NativeObservationError):
+            security.read_handle_geometry(child)
+        assert not fake.queries and security._RETAINED is None
+    finally:
+        child.close()
+
+
+@pytest.mark.parametrize("length", [3, 5])
+def test_geometry_alignment_short_long_characterization(length):
+    test_geometry_completion_exact_before_payload(1, "informations", length)
+
+
+def test_geometry_raw_invalid_still_accumulates_safe_causes():
+    from dataclasses import replace
+
+    observed = geometry_fixture((0, 513, 4096, 4096, 16, 0xFFFFFFFF, 4096), 2)
+    observed = replace(observed, source="wrong-source")
+    result = security.derive_geometry_candidate(observed)
+    assert result.candidate_b is None
+    assert result.causes == (
+        "RAW_INVALID",
+        "GEOMETRY_SIZE_UNKNOWN",
+        "GEOMETRY_SIZE_INVALID",
+        "GEOMETRY_ALIGNMENT_MASK_INVALID",
+        "GEOMETRY_FLAGS_UNKNOWN",
+        "GEOMETRY_OFFSET_UNKNOWN",
+        "GEOMETRY_OFFSET_NOT_ACCREDITED",
+        "GEOMETRY_ALIGNMENT_NOT_CORROBORATED",
+    )
+
+
+def geometry_fault_child(body):
+    """El padre retira y reapea su hijo antes de sellar streams/receipts."""
+    import hashlib
+    import subprocess
+    from datetime import datetime, timezone
+
+    namespace = SOURCE.parents[2] / ("geometry-child-" + uuid.uuid4().hex)
+    namespace.mkdir()
+    script = namespace / "child.py"
+    bootstrap = "import runpy, json, gc, weakref, ast, traceback, threading, sys\n"
+    bootstrap += (
+        f"globals().update(runpy.run_path({str(Path(__file__).resolve())!r}))\ntry:\n"
+    )
+    bootstrap += "\n".join("    " + line for line in body.splitlines())
+    bootstrap += '\n    print(json.dumps({"geometry_ready": True}), flush=True)\n    threading.Event().wait()\nexcept BaseException:\n    traceback.print_exc()\n    print(json.dumps({"geometry_failed": True}), flush=True)\n    threading.Event().wait()\n'
+    script.write_text(bootstrap, encoding="utf8")
+    argv = [sys.executable, "-X", "utf8", "-B", str(script)]
+    start = datetime.now(timezone.utc).isoformat()
+    process = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    terminated = False
+    try:
+        out, err = process.communicate(timeout=2)
+    except subprocess.TimeoutExpired:
+        terminated = True
+        process.terminate()
+        out, err = process.communicate(timeout=10)
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.wait(timeout=10)
+    (namespace / "stdout.txt").write_bytes(out)
+    (namespace / "stderr.txt").write_bytes(err)
+    ready = b'"geometry_ready": true' in out
+    record = {
+        "argv": argv,
+        "utc_start": start,
+        "utc_end": datetime.now(timezone.utc).isoformat(),
+        "pid": process.pid,
+        "exit_code": process.returncode,
+        "terminated_by_own_parent": terminated,
+        "ready_before_retirement": ready,
+        "reaped": process.poll() is not None,
+        "source_sha256": hashlib.sha256(SOURCE.read_bytes()).hexdigest(),
+        "test_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        "stdout_sha256": hashlib.sha256(out).hexdigest(),
+        "stderr_sha256": hashlib.sha256(err).hexdigest(),
+        "scope": "synthetic-double-not-native-pending",
+    }
+    (namespace / "receipt.json").write_text(
+        json.dumps(record, indent=2), encoding="utf8"
+    )
+    assert ready and terminated and process.poll() is not None, err.decode(
+        "utf8", errors="replace"
+    )
+    assert not err
+
+
 SOURCE = Path(__file__).resolve().parents[1] / "scripts/storage_journal_windows.py"
 SPEC = importlib.util.spec_from_file_location("candidate_windows_security", SOURCE)
 security = importlib.util.module_from_spec(SPEC)

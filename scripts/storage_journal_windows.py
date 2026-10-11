@@ -470,7 +470,12 @@ class _ObservationContext:
     def retain(self, arena):
         global _RETAINED
         if _RETAINED is None:
-            _RETAINED = (self, arena, tuple(_LIVE_CONTEXTS))
+            _RETAINED = (
+                self,
+                getattr(self, "_geometry_custody", arena),
+                tuple(_LIVE_CONTEXTS),
+                arena,  # Preserve the entered metadata arena as well as geometry.
+            )
         raise IOCompletionUnaccreditedError("Completion no acreditada; retirar owner")
 
     def call(self, arena, function, *args, pending=None):
@@ -505,6 +510,13 @@ class _BorrowedDirectory:
 
 class _ObservedHandle:
     def __init__(self, handle, kind, parent):
+        self._acquisition = (
+            handle,
+            parent,
+            parent.context,
+            parent.owner,
+            parent._handle,
+        )
         self._handle, self.kind = handle, kind
         self.parent, self.context = parent, parent.context
         self._close_observation = None
@@ -832,6 +844,351 @@ class _CallArena:
         self.owner = owner
 
 
+_GEOMETRY_SOURCE = "nt-volume-sector11+nt-file-alignment17/v1"
+_SECTOR_FIELDS = (
+    "logical_bytes_per_sector",
+    "physical_bytes_per_sector_for_atomicity",
+    "physical_bytes_per_sector_for_performance",
+    "filesystem_effective_physical_bytes_per_sector_for_atomicity",
+    "flags",
+    "sector_alignment_offset",
+    "partition_alignment_offset",
+)
+
+
+class _FileFsSectorSizeInformation(ctypes.Structure):
+    _fields_ = [(name, ctypes.c_uint32) for name in _SECTOR_FIELDS]
+
+
+class _FileAlignmentInformation(ctypes.Structure):
+    _fields_ = [("AlignmentRequirement", ctypes.c_uint32)]
+
+
+@dataclass(frozen=True)
+class NtSectorSizeObservation:
+    information_class: int
+    requested_bytes: int
+    ntstatus: int
+    iosb_status: int
+    information: int
+    raw: bytes
+    logical_bytes_per_sector: int
+    physical_bytes_per_sector_for_atomicity: int
+    physical_bytes_per_sector_for_performance: int
+    filesystem_effective_physical_bytes_per_sector_for_atomicity: int
+    flags: int
+    sector_alignment_offset: int
+    partition_alignment_offset: int
+
+
+@dataclass(frozen=True)
+class NtAlignmentObservation:
+    information_class: int
+    requested_bytes: int
+    ntstatus: int
+    iosb_status: int
+    information: int
+    raw: bytes
+    alignment_mask: int
+
+
+@dataclass(frozen=True)
+class GeometryObservation:
+    source: str
+    sector: NtSectorSizeObservation
+    alignment: NtAlignmentObservation
+    parent_before: "MetadataObservation"
+    object_before: "MetadataObservation"
+    object_after: "MetadataObservation"
+    parent_after: "MetadataObservation"
+
+
+@dataclass(frozen=True)
+class GeometryDiagnostic:
+    source: str
+    candidate_b: int | None
+    causes: tuple[str, ...]
+
+
+def derive_geometry_candidate(observation):
+    """Calcula un número lógico readonly; nunca acredita capacidad nativa."""
+    if (
+        type(observation) is not GeometryObservation
+        or type(observation.sector) is not NtSectorSizeObservation
+        or type(observation.alignment) is not NtAlignmentObservation
+    ):
+        return GeometryDiagnostic(_GEOMETRY_SOURCE, None, ("RAW_INVALID",))
+    sector = observation.sector
+    operands = tuple(getattr(sector, name) for name in _SECTOR_FIELDS) + (
+        observation.alignment.alignment_mask,
+    )
+    if any(type(n) is not int or not 0 <= n <= 0xFFFFFFFF for n in operands):
+        return GeometryDiagnostic(_GEOMETRY_SOURCE, None, ("RAW_INVALID",))
+    sizes = tuple(getattr(sector, name) for name in _SECTOR_FIELDS[:4])
+    causes = [] if _geometry_raw_valid(observation) else ["RAW_INVALID"]
+    if 0 in sizes:
+        causes.append("GEOMETRY_SIZE_UNKNOWN")
+    if any(n and (not 512 <= n <= 65536 or n & (n - 1)) for n in sizes):
+        causes.append("GEOMETRY_SIZE_INVALID")
+    valid_sizes = all(n and 512 <= n <= 65536 and not n & (n - 1) for n in sizes)
+    if valid_sizes and any(n < sizes[0] or n % sizes[0] for n in sizes[1:]):
+        causes.append("GEOMETRY_SIZE_INCOHERENT")
+    mask = observation.alignment.alignment_mask
+    valid_mask = mask in (0, 1, 3, 7, 15, 31, 63, 127, 255, 511)
+    if not valid_mask:
+        causes.append("GEOMETRY_ALIGNMENT_MASK_INVALID")
+    if sector.flags & ~15:
+        causes.append("GEOMETRY_FLAGS_UNKNOWN")
+    offsets = (sector.sector_alignment_offset, sector.partition_alignment_offset)
+    if 0xFFFFFFFF in offsets:
+        causes.append("GEOMETRY_OFFSET_UNKNOWN")
+    if sector.flags & 1 and offsets[0] not in (0, 0xFFFFFFFF):
+        causes.append("GEOMETRY_ALIGNMENT_CONTRADICTION")
+    if any(n not in (0, 0xFFFFFFFF) for n in offsets):
+        causes.append("GEOMETRY_OFFSET_NOT_ACCREDITED")
+    if sector.flags & 3 != 3:
+        causes.append("GEOMETRY_ALIGNMENT_NOT_CORROBORATED")
+    candidate = None
+    if valid_sizes and valid_mask:
+        alignment_bytes = mask + 1
+        candidate = max(*sizes, alignment_bytes)
+        if (
+            not 512 <= candidate <= 65536
+            or candidate & (candidate - 1)
+            or any(candidate % n for n in (*sizes, alignment_bytes))
+        ):
+            causes.append("GEOMETRY_B_OUT_OF_WIRE")
+    return GeometryDiagnostic(
+        _GEOMETRY_SOURCE, None if causes else candidate, tuple(causes)
+    )
+
+
+def _geometry_raw_valid(observed):
+    if (
+        type(observed) is not GeometryObservation
+        or type(observed.source) is not str
+        or observed.source != _GEOMETRY_SOURCE
+    ):
+        return False
+    if any(
+        type(value) is not MetadataObservation
+        for value in (
+            observed.parent_before,
+            observed.object_before,
+            observed.object_after,
+            observed.parent_after,
+        )
+    ):
+        return False
+    for value, expected_type, info_class, size, fields in (
+        (observed.sector, NtSectorSizeObservation, 11, 28, _SECTOR_FIELDS),
+        (observed.alignment, NtAlignmentObservation, 17, 4, ("alignment_mask",)),
+    ):
+        if type(value) is not expected_type:
+            return False
+        for name, expected in (
+            ("information_class", info_class),
+            ("requested_bytes", size),
+            ("ntstatus", 0),
+            ("iosb_status", 0),
+            ("information", size),
+        ):
+            if (
+                type(getattr(value, name)) is not int
+                or getattr(value, name) != expected
+            ):
+                return False
+        numbers = tuple(getattr(value, name) for name in fields)
+        if any(type(n) is not int or not 0 <= n <= 0xFFFFFFFF for n in numbers):
+            return False
+        if (
+            type(value.raw) is not bytes
+            or len(value.raw) != size
+            or struct.unpack("<" + "I" * len(fields), value.raw) != numbers
+        ):
+            return False
+    return True
+
+
+def read_handle_geometry(observed):
+    """Dos consultas readonly de la misma adquisición; no abre ni cierra."""
+    if os.name != "nt" or ctypes.sizeof(ctypes.c_void_p) != 8:
+        raise PlatformUnsupportedError("Se requiere Windows de 64 bits")
+    if (
+        type(observed) is not _ObservedHandle
+        or type(observed.context) is not _ObservationContext
+    ):
+        raise NativeObservationError("Adquisición propia requerida")
+    context = observed.context
+    with context.lock:
+        context.check()
+        parent = observed.parent
+        if (
+            type(parent) is not _BorrowedDirectory
+            or parent.context is not context
+            or observed not in context.owned
+            or not _valid_observed_handle(observed._handle)
+            or observed._close_observation is not None
+        ):
+            raise NativeObservationError("Acquisición retirada o parent ajeno")
+        acquisition = observed._acquisition
+        _check_geometry_acquisition(observed, acquisition)
+        _check_geometry_abi()
+        try:
+            functions = (
+                context.api.NtQueryVolumeInformationFile,
+                context.api.NtQueryInformationFile,
+            )
+        except AttributeError as error:
+            raise NativeObservationError("Binding de geometría ausente") from error
+        if not all(callable(function) for function in functions):
+            raise NativeObservationError("Binding de geometría inválido")
+        parent_before = read_handle_metadata(parent)
+        _check_geometry_acquisition(observed, acquisition)
+        object_before = read_handle_metadata(observed)
+        _check_geometry_acquisition(observed, acquisition)
+        if parent_before.volume_serial != object_before.volume_serial:
+            raise NativeObservationError("Volumen del parent inconsistente")
+        arena = _CallArena(observed)
+        arena.parent, arena.context = parent, context
+        arena.acquisition = acquisition
+        arena.buffers = (_FileFsSectorSizeInformation(), _FileAlignmentInformation())
+        arena.iosbs = (_IoStatusBlock(), _IoStatusBlock())
+        for buffer, iosb, size in zip(arena.buffers, arena.iosbs, (28, 4), strict=True):
+            ctypes.memset(ctypes.addressof(buffer), 0xA5, size)
+            iosb.Status, iosb.Information = -2147483648, 2**64 - 1
+        arguments = tuple(
+            (
+                observed._handle,
+                ctypes.byref(iosb),
+                ctypes.byref(buffer),
+                size,
+                info_class,
+            )
+            for buffer, iosb, size, info_class in zip(
+                arena.buffers, arena.iosbs, (28, 4), (11, 17), strict=True
+            )
+        )
+        responses = []
+        context._geometry_custody = arena
+        try:
+            for index, (function, args) in enumerate(
+                zip(functions, arguments, strict=True)
+            ):
+                _check_geometry_acquisition(observed, acquisition, complete=True)
+                status = context.call(
+                    arena,
+                    function,
+                    *args,
+                    pending=lambda returned: returned == STATUS_PENDING,
+                )
+                if status != STATUS_SUCCESS:
+                    raise _GeometryCompleteRejection("Query NT no acreditada")
+                _check_geometry_acquisition(observed, acquisition, complete=True)
+                iosb, size, info_class = arena.iosbs[index], args[3], args[4]
+                if iosb.Status != STATUS_SUCCESS or iosb.Information != size:
+                    raise _GeometryCompleteRejection(
+                        "Completion geométrica inconsistente"
+                    )
+                raw = bytes(arena.buffers[index])
+                fields = struct.unpack("<7I" if index == 0 else "<I", raw)
+                result_type = (
+                    NtSectorSizeObservation if index == 0 else NtAlignmentObservation
+                )
+                responses.append(
+                    result_type(
+                        info_class,
+                        size,
+                        status,
+                        iosb.Status,
+                        iosb.Information,
+                        raw,
+                        *fields,
+                    )
+                )
+            try:
+                object_after = read_handle_metadata(observed)
+                _check_geometry_acquisition(observed, acquisition, complete=True)
+                parent_after = read_handle_metadata(parent)
+                _check_geometry_acquisition(observed, acquisition, complete=True)
+            except IOCompletionUnaccreditedError:
+                raise
+            except NativeObservationError as error:
+                raise _GeometryCompleteRejection(
+                    "Postmetadata no acreditada"
+                ) from error
+            if parent_before != parent_after or object_before != object_after:
+                raise _GeometryCompleteRejection("Identidad de geometría cambió")
+            result = GeometryObservation(
+                _GEOMETRY_SOURCE,
+                *responses,
+                parent_before,
+                object_before,
+                object_after,
+                parent_after,
+            )
+            del context._geometry_custody
+            return result
+        except _GeometryCompleteRejection as error:
+            try:
+                del context._geometry_custody
+            except BaseException as interruption:  # noqa: BLE001 - fallo de transferencia
+                try:
+                    context.retain(arena)
+                except IOCompletionUnaccreditedError as failure:
+                    raise failure from interruption
+            raise NativeObservationError(str(error)) from error
+        except BaseException as error:  # noqa: BLE001 - retiene ambas arenas hasta reap
+            try:
+                context.retain(arena)
+            except IOCompletionUnaccreditedError as failure:
+                raise failure from error
+
+
+class _GeometryCompleteRejection(NativeObservationError):
+    """Rechazo privado sólo después de retorno acreditado."""
+
+
+def _check_geometry_acquisition(observed, acquisition, *, complete=False):
+    handle, parent, context, parent_owner, parent_handle = acquisition
+    if (
+        observed._handle != handle
+        or type(observed._handle) is not int
+        or observed.parent is not parent
+        or observed.context is not context
+        or parent.context is not context
+        or parent.owner is not parent_owner
+        or parent._handle != parent_handle
+        or observed not in context.owned
+        or observed._close_observation is not None
+        or not _valid_observed_handle(parent._handle)
+    ):
+        error_type = _GeometryCompleteRejection if complete else NativeObservationError
+        raise error_type("Acquisición original revocada")
+
+
+def _check_geometry_abi():
+    if (
+        ctypes.sizeof(_IoStatusBlock),
+        ctypes.alignment(_IoStatusBlock),
+        _IoStatusBlock.status.offset,
+        _IoStatusBlock.Information.offset,
+    ) != (16, 8, 0, 8):
+        raise NativeObservationError("ABI IOSB inválida")
+    for struct_type, size, names in (
+        (_FileFsSectorSizeInformation, 28, _SECTOR_FIELDS),
+        (_FileAlignmentInformation, 4, ("AlignmentRequirement",)),
+    ):
+        if ctypes.sizeof(struct_type) != size or ctypes.alignment(struct_type) != 4:
+            raise NativeObservationError("ABI geométrica inválida")
+        if struct_type._fields_ != [(name, ctypes.c_uint32) for name in names]:
+            raise NativeObservationError("Tipos ABI geométrica inválidos")
+        if tuple(getattr(struct_type, name).offset for name in names) != tuple(
+            range(0, size, 4)
+        ):
+            raise NativeObservationError("Offsets ABI geométrica inválidos")
+
+
 @dataclass(frozen=True)
 class MetadataObservation:
     """Copias readonly sin HANDLE; no admisión de store ni cadena."""
@@ -906,6 +1263,30 @@ class _ObservationApi:
                     dword,
                     pointer,
                     dword,
+                ],
+                ctypes.c_int32,
+            ),
+            (
+                nt,
+                "NtQueryVolumeInformationFile",
+                [
+                    pointer,
+                    ctypes.POINTER(_IoStatusBlock),
+                    pointer,
+                    dword,
+                    ctypes.c_int32,
+                ],
+                ctypes.c_int32,
+            ),
+            (
+                nt,
+                "NtQueryInformationFile",
+                [
+                    pointer,
+                    ctypes.POINTER(_IoStatusBlock),
+                    pointer,
+                    dword,
+                    ctypes.c_int32,
                 ],
                 ctypes.c_int32,
             ),
