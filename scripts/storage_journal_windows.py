@@ -3,6 +3,7 @@
 import ctypes
 import os
 import struct
+import threading
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 
@@ -418,6 +419,510 @@ class _WindowsApi:
                 [pointer, ctypes.POINTER(ctypes.c_uint16), ctypes.POINTER(dword)],
                 boolean,
             ),
+        ]
+        for lib, name, args, result in signatures:
+            function = getattr(lib, name)
+            function.argtypes, function.restype = args, result
+            setattr(self, name, function)
+
+
+class NativeObservationError(Exception):
+    code = "NATIVE_OBSERVATION_UNACCREDITED"
+
+
+class IOCompletionUnaccreditedError(NativeObservationError):
+    code = "IO_COMPLETION_UNACCREDITED"
+
+
+def _validate_component(name):
+    if type(name) is not str or not name or name in (".", ".."):
+        raise NativeObservationError("Componente inválido")
+    if any(ord(c) < 32 or c in '\\/:*?"<>|' for c in name) or name[-1] in ". ":
+        raise NativeObservationError("Componente inválido")
+    try:
+        encoded = name.encode("utf-16-le")
+    except UnicodeError as error:
+        raise NativeObservationError("UTF16 inválido") from error
+    if len(encoded) > 510:
+        raise NativeObservationError("Componente fuera de límites")
+    stem = name.split(".", 1)[0].upper()
+    reserved = {"CON", "PRN", "AUX", "NUL", "CONIN$", "CONOUT$"}
+    reserved.update(
+        prefix + digit for prefix in ("COM", "LPT") for digit in "123456789¹²³"
+    )
+    if stem in reserved:
+        raise NativeObservationError("Nombre de dispositivo no admitido")
+    return name
+
+
+class _ObservationContext:
+    def __init__(self, api=None):
+        self.lock = _OBSERVATION_LOCK
+        self.api = _observation_api() if api is None else api
+        self.owned = set()
+
+    def check(self):
+        if _RETAINED is not None:
+            raise IOCompletionUnaccreditedError(
+                "Retirada del proceso propietario requerida"
+            )
+
+    def retain(self, arena):
+        global _RETAINED
+        if _RETAINED is None:
+            _RETAINED = (self, arena, tuple(_LIVE_CONTEXTS))
+        raise IOCompletionUnaccreditedError("Completion no acreditada; retirar owner")
+
+    def call(self, arena, function, *args, pending=None):
+        self.check()
+        # Resolve binding/arguments before entered. No finally may release this arena.
+        try:
+            returned = function(*args)
+            if pending is not None and pending(returned):
+                self.retain(arena)
+            return returned
+        except BaseException as error:  # noqa: BLE001 - conserva ownership incluso ante interrupción
+            try:
+                self.retain(arena)
+            except IOCompletionUnaccreditedError as failure:
+                raise failure from error
+
+
+class _BorrowedDirectory:
+    """Owner confiable conserva adquisición y coopera con context.lock hasta reap.
+
+    Una referencia al owner no evita un CloseHandle externo. No acredita cadena,
+    modo de apertura del parent, ACL ni autoridad de un root de producto.
+    """
+
+    def __init__(self, owner, context):
+        self.owner, self.context = owner, context
+
+    @property
+    def _handle(self):
+        return self.owner.handle
+
+
+class _ObservedHandle:
+    def __init__(self, handle, kind, parent):
+        self._handle, self.kind = handle, kind
+        self.parent, self.context = parent, parent.context
+        self._close_observation = None
+        self.context.owned.add(self)
+        _LIVE_CONTEXTS.add(self.context)
+
+    def close(self):
+        with self.context.lock:
+            previous = self._close_observation
+            if previous is not None:
+                return previous
+            acquisition = self._handle
+            arena = _CallArena(self)
+            arena.acquisition = acquisition
+            unknown = _LocalCloseObservation("unknown", ("IO_COMPLETION_UNACCREDITED",))
+            try:
+                # Reserve idempotence before revoking authority or entering native.
+                self._close_observation = unknown
+                self._handle = None
+                if _RETAINED is not None:
+                    return unknown
+                else:
+                    accepted = bool(self.context.api.CloseHandle(acquisition))
+                    reasons = () if accepted else ("CloseHandleFalse",)
+                    result = _LocalCloseObservation(
+                        "closed" if accepted else "unknown", reasons
+                    )
+                    self._close_observation = result
+                    if accepted:
+                        self.context.owned.remove(self)
+                        if not self.context.owned:
+                            _LIVE_CONTEXTS.discard(self.context)
+                    else:
+                        self.context.retain(arena)
+                    return result
+            except BaseException as error:  # noqa: BLE001 - una interrupción requiere reap
+                self._handle = None
+                if (
+                    self._close_observation is None
+                    or self._close_observation is unknown
+                    or self._close_observation.state == "closed"
+                ):
+                    self._close_observation = _LocalCloseObservation(
+                        "unknown", (type(error).__name__,)
+                    )
+                # Keep this owner even if interrupted halfway through deregistration.
+                self.context.owned.add(self)
+                _LIVE_CONTEXTS.add(self.context)
+                try:
+                    self.context.retain(arena)
+                except IOCompletionUnaccreditedError:
+                    pass
+                return self._close_observation
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, kind, primary, traceback):
+        observation = self.close()
+        if observation.state == "closed":
+            return False
+        if primary is None:
+            raise NativeObservationError("Cierre del contexto no acreditado")
+        primary.add_note("Cleanup separado: " + ",".join(observation.causes))
+        return False
+
+
+def _open_relative_existing(parent, name, kind):
+    _validate_component(name)
+    if (
+        type(parent) is not _BorrowedDirectory
+        or type(kind) is not str
+        or kind not in ("directory", "file")
+    ):
+        raise NativeObservationError("Parent o tipo no liberado")
+    context = parent.context
+    with context.lock:
+        context.check()
+        read_handle_metadata(parent)
+        encoded = name.encode("utf-16-le")
+        arena = _CallArena(parent)
+        arena.name = ctypes.create_string_buffer(encoded + b"\0\0")
+        arena.unicode = _UnicodeString(
+            len(encoded), len(encoded) + 2, ctypes.addressof(arena.name)
+        )
+        arena.attributes = _ObjectAttributes(
+            ctypes.sizeof(_ObjectAttributes),
+            parent._handle,
+            ctypes.pointer(arena.unicode),
+            OBJ_DONT_REPARSE,
+            None,
+            None,
+        )
+        arena.iosb = _IoStatusBlock()
+        arena.output = ctypes.c_void_p()
+        directory = kind == "directory"
+        access = (
+            READ_CONTROL
+            | SYNCHRONIZE
+            | FILE_READ_ATTRIBUTES
+            | (FILE_TRAVERSE if directory else FILE_READ_DATA)
+        )
+        share = FILE_SHARE_READ | (FILE_SHARE_WRITE if directory else 0)
+        options = (
+            FILE_SYNCHRONOUS_IO_NONALERT
+            | FILE_OPEN_REPARSE_POINT
+            | (FILE_DIRECTORY_FILE if directory else FILE_NON_DIRECTORY_FILE)
+        )
+        child = None
+        try:
+            # Custody spans native return, recognition and wrapper registration.
+            status = context.call(
+                arena,
+                context.api.NtCreateFile,
+                ctypes.byref(arena.output),
+                access,
+                ctypes.byref(arena.attributes),
+                ctypes.byref(arena.iosb),
+                None,
+                0,
+                share,
+                FILE_OPEN,
+                options,
+                None,
+                0,
+                pending=lambda result: result == STATUS_PENDING,
+            )
+            if status != STATUS_SUCCESS:
+                raise NativeObservationError("FILE_OPEN no acreditado")
+            value = arena.output.value
+            if not _valid_observed_handle(value):
+                raise NativeObservationError("Adquisición propia inválida")
+            child = _ObservedHandle(value, kind, parent)
+            if arena.iosb.Information != FILE_OPENED:
+                raise NativeObservationError("Resultado no es FILE_OPENED")
+            read_handle_metadata(child)
+            return child
+        except IOCompletionUnaccreditedError:
+            # The retained query arena owns child -> parent -> cooperative owner.
+            raise
+        except NativeObservationError as primary:
+            if child is not None:
+                cleanup = child.close()
+                if cleanup.state != "closed":
+                    primary.add_note("Cleanup separado: cierre no acreditado")
+            raise
+        except BaseException as error:  # noqa: BLE001 - custodia de adquisición sin transferir
+            try:
+                context.retain(arena)
+            except IOCompletionUnaccreditedError as failure:
+                raise failure from error
+
+
+def read_handle_metadata(observed):
+    if type(observed) not in (_BorrowedDirectory, _ObservedHandle):
+        raise NativeObservationError("Observador local requerido")
+    context = observed.context
+    with context.lock:
+        context.check()
+        handle = observed._handle
+        if not _valid_observed_handle(handle):
+            raise NativeObservationError("Observador retirado")
+        expected = (
+            "directory" if type(observed) is _BorrowedDirectory else observed.kind
+        )
+        arena = _CallArena(observed)
+        file_type = context.call(arena, context.api.GetFileType, handle)
+        if file_type != FILE_TYPE_DISK:
+            raise NativeObservationError("Sólo objeto disk local")
+        arena.identity, arena.attributes, arena.standard = (
+            _FileIdInfo(),
+            _FileAttributeTagInfo(),
+            _FileStandardInfo(),
+        )
+        for info, buffer in (
+            (FileIdInfo, arena.identity),
+            (FileAttributeTagInfo, arena.attributes),
+            (FileStandardInfo, arena.standard),
+        ):
+            returned = context.call(
+                arena,
+                context.api.GetFileInformationByHandleEx,
+                handle,
+                info,
+                ctypes.byref(buffer),
+                ctypes.sizeof(buffer),
+                pending=lambda result: (
+                    not result and ctypes.get_last_error() == ERROR_IO_PENDING
+                ),
+            )
+            if not returned:
+                raise NativeObservationError("Metadata no disponible")
+        arena.path = ctypes.create_unicode_buffer(32768)
+        length = context.call(
+            arena,
+            context.api.GetFinalPathNameByHandleW,
+            handle,
+            arena.path,
+            len(arena.path),
+            0,
+            pending=lambda result: (
+                not result and ctypes.get_last_error() == ERROR_IO_PENDING
+            ),
+        )
+        if not 0 < length < len(arena.path):
+            raise NativeObservationError("Longitud de ruta no acreditada")
+        path = arena.path.value
+        _validate_final_path(path)
+        identity, attrs, standard = arena.identity, arena.attributes, arena.standard
+        actual = "directory" if standard.Directory else "file"
+        if (
+            attrs.FileAttributes
+            & (FILE_ATTRIBUTE_REPARSE_POINT | FILE_ATTRIBUTE_DEVICE)
+            or attrs.ReparseTag
+            or standard.DeletePending
+            or standard.Directory not in (0, 1)
+            or bool(attrs.FileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            != bool(standard.Directory)
+            or actual != expected
+            or not standard.NumberOfLinks
+            or (actual == "file" and standard.NumberOfLinks != 1)
+            or standard.EndOfFile < 0
+            or standard.AllocationSize < 0
+            or (actual == "file" and standard.AllocationSize < standard.EndOfFile)
+        ):
+            raise NativeObservationError("Metadata fuera de política local")
+        return MetadataObservation(
+            identity.VolumeSerialNumber,
+            bytes(identity.FileId.Identifier),
+            path,
+            actual,
+            attrs.FileAttributes,
+            attrs.ReparseTag,
+            standard.NumberOfLinks,
+            bool(standard.DeletePending),
+            standard.EndOfFile,
+            standard.AllocationSize,
+            tuple(bytes(buffer) for buffer in (identity, attrs, standard)),
+        )
+
+
+# SDK/WDK constants: ntifs.h, ntdef.h, winnt.h, minwinbase.h.
+# Microsoft Learn primary ABI sources recorded in primary-sources.json.
+FILE_READ_DATA = 0x1
+FILE_TRAVERSE = 0x20
+FILE_READ_ATTRIBUTES = 0x80
+READ_CONTROL = 0x20000
+SYNCHRONIZE = 0x100000
+FILE_SHARE_READ = 0x1
+FILE_SHARE_WRITE = 0x2
+FILE_DIRECTORY_FILE = 0x1
+FILE_SYNCHRONOUS_IO_NONALERT = 0x20
+FILE_NON_DIRECTORY_FILE = 0x40
+FILE_OPEN_REPARSE_POINT = 0x200000
+FILE_OPEN = 1
+FILE_OPENED = 1
+OBJ_DONT_REPARSE = 0x1000
+STATUS_SUCCESS = 0
+STATUS_PENDING = 0x103
+ERROR_IO_PENDING = 997
+FILE_TYPE_DISK = 1
+FILE_ATTRIBUTE_DIRECTORY = 0x10
+FILE_ATTRIBUTE_DEVICE = 0x40
+FILE_ATTRIBUTE_REPARSE_POINT = 0x400
+FileStandardInfo = 1
+FileAttributeTagInfo = 9
+FileIdInfo = 18
+_RETAINED = None
+_OBSERVATION_LOCK = threading.RLock()
+_LIVE_CONTEXTS = set()
+
+
+class _UnicodeString(ctypes.Structure):
+    _fields_ = [
+        ("Length", ctypes.c_uint16),
+        ("MaximumLength", ctypes.c_uint16),
+        ("Buffer", ctypes.c_void_p),
+    ]
+
+
+class _ObjectAttributes(ctypes.Structure):
+    _fields_ = [
+        ("Length", ctypes.c_uint32),
+        ("RootDirectory", ctypes.c_void_p),
+        ("ObjectName", ctypes.POINTER(_UnicodeString)),
+        ("Attributes", ctypes.c_uint32),
+        ("SecurityDescriptor", ctypes.c_void_p),
+        ("SecurityQualityOfService", ctypes.c_void_p),
+    ]
+
+
+class _StatusUnion(ctypes.Union):
+    _fields_ = [("Status", ctypes.c_int32), ("Pointer", ctypes.c_void_p)]
+
+
+class _IoStatusBlock(ctypes.Structure):
+    _anonymous_ = ("status",)
+    _fields_ = [("status", _StatusUnion), ("Information", ctypes.c_size_t)]
+
+
+class _FileId128(ctypes.Structure):
+    _fields_ = [("Identifier", ctypes.c_ubyte * 16)]
+
+
+class _FileIdInfo(ctypes.Structure):
+    _fields_ = [("VolumeSerialNumber", ctypes.c_uint64), ("FileId", _FileId128)]
+
+
+class _FileAttributeTagInfo(ctypes.Structure):
+    _fields_ = [("FileAttributes", ctypes.c_uint32), ("ReparseTag", ctypes.c_uint32)]
+
+
+class _FileStandardInfo(ctypes.Structure):
+    _fields_ = [
+        ("AllocationSize", ctypes.c_int64),
+        ("EndOfFile", ctypes.c_int64),
+        ("NumberOfLinks", ctypes.c_uint32),
+        ("DeletePending", ctypes.c_ubyte),
+        ("Directory", ctypes.c_ubyte),
+    ]
+
+
+class _CallArena:
+    def __init__(self, owner):
+        self.owner = owner
+
+
+@dataclass(frozen=True)
+class MetadataObservation:
+    """Copias readonly sin HANDLE; no admisión de store ni cadena."""
+
+    volume_serial: int
+    file_id: bytes
+    final_path: str
+    kind: str
+    attributes: int
+    reparse_tag: int
+    links: int
+    delete_pending: bool
+    eof: int
+    allocation: int
+    raw: tuple[bytes, ...]
+
+
+@dataclass(frozen=True)
+class _LocalCloseObservation:
+    state: str
+    causes: tuple[str, ...] = ()
+
+
+def _valid_observed_handle(value):
+    return type(value) is int and 0 < value < 2**64 - 2
+
+
+def _validate_final_path(path):
+    if not (
+        path.startswith("\\\\?\\")
+        and len(path) >= 7
+        and path[4] in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+        and path[5:7] == ":\\"
+    ):
+        raise NativeObservationError("Ruta local normalizada requerida")
+    parts = path[7:].split("\\")
+    if parts == [""]:
+        return
+    for component in parts:
+        _validate_component(component)
+
+
+def _observation_api():
+    if os.name != "nt" or ctypes.sizeof(ctypes.c_void_p) != 8:
+        raise PlatformUnsupportedError("Se requiere Windows de 64 bits")
+    try:
+        return _ObservationApi()
+    except (OSError, AttributeError) as error:
+        raise NativeObservationError("Binding NT/Win32 no disponible") from error
+
+
+class _ObservationApi:
+    """Binding privado sin operaciones de escritura, wait, cancel ni retry."""
+
+    def __init__(self):
+        kernel = ctypes.WinDLL("kernel32.dll", use_last_error=True)
+        nt = ctypes.WinDLL("ntdll.dll", use_last_error=True)
+        pointer, dword, boolean = ctypes.c_void_p, ctypes.c_uint32, ctypes.c_int32
+        signatures = [
+            (
+                nt,
+                "NtCreateFile",
+                [
+                    ctypes.POINTER(pointer),
+                    dword,
+                    ctypes.POINTER(_ObjectAttributes),
+                    ctypes.POINTER(_IoStatusBlock),
+                    ctypes.POINTER(ctypes.c_int64),
+                    dword,
+                    dword,
+                    dword,
+                    dword,
+                    pointer,
+                    dword,
+                ],
+                ctypes.c_int32,
+            ),
+            (
+                kernel,
+                "GetFileInformationByHandleEx",
+                [pointer, ctypes.c_int32, pointer, dword],
+                boolean,
+            ),
+            (
+                kernel,
+                "GetFinalPathNameByHandleW",
+                [pointer, ctypes.c_wchar_p, dword, dword],
+                dword,
+            ),
+            (kernel, "GetFileType", [pointer], dword),
+            (kernel, "CloseHandle", [pointer], boolean),
         ]
         for lib, name, args, result in signatures:
             function = getattr(lib, name)
