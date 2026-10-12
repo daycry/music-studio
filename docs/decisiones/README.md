@@ -122,6 +122,10 @@ Formato: `ADR-XXXX-slug.md` con **Estado** (propuesta · aceptada · sustituida 
 
 | [0084](ADR-0084-frontera-nativa-y-admision-del-principal-windows.md) | Frontera nativa y admisión del principal Windows | aceptada; O1 elegida, ratificada tras revisión2 y QA documental; runtime pendiente |
 
+| [0083](ADR-0083-persistencia-tipificada-y-revisiones-inmutables-de-produccion.md) | Persistencia tipificada y revisiones inmutables de producción | aceptada; D03/PD-O1 elegida, ratificada tras revisión2 y QA documental; runtime pendiente |
+
+| [0085](ADR-0085-formatos-tipados-y-cierre-portable-de-produccion.md) | Formatos tipados y cierre portable de producción | aceptada; PF-O1 ratificada tras revisión2 y QA documental; runtime pendiente |
+
 ## Decisiones heredadas de la documentación archivada
 
 
