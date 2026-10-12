@@ -128,6 +128,8 @@ Formato: `ADR-XXXX-slug.md` con **Estado** (propuesta · aceptada · sustituida 
 
 | [0086](ADR-0086-medicion-conservadora-del-audio-de-produccion.md) | Medición conservadora del audio de producción | aceptada; AM-O1 ratificada tras revisión2 y QA documental; audio pendiente |
 
+| [0087](ADR-0087-cohortes-independientes-y-aceptacion-de-produccion.md) | Cohortes independientes y aceptación de producción | aceptada; CM-O1/CM-P1 ratificadas; instrumento y D13 pendientes |
+
 ## Decisiones heredadas de la documentación archivada
 
 
