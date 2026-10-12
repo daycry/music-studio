@@ -126,6 +126,8 @@ Formato: `ADR-XXXX-slug.md` con **Estado** (propuesta · aceptada · sustituida 
 
 | [0085](ADR-0085-formatos-tipados-y-cierre-portable-de-produccion.md) | Formatos tipados y cierre portable de producción | aceptada; PF-O1 ratificada tras revisión2 y QA documental; runtime pendiente |
 
+| [0086](ADR-0086-medicion-conservadora-del-audio-de-produccion.md) | Medición conservadora del audio de producción | aceptada; AM-O1 ratificada tras revisión2 y QA documental; audio pendiente |
+
 ## Decisiones heredadas de la documentación archivada
 
 
