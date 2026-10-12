@@ -8,6 +8,7 @@ import sys
 import threading
 import types
 import uuid
+from contextlib import nullcontext
 
 import pytest
 
@@ -85,6 +86,111 @@ def setup():
     b = Blocks(m)
     c = m._assemble_memory_context(b.ops(), provenance="cpu_double")
     return m, b, c
+
+
+def test_identity_bootstrap_claim_never_recycled_by_reload():
+    m = load()
+    claim = getattr(m, "_kernel_identity_bootstrap_claim", lambda: None)
+    claim()
+    with pytest.raises(m.KernelMemoryError) as caught:
+        claim()
+    assert caught.value.diagnostic.code == "OWNER_RETIRE_REQUIRED"
+
+
+def test_boundary_precedes_memory_context_lock():
+    m, b, c = setup()
+    entered = threading.Event()
+    done = threading.Event()
+
+    def allocate():
+        entered.set()
+        m._allocate_aligned(c, length=512, alignment=512)
+        done.set()
+
+    domain = getattr(m, "_kernel_domain", nullcontext)
+    with domain():
+        worker = threading.Thread(target=allocate)
+        worker.start()
+        assert entered.wait(1)
+        assert not done.wait(0.05)
+        assert b.calls == []
+    worker.join(2)
+    assert not worker.is_alive()
+    assert done.is_set()
+
+
+def test_boundary_precedes_memory_factory():
+    m = load()
+    b = Blocks(m)
+    entered = threading.Event()
+    done = threading.Event()
+
+    def assemble():
+        entered.set()
+        m._assemble_memory_context(b.ops(), provenance="cpu_double")
+        done.set()
+
+    with m._kernel_domain():
+        worker = threading.Thread(target=assemble)
+        worker.start()
+        assert entered.wait(1)
+        assert not done.wait(0.05)
+    worker.join(2)
+    assert done.is_set() and not worker.is_alive()
+
+
+def test_identity_poison_and_workspace_reject_unregistered_cpu():
+    m = load()
+    for name, args in (
+        ("_kernel_domain_poison_identity", (object(),)),
+        ("_pin_identity_workspace", (object(), object())),
+    ):
+        seam = getattr(m, name, lambda *a: None)
+        with pytest.raises(m.KernelMemoryError) as caught:
+            seam(*args)
+        assert caught.value.diagnostic.code == "CAPABILITY_INVALID"
+
+
+def test_workspace_metadata_types_and_tail_are_exact():
+    m = load()
+    values = {
+        "workspace_sdk_length": 131328,
+        "workspace_k1_length": 131584,
+        "workspace_alignment": 512,
+        "workspace_requested": 132095,
+        "workspace_tail": 256,
+    }
+    valid = getattr(m, "_workspace_metadata_matches", lambda record: True)
+    assert valid(types.SimpleNamespace(**values))
+    for field, original in values.items():
+        for value in (True, original + 1, -1):
+            changed = dict(values)
+            changed[field] = value
+            assert not valid(types.SimpleNamespace(**changed))
+
+
+def test_workspace_k1_geometry_charge_and_single_cleanup_regression():
+    m, b, c = setup()
+    b.next = 4097
+    for alignment in (8, 512):
+        with pytest.raises(m.KernelMemoryError, match="ALIGNMENT_INVALID"):
+            m._allocate_aligned(c, length=131328, alignment=alignment)
+    assert b.calls == []
+    a = m._allocate_aligned(c, length=131584, alignment=512)
+    r = m._LIVE_MEMORY_CONTEXTS[c]
+    allocation = r.allocations[a]
+    assert r.charge == (1, 131584, 132095)
+    assert (allocation.base, allocation.address, allocation.requested) == (
+        4097,
+        4608,
+        132095,
+    )
+    assert allocation.address + 131584 == allocation.base + 132095 == 136192
+    assert allocation.length - 131328 == 256
+    closed = m._close_arena(c, a)
+    assert closed.state == "closed" and r.charge == (0, 0, 0)
+    assert m._close_arena(c, a) is closed
+    assert sum(call[0] == "release" for call in b.calls) == 1
 
 
 @pytest.mark.parametrize("machine", ["arm64", "x86", "unknown"])

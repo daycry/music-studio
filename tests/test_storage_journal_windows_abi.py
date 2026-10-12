@@ -46,6 +46,102 @@ def test_unsupported_abi_gate(monkeypatch):
         m._new_native_memory_backend()
 
 
+def test_identity_sdk_layouts_exact():
+    import ctypes as c
+
+    m = load()
+    builder = getattr(m, "_build_identity_abi", m._build_abi)
+    abi = builder(c)
+    expected = {
+        "LUID": (8, 4, {"LowPart": 0, "HighPart": 4}),
+        "TOKEN_USER": (16, 8, {"Sid": 0, "Attributes": 8}),
+        "TOKEN_PRIMARY_GROUP": (8, 8, {"PrimaryGroup": 0}),
+        "TOKEN_STATISTICS": (
+            56,
+            8,
+            {
+                "TokenId": 0,
+                "AuthenticationId": 8,
+                "ExpirationTime": 16,
+                "TokenType": 24,
+                "ImpersonationLevel": 28,
+                "DynamicCharged": 32,
+                "DynamicAvailable": 36,
+                "GroupCount": 40,
+                "PrivilegeCount": 44,
+                "ModifiedId": 48,
+            },
+        ),
+    }
+    actual = {
+        name: None
+        if name not in abi
+        else (
+            c.sizeof(abi[name]),
+            c.alignment(abi[name]),
+            {field: getattr(abi[name], field).offset for field in fields},
+        )
+        for name, (_, _, fields) in expected.items()
+    }
+    assert actual == expected
+
+
+def test_identity_bindings_fake_sdk_and_call_wall(monkeypatch):
+    import ctypes as c
+
+    m = load()
+    calls = []
+    # Gate y DLL simulados sólo para fijar firmas: ningún issuer ni query real.
+    monkeypatch.setattr(m, "os", types.SimpleNamespace(name="nt"))
+    monkeypatch.setattr(
+        m, "sys", types.SimpleNamespace(platform="win32", maxsize=2**63 - 1)
+    )
+    monkeypatch.setattr(m, "platform", types.SimpleNamespace(machine=lambda: "amd64"))
+
+    class Function:
+        def __call__(self, *args):
+            calls.append(args)
+            return 1
+
+    functions = {
+        name: Function()
+        for name in (
+            "GetCurrentProcess",
+            "GetCurrentThread",
+            "OpenThreadToken",
+            "OpenProcessToken",
+            "GetTokenInformation",
+            "CloseHandle",
+        )
+    }
+    dll = types.SimpleNamespace(**functions)
+    monkeypatch.setattr(c, "WinDLL", lambda *a, **k: dll, raising=False)
+    factory = getattr(m, "_new_native_identity_backend", lambda: None)
+    backend = factory()
+    assert type(backend).__name__ == "_IdentityOps"
+    assert calls == []
+    assert functions["OpenThreadToken"].argtypes == (
+        c.c_void_p,
+        c.c_uint32,
+        c.c_int32,
+        c.POINTER(c.c_void_p),
+    )
+    assert functions["GetTokenInformation"].argtypes == (
+        c.c_void_p,
+        c.c_int32,
+        c.c_void_p,
+        c.c_uint32,
+        c.POINTER(c.c_uint32),
+    )
+    assert all(
+        f.restype is (c.c_void_p if n.startswith("GetCurrent") else c.c_int32)
+        for n, f in functions.items()
+    )
+    with pytest.raises(Exception, match="CAPABILITY_INVALID"):
+        backend.execute({"trusted": True})
+    assert calls == []
+
+
 @native_windows
 def test_native_backend_complete_abi():
     m = load()

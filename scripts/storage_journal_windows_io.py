@@ -7,16 +7,26 @@ import sys
 import threading
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+from functools import wraps
 
 SIZE_T_MAX = 2**64 - 1
 MAX_LENGTH = 1114112
 MAX_COUNT = 8
 MAX_LOGICAL = 8912896
 MAX_REQUESTED = 9437176
-_REGISTRY_LOCK = threading.RLock()
-_LIVE_MEMORY_CONTEXTS = {}
-_QUARANTINED_MEMORY_CONTEXTS = {}
-_KERNEL_POISONED = False
+if "_REGISTRY_LOCK" not in globals():
+    _REGISTRY_LOCK = threading.RLock()
+    _NATIVE_BOUNDARY_LOCK = threading.RLock()
+    _LIVE_MEMORY_CONTEXTS = {}
+    _QUARANTINED_MEMORY_CONTEXTS = {}
+    _LIVE_IDENTITY_SESSIONS = {}
+    _QUARANTINED_IDENTITY_SESSIONS = {}
+    _CLOSED_IDENTITY_SESSIONS = {}
+    _BOUNDARY_LEASES = {}
+    _IDENTITY_WORKSPACE_PINS = {}
+    _IDENTITY_CAPABILITIES = {}
+    _IDENTITY_BOOTSTRAP_CONSUMED = False
+    _KERNEL_POISONED = False
 _OPERATIONS = {"allocate", "info", "copy_in", "copy_out", "close", "context_close"}
 _CODE_OPERATIONS = {
     "PLATFORM_UNSUPPORTED": {"context"},
@@ -133,6 +143,178 @@ class _MemoryContext:
         raise TypeError("CAPABILITY_INVALID")
 
 
+class _KernelBoundaryLease(_MemoryContext):
+    __slots__ = ()
+
+
+@contextmanager
+def _kernel_domain():
+    with _NATIVE_BOUNDARY_LOCK:
+        with _REGISTRY_LOCK:
+            if _KERNEL_POISONED:
+                _fail("OWNER_RETIRE_REQUIRED", "allocate")
+            lease = object.__new__(_KernelBoundaryLease)
+            _BOUNDARY_LEASES[lease] = (
+                os.getpid(),
+                threading.current_thread(),
+                threading.get_native_id(),
+            )
+        try:
+            yield lease
+        finally:
+            with _REGISTRY_LOCK:
+                _BOUNDARY_LEASES.pop(lease, None)
+
+
+def _kernel_identity_bootstrap_claim():
+    global _IDENTITY_BOOTSTRAP_CONSUMED
+    with _NATIVE_BOUNDARY_LOCK, _REGISTRY_LOCK:
+        if _IDENTITY_BOOTSTRAP_CONSUMED or _KERNEL_POISONED:
+            _fail("OWNER_RETIRE_REQUIRED", "allocate")
+        _IDENTITY_BOOTSTRAP_CONSUMED = True
+
+
+def _boundary_method(function):
+    @wraps(function)
+    def guarded(*args, **kwargs):
+        with _NATIVE_BOUNDARY_LOCK:
+            return function(*args, **kwargs)
+
+    return guarded
+
+
+def _registered_native_session(session):
+    identity = importlib.import_module(".storage_journal_windows_identity", __package__)
+    if type(session) is not identity._IdentitySession:
+        _fail("CAPABILITY_INVALID", "allocate")
+    with _REGISTRY_LOCK:
+        record = (
+            _LIVE_IDENTITY_SESSIONS.get(session)
+            or _QUARANTINED_IDENTITY_SESSIONS.get(session)
+            or _CLOSED_IDENTITY_SESSIONS.get(session)
+        )
+        expected = getattr(identity, "_IdentitySessionRecord", None)
+        if (
+            record is None
+            or type(record) is not expected
+            or record.capability is not session
+            or record.source != "native_windows_x64"
+            or type(record.pid) is not int
+            or record.pid != os.getpid()
+        ):
+            _fail("CAPABILITY_INVALID", "allocate")
+        return record
+
+
+def _kernel_domain_poison_identity(session):
+    global _KERNEL_POISONED
+    record = _registered_native_session(session)
+    with _REGISTRY_LOCK:
+        record.state = "unknown"
+        _KERNEL_POISONED = True
+        _QUARANTINED_IDENTITY_SESSIONS[session] = record
+
+
+class _IdentityWorkspacePin(_MemoryContext):
+    __slots__ = ()
+
+
+def _workspace_metadata_matches(record):
+    metadata = tuple(
+        getattr(record, field, None)
+        for field in (
+            "workspace_sdk_length",
+            "workspace_k1_length",
+            "workspace_alignment",
+            "workspace_requested",
+            "workspace_tail",
+        )
+    )
+    return all(type(value) is int for value in metadata) and metadata == (
+        131328,
+        131584,
+        512,
+        132095,
+        256,
+    )
+
+
+def _pin_identity_workspace(session, arena):
+    record = _registered_native_session(session)
+    with _REGISTRY_LOCK:
+        leases = tuple(
+            lease
+            for lease, owner in _BOUNDARY_LEASES.items()
+            if owner
+            == (os.getpid(), threading.current_thread(), threading.get_native_id())
+        )
+        if not leases or _KERNEL_POISONED or record.state not in {"building", "live"}:
+            _fail("CAPABILITY_INVALID", "allocate")
+    if not _workspace_metadata_matches(record) or record.workspace_arena is not arena:
+        _fail("CAPABILITY_INVALID", "allocate")
+    with _pinned(record.workspace_context, "allocate") as context:
+        allocation = _owned_arena(context, arena, "allocate")
+        _live(context, "allocate")
+        if (
+            context.provenance != "native_windows_x64"
+            or allocation.state != "live"
+            or (allocation.length, allocation.alignment, allocation.requested)
+            != (131584, 512, 132095)
+        ):
+            _fail("CAPABILITY_INVALID", "allocate")
+        pin = object.__new__(_IdentityWorkspacePin)
+        with _REGISTRY_LOCK:
+            _IDENTITY_WORKSPACE_PINS[pin] = (
+                pin,
+                session,
+                arena,
+                context,
+                allocation,
+                leases[-1],
+                threading.current_thread(),
+                threading.get_native_id(),
+                os.getpid(),
+            )
+        return pin
+
+
+def _identity_workspace_address(pin):
+    if type(pin) is not _IdentityWorkspacePin:
+        _fail("CAPABILITY_INVALID", "allocate")
+    with _REGISTRY_LOCK:
+        row = _IDENTITY_WORKSPACE_PINS.get(pin)
+        if (
+            row is None
+            or row[0] is not pin
+            or row[5] not in _BOUNDARY_LEASES
+            or row[6] is not threading.current_thread()
+            or row[7] != threading.get_native_id()
+            or row[8] != os.getpid()
+            or _KERNEL_POISONED
+        ):
+            _fail("CAPABILITY_INVALID", "allocate")
+        address = row[4].address
+    record = _registered_native_session(row[1])
+    if (
+        record.state not in {"building", "live"}
+        or row[4].state != "live"
+        or not _workspace_metadata_matches(record)
+        or record.workspace_arena is not row[2]
+        or record.workspace_context is not row[3].context
+        or row[3].provenance != "native_windows_x64"
+        or row[3].pid != os.getpid()
+        or (row[4].length, row[4].alignment, row[4].requested) != (131584, 512, 132095)
+        or row[3].charge != (1, 131584, 132095)
+    ):
+        _fail("CAPABILITY_INVALID", "allocate")
+    return address
+
+
+def _retire_identity_workspace_pin(pin):
+    with _REGISTRY_LOCK:
+        _IDENTITY_WORKSPACE_PINS.pop(pin, None)
+
+
 class AlignedArena:
     __slots__ = ()
 
@@ -200,16 +382,17 @@ def _poison(record, call, error=None):
 
 @contextmanager
 def _pinned(context, operation):
-    if type(context) is not _MemoryContext:
-        _fail("CAPABILITY_INVALID", operation)
-    with _REGISTRY_LOCK:
-        record = _LIVE_MEMORY_CONTEXTS.get(context)
-    if record is None or record.context is not context:
-        _fail("CAPABILITY_INVALID", operation)
-    with record.lock:
-        if record.pid != os.getpid():
-            _fail("OWNER_MISMATCH", operation)
-        yield record
+    with _NATIVE_BOUNDARY_LOCK:
+        if type(context) is not _MemoryContext:
+            _fail("CAPABILITY_INVALID", operation)
+        with _REGISTRY_LOCK:
+            record = _LIVE_MEMORY_CONTEXTS.get(context)
+        if record is None or record.context is not context:
+            _fail("CAPABILITY_INVALID", operation)
+        with record.lock:
+            if record.pid != os.getpid():
+                _fail("OWNER_MISMATCH", operation)
+            yield record
 
 
 def _live(record, operation):
@@ -246,6 +429,7 @@ def _uint32(value):
     return value is None or (type(value) is int and 0 <= value <= 2**32 - 1)
 
 
+@_boundary_method
 def _new_memory_context():
     if not (
         os.name == "nt"
@@ -267,6 +451,7 @@ def _new_memory_context():
     return _assemble_memory_context(ops, provenance="native_windows_x64")
 
 
+@_boundary_method
 def _assemble_memory_context(ops, *, provenance):
     if (
         type(ops) is not _MemoryOps

@@ -209,3 +209,142 @@ def _bind_function(dll, name, args, result):
         return function
     except Exception:  # noqa: BLE001 - diagnostico cerrado sin chaining
         raise RuntimeError("ABI_UNACCREDITED") from None
+
+
+def _build_identity_abi(c):
+    pointer, uint, sint = c.c_void_p, c.c_uint32, c.c_int32
+
+    class LUID(c.Structure):
+        _fields_: ClassVar[list] = [("LowPart", uint), ("HighPart", sint)]
+
+    class TOKEN_USER(c.Structure):
+        _fields_: ClassVar[list] = [("Sid", pointer), ("Attributes", uint)]
+
+    class TOKEN_PRIMARY_GROUP(c.Structure):
+        _fields_: ClassVar[list] = [("PrimaryGroup", pointer)]
+
+    class TOKEN_STATISTICS(c.Structure):
+        _fields_: ClassVar[list] = [
+            ("TokenId", LUID),
+            ("AuthenticationId", LUID),
+            ("ExpirationTime", c.c_int64),
+            ("TokenType", sint),
+            ("ImpersonationLevel", sint),
+            ("DynamicCharged", uint),
+            ("DynamicAvailable", uint),
+            ("GroupCount", uint),
+            ("PrivilegeCount", uint),
+            ("ModifiedId", LUID),
+        ]
+
+    abi = {
+        "HANDLE": pointer,
+        "PVOID": pointer,
+        "DWORD": uint,
+        "BOOL": sint,
+        "TOKEN_TYPE": sint,
+        "LUID": LUID,
+        "TOKEN_USER": TOKEN_USER,
+        "SID_AND_ATTRIBUTES": TOKEN_USER,
+        "TOKEN_PRIMARY_GROUP": TOKEN_PRIMARY_GROUP,
+        "TOKEN_STATISTICS": TOKEN_STATISTICS,
+    }
+    layouts = {
+        "LUID": (8, 4, {"LowPart": 0, "HighPart": 4}),
+        "TOKEN_USER": (16, 8, {"Sid": 0, "Attributes": 8}),
+        "TOKEN_PRIMARY_GROUP": (8, 8, {"PrimaryGroup": 0}),
+        "TOKEN_STATISTICS": (
+            56,
+            8,
+            {
+                "TokenId": 0,
+                "AuthenticationId": 8,
+                "ExpirationTime": 16,
+                "TokenType": 24,
+                "ImpersonationLevel": 28,
+                "DynamicCharged": 32,
+                "DynamicAvailable": 36,
+                "GroupCount": 40,
+                "PrivilegeCount": 44,
+                "ModifiedId": 48,
+            },
+        ),
+    }
+    if (
+        c.sizeof(pointer) != 8
+        or c.sizeof(uint) != 4
+        or c.sizeof(sint) != 4
+        or any(
+            c.sizeof(abi[n]) != size
+            or c.alignment(abi[n]) != align
+            or any(getattr(abi[n], f).offset != offset for f, offset in fields.items())
+            for n, (size, align, fields) in layouts.items()
+        )
+    ):
+        raise RuntimeError("ABI_UNACCREDITED") from None
+    return abi
+
+
+def _new_native_identity_backend():
+    if not (
+        os.name == "nt"
+        and sys.platform == "win32"
+        and sys.maxsize == 2**63 - 1
+        and platform.machine().casefold() in {"amd64", "x86_64"}
+    ):
+        raise RuntimeError("PLATFORM_UNSUPPORTED") from None
+    import ctypes as c
+
+    from . import storage_journal_windows_identity as identity
+
+    try:
+        abi = _build_identity_abi(c)
+        kernel = c.WinDLL("kernel32", use_last_error=True)
+        advapi = c.WinDLL("advapi32", use_last_error=True)
+        handle, uint, sint = abi["HANDLE"], abi["DWORD"], abi["BOOL"]
+        signatures = {
+            "GetCurrentProcess": (kernel, (), handle),
+            "GetCurrentThread": (kernel, (), handle),
+            "OpenThreadToken": (advapi, (handle, uint, sint, c.POINTER(handle)), sint),
+            "OpenProcessToken": (advapi, (handle, uint, c.POINTER(handle)), sint),
+            "GetTokenInformation": (
+                advapi,
+                (handle, sint, handle, uint, c.POINTER(uint)),
+                sint,
+            ),
+            "CloseHandle": (kernel, (handle,), sint),
+        }
+        bindings = {
+            name: _bind_function(dll, name, args, restype)
+            for name, (dll, args, restype) in signatures.items()
+        }
+    except Exception:  # noqa: BLE001 - ninguna query antes de binding cerrado
+        raise RuntimeError("ABI_UNACCREDITED") from None
+
+    def execute(call):
+        _, frame, step, address = identity._validate_native_call(call, ops)
+        function = bindings[step.function]
+        if step.function in {"GetCurrentProcess", "GetCurrentThread"}:
+            return identity._ContextPseudoResult(function())
+        if step.function == "OpenThreadToken":
+            output = handle.from_address(address + step.offset)
+            raw = function(frame.current_pseudo, 8, 1, c.byref(output))
+        elif step.function == "OpenProcessToken":
+            output = handle.from_address(address + step.offset)
+            raw = function(frame.current_pseudo, 8, c.byref(output))
+        elif step.function == "GetTokenInformation":
+            length = uint.from_address(address + step.return_offset)
+            raw = function(
+                step.token,
+                step.info_class,
+                None if step.sizing else address + step.offset,
+                step.capacity,
+                c.byref(length),
+            )
+        else:
+            raw = function(step.token)
+        error = c.get_last_error() if not raw else None
+        return identity._TokenBoolResult(bool(raw), error)
+
+    ops = identity._IdentityOps(execute)
+    return ops
