@@ -37,6 +37,7 @@ Formato: `ADR-XXXX-slug.md` con **Estado** (propuesta · aceptada · sustituida 
 | [0031](ADR-0031-transcripcion-segmentada-con-tiempos-globales.md) | Transcripción hasta600s en fragmentos≤180s, reconocimientos correspondientes y offsets globales; residencia secuencial y límite independiente explícito hastaM3 | aceptada |
 | [0032](ADR-0032-condicionamiento-dit-segun-rama-nativa.md) | Planificación de ambas ramas DiT y validación exacta de la resolución nativa con códigos LM; contenido y guardas íntegros | aceptada |
 | [0033](ADR-0033-perfiles-y-medicion-directa-del-benchmark.md) | Benchmark del engine mediante /v1: perfiles base/XL, INT8 efectivo, inferencia directa y observación WDDM; copia interior efímera y referencias comparables | aceptada; implementación pendiente |
+| [0088](ADR-0088-salidas-externas-y-custodia-del-recolector-python.md) | Salidas externas desde creación y custodia propia del recolector Python | aceptada; O1 ratificada por ROOT tras revisión documental y QA84/84; implementación runtime pendiente |
 
 | [0034](ADR-0034-capacidades-nativas-y-accesibles-por-v1.md) | Matriz de capacidades con /v1 y laboratorio nativo seguro separados; verified sólo desde evidencia accesible del producto | aceptada; medición pendiente |
 
@@ -135,7 +136,3 @@ Formato: `ADR-XXXX-slug.md` con **Estado** (propuesta · aceptada · sustituida 
 
 
 Las decisiones D-01…D-30 de [`../archive/…/spec.md`](../archive/roadmap-2026-07-27/2026-07-27-plataforma-musical-ia/spec.md) §2 **no están vigentes** salvo las recogidas explícitamente en un ADR de esta tabla («Hereda D-xx»).
-
-
-
-
