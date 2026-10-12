@@ -27,6 +27,11 @@ if "_REGISTRY_LOCK" not in globals():
     _IDENTITY_CAPABILITIES = {}
     _IDENTITY_BOOTSTRAP_CONSUMED = False
     _KERNEL_POISONED = False
+    _LIVE_ACQUISITION_OWNERS = {}
+    _QUARANTINED_ACQUISITION_OWNERS = {}
+    _CLOSED_ACQUISITION_OWNERS = {}
+    _ACQUISITION_OWNERS_EMITTED = 0
+    _ACQUISITION_CAPABILITY_CLASS = None
 _OPERATIONS = {"allocate", "info", "copy_in", "copy_out", "close", "context_close"}
 _CODE_OPERATIONS = {
     "PLATFORM_UNSUPPORTED": {"context"},
