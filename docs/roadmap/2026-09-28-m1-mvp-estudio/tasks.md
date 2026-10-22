@@ -39,8 +39,8 @@ verificacion: obligatoria
 | Fase 2 — Cola y post-proceso | 0 | 3 | 0% | 0 |
 | Fase 3 — API | 0 | 1 | 0% | 0 |
 | Fase 4 — Web | 0 | 7 | 0% | 1 (T-14) |
-| Fase 5 — Pruebas y cierre | 0 | 3 | 0% | 0 |
-| **TOTAL** | **0** | **18** | **0%** | **2** |
+| Fase 5 — Pruebas y cierre | 1 | 3 | 33% | 0 |
+| **TOTAL** | **1** | **18** | **6%** | **2** |
 
 **Orden recomendado:**
 
@@ -429,7 +429,7 @@ verificacion: obligatoria
   - directorios `_server_inputs/<hex>` de engine.
 
   Además, el reintento de ADR-0090 abandona `tmp/<attempt>`, y `CancelSweeper` reintenta para siempre los fallos permanentes de borrado.
-- **Estado**: en-progreso
+- **Estado**: completado
 - **Tipo**: backend
 - **Dependencias**: T-04, T-05
 - **Archivos**: `apps/server/app/worker/execution.py`, `apps/server/app/queue/cleanup.py`, `apps/server/app/queue/runtime.py`, `apps/server/app/queue/events.py`, `apps/server/app/queue/inputs.py`, `apps/server/tests/test_tmp_cleanup_t17.py` (nuevo), `apps/server/tests/test_queue_cancel_cleanup.py`
@@ -441,15 +441,15 @@ verificacion: obligatoria
     - `verify_manifest.py` → `all valid`.
 
 **Criterios de aceptación**
-- [ ] CA-1 (H5): cuando un job llega a un estado terminal (`succeeded`, `failed` o `cancelled`), el server borra lo que ese job dejó en `data/tmp` y ya no necesita ningún job vivo (dependiente, hermano, reintento manual o automático pendiente). Cubre:
+- [x] CA-1 (H5): cuando un job llega a un estado terminal (`succeeded`, `failed` o `cancelled`), el server borra lo que ese job dejó en `data/tmp` y ya no necesita ningún job vivo (dependiente, hermano, reintento manual o automático pendiente). Cubre:
   - `tmp/<attempt>` de los jobs de engine (generación y `audio.beats`) y de **todos** sus attempts;
   - `_server_inputs/<exec>` y `_server_cpu/<exec>` de los posts;
   - los `_server_inputs/<hex>` que crea `queue/inputs.py`.
 
   Un `failed` que todavía puede reintentarse conserva lo que necesita el reintento.
-- [ ] CA-2 (B5): el `tmp/<attempt>` de un intento abandonado por el reintento acotado (ADR-0090) se borra como parte de CA-1.
-- [ ] CA-3 (N7): los fallos **permanentes** de borrado (destino symlink o junction, no-directorio, fuera de `data/`) se registran **una vez** (`worker.cleanup.failed`) y salen de `deferred`. Solo se reintentan los transitorios (`OSError` de `rmtree`), con un tope de intentos.
-- [ ] CA-4: las reglas de borrado seguro de T-05 siguen intactas (no seguir enlaces, quedarse dentro de `data/`, errores como evento) y no se borra nada que use un job vivo. Hay tests de regresión: post vivo, `audio.beats` pendiente y reintento manual posible.
+- [x] CA-2 (B5): el `tmp/<attempt>` de un intento abandonado por el reintento acotado (ADR-0090) se borra como parte de CA-1.
+- [x] CA-3 (N7): los fallos **permanentes** de borrado (destino symlink o junction, no-directorio, fuera de `data/`) se registran **una vez** (`worker.cleanup.failed`) y salen de `deferred`. Solo se reintentan los transitorios (`OSError` de `rmtree`), con un tope de intentos.
+- [x] CA-4: las reglas de borrado seguro de T-05 siguen intactas (no seguir enlaces, quedarse dentro de `data/`, errores como evento) y no se borra nada que use un job vivo. Hay tests de regresión: post vivo, `audio.beats` pendiente y reintento manual posible.
 - **Implementación** (2026-10-22, 2,95 h IA medidas). Commit `face3d2`:
   - `TerminalSweeper` generaliza el barrido incremental de cancelados a todos los terminales.
   - `remove_data_dir` distingue `True`, `False`, `None` (transitorio, tope de 5) y `PERMANENT` (se registra una vez).
@@ -490,6 +490,12 @@ verificacion: obligatoria
   - **Docker** (orquestador):
     - 2 secuencias de canción normal y SIGKILL con reanudación dan 4 takes `ready`, **0 ficheros en `data/tmp`** y `all valid (4 manifests)`.
     - Linux real: 99 passed, 2 skipped.
+- **QA** (2026-10-22, orquestador, modo sin UI):
+  - `ledger-lint`: 0 incoherencias.
+  - `coverage-check`: exit 0.
+  - T-17 no tiene E2E en `test-plan.md`: es una tarea interna sin interfaz. Su evidencia es la verificación en Docker de arriba (0 ficheros en `data/tmp` tras 2 secuencias de canción normal y SIGKILL con reanudación; manifiestos válidos) y la suite.
+  - Se cierra como `completado`.
+  - Deuda: el Minor 1 del intento 3 y el gap 5 del intento 2 (consulta lineal sin índice).
 - **Changelog**: El estudio ya no acumula copias de audio ni ficheros temporales en `data/tmp` tras cada canción.
 
 ## Revisión de dos lentes — intento 1: Fase 2 (T-05) — dos Important pendientes
@@ -685,3 +691,16 @@ Lentes A, B y D sobre el fix1 (`19cffeb..dc733e0`).
 | 3 | Minor | `sweep_cancelled` (la vía de la cancelación CPU) vuelve a registrar los fallos permanentes en cada cancelación | T-17 | corregido (`5ec56c5`) | `execution.py:1486`, `cleanup.py:232-236` |
 | 4 | Minor | `sweep_cancelled` mete todos los cancelados en un `IN (...)`; por encima de 32.766 falla con `too many SQL variables` y se salta `_remove_stages` | T-17 | corregido (`5ec56c5`) | `cleanup.py:135-136,151,167`; `execution.py:1485-1490` |
 | 5 | Minor (D) | La consulta de ids crece de forma lineal con el histórico, sin índice sobre `status`: 15 ms con 10⁴ y unos 150 ms extrapolados con 10⁵ | T-17 | deuda aceptada: sin migración no es barato (un terminal puede tener un id antiguo); unos 20 ms por pasada con 10⁴ | `cleanup.py:97-100` |
+
+## Revisión de dos lentes — intento 3: Fase 5 (T-17) — sin gaps Critical/Important
+
+Lentes A, B y D sobre el fix2 (`7ba155e..9c147e3`).
+
+- Gaps del intento 2: 1 ✓ · 2 ✓ · 3 ✓ · 4 ✓.
+- **`_will_retry` frente a `Retry.eligible`/`reserve`:** no hay ningún caso que borre las entradas de un job que el reintento automático sí va a reservar. `not_before` futuro es conservador; VRAM en bf16 se conserva; VRAM ya en offload no se reintenta nunca.
+- `_REPORTED` no oculta fallos nuevos, porque las rutas de `tmp/` no se reutilizan.
+- Tests: 148 passed (t17, cancel_cleanup, dispatcher_retry).
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| 1 | Minor | Algunos jobs nunca se reintentarán y aun así quedan aparcados para siempre: VRAM en bf16 sin modo `offload` en el catálogo, engine o modelo retirado del catálogo, o `not_before` ilegible. Su `tmp/` no se limpia nunca. El coste está acotado (≤200 por pasada, sin bucle caliente). Es una decisión explícita y conservadora (docstring `cleanup.py:152-154`) | T-17 | deuda aceptada | `cleanup.py:146-155,243-245` |
