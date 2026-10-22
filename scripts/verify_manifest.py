@@ -3,36 +3,59 @@
 import argparse
 import json
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from audio_post import verify_manifest
 
 
-def data_relative(payload):
+def _output_paths(payload):
     outputs = payload.get("outputs") if isinstance(payload, dict) else None
-    return isinstance(outputs, list) and any(
-        isinstance(o, dict) and str(o.get("path", "")).startswith("data/")
-        for o in outputs
-    )
+    if not isinstance(outputs, list):
+        return []
+    return [o["path"] for o in outputs if isinstance(o, dict) and "path" in o]
 
 
 def base_for(path, payload, data_dir):
-    """Base y contexto privado; `data_dir` es el directorio de datos en sí (el que el server monta)."""
-    if not data_relative(payload):
+    """Base, contexto privado y vista a verificar.
+
+    Con salidas `data/<rel>` la raíz de datos se deriva del propio manifiesto: la
+    carpeta del manifiesto debe ser exactamente `<datos>/dirname(<rel>)`. Nunca se
+    buscan ancestros `data/` ni se valida contra ficheros ajenos al manifiesto.
+    """
+    paths = _output_paths(payload)
+    flagged = [isinstance(v, str) and v.startswith("data/") for v in paths]
+    if not any(flagged):
         return path.parent, None, payload
-    if data_dir is not None:
-        # Vista privada como la del server: sin prefijo `data/`; el manifiesto en disco no se toca.
-        outputs = [
-            {**o, "path": o["path"][len("data/") :]}
-            if isinstance(o, dict) and str(o.get("path", "")).startswith("data/")
-            else o
-            for o in payload["outputs"]
-        ]
-        return Path(data_dir), Path(data_dir), {**payload, "outputs": outputs}
-    root = next((p for p in path.absolute().parents if (p / "data").is_dir()), None)
-    if root is None:
-        return path.parent, None, payload
-    return root, root / "data", payload
+    if not all(flagged):
+        raise ValueError(
+            "OUTPUT_MIXED_PATHS: salidas data/ y relativas en un manifiesto"
+        )
+    parents = {PurePosixPath(v[len("data/") :]).parent for v in paths}
+    if len(parents) != 1:
+        raise ValueError("OUTPUT_OUTSIDE_TAKE: salidas en carpetas distintas")
+    parent = parents.pop()
+    folder = path.absolute().parent
+    if ".." in parent.parts or folder.parts[
+        len(folder.parts) - len(parent.parts) :
+    ] != (parent.parts):
+        raise ValueError(
+            "OUTPUT_OUTSIDE_TAKE: las salidas no están en la carpeta del manifiesto"
+        )
+    derived = folder
+    for _ in parent.parts:
+        derived = derived.parent
+    if data_dir is not None and Path(data_dir).resolve() != derived.resolve():
+        raise ValueError(
+            "OUTPUT_OUTSIDE_TAKE: --data-dir no contiene la carpeta del manifiesto"
+        )
+    # Vista privada como la del server: nombres base junto al manifiesto.
+    view = {
+        **payload,
+        "outputs": [
+            {**o, "path": PurePosixPath(o["path"]).name} for o in payload["outputs"]
+        ],
+    }
+    return folder, derived, view
 
 
 def main(argv=None):
@@ -41,8 +64,7 @@ def main(argv=None):
     parser.add_argument(
         "--data-dir",
         type=Path,
-        help="directorio de datos en sí (el que el server monta como /data); "
-        "para manifiestos con rutas data/... cuando no cuelga de un directorio data/",
+        help="directorio de datos en sí (el que el server monta como /data); opcional: se deriva del manifiesto y, si se da, debe coincidir",
     )
     args = parser.parse_args(argv)
     directory = args.path.is_dir()

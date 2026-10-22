@@ -303,7 +303,7 @@ def test_cli_data_dir_is_the_data_directory_itself(tmp_path, manifest, capsys):
     manifest["outputs"][0]["path"] = "data/songs/S/takes/T/fixture.txt"
     (take / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
     module = _cli()
-    assert module.main([str(data_dir / "songs")]) == 1  # sin autodetección posible
+    assert module.main([str(data_dir / "songs")]) == 0  # raíz derivada del manifiesto
     capsys.readouterr()
     assert module.main([str(data_dir / "songs"), "--data-dir", str(data_dir)]) == 0
     assert "all valid" in capsys.readouterr().out
@@ -311,3 +311,100 @@ def test_cli_data_dir_is_the_data_directory_itself(tmp_path, manifest, capsys):
     (take / "fixture.txt").write_bytes(b"tampered")
     assert module.main([str(take / "manifest.json"), "--data-dir", str(data_dir)]) == 1
     assert "HASH_MISMATCH" in capsys.readouterr().err
+
+
+def _put(take_dir, payload, rel, base):
+    take_dir.mkdir(parents=True, exist_ok=True)
+    (take_dir / "fixture.txt").write_bytes(payload)
+    value = json.loads(json.dumps(base))
+    value["outputs"][0]["path"] = rel
+    (take_dir / "manifest.json").write_text(json.dumps(value), encoding="utf-8")
+    return value
+
+
+GOOD = b"music-studio fixture" + bytes([10])
+TAKE_REL = "data/songs/S/takes/T/fixture.txt"
+
+
+def test_cli_s1_corrupted_copy_is_not_validated_against_another_data(
+    tmp_path, manifest
+):
+    live = tmp_path / "root" / "data" / "songs" / "S" / "takes" / "T"
+    snap = tmp_path / "root" / "snapshot" / "songs" / "S" / "takes" / "T"
+    _put(live, GOOD, TAKE_REL, manifest)
+    _put(snap, b"CORRUPTED", TAKE_REL, manifest)
+    module = _cli()
+    assert module.main([str(live / "manifest.json")]) == 0
+    assert module.main([str(snap / "manifest.json")]) == 1  # snapshot/ != data/
+
+
+def test_cli_derives_data_root_from_manifest_without_option(tmp_path, manifest):
+    module = _cli()
+    for name in ("x/data", "e2e-data"):
+        take = tmp_path / name / "songs" / "S" / "takes" / "T"
+        _put(take, GOOD, TAKE_REL, manifest)
+        assert module.main([str(take / "manifest.json")]) == 0
+        assert (
+            module.main(
+                [str(take / "manifest.json"), "--data-dir", str(tmp_path / name)]
+            )
+            == 0
+        )
+        (take / "fixture.txt").write_bytes(b"tampered")
+        assert module.main([str(take / "manifest.json")]) == 1
+
+
+def test_cli_data_dir_must_contain_the_manifest_folder(tmp_path, manifest, capsys):
+    dd = tmp_path / "dd"
+    take = dd / "songs" / "S" / "takes" / "T"
+    _put(take, GOOD, TAKE_REL, manifest)
+    module = _cli()
+    assert (
+        module.main([str(take / "manifest.json"), "--data-dir", str(tmp_path / "otro")])
+        == 1
+    )
+    assert "OUTPUT_OUTSIDE_TAKE" in capsys.readouterr().err
+
+
+def test_cli_rejects_mixed_data_and_relative_outputs(tmp_path, manifest, capsys):
+    dd = tmp_path / "dd"
+    take = dd / "songs" / "S" / "takes" / "T"
+    value = _put(take, GOOD, TAKE_REL, manifest)
+    second = dict(value["outputs"][0])
+    second["path"] = "fixture.txt"
+    value["outputs"].append(second)
+    (take / "manifest.json").write_text(json.dumps(value), encoding="utf-8")
+    module = _cli()
+    for extra in ([], ["--data-dir", str(dd)]):
+        assert module.main([str(take / "manifest.json"), *extra]) == 1  # S2
+    (dd / "fixture.txt").write_bytes(GOOD)
+    assert module.main([str(take / "manifest.json"), "--data-dir", str(dd)]) == 1  # S2b
+    assert "OUTPUT_MIXED_PATHS" in capsys.readouterr().err
+
+
+def test_cli_rejects_manifest_pointing_to_another_take(tmp_path, manifest, capsys):
+    dd = tmp_path / "dd"
+    _put(dd / "songs" / "S" / "takes" / "T", GOOD, TAKE_REL, manifest)
+    other = dd / "songs" / "S" / "takes" / "T1"
+    other.mkdir(parents=True)
+    (other / "manifest.json").write_text(
+        json.dumps(
+            {
+                **manifest,
+                "outputs": [{**manifest["outputs"][0], "path": TAKE_REL}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    module = _cli()
+    assert module.main([str(other / "manifest.json"), "--data-dir", str(dd)]) == 1  # S3
+    assert "OUTPUT_OUTSIDE_TAKE" in capsys.readouterr().err
+
+
+def test_cli_m0_relative_manifests_unchanged(tmp_path, manifest):
+    run = tmp_path / "m0" / "run"
+    _put(run, GOOD, "fixture.txt", manifest)
+    module = _cli()
+    assert module.main([str(run / "manifest.json")]) == 0  # S4
+    (run / "fixture.txt").write_bytes(b"x")
+    assert module.main([str(run / "manifest.json")]) == 1  # S4b
