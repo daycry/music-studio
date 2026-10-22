@@ -176,9 +176,8 @@ def _will_retry(job, rows):
     )
     if last is None:
         return False
-    if last.code == "VRAM_EXCEEDED" and any(r.mode == "offload" for r in rows):
-        return False
-    return True
+    # VRAM_EXCEEDED ya en offload: Retry.reserve no volverá a reservarlo.
+    return not (last.code == "VRAM_EXCEEDED" and any(r.mode == "offload" for r in rows))
 
 
 def terminal_targets(session, owner_id, ids=None, statuses=TERMINAL, report=None):
