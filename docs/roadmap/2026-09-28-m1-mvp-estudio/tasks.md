@@ -90,11 +90,29 @@ verificacion: obligatoria
 - **Verificación**: `uv run pytest apps/server/tests -k "queue or dispatcher or retry or recovery or cancel" -m "not gpu"` en verde.
 
 ### T-05 — Post-proceso y publicación sencilla de takes
-- **Descripción**: **Rediseño (ADR-0089 §2).** Post-proceso con `audio-post`, publicación en `data/songs/<song>/<take_ulid>/` mediante staging y `os.rename` normal (sin `renameat2`, sin VHDX y sin custodia Windows), la fila SQLite como autoridad y limpieza de huérfanos al arrancar. Hay que decidir qué se queda de `apps/server/app/worker/custody_*`, `pipe_protocol` y `packages/storage-guard`, y simplificarlo.
+- **Descripción**: **Rediseño (ADR-0089 §2).** Hoy la publicación final (`publications.py::rename_noreplace`) exige `renameat2(RENAME_NOREPLACE)`, que devuelve `EINVAL` sobre el bind 9p de Docker Desktop, y por eso ningún take llega a `ready` en el despliegue real. Se sustituye por una publicación sencilla:
+  - el destino `data/songs/<song>/takes/<take_ulid>` es único por construcción;
+  - se usa `renameat2` si el filesystem lo soporta y, si devuelve `EINVAL`/`ENOSYS`, comprobación de ausencia más `os.rename`;
+  - la fila SQLite sigue siendo la autoridad;
+  - al arrancar se limpian los staging huérfanos.
+
+  Fuera de alcance: simplificar la custodia de procesos (`custody_*`, `pipe_protocol`), que funciona y no bloquea. `packages/storage-guard` se mantiene opcional (solo con `STUDIO_STORAGE_UUID`).
 - **Estado**: en-progreso
+- **Tipo**: backend
 - **Dependencias**: T-04
-- **Archivos**: `apps/server/app/worker/`, `apps/server/app/publication.py`, `packages/audio-post`
-- **Verificación**: con `docker compose --profile studio up -d web server engine-mock`, un `POST` de generación produce un take `ready` en `data/songs/` sobre el bind de Windows · `uv run scripts/verify_manifest.py data/songs/` en verde · reinicio a mitad → sin huérfanos.
+- **Archivos**: `apps/server/app/worker/publications.py`, `apps/server/app/worker/execution.py`, `apps/server/tests/test_worker_*.py`, `pyproject.toml` (marcador de pytest)
+- **Verificación**:
+  - Windows: `uv run pytest apps/server/tests -m "not gpu"` → **0 failed, 0 errors** (los tests Linux-only aparecen como `skipped` con motivo).
+  - Docker: `docker compose run --rm server uv run pytest apps/server/tests -m "not gpu" -k "worker or publication"` en verde, incluidos los tests nativos Linux.
+  - Punta a punta: `scripts/e2e_stack.py up` y una generación con `engine-mock` deja el take `ready` en `data/songs/` sobre el bind de Windows · `uv run scripts/verify_manifest.py data/songs/` en verde · `scripts/e2e_stack.py restart-server` a mitad del post-proceso no deja `.pending-*` huérfanos.
+
+**Criterios de aceptación**
+- [ ] CA-1: la publicación funciona donde `renameat2(NOREPLACE)` devuelve `EINVAL`/`ENOSYS`, con un fallback de comprobación de ausencia más `rename`. Un test simula `EINVAL` y comprueba que el take se publica.
+- [ ] CA-2: se mantiene el no-clobber. Un destino ajeno existente (fichero, directorio o directorio vacío) se rechaza sin tocarlo, con y sin fallback, y el cross-device se rechaza antes del rename (los tests `test_native_noreplace_preserves_foreign_destination*` y `test_native_publication_rejects_cross_device_before_rename` pasan, adaptados si hace falta).
+- [ ] CA-3: al arrancar, los directorios `takes/.pending-<execution>/` de ejecuciones no confirmadas se eliminan y el `post.audio` interrumpido puede reintentarse (automático o con el reintento manual existente) hasta dejar el take en `ready`.
+- [ ] CA-4: los tests que exigen Linux real o el arnés de custodia Windows de Codex (`CUSTODY_SOURCE_SHA256`) se marcan con un marcador explícito y se saltan con motivo cuando no aplican, en lugar de fallar o dar error.
+- [ ] CA-5: verificación de punta a punta en Docker con `engine-mock` (bloque **Verificación**).
+- **Changelog**: Los takes se publican de forma fiable sobre la carpeta de datos de Docker Desktop, sin sobrescribir nada ajeno y limpiando restos tras un reinicio.
 
 ### T-06 — SSE de eventos
 - **Descripción**: Etapas reales del job por SSE, con reconexión y estado inicial.

@@ -92,7 +92,7 @@
   "fixture_set_version": 1,
   "postplan_canonical_sha256": "d15eb15db03be986d34a4e6b71a8412f1526f8a07ac4825aa01fcbadfc431b76",
   "purpose": "Compatibilidad contractual CPU; no autoridad, custodia ni audio ejecutado",
-  "recipe_schema_sha256": "05ef38f24f178a9294bcdaaf6a8ef122f37b9270ad22972b9c3f4ffd7f9688dc",
+  "recipe_schema_sha256": "a8b0090587e7611f79badc0fa0ff3e3ce7ab4602690c5fb493125c3170888668",
   "sources": {
     "manifest": "packages/contracts/examples/audio_take.json",
     "postplan": "apps/server/tests/test_worker_contracts.py",
