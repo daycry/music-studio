@@ -260,6 +260,7 @@ def test_real_wav_is_transcoded_and_published_once(actual):
     assert abs(results[0].integrated_lufs + 14) <= 0.5
     assert results[0].true_peak_dbtp <= -1.0
     final = actual.root / f"data/songs/{SONG}/takes/{TAKE}"
+    assert not (final.parent / f".pending-{EXECUTION}").exists()
     before = {path.name: path.read_bytes() for path in final.iterdir()}
     manifest = json.loads(before["manifest.json"])
     assert manifest["kind"] == "audio_take"

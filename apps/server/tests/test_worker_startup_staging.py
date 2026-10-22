@@ -433,3 +433,78 @@ def test_startup_cleanup_events_reach_server_log(tmp_path):
             handler.close()
             logger.removeHandler(handler)
         engine.dispose()
+
+
+# --- fix3/H3: tras publicar no queda `.pending-<exec>` vacío ---
+
+
+def _plan_for(tmp_path):
+    from types import SimpleNamespace
+
+    from test_worker_publication_invariants import SONG
+
+    return SimpleNamespace(song_id=SONG)
+
+
+def test_empty_stage_removed_after_execution(tmp_path):
+    from test_worker_publication_invariants import EXECUTION
+
+    engine, _ = _interrupted_world(tmp_path)
+    stage = _takes_dir(tmp_path) / f".pending-{EXECUTION}"
+    stage.mkdir()
+    try:
+        _service(engine, tmp_path)._remove_empty_stage(_plan_for(tmp_path), EXECUTION)
+        assert not stage.exists()
+    finally:
+        engine.dispose()
+
+
+def test_non_empty_stage_is_left_for_startup_cleanup(tmp_path):
+    from test_worker_publication_invariants import EXECUTION, TAKE
+
+    engine, _ = _interrupted_world(tmp_path)
+    stage = _takes_dir(tmp_path) / f".pending-{EXECUTION}" / TAKE
+    stage.mkdir(parents=True)
+    try:
+        _service(engine, tmp_path)._remove_empty_stage(_plan_for(tmp_path), EXECUTION)
+        assert stage.exists()
+    finally:
+        engine.dispose()
+
+
+def test_empty_stage_junction_is_not_followed(tmp_path):
+    from test_worker_publication_invariants import EXECUTION, SONG
+
+    engine, _ = _interrupted_world(tmp_path)
+    outside = Path(tmp_path) / "outside-empty"
+    outside.mkdir()
+    song = Path(tmp_path) / "data" / "songs" / SONG
+    song.mkdir(parents=True, exist_ok=True)
+    link = song / "takes"
+    _junction(link, outside)
+    (outside / f".pending-{EXECUTION}").mkdir()
+    try:
+        _service(engine, tmp_path)._remove_empty_stage(_plan_for(tmp_path), EXECUTION)
+        assert (outside / f".pending-{EXECUTION}").exists()
+    finally:
+        _unlink_junction(link)
+        engine.dispose()
+
+
+def test_empty_stage_error_is_an_event_not_an_abort(tmp_path, monkeypatch, caplog):
+    from test_worker_publication_invariants import EXECUTION
+
+    engine, _ = _interrupted_world(tmp_path)
+    stage = _takes_dir(tmp_path) / f".pending-{EXECUTION}"
+    stage.mkdir()
+
+    def boom(self):
+        raise OSError("boom")
+
+    monkeypatch.setattr(Path, "rmdir", boom)
+    try:
+        _service(engine, tmp_path)._remove_empty_stage(_plan_for(tmp_path), EXECUTION)
+        assert "worker.cleanup.failed" in caplog.text
+        assert "boom" not in caplog.text
+    finally:
+        engine.dispose()

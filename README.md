@@ -49,6 +49,8 @@ Para reiniciar unicamente el server durante una prueba de recuperacion:
 
 Los datos viven en `data/` (o en `STUDIO_DATA_ROOT`), montado en los contenedores. La publicación de takes es sencilla: directorio por id único, `rename` dentro de `data/` y SQLite como autoridad ([ADR-0089](docs/decisiones/ADR-0089-reencauce-tras-codex.md)). El server es el único proceso que escribe en la base de datos, y los engines devuelven sus salidas en `data/tmp/<job_id>`. Para ACE-Step o el análisis se sustituyen los servicios mock por los engines correspondientes.
 
+**Aviso:** no abras `data/db/studio.sqlite` (ni con Python ni con DB Browser) desde Windows mientras el stack corre. SQLite en modo WAL sobre el bind de Docker Desktop no comparte bloqueos con el host, y al cerrar esa conexión se borran `-wal` y `-shm` en uso, con pérdida de escrituras. Consulta por la API o con `docker compose exec server`.
+
 ## GPU y Ollama
 
 Antes de cargar un engine GPU, comprueba el modelo compartido y libera solo el modelo, sin detener el servicio ni borrar pesos:

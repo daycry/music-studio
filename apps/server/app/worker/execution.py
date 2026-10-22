@@ -228,6 +228,24 @@ class CpuAudioService:
         data = (self.root / "data").resolve()
         return all(p.resolve().is_relative_to(data) for p in paths)
 
+    def _remove_empty_stage(self, plan, execution_id):
+        """Quita ``takes/.pending-<exec>`` ya vacío tras publicar (``rmdir``, nunca rmtree)."""
+        extra = {"song_id": plan.song_id}
+        try:
+            takes_dir = self.root / "data" / "songs" / plan.song_id / "takes"
+            stage = takes_dir / f".pending-{execution_id}"
+            if (
+                self._link(takes_dir)
+                or self._link(stage)
+                or not stage.is_dir()
+                or not self._inside_data(takes_dir, stage)
+            ):
+                return
+            stage.rmdir()
+            self.log.info("worker.staging.removed", extra=extra)
+        except OSError:
+            self.log.error("worker.cleanup.failed", extra=extra)
+
     def _clean_staging(self):
         """Limpieza de arranque (ADR-0089 §2); la fila SQLite manda.
 
@@ -650,6 +668,7 @@ class CpuAudioService:
 
             self.publisher.transaction(complete)
             self._cleanup_raw_outputs(plan)
+            self._remove_empty_stage(plan, execution_id)
             return tuple(results)
         except BaseException as primary:
             owner.cancel()

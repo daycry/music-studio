@@ -258,3 +258,50 @@ def test_preparation_reference_missing_rejected(manifest, tmp_path):
     manifest["preparation"] = {"sha256": "a" * 64}
     with pytest.raises(ValueError, match="PREPARATION_MISSING"):
         verify_manifest(manifest, tmp_path)
+
+
+def _cli():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "verify_manifest_cli_root", ROOT / "scripts/verify_manifest.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _server_style(tmp_path, manifest):
+    """Manifiesto del server: rutas `data/...` relativas a la raíz que contiene data/."""
+    take = tmp_path / "root" / "data" / "songs" / "S" / "takes" / "T"
+    take.mkdir(parents=True)
+    (take / "fixture.txt").write_bytes(b"music-studio fixture\n")
+    manifest["outputs"][0]["path"] = "data/songs/S/takes/T/fixture.txt"
+    (take / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    return tmp_path / "root", take
+
+
+def test_cli_validates_server_manifests_with_data_relative_paths(
+    tmp_path, manifest, capsys
+):
+    root, take = _server_style(tmp_path, manifest)
+    module = _cli()
+    assert module.main([str(take / "manifest.json")]) == 0
+    assert module.main([str(root / "data" / "songs")]) == 0
+    assert "all valid (1 manifests)" in capsys.readouterr().out
+    (take / "fixture.txt").write_bytes(b"tampered")
+    assert module.main([str(take / "manifest.json")]) == 1
+    assert "HASH_MISMATCH" in capsys.readouterr().err
+
+
+def test_cli_explicit_root_for_data_relative_paths(tmp_path, manifest, capsys):
+    root, take = _server_style(tmp_path, manifest)
+    outside = tmp_path / "elsewhere"
+    outside.mkdir()
+    copy_path = outside / "manifest.json"
+    copy_path.write_text((take / "manifest.json").read_text(), encoding="utf-8")
+    module = _cli()
+    assert module.main([str(copy_path)]) == 1  # sin ancestro `data` ni --root
+    capsys.readouterr()
+    assert module.main([str(copy_path), "--root", str(root)]) == 0
+    assert "all valid" in capsys.readouterr().out
