@@ -5,6 +5,7 @@ import json
 import logging
 import math
 import sys
+import time
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
 from dataclasses import replace
@@ -23,6 +24,7 @@ from .admission import Admission, Claim, occupancy_filters
 from .backends.http import HttpEngineBackend
 from .backends.protocol import BackendFailure, ConfirmedAbsent
 from .cancellation import Cancellation, local_jobs
+from .cleanup import sweep_cancelled
 from .dispatcher import Dispatcher, Resident
 from .events import EventBus, EventConsumer
 from .provenance import MUSIC_TASKS, SelectedProvenance, capture_before_send
@@ -84,6 +86,7 @@ class QueueRuntime:
         self.native = set()
         self.suspended, self.cancel_sent = set(), set()
         self.engine_origins = {}
+        self.sweep_s, self._sweep_at = 2.0, 0.0
 
     async def dbcall(self, function, *args):
         future = self.executor.submit(function, *args)
@@ -163,6 +166,7 @@ class QueueRuntime:
             await self.dbcall(self.cpu_service.reconcile_startup)
         if self.backends:
             await self.dbcall(self.recovery.startup)
+        await self._sweep_cancelled(force=True)
         self.task = asyncio.create_task(self._run())
 
     def _default_cpu_service(self):
@@ -241,12 +245,14 @@ class QueueRuntime:
                         return
                     safe = await self.dbcall(self.recovery.safe_absent, attempt)
                     if not safe or resent:
+                        # El engine confirma que no lo tiene: reintento acotado
+                        # (failed retryable) en vez de quedar interrumpido.
                         await self.dbcall(
-                            self.recovery.uncertain,
+                            self.consumer.accept,
                             attempt.id,
-                            "Ausencia sin prueba de reinicio; cursor y temporales conservados",
+                            attempt.engine_id,
+                            self.recovery.lost_event(attempt),
                         )
-                        self.suspended.add(attempt.id)
                         return
                     if (
                         health.state != "idle"
@@ -550,6 +556,18 @@ class QueueRuntime:
     async def _dispatch_cpu(self):
         if self.cpu_service is None or len(self.cpu_workers) >= 2:
             return
+        # Primero los posts interrumpidos cuyo proceso anterior se prueba muerto
+        # (se reanudan sobre su misma cpu_execution); luego los encolados.
+        resumable = []
+        if hasattr(self.cpu_service, "resumable_jobs"):
+            resumable = await self.dbcall(self.cpu_service.resumable_jobs)
+        for job_id in resumable:
+            if len(self.cpu_workers) >= 2:
+                return
+            if job_id not in self.cpu_workers:
+                self.cpu_workers[job_id] = asyncio.create_task(
+                    self._consume_cpu(job_id), name=f"cpu-post-{job_id}"
+                )
         candidates = await self.dbcall(self.admission.candidates)
         for job in candidates:
             if len(self.cpu_workers) >= 2:
@@ -568,6 +586,26 @@ class QueueRuntime:
             return
         for job_id in await self.dbcall(self.cpu_service.pending_cancellations):
             await self.dbcall(self.cpu_service.cancel_job, job_id)
+
+    async def _sweep_cancelled(self, force=False):
+        """Borra ``data/tmp`` de los jobs cancelados que nadie más necesita (CA-3)."""
+        owner = getattr(self, "owner_id", None)
+        if owner is None or not hasattr(self, "settings"):
+            return
+        now = time.monotonic()
+        if not force and now < getattr(self, "_sweep_at", 0.0):
+            return
+        self._sweep_at = now + getattr(self, "sweep_s", 2.0)
+        try:
+            await self.dbcall(
+                sweep_cancelled,
+                self.engine,
+                owner,
+                self.settings.data_dir,
+                getattr(self.engine, "studio_logger", None),
+            )
+        except Exception:  # noqa: BLE001 -- la limpieza nunca para la cola
+            self.logger.warning("queue.cleanup_failed")
 
     async def _consume_cpu(self, job_id):
         try:
@@ -731,6 +769,7 @@ class QueueRuntime:
                     del self.workers[aid]
             try:
                 await self._cancel_cpu()
+                await self._sweep_cancelled()
                 if self.backends:
                     await self._cancel()
                     for attempt in await self.dbcall(self._active):

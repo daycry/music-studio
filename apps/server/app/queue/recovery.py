@@ -48,6 +48,25 @@ class Recovery:
             ):
                 job.status, job.error, job.updated_at = "interrupted", reason, utc_now()
 
+    @staticmethod
+    def lost_event(attempt):
+        """Terminal ``error`` retryable: el engine confirmó que no conserva el intento.
+
+        El retry x2 existente lo recoge (attempt nuevo, misma semilla, hasta
+        ``max_attempts``); no se reenvía nada por conjetura.
+        """
+        return {
+            "job_id": attempt.id,
+            "seq": attempt.last_seq + 1,
+            "ts": utc_now(),
+            "type": "error",
+            "data": {
+                "code": "INTERNAL",
+                "message": "El engine no conserva el intento tras el reinicio",
+                "retryable": True,
+            },
+        }
+
     def current(self, aid):
         with Session(self.engine, expire_on_commit=False) as session:
             attempt = session.get(JobAttempt, aid)

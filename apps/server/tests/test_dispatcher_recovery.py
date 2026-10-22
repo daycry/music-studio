@@ -213,9 +213,9 @@ def test_configured_family_alias_reconnects_only_matching_engine(engine):
 @pytest.mark.parametrize(
     "scenario",
     [
-        "cursor",
+        # "cursor" y "partial" (el engine confirma ausencia) pasan a reintento
+        # acotado en T-04/CA-4: ver test_queue_recovery_gpu_doubt.py.
         "rollback",
-        "partial",
         "status_failure",
         "foreign",
         "wrong_identity",
@@ -244,15 +244,10 @@ def test_uncertain_recovery_retains_capacity_and_cursor(engine, scenario):
             )
 
         backend.health = constrained
-    if scenario in {"cursor", "rollback"}:
+    if scenario == "rollback":
         with Session(engine) as session, session.begin():
             session.get(JobAttempt, claim.attempt_id).last_seq = 1
-        if scenario == "rollback":
-            backend.record = JobStatus(job_id=claim.attempt_id, state="done", seq=0)
-    if scenario == "partial":
-        output = settings().data_dir / "tmp" / claim.attempt_id
-        output.mkdir(parents=True)
-        (output / "partial.bin").write_bytes(b"preserve")
+        backend.record = JobStatus(job_id=claim.attempt_id, state="done", seq=0)
     if scenario == "status_failure":
 
         async def failed(aid):
@@ -292,12 +287,10 @@ def test_uncertain_recovery_retains_capacity_and_cursor(engine, scenario):
                     "Startup did not retain uncertain occupancy"
                 )
                 assert session.get(JobAttempt, claim.attempt_id).last_seq == (
-                    1 if scenario in {"cursor", "rollback"} else 0
+                    1 if scenario == "rollback" else 0
                 )
             assert not backend.posts
             assert not backend.cancels
-            if scenario == "partial":
-                assert (output / "partial.bin").read_bytes() == b"preserve"
         finally:
             await runtime.close()
 
