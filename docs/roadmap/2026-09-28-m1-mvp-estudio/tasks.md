@@ -475,6 +475,21 @@ verificacion: obligatoria
   - **De punta a punta en Docker:**
     - En 3 secuencias de «canción normal y después SIGKILL con reanudación» el take llega a `ready` (reanudación en 31–60 s), y al terminar quedan **0 ficheros en `data/tmp`**; `verify_manifest.py`: `all valid (6 manifests)`.
     - Una primera ejecución se cortó con el take aún `queued` a los 180 s: era una espera demasiado corta para un post de 600 s de audio. Con el seguimiento cada 20 s se vio que los temporales se conservan mientras el post está vivo y se borran al terminar.
+- **Fix2** (2026-10-22, 3,34 h IA medidas). Commits `5ec56c5` y `9c147e3` (este último, retoque de ruff SIM103 hecho por el orquestador):
+  - **Aparcar:** los jobs `needed`/`waiting` se aparcan y se reevalúan cada `PARK_S=10 s` con su propio presupuesto.
+  - **Cadencia:** la rápida solo mientras quede histórico nuevo.
+  - **Alineación con `Retry.eligible`:** `waiting` sigue sus condiciones (lane, estado del attempt, offload `VRAM_EXCEEDED`).
+  - **Registro único:** un fallo permanente se registra una vez por proceso y destino, por todas las vías.
+  - **`IN` troceados:** de 500 en 500, y un fallo del barrido ya no se salta `_remove_stages`.
+  - **Test con la cadena real** beats→post.
+  - **Gap 5 no se toca:** con «solo ids mayores» se perderían los terminales de ids antiguos. Queda lineal y sin índice; ver deuda.
+  - **Tests:**
+    - Suite completa del server (implementer): `2010 passed, 77 skipped`, 0 failed.
+    - Focales (orquestador): 105 passed; `ruff` limpio.
+  - **Bench del revisor, 2.000 viejos + 250 `waiting`** (orquestador): 12 pasadas en 2,4 s, `pending=0`, `resolved=2001`, `oldest_dir_exists=False`. Régimen estable: 4,2 ms. Pico de memoria: 1,4 MB.
+  - **Docker** (orquestador):
+    - 2 secuencias de canción normal y SIGKILL con reanudación dan 4 takes `ready`, **0 ficheros en `data/tmp`** y `all valid (4 manifests)`.
+    - Linux real: 99 passed, 2 skipped.
 - **Changelog**: El estudio ya no acumula copias de audio ni ficheros temporales en `data/tmp` tras cada canción.
 
 ## Revisión de dos lentes — intento 1: Fase 2 (T-05) — dos Important pendientes
@@ -665,8 +680,8 @@ Lentes A, B y D sobre el fix1 (`19cffeb..dc733e0`).
 
 | # | Grado | Gap | Tarea | Corrección | Evidencia |
 |---|---|---|---|---|---|
-| 1 | Important | Con 200 jobs o más que nunca se resuelven (`waiting`/`deferred`), el presupuesto se agota siempre en ellos: los antiguos no se barren nunca y, con `pending>0`, el barrido corre cada 0,1 s en lugar de cada 2 s (~30 % del bucle). Hay causas reales de `waiting` eterno: offload `VRAM_EXCEEDED`, cambio de engine o modelo, carril `remote` | T-17 | pendiente (fix2) | `cleanup.py:268-270,278-279`; `runtime.py:609-610,44`; bench `rev2/bench2.py` (2000+250: `resolved=0`) |
-| 2 | Minor | El test de «beats real» usa la arista beats→generación, pero producción crea beats→post | T-17 | pendiente (fix2) | `test_tmp_cleanup_t17.py:457-461` frente a `chains.py:133` |
-| 3 | Minor | `sweep_cancelled` (la vía de la cancelación CPU) vuelve a registrar los fallos permanentes en cada cancelación | T-17 | pendiente (fix2) | `execution.py:1486`, `cleanup.py:232-236` |
-| 4 | Minor | `sweep_cancelled` mete todos los cancelados en un `IN (...)`; por encima de 32.766 falla con `too many SQL variables` y se salta `_remove_stages` | T-17 | pendiente (fix2) | `cleanup.py:135-136,151,167`; `execution.py:1485-1490` |
-| 5 | Minor (D) | La consulta de ids crece de forma lineal con el histórico, sin índice sobre `status`: 15 ms con 10⁴ y unos 150 ms extrapolados con 10⁵ | T-17 | pendiente (fix2, si es barato sin migración); si no, deuda | `cleanup.py:97-100` |
+| 1 | Important | Con 200 jobs o más que nunca se resuelven (`waiting`/`deferred`), el presupuesto se agota siempre en ellos: los antiguos no se barren nunca y, con `pending>0`, el barrido corre cada 0,1 s en lugar de cada 2 s (~30 % del bucle). Hay causas reales de `waiting` eterno: offload `VRAM_EXCEEDED`, cambio de engine o modelo, carril `remote` | T-17 | corregido (`5ec56c5`) | `cleanup.py:268-270,278-279`; `runtime.py:609-610,44`; bench `rev2/bench2.py` (2000+250: `resolved=0`) |
+| 2 | Minor | El test de «beats real» usa la arista beats→generación, pero producción crea beats→post | T-17 | corregido (`5ec56c5`) | `test_tmp_cleanup_t17.py:457-461` frente a `chains.py:133` |
+| 3 | Minor | `sweep_cancelled` (la vía de la cancelación CPU) vuelve a registrar los fallos permanentes en cada cancelación | T-17 | corregido (`5ec56c5`) | `execution.py:1486`, `cleanup.py:232-236` |
+| 4 | Minor | `sweep_cancelled` mete todos los cancelados en un `IN (...)`; por encima de 32.766 falla con `too many SQL variables` y se salta `_remove_stages` | T-17 | corregido (`5ec56c5`) | `cleanup.py:135-136,151,167`; `execution.py:1485-1490` |
+| 5 | Minor (D) | La consulta de ids crece de forma lineal con el histórico, sin índice sobre `status`: 15 ms con 10⁴ y unos 150 ms extrapolados con 10⁵ | T-17 | deuda aceptada: sin migración no es barato (un terminal puede tener un id antiguo); unos 20 ms por pasada con 10⁴ | `cleanup.py:97-100` |
