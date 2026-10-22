@@ -450,6 +450,15 @@ verificacion: obligatoria
 - [ ] CA-2 (B5): el `tmp/<attempt>` de un intento abandonado por el reintento acotado (ADR-0090) se borra como parte de CA-1.
 - [ ] CA-3 (N7): los fallos **permanentes** de borrado (destino symlink o junction, no-directorio, fuera de `data/`) se registran **una vez** (`worker.cleanup.failed`) y salen de `deferred`. Solo se reintentan los transitorios (`OSError` de `rmtree`), con un tope de intentos.
 - [ ] CA-4: las reglas de borrado seguro de T-05 siguen intactas (no seguir enlaces, quedarse dentro de `data/`, errores como evento) y no se borra nada que use un job vivo. Hay tests de regresión: post vivo, `audio.beats` pendiente y reintento manual posible.
+- **Implementación** (2026-10-22, 2,95 h IA medidas). Commit `face3d2`:
+  - `TerminalSweeper` generaliza el barrido incremental de cancelados a todos los terminales.
+  - `remove_data_dir` distingue `True`, `False`, `None` (transitorio, tope de 5) y `PERMANENT` (se registra una vez).
+  - Los `_server_inputs/<hex>` se atribuyen por `engine_request.inputs[].path`; los que no se pueden atribuir se conservan.
+  - **RED → GREEN:** `test_tmp_cleanup_t17.py` en rojo contra el alias de `CancelSweeper` (aserciones de CA-1/CA-3, `AttributeError: MAX_RETRIES`) → 14 passed.
+  - **Tests:** suite completa del server (implementer): `1993 passed, 77 skipped`, 0 failed. Focales (orquestador): 55 passed; `ruff` limpio.
+- **Verificación en Docker** (orquestador, 2026-10-22): imagen reconstruida, `server` + `engine-mock`.
+  - Generación correcta, y aparte SIGKILL a mitad con reanudación: tras `ready` y `audio.beats` `succeeded`, en `data/tmp` **solo quedan los contenedores vacíos** `_server_cpu/` y `_server_inputs/`, sin `.pending-*`.
+  - `verify_manifest.py`: `all valid (2 manifests)`.
 - **Changelog**: El estudio ya no acumula copias de audio ni ficheros temporales en `data/tmp` tras cada canción.
 
 ## Revisión de dos lentes — intento 1: Fase 2 (T-05) — dos Important pendientes
