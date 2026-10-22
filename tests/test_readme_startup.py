@@ -1,7 +1,7 @@
 from pathlib import Path
 
 
-def test_readme_has_reproducible_mock_and_persistent_recipes():
+def test_readme_has_reproducible_mock_recipe():
     text = Path("README.md").read_text(encoding="utf-8")
     for token in (
         "https://github.com/daycry/music-studio.git",
@@ -9,8 +9,7 @@ def test_readme_has_reproducible_mock_and_persistent_recipes():
         "scripts/init_env.py",
         "scripts/e2e_stack.py up",
         "scripts/e2e_stack.py down",
-        "docker-compose.storage.yml",
-        "STUDIO_STORAGE_UUID",
+        "STUDIO_DATA_ROOT",
         "ollama ps",
         "WSL2",
     ):

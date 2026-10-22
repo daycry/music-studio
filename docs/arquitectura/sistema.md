@@ -179,20 +179,10 @@ Resumen de [ADR-0020](../decisiones/ADR-0020-seguridad-local.md) y de [convencio
 - La telemetría de cada job (carga, ejecución, RTF, pico de VRAM, tope y desbordamiento) se guarda en `job.telemetry` y en el manifiesto.
 - La página **Sistema** muestra GPU, VRAM, RAM, el modelo cargado, el estado de cada engine, la cola y el espacio en disco de `data/` y `models/`.
 
-## Almacenamiento operativo persistente (ADR-0069)
+## Almacenamiento operativo
 
-[ADR-0069](../decisiones/ADR-0069-almacenamiento-ext4-del-proyecto-para-publicacion-atomica.md)
-fija ext4 respaldado por `data/_storage/studio-data.vhdx`, dentro del
-proyecto. Server y engines comparten la misma raíz lógica montada; sus
-paths de dominio/manifiestos siguen relativos. El punto de montaje WSL es
-una vista virtual, no persistencia adicional fuera del proyecto. Código,
-modelos y herramientas conservan sus ubicaciones.
+[ADR-0089](../decisiones/ADR-0089-reencauce-tras-codex.md) aparca el VHDX ext4 y el journal Windows de ADR-0069/0075. Los datos viven en `data/`, montado en los contenedores. Cada take se publica así:
 
-La provisión de plataforma requiere privilegios de montaje; el server no
-recibe SYS_ADMIN, loop ni socket Docker. Sin mount/UUID correcto o sin
-NOREPLACE nativo, startup aborta antes de publicar. No hay fallback a
-rename ordinario, directorio parcial, tmpfs o volumen externo. La biblioteca
-NTFS existente no se migra ni se borra automáticamente. Acceso Windows y
-verificadores usan la vista WSL/Docker o exportación explícita al proyecto.
-Backup de VHDX requiere quiesce/flush/detach propios; no copiarlo activo ni
-parar servicios ajenos. Implementación y QA persistente siguen pendientes.
+1. Se escribe en un directorio de staging.
+2. Se mueve con `rename` normal a `data/songs/<song_id>/<take_ulid>/`. El id es único, así que no hay colisión y no hace falta `NOREPLACE`.
+3. Se confirma la fila en SQLite. Esa fila es la autoridad: un directorio sin fila es huérfano y se limpia al arrancar.

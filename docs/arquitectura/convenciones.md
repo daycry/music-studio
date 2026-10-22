@@ -82,29 +82,10 @@ La primera unidad implementará sólo bus y framing. Antes del endpoint se valid
 
 La integración prevista utiliza bootstrap automático con Origin/Host locales y header no simple; una credencial efímera pública en memoria autoriza SSE mediante header, nunca URL ni token de engines. Registro/DTOs preceden a HTTP/CORS/contrato y cliente; esta decisión no acredita endpoints implementados. [Decisión](../decisiones/ADR-0058-sesion-publica-local-para-eventos.md).
 
-## Almacenamiento operativo persistente (ADR-0069)
+## Almacenamiento operativo
 
-[ADR-0069](../decisiones/ADR-0069-almacenamiento-ext4-del-proyecto-para-publicacion-atomica.md)
-fija ext4 respaldado por `data/_storage/studio-data.vhdx`, dentro del
-proyecto. Server y engines comparten la misma raíz lógica montada; sus
-paths de dominio/manifiestos siguen relativos. El punto de montaje WSL es
-una vista virtual, no persistencia adicional fuera del proyecto. Código,
-modelos y herramientas conservan sus ubicaciones.
+[ADR-0089](../decisiones/ADR-0089-reencauce-tras-codex.md) aparca el VHDX ext4 y el journal Windows de ADR-0069/0075. Los datos viven en `data/`, montado en los contenedores. Cada take se publica así:
 
-La provisión de plataforma requiere privilegios de montaje; el server no
-recibe SYS_ADMIN, loop ni socket Docker. Sin mount/UUID correcto o sin
-NOREPLACE nativo, startup aborta antes de publicar. No hay fallback a
-rename ordinario, directorio parcial, tmpfs o volumen externo. La biblioteca
-NTFS existente no se migra ni se borra automáticamente. Acceso Windows y
-verificadores usan la vista WSL/Docker o exportación explícita al proyecto.
-Backup de VHDX requiere quiesce/flush/detach propios; no copiarlo activo ni
-parar servicios ajenos. Implementación y QA persistente siguen pendientes.
-
-
-Los formatos nuevos de producción usan lectores cerrados por family/reader/version; una versión desconocida o gate no liberado rechaza antes efectos. El número de versión no es global. Inferencia manifest1, CPUv2/SongCPUv2, timeline1 y sus bytes originales conservan semántica. M3 usa ProductionArtifact1/Package1 con7readers por sujeto cuando no cabe en familias históricas; no redefine CPUv2 ni añade inferencia ficticia a CPU/upload/import/maintenance. Las refs privadas D-02/D-03 y los11sellos `seal_kind` conservan campos/hashes propios. Un hash/receipt importado es historia, no autoridad activa.
-
-TimelineV2/SceneN01 N0 liga VideoRevision/audio final/timing/context/features/fonts/perfil capturados, sin letra privada en el índice ni master actual como default. El reloj de audio y cuadro racional alimentan la misma escena temporal offline. Bytes v1/timeline1 no se convierten silenciosamente. Original conserva bytes y usa metadata sidecar; embedding exige export derivada cuando cambiaría original. Stems48k conservan4roles/amplitud/alineación común sin normalizar. Metadatos/lyrics usan la versión histórica solicitada; omit no embebe.
-
-Paquetes privados conservan cierre completo de Song/historia/ancestros/roles/maps/refs/rights/media/manifiestos por versiones exactas. Ningún secreto, path absoluto, lease/PID/autoridad viva viaja en el paquete; letras/fotos necesarias sólo payload privado autorizado. Import revalida owner y usa receipt propio, mapa source→local completo y no-clobber/CAS; no dedup global por hash ni overwrite. Backup de biblioteca exige cut/SQLite/media juntos y restore/binding/rollback D-09, sin reactivar procesos históricos.
-
-Export audio/stems/video/lyrics exige metadata_ref ByteRef production.export_metadata/1 ligado al Take efectivo. Export_project/project_zip exige metadata_ref NULL literal en prepared/final/Package, incluso con Takes; título/letra/portada/revisiones se recuperan por closure Songv1/SongCPUv2/SongBundleM31. Song válida master NULL/takes [] conserva historia sin metadata de Take ni Take/audio ficticios. Operation/kind/payload/profile deben coincidir con D-02; gate ausente bloquea antes efectos.
+1. Se escribe en un directorio de staging.
+2. Se mueve con `rename` normal a `data/songs/<song_id>/<take_ulid>/`. El id es único, así que no hay colisión y no hace falta `NOREPLACE`.
+3. Se confirma la fila en SQLite. Esa fila es la autoridad: un directorio sin fila es huérfano y se limpia al arrancar.

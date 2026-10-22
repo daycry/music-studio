@@ -79,14 +79,10 @@ unidad de procedencia sintética, sin modificar sus fuentes en paralelo.
 
 [ADR-0060](../../decisiones/ADR-0060-captura-write-once-de-procedencia-antes-del-envio.md) fija O2: snapshot seleccionado inmutable y primera captura tras load/Health fresco, antes de submit, sin backfill histórico. La próxima unidad implementa seis módulos de cola y sus tests; respeta la propiedad de fuentes y las verificaciones SSE activas. Es prerrequisito de las revisiones de publicación, no evidencia de worker completo.
 
-## Gate de almacenamiento persistente (ADR-0069)
+## Almacenamiento operativo
 
-[ADR-0069](../../decisiones/ADR-0069-almacenamiento-ext4-del-proyecto-para-publicacion-atomica.md)
-conserva los CA originales de publicación atómica no-clobber y adopta
-ext4 respaldado por un VHDX dentro del proyecto. Provisión y montaje son
-infraestructura; producto en Docker, sin privilegios de montaje. No se
-migra la biblioteca existente automáticamente ni se acepta tmpfs como
-despliegue. T-05 requiere recorrido real sobre el disco persistente,
-rechazo de destinos ajenos incluidos vacíos/carreras, restart/reconcile y
-backup/restauración verificados. Sin mount/UUID/capacidad nativa correctos,
-startup aborta antes de datos/jobs. Gates de E2E y hito completos permanecen.
+[ADR-0089](../../decisiones/ADR-0089-reencauce-tras-codex.md) aparca el VHDX ext4 y el journal Windows de ADR-0069/0075. Los datos viven en `data/`, montado en los contenedores. Cada take se publica así:
+
+1. Se escribe en un directorio de staging.
+2. Se mueve con `rename` normal a `data/songs/<song_id>/<take_ulid>/`. El id es único, así que no hay colisión y no hace falta `NOREPLACE`.
+3. Se confirma la fila en SQLite. Esa fila es la autoridad: un directorio sin fila es huérfano y se limpia al arrancar.

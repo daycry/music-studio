@@ -1,11 +1,10 @@
 ---
-storage_durable_design: storage-durable-design.md
 spec: m1-mvp-estudio
 descripcion: MVP del estudio web: crear canciones como proyecto, ver la generación en vivo, escuchar variantes, elegir maestro y descargar
 estado: aprobada          # borrador | aprobada | implementada | obsoleta
 aprobada: 2026-09-28
 creado: 2026-09-28
-actualizado: 2026-10-07
+actualizado: 2026-10-22
 evaluacion: n/a (proyecto personal — ADR-0001; esfuerzo orientativo en tasks.md)
 design: design.md
 plan: improvement-plan.md
@@ -79,14 +78,32 @@ Ver [funcionalidades.md](../../producto/funcionalidades.md).
 | I-01 | ¿Genera el modelo elegido en M0 N variantes en un solo batch dentro de la VRAM, o hay que hacerlas en serie? | T-04 (según el benchmark de M0) |
 | I-02 | ¿Qué parámetros avanzados expone de verdad el descriptor de la tarea (BPM, tonalidad, idioma, fuerza del estilo, prompt negativo)? | T-09 (a partir del `params_schema`) |
 
-## Gate de almacenamiento persistente (ADR-0069)
+## Recorte del 2026-10-22 (ADR-0089)
 
-[ADR-0069](../../decisiones/ADR-0069-almacenamiento-ext4-del-proyecto-para-publicacion-atomica.md)
-conserva los CA originales de publicación atómica no-clobber y adopta
-ext4 respaldado por un VHDX dentro del proyecto. Provisión y montaje son
-infraestructura; producto en Docker, sin privilegios de montaje. No se
-migra la biblioteca existente automáticamente ni se acepta tmpfs como
-despliegue. T-05 requiere recorrido real sobre el disco persistente,
-rechazo de destinos ajenos incluidos vacíos/carreras, restart/reconcile y
-backup/restauración verificados. Sin mount/UUID/capacidad nativa correctos,
-startup aborta antes de datos/jobs. Gates de E2E y hito completos permanecen.
+El objetivo de M1 pasa a ser un **camino mínimo de punta a punta**: escribir la letra y el estilo, ver la generación en vivo, escuchar el take, guardarlo en la biblioteca y descargarlo, con ACE-Step real. Para eso hacen falta pocos criterios, y el resto se aplaza a un hito posterior.
+
+| Criterio | En M1 recortado |
+|---|---|
+| CA-01 Arranque | **Dentro.** La aceptación final exige ACE-Step real (M0/T-13); la apertura técnica con el mock sigue vigente |
+| CA-02 Crear | **Dentro:** letra validada, estilo, autoría obligatoria y opciones avanzadas del `params_schema`. **Fuera:** chips y estilos a excluir. Variantes: 1, y 2 si cabe en la VRAM |
+| CA-03 Generación en vivo | **Dentro** |
+| CA-04 Variantes A/B | **Aplazado.** Se mantiene la canción borrador automática |
+| CA-05 Instrumental | **Dentro** |
+| CA-06 Biblioteca | **Dentro:** lista, búsqueda FTS y preescucha. **Fuera:** filtros avanzados, grid y papelera |
+| CA-07 Vista de canción | **Dentro:** takes, marcar maestro, onda con seek, letra y descarga MP3/FLAC. **Fuera:** beats, zoom, panel de procedencia y versiones de letra en la UI (el dato sí se guarda) |
+| CA-08 Reproductor | **Dentro:** reproductor persistente. **Fuera:** cola y atajos |
+| CA-09 Cola | **Dentro:** cancelar, interrumpido y reencolado, y reintentos. **Fuera:** dependencia del análisis |
+| CA-10 Errores | **Dentro** |
+| CA-11 Página Sistema | **Aplazado.** Basta un `GET /system` mínimo |
+| CA-12 Datos | **Dentro:** esquema y manifiesto válido. **Fuera:** backup diario, que ya existe en el código y no bloquea |
+| CA-13 Colecciones | **Aplazado** |
+| CA-14 Seguridad local | **Dentro** |
+| CA-15 Interfaz | **Dentro:** castellano con `next-intl` y tema oscuro. **Fuera:** tema claro |
+| CA-16 Tests | **Dentro**, con E2E solo del camino mínimo |
+
+**Almacenamiento:** el gate de ADR-0069 (VHDX ext4) queda sustituido por la publicación sencilla de ADR-0089 §2:
+
+- directorio por id único;
+- `rename` normal dentro de `data/`;
+- SQLite como autoridad;
+- limpieza de huérfanos al arrancar.

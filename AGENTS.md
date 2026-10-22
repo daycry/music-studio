@@ -11,7 +11,7 @@
 - **Imagen y vídeo:** ComfyUI headless.
 - **Letras:** LLM local.
 - **Idiomas:** documentación, UI y commits en **castellano**; identificadores de código, API, BD y JSON en **inglés**.
-- **Estado actual:** hito **M0** (entorno, motor por CLI y elección de modelo). El progreso está en el ledger del hito.
+- **Estado actual:** cierre de **M0** (falta la escucha y la decisión de modelo) y **M1 recortado** (MVP web de punta a punta). M2 y M3 están congelados ([ADR-0089](docs/decisiones/ADR-0089-reencauce-tras-codex.md)). El progreso está en los ledgers.
 
 ## 2. Flujo de trabajo: SIEMPRE con el plugin `custom-agents`
 

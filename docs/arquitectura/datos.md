@@ -372,24 +372,13 @@ La frontera de captura se concreta en [ADR-0060](../decisiones/ADR-0060-captura-
 
 [ADR-0062](../decisiones/ADR-0062-evidencia-sintetica-explicita-con-binding-del-server.md) distingue evidencia sintética registrada por el server y procedencia aprendida. La clasificación y su binding se conservan en el contenido privado de provenance y su SHA, sin ampliar la DDL ni /v1. No acredita inferencia aprendida ni permite completar intentos legacy desde el catálogo actual.
 
-## Almacenamiento operativo persistente (ADR-0069)
+## Almacenamiento operativo
 
-[ADR-0069](../decisiones/ADR-0069-almacenamiento-ext4-del-proyecto-para-publicacion-atomica.md)
-fija ext4 respaldado por `data/_storage/studio-data.vhdx`, dentro del
-proyecto. Server y engines comparten la misma raíz lógica montada; sus
-paths de dominio/manifiestos siguen relativos. El punto de montaje WSL es
-una vista virtual, no persistencia adicional fuera del proyecto. Código,
-modelos y herramientas conservan sus ubicaciones.
+[ADR-0089](../decisiones/ADR-0089-reencauce-tras-codex.md) aparca el VHDX ext4 y el journal Windows de ADR-0069/0075. Los datos viven en `data/`, montado en los contenedores. Cada take se publica así:
 
-La provisión de plataforma requiere privilegios de montaje; el server no
-recibe SYS_ADMIN, loop ni socket Docker. Sin mount/UUID correcto o sin
-NOREPLACE nativo, startup aborta antes de publicar. No hay fallback a
-rename ordinario, directorio parcial, tmpfs o volumen externo. La biblioteca
-NTFS existente no se migra ni se borra automáticamente. Acceso Windows y
-verificadores usan la vista WSL/Docker o exportación explícita al proyecto.
-Backup de VHDX requiere quiesce/flush/detach propios; no copiarlo activo ni
-parar servicios ajenos. Implementación y QA persistente siguen pendientes.
-
+1. Se escribe en un directorio de staging.
+2. Se mueve con `rename` normal a `data/songs/<song_id>/<take_ulid>/`. El id es único, así que no hay colisión y no hace falta `NOREPLACE`.
+3. Se confirma la fila en SQLite. Esa fila es la autoridad: un directorio sin fila es huérfano y se limpia al arrancar.
 
 ## Procedencia CPU autónoma y formatos v2 (M2)
 
@@ -403,12 +392,6 @@ CPU autónomo usa manifiesto v2 con executor del server, receta, entradas y herr
 
 Las previews CPU A/B también usan v2. Son temporales autorizados del job, resueltos por recibo/contexto privado y CAS vigente: no crean Take, intención por toma ni `asset.subject_type=job`, valor excluido del schema actual. El plan/recibo tipado se fija antes de su RED. Detalle, listado, PATCH y restore de API server v2 exponen TakeV2; operaciones M1 que incluyan CPU rechazan 409 explícito después de autorización y antes de efectos, sin ocultar filas. Modelo y contratos de producto aún pendientes; este apartado documenta la decisión, no una migración aplicada.
 
-
-## Autoridad del ciclo de almacenamiento
-
-[ADR-0075](../decisiones/ADR-0075-recibo-durable-y-ciclo-de-vida-del-almacenamiento.md) concreta el journal de infraestructura por handle elegido para el controller de plataforma. El journal tendrá generaciones con PREPARE/COMMIT, CAS nativo e intenciones previas a los efectos; el server conserva la autoridad exclusiva sobre SQLite de producto. El recibo v1 publicado se conserva como semilla histórica y los consumidores nuevos deberán resolver la cadena sellada vigente. Un recibo leído o un hash aislado no autorizan mutaciones.
-
-La implementación, recuperación y QA física del controller siguen pendientes. El diseño distingue fallos de proceso de power loss y mantiene cerrada la admisión ante commit/cierre inciertos. No cambia los componentes readonly aceptados ni promueve el VHDX de prueba a producción.
 
 
 ## Apéndice normativo M3 — Autoridad por sujeto D-02 (candidato seleccionado)

@@ -38,6 +38,7 @@ Formato: `ADR-XXXX-slug.md` con **Estado** (propuesta · aceptada · sustituida 
 | [0032](ADR-0032-condicionamiento-dit-segun-rama-nativa.md) | Planificación de ambas ramas DiT y validación exacta de la resolución nativa con códigos LM; contenido y guardas íntegros | aceptada |
 | [0033](ADR-0033-perfiles-y-medicion-directa-del-benchmark.md) | Benchmark del engine mediante /v1: perfiles base/XL, INT8 efectivo, inferencia directa y observación WDDM; copia interior efímera y referencias comparables | aceptada; implementación pendiente |
 | [0088](ADR-0088-salidas-externas-y-custodia-del-recolector-python.md) | Salidas externas desde creación y custodia propia del recolector Python | aceptada; O1 ratificada por ROOT tras revisión documental y QA84/84; implementación runtime pendiente |
+| [0089](ADR-0089-reencauce-tras-codex.md) | Reencauce tras Codex: un hito activo, M1 recortado, M2/M3 congelados, journal Windows aparcado y proceso ligero | aceptada |
 
 | [0034](ADR-0034-capacidades-nativas-y-accesibles-por-v1.md) | Matriz de capacidades con /v1 y laboratorio nativo seguro separados; verified sólo desde evidencia accesible del producto | aceptada; medición pendiente |
 
@@ -45,7 +46,7 @@ Formato: `ADR-XXXX-slug.md` con **Estado** (propuesta · aceptada · sustituida 
 
 | [0036](ADR-0036-observabilidad-wddm-autonoma.md) | Observación automática WDDM con contraste dedicado separado y confianza shared explícita; puerta manual complementaria | aceptada; implementación pendiente |
 
-| [0037](ADR-0037-avance-tecnico-condicionado.md) | Apertura técnica contra mock y aceptación real separadas; decisión del orquestador bajo delegación, sin cierre musical por automatización | aceptada; revisión/QA documental conformes, integración Git pendiente |
+| [0037](ADR-0037-avance-tecnico-condicionado.md) | Apertura técnica contra mock y aceptación real separadas; decisión del orquestador bajo delegación, sin cierre musical por automatización | sustituida en parte por ADR-0089 (un hito activo a la vez) |
 
 | [0038](ADR-0038-rechazo-explicito-host-origin.md) | Host inválido y Origin presente ajeno reciben403; GET/HEAD ordinarios pueden omitir Origin, SSE y métodos restantes lo exigen | aceptada; implementación y QA pendientes |
 
@@ -98,30 +99,30 @@ Formato: `ADR-XXXX-slug.md` con **Estado** (propuesta · aceptada · sustituida 
 | [0066](ADR-0066-sincronizacion-con-el-submit-real-en-prueba-de-recuperacion.md) | Sustituir sólo la espera fija de acuse perdido por el submit real observado; assertions y presupuestos de producto conservados | aceptada; fixture, revisión y QA pendientes |
 | [0067](ADR-0067-verificacion-vigente-del-esquema-sql-con-suite-completa.md) | Suite SQL completa1056 funcional/1055 instrumentada, gate de cuatro módulos y tres casos Linux vigentes | aceptada; ejecuciones y aceptación pendientes |
 | [0068](ADR-0068-descarte-de-identidad-obsoleta-antes-de-procedencia.md) | Descartar cambios de identidad tras routing antes de construir procedencia, sin ampliar autoridad ni ocultar entradas inválidas | aceptada; implementación, revisión y QA pendientes |
-| [0069](ADR-0069-almacenamiento-ext4-del-proyecto-para-publicacion-atomica.md) | Ext4 respaldado por VHDX dentro del proyecto para conservar publicación atómica no-clobber | aceptada; provisión, implementación y QA persistente pendientes |
+| [0069](ADR-0069-almacenamiento-ext4-del-proyecto-para-publicacion-atomica.md) | Ext4 respaldado por VHDX dentro del proyecto para conservar publicación atómica no-clobber | aparcada por ADR-0089 |
 | [0070](ADR-0070-contexto-privado-de-request-y-linaje-en-publicacion-audio.md) | Request y linaje exactos en contexto privado sellado, referencia opcional v1 y verificación común sin publicar letra/estilo | aceptada; implementación, revisión y QA pendientes |
-| [0071](ADR-0071-probes-de-almacenamiento-en-dominio-aislado.md) | Helper CPU aislado y FD real del consumidor para probes frescos, limpieza propia y preservación de datos ajenos | aceptada; implementación, revisión y QA pendientes |
+| [0071](ADR-0071-probes-de-almacenamiento-en-dominio-aislado.md) | Helper CPU aislado y FD real del consumidor para probes frescos, limpieza propia y preservación de datos ajenos | aparcada por ADR-0089 |
 
 | [0072](ADR-0072-copia-de-pesos-con-presupuesto-de-io.md) | Copia de pesos a 128 MiB/s y sincronización por bloque para controlar la competencia de E/S | aceptada; TDD, revisión A/B/D, QA CPU y reproducción directa validados; matriz GPU pendiente |
 | [0073](ADR-0073-recetas-privadas-y-escucha-ab-de-iteracion-creativa.md) | Recetas privadas por job, autoridad CPU explícita y previews A/B desde masters para M2 | aceptada bajo delegación; plan aprobado, implementación y QA pendientes |
 
 | [0074](ADR-0074-procedencia-cpu-y-contratos-versionados.md) | Take CPU discriminada, excepción SQL limitada y contratos/preview v2; API M1 preservada | aceptada bajo delegación; T-01 contractual cerrada tras revisión 2 y QA16/16; implementación pendiente |
-| [0075](ADR-0075-recibo-durable-y-ciclo-de-vida-del-almacenamiento.md) | Journal estable por handle, CAS e intenciones para recuperación y sesiones del almacenamiento propio | aceptada bajo delegación; revisión 2 A/B conforme, implementación y QA física pendientes |
-| [0076](ADR-0076-politica-estricta-de-confianza-del-journal-windows.md) | Política S1 de admisión por handles y excepción owner TrustedInstaller sólo para el root del sistema; S2 experimental y S3 aplazada | aceptada documentalmente por ROOT bajo delegación; revisión A/B conforme, implementación y QA nativas pendientes |
+| [0075](ADR-0075-recibo-durable-y-ciclo-de-vida-del-almacenamiento.md) | Journal estable por handle, CAS e intenciones para recuperación y sesiones del almacenamiento propio | aparcada por ADR-0089 |
+| [0076](ADR-0076-politica-estricta-de-confianza-del-journal-windows.md) | Política S1 de admisión por handles y excepción owner TrustedInstaller sólo para el root del sistema; S2 experimental y S3 aplazada | aparcada por ADR-0089 |
 
 | [0077](ADR-0077-envelope-privado-de-recetas-creativas.md) | Envelope privado versionado, captura inmutable y lectores históricos de recetas creativas | aceptada; contrato O1 ratificado tras revisión A+B intento2 y QA documental18/18 |
 
-| [0078](ADR-0078-geometria-nt-readonly-del-journal.md) | Geometría NT readonly por adquisición retenida y derivación de B candidato sin autoridad writer | aceptada por ROOT; revisión A+B1 con Minor anotado y QA documental33/33; implementación nativa pendiente |
+| [0078](ADR-0078-geometria-nt-readonly-del-journal.md) | Geometría NT readonly por adquisición retenida y derivación de B candidato sin autoridad writer | aparcada por ADR-0089 |
 
 | [0079](ADR-0079-composicion-creativa-por-muestras-medidas.md) | Composición creativa con frames medidos, conversiones explícitas y full/region sin doble ensamblado | aceptada; O1 y contrato ratificados por ROOT tras revisión2 y QA documental60/60 |
 
 | [0080](ADR-0080-produccion-por-derivados-tipados-y-escena-n0-local.md) | Producción por derivados tipados y escena N0 local compartida | aceptada; O1 incorporada por ROOT tras revisión1 y QA documental175/175 |
 
-| [0081](ADR-0081-store-del-journal-windows-con-kernel-io-privado.md) | Store del journal Windows con kernel I/O privado | aceptada; ROOT tras revisión2 y QA documental95/95, implementación nativa pendiente |
+| [0081](ADR-0081-store-del-journal-windows-con-kernel-io-privado.md) | Store del journal Windows con kernel I/O privado | aparcada por ADR-0089 |
 
 | [0082](ADR-0082-peticion-privada-de-produccion-y-autoridad-por-resultado.md) | Petición privada de producción y autoridad discriminada por resultado | aceptada por ROOT; PR-O1, revisión1 A/B sin gaps y QA documental403/403; implementación M3 pendiente |
 
-| [0084](ADR-0084-frontera-nativa-y-admision-del-principal-windows.md) | Frontera nativa y admisión del principal Windows | aceptada; O1 elegida, ratificada tras revisión2 y QA documental; runtime pendiente |
+| [0084](ADR-0084-frontera-nativa-y-admision-del-principal-windows.md) | Frontera nativa y admisión del principal Windows | aparcada por ADR-0089 |
 
 | [0083](ADR-0083-persistencia-tipificada-y-revisiones-inmutables-de-produccion.md) | Persistencia tipificada y revisiones inmutables de producción | aceptada; D03/PD-O1 elegida, ratificada tras revisión2 y QA documental; runtime pendiente |
 

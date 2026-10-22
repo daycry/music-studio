@@ -2,7 +2,7 @@
 
 > Estos principios son permanentes y se aplican a todo el trabajo del repositorio. Los agentes del plugin custom-agents la leen antes de empezar, y la revisión adversarial (lente A) marca como gap cualquier cambio que viole uno de ellos.
 > **Para cambiar un principio** hace falta un ADR nuevo en `docs/decisiones/` y editar este fichero. No se cambia desde una tarea normal.
-> Última revisión: 2026-10-10 · Mantenida por: el propietario
+> Última revisión: 2026-10-22 (ADR-0089: se retira la excepción del VHDX de ADR-0069) · Mantenida por: el propietario
 
 ## 1. Principios de producto
 
@@ -23,7 +23,7 @@
 - **Fijado:** la primera migración de M1 crea el esquema completo definido inicialmente en [`arquitectura/datos.md`](arquitectura/datos.md), baseline de 23 tablas de ADR-0041; después, **solo migraciones Alembic aditivas**, también para nuevas relaciones aprobadas posteriormente como `job_attempt` (ADR-0043). Renombrar o borrar columnas con datos exige un ADR. La excepción delimitada de [ADR-0074](decisiones/ADR-0074-procedencia-cpu-y-contratos-versionados.md) permite relajar/reconstruir únicamente `take`, `publication_intent` y `publication_intent_revision` para origen CPU discriminado; inferencia conserva sus campos obligatorios. Exige exclusividad, backup restaurable, conservación de datos/IDs/FK/índices/checks/triggers y rollback probado; no se cambia el baseline. Todo artefacto generado tiene manifiesto versionado y linaje: inferencia conserva v1 y CPU autónomo usa v2, también sus previews; snapshots con cierre CPU usan v2. Ningún manifiesto emitido se reescribe y v1 solo crece con campos opcionales. La API server añade operaciones v2 sin alterar DTO M1; engine `/v1` sigue compatible.
 - **Vetado:** `torch.load`, `pickle.load` o cualquier deserialización pickle de pesos en código propio. En runtime solo se cargan `safetensors`, `gguf` u `onnx`, verificados por SHA-256 contra `models/models.lock.json` y fijados por revisión (nunca `main`); los pickle de repos oficiales se convierten una vez con el auditor y el código remoto (`trust_remote_code`) va fijado por hash (ADR-0006).
 - **Vetado:** rutas fuera de la carpeta del proyecto. Código, modelos, datos, evaluaciones y memoria viven dentro de `music-studio/` (ADR-0005). La excepción de ADR-0035 se limita al servicio Ollama preexistente y compartido; los datos del estudio y los nuevos pesos siguen dentro del proyecto.
-  [ADR-0069](decisiones/ADR-0069-almacenamiento-ext4-del-proyecto-para-publicacion-atomica.md)  permite únicamente la vista virtual WSL del ext4 cuya persistencia física  está en `data/_storage/studio-data.vhdx`, dentro del proyecto. No autoriza  almacenamiento externo ni otra copia como fuente de verdad. El montaje  es provisión de plataforma; el producto sigue en Docker sin privilegios  de montaje. Provisión y QA persistente pendientes.- **Vetado:** integrar APIs generativas de música de terceros (Suno, Udio…).
+- **Vetado:** integrar APIs generativas de música de terceros (Suno, Udio…).
 - **Vetado:** modelos o herramientas cuyos pesos no permitan uso comercial como opción por defecto. Solo pueden usarse como «laboratorio», con `commercial_use: false` en el manifiesto (ADR-0011).
 - **Vetado:** añadir un servicio de infraestructura (Postgres, Redis, colas externas, cloud) sin un ADR.
 

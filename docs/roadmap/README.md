@@ -5,14 +5,13 @@ Cada hito es una iniciativa en `docs/roadmap/<YYYY-MM-DD>-<slug>/` con el format
 | Fecha | Slug | Título | Prioridad | Estado spec | Estado eval. | Esfuerzo | Spec | Tasks |
 |-------|------|--------|-----------|-------------|--------------|----------|------|-------|
 | 2026-09-28 | `m0-entorno-y-motor` | M0 · Entorno, motor por CLI y elección de modelo | Crítica | **aprobada** | n/a | ~88 h (80 sin la opcional) | [spec](./2026-09-28-m0-entorno-y-motor/spec.md) | [tasks](./2026-09-28-m0-entorno-y-motor/tasks.md) |
-| 2026-09-28 | `m1-mvp-estudio` | M1 · MVP del estudio web | Alta | **aprobada** | n/a | ~153 h | [spec](./2026-09-28-m1-mvp-estudio/spec.md) | [tasks](./2026-09-28-m1-mvp-estudio/tasks.md) |
-| 2026-10-10 | `m2-iteracion-creativa` | M2 · Iteración creativa; apertura técnica ADR-0037 | Alta | **aprobada bajo delegación** | n/a | ~590 h base orientativas | [spec](./2026-10-10-m2-iteracion-creativa/spec.md) | [tasks](./2026-10-10-m2-iteracion-creativa/tasks.md) |
-
-| 2026-10-11 | `m3-produccion-portada-video-letra` | M3 · Producción, portada y vídeo con letra | Alta | **aprobada bajo delegación** | n/a | pendiente de plan | [spec](./2026-10-11-m3-produccion-portada-video-letra/spec.md) | pendiente |
+| 2026-09-28 | `m1-mvp-estudio` | M1 · MVP del estudio web (recortado, ADR-0089) | Alta | **aprobada** | n/a | ~153 h originales; recortado | [spec](./2026-09-28-m1-mvp-estudio/spec.md) | [tasks](./2026-09-28-m1-mvp-estudio/tasks.md) |
+| 2026-10-10 | `m2-iteracion-creativa` | M2 · Iteración creativa | Alta | **congelada** (ADR-0089) | n/a | — | [spec](../archive/codex-2026-10/roadmap/2026-10-10-m2-iteracion-creativa/spec.md) | [archivo](../archive/codex-2026-10/roadmap/2026-10-10-m2-iteracion-creativa/tasks.md) |
+| 2026-10-11 | `m3-produccion-portada-video-letra` | M3 · Producción, portada y vídeo con letra | Alta | **congelada** (ADR-0089) | n/a | — | [spec](../archive/codex-2026-10/roadmap/2026-10-11-m3-produccion-portada-video-letra/spec.md) | [archivo](../archive/codex-2026-10/roadmap/2026-10-11-m3-produccion-portada-video-letra/tasks.md) |
 
 ## Secuencia de aceptación de hitos
 
-M2 dispone de spec, diseño O2 y plan aprobados bajo delegación; comienza por su contrato CPU independiente conforme ADR-0037; O1 de [cpu-contract-design.md](2026-10-10-m2-iteracion-creativa/cpu-contract-design.md) y ADR-0074 concretan origen, excepción SQL y formatos/API v2. La aceptación final conserva las condiciones siguientes. M3 dispone de requisitos aprobados bajo delegación y conserva diseño/plan pendientes; M4–M5 todavía no tienen carpeta. La preparación técnica no cierra ni acepta los hitos previos.
+**Un hito activo a la vez** ([ADR-0089](../decisiones/ADR-0089-reencauce-tras-codex.md)): M0 se cierra y M1 recortado está en curso. M2 y M3 se congelaron con su trabajo en [`../archive/codex-2026-10/`](../archive/codex-2026-10/README.md) y se replanifican cuando M1 esté cerrado y en uso real. M4 y M5 todavía no tienen carpeta.
 
 | Hito | Contenido ([funcionalidades](../producto/funcionalidades.md)) | Condición para abrirlo |
 |---|---|---|
