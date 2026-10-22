@@ -5,6 +5,7 @@ salta con el motivo «requiere Linux real».
 """
 # ruff: noqa: F811  (el fixture se importa de otro test)
 
+import pytest
 from app import models
 from app.publication import PublicationCoordinator
 from app.worker.execution import CpuAudioService
@@ -78,4 +79,29 @@ def test_resume_discards_a_half_written_stage_of_the_dead_child(actual):
     service = _restart(actual)
     assert service.claim_resume(POST) == EXECUTION
     service.execute(actual.plan, execution_id=EXECUTION, resume=True)
+    _assert_published(actual)
+
+
+def test_prepared_intent_is_republished_from_its_staging_after_a_crash(
+    actual, monkeypatch
+):
+    """Republicación REAL (verify_package + rename): sin simular reconcile."""
+    from app.worker import publications
+
+    def crash(source, destination):
+        raise RuntimeError("SIGKILL entre prepared y rename")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(publications, "rename_noreplace", crash)
+        with pytest.raises(RuntimeError):
+            actual.service.execute(actual.plan, execution_id=EXECUTION)
+    with Session(actual.engine) as session:
+        assert session.scalar(select(models.PublicationIntent)).state == "prepared"
+        assert session.get(models.Take, TAKE).status != "ready"
+    staging = actual.root / f"data/songs/{SONG}/takes/.pending-{EXECUTION}/{TAKE}"
+    assert (staging / "master.flac").is_file()
+    service = _restart(actual)
+    assert service.claim_resume(POST) == EXECUTION
+    results = service.execute(actual.plan, execution_id=EXECUTION, resume=True)
+    assert [r.status for r in results] == ["success"]
     _assert_published(actual)

@@ -31,7 +31,7 @@ from .contracts import (
     canonical_sha256,
 )
 from .custody import Owner
-from .custody_linux import LinuxGroup
+from .custody_linux import LINUX_GROUPS, LinuxGroup
 from .packages import (
     MAX_PLAN_BYTES,
     canonical_bytes,
@@ -85,7 +85,34 @@ def _probe_group(leader):
     return False
 
 
+def _probe_execution(execution_id, proc=Path("/proc")):
+    """``True`` si algún proceso vivo pertenece a la ejecución ``execution_id``.
+
+    El supervisor y el hijo se lanzan con el id de ejecución en su ``argv``
+    (``custody_linux``), y FFmpeg con rutas ``.pending-<exec>``: siempre aparece
+    en ``/proc/*/cmdline``. Prueba de muerte sin pid para la marca ``launching``.
+    Sin ``/proc`` no se puede saber y se lanza ``OSError``.
+    """
+    proc = Path(proc)
+    if not (proc / "self" / "stat").exists():
+        raise OSError("PROC_UNAVAILABLE")
+    needle = execution_id.encode()
+    for entry in proc.iterdir():
+        if not entry.name.isdigit():
+            continue
+        try:
+            fields = (entry / "stat").read_text().rsplit(")", 1)[1].split()
+            if fields[0] in {"Z", "X"}:
+                continue
+            if needle in (entry / "cmdline").read_bytes():
+                return True
+        except (FileNotFoundError, ProcessLookupError, IndexError):
+            continue  # terminó mientras se recorría
+    return False
+
+
 _ULID = re.compile(r"[0-9A-Z]{26}")
+_LAUNCHING = {"launching": True}
 
 
 class CpuAudioService:
@@ -101,6 +128,7 @@ class CpuAudioService:
         self._guard = threading.RLock()
         self._birth_probe = _probe_birth
         self._group_probe = _probe_group
+        self._execution_probe = _probe_execution
         self._resumed = set()
         self._skipped = {}
         self._owner_jobs = {}
@@ -118,7 +146,10 @@ class CpuAudioService:
 
     def _back_off(self, key):
         with self._guard:
-            self._backoff[key] = time.monotonic() + self.backoff_s
+            now = time.monotonic()
+            for stale in [k for k, until in self._backoff.items() if until <= now]:
+                del self._backoff[stale]
+            self._backoff[key] = now + self.backoff_s
 
     def _occupied_slots(self, executor, live=None):
         """Slots CPU ocupados: todo owner vivo o retenido más los ``running`` de SQL.
@@ -348,7 +379,11 @@ class CpuAudioService:
 
         Las entradas de engine usan ``uuid4().hex`` y nunca casan con un ULID.
         """
-        base = self.root / "data" / "tmp" / "_server_inputs"
+        for folder in ("_server_inputs", "_server_cpu"):
+            self._clean_orphan_folder(folder)
+
+    def _clean_orphan_folder(self, folder):
+        base = self.root / "data" / "tmp" / folder
         if not base.is_dir() or self._link(base):
             return
         with self.engine.connect() as connection:
@@ -363,7 +398,7 @@ class CpuAudioService:
                 remove_data_dir(
                     self.root / "data",
                     "tmp",
-                    "_server_inputs",
+                    folder,
                     entry.name,
                     log=self.log,
                 )
@@ -487,7 +522,7 @@ class CpuAudioService:
         shutil.move(str(entry), str(destination))
         self.log.warning("worker.orphan.quarantined", extra=extra)
 
-    def _process_dead(self, identity):
+    def _process_dead(self, identity, execution_id=None):
         """Prueba de muerte del proceso anterior a partir de su identidad durable.
 
         ``None``: nunca llegó a lanzarse un workload con ese lease. Con identidad
@@ -500,6 +535,16 @@ class CpuAudioService:
             return True
         if not isinstance(identity, dict):
             return False
+        if identity == _LAUNCHING:
+            # Marca previa al lanzamiento: no hay pid. Sin id de ejecución o sin
+            # /proc no se prueba nada; si no queda ningún proceso de la ejecución,
+            # nunca llegó a lanzarse o ya murió.
+            if execution_id is None:
+                return False
+            try:
+                return not self._execution_probe(execution_id)
+            except (OSError, ValueError):
+                return False
         leader, birth = identity.get("leader"), identity.get("birth")
         if type(leader) is not int or type(birth) is not int or leader <= 0:
             return False
@@ -546,13 +591,16 @@ class CpuAudioService:
             )
         with self._guard:
             alive, tried = set(self.owners), set(self._resumed)
-        return [
-            job_id
-            for job_id, execution_id, identity in rows
-            if execution_id not in alive
-            and job_id not in tried
-            and self._process_dead(identity)
-        ]
+        ready = []
+        for job_id, execution_id, identity in rows:
+            key = ("probe", execution_id)
+            if execution_id in alive or job_id in tried or self._backed_off(key):
+                continue
+            if self._process_dead(identity, execution_id):
+                ready.append(job_id)
+            else:
+                self._back_off(key)  # no se recorre /proc en cada tick
+        return ready
 
     def claim_resume(self, job_id):
         """``interrupted → running`` sobre la misma ``cpu_execution`` (opción A).
@@ -616,7 +664,7 @@ class CpuAudioService:
                 return None
             if (
                 cpu["id"] in alive
-                or not self._process_dead(cpu["process_identity"])
+                or not self._process_dead(cpu["process_identity"], cpu["id"])
                 or self._occupied_slots(session) >= 2
             ):
                 self._back_off(key)
@@ -628,7 +676,7 @@ class CpuAudioService:
                 job is None
                 or cpu is None
                 or cpu["id"] in alive
-                or not self._process_dead(cpu["process_identity"])
+                or not self._process_dead(cpu["process_identity"], cpu["id"])
                 or self._occupied_slots(connection, live=live) >= 2
             ):
                 return None
@@ -1116,19 +1164,40 @@ class CpuAudioService:
                 wrote=lambda value: True,
             )
             cpu = dict(cpu, revision=launching)
-            group = LinuxGroup(
-                "audio",
-                run,
-                execution_id,
-                cpu["supervisor_epoch"],
-                audio_root=self.root,
-                plan_sha256=cpu["plan_sha256"],
-                plan_bytes=len(canonical_bytes(plan)),
-                context_sha256=self.publisher.receipt_hashes[execution_id],
-                context_bytes=len(
-                    self.publisher.prepared_contexts[execution_id].payload
-                ),
-            )
+            known = set(LINUX_GROUPS)
+            try:
+                group = LinuxGroup(
+                    "audio",
+                    run,
+                    execution_id,
+                    cpu["supervisor_epoch"],
+                    audio_root=self.root,
+                    plan_sha256=cpu["plan_sha256"],
+                    plan_bytes=len(canonical_bytes(plan)),
+                    context_sha256=self.publisher.receipt_hashes[execution_id],
+                    context_bytes=len(
+                        self.publisher.prepared_contexts[execution_id].payload
+                    ),
+                )
+            except BaseException:
+                # Sin ningún grupo nuevo (ni Popen) se sabe que no se lanzó nada:
+                # la marca vuelve a «nunca lanzado» para poder cancelar/reanudar.
+                if not any(hasattr(g, "process") for g in set(LINUX_GROUPS) - known):
+                    try:
+                        self.publisher.transaction(
+                            lambda connection: cas(
+                                connection,
+                                "cpu_execution",
+                                execution_id,
+                                cpu["revision"],
+                                "prepared",
+                                process_identity=None,
+                            ),
+                            wrote=lambda value: True,
+                        )
+                    except Exception:  # noqa: BLE001 -- se conserva el error primario
+                        self.log.error("worker.cleanup.failed")
+                raise
             owner = Owner(group, execution_id, cpu["supervisor_epoch"], 3600)
             self.owners[execution_id] = owner
             self._owner_jobs[execution_id] = plan.post_job_id
@@ -1354,7 +1423,8 @@ class CpuAudioService:
 
         def proven(executions):
             return not any(
-                row["id"] in live or not self._process_dead(row["process_identity"])
+                row["id"] in live
+                or not self._process_dead(row["process_identity"], row["id"])
                 for row in executions
             )
 

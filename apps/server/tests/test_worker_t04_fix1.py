@@ -111,10 +111,10 @@ def test_b1_claim_resume_never_takes_guard_inside_the_barrier(tmp_path):
     outcome = {}
     real = service._process_dead
 
-    def slow_dead(identity):
+    def slow_dead(identity, *args):
         in_proof.set()
         a_has_guard.wait(5)
-        return real(identity)
+        return real(identity, *args)
 
     service._process_dead = slow_dead
 
@@ -152,10 +152,10 @@ def test_b1_cancel_never_takes_guard_inside_the_barrier(tmp_path):
     outcome = {}
     real = service._process_dead
 
-    def slow_dead(identity):
+    def slow_dead(identity, *args):
         in_proof.set()
         a_has_guard.wait(5)
-        return real(identity)
+        return real(identity, *args)
 
     service._process_dead = slow_dead
 

@@ -27,12 +27,16 @@ def _link(path):
 
 
 def remove_data_dir(data_dir, *parts, log=None, extra=None):
-    """Borra ``data/<parts>`` si es un directorio propio; devuelve si lo borró."""
+    """Borra ``data/<parts>`` si es un directorio propio.
+
+    ``True`` lo borró, ``False`` no había nada que borrar, ``None`` falló (el
+    llamador puede reintentar).
+    """
     log = log or logging.getLogger(__name__)
     extra = extra or {}
     if not parts or not all(isinstance(p, str) and _PART.fullmatch(p) for p in parts):
         log.error("worker.cleanup.failed", extra=extra)
-        return False
+        return None
     data = Path(data_dir)
     try:
         chain = [data]
@@ -43,18 +47,18 @@ def remove_data_dir(data_dir, *parts, log=None, extra=None):
             return False
         if any(_link(p) for p in chain):
             log.error("worker.cleanup.failed", extra=extra)
-            return False
+            return None
         if not target.exists():
             return False
         if not target.is_dir() or not target.resolve().is_relative_to(data.resolve()):
             log.error("worker.cleanup.failed", extra=extra)
-            return False
+            return None
         shutil.rmtree(target)
         log.info("worker.staging.removed", extra=extra)
         return True
     except OSError:
         log.error("worker.cleanup.failed", extra=extra)
-        return False
+        return None
 
 
 def needed_by_live_job(session, job_id):
@@ -129,12 +133,13 @@ def cancelled_targets(session, owner_id, since=None, retry=(), report=None):
     return targets
 
 
-def _remove_targets(targets, data_dir, log):
+def _remove_targets(targets, data_dir, log, failed=None):
     removed = 0
     for job_id, parts in targets:
-        removed += bool(
-            remove_data_dir(data_dir, *parts, log=log, extra={"job_id": job_id})
-        )
+        outcome = remove_data_dir(data_dir, *parts, log=log, extra={"job_id": job_id})
+        removed += outcome is True
+        if outcome is None and failed is not None:
+            failed.add(job_id)
     return removed
 
 
@@ -173,8 +178,9 @@ class CancelSweeper:
                 report=report,
             )
         self.last_scanned = report["scanned"]
-        removed = _remove_targets(targets, self.data_dir, self.log)
-        self.deferred = report["deferred"]
+        failed = set()
+        removed = _remove_targets(targets, self.data_dir, self.log, failed)
+        self.deferred = report["deferred"] | failed  # un borrado fallido se reintenta
         margin = started - timedelta(seconds=self.MARGIN_S)
         self.since = margin.isoformat(timespec="microseconds").replace("+00:00", "Z")
         return removed
