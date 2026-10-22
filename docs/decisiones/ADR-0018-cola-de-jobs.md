@@ -17,10 +17,10 @@
 - **Orden dentro de una misma prioridad.** FIFO. Además, se agrupan los jobs que usan **el mismo modelo** antes de cambiar de modelo, sin retrasar ninguno más de `STUDIO_MAX_REORDER_S` (120 s por defecto).
 - **Sin expropiación.** Un job en curso no se interrumpe. Por eso los trabajos largos se trocean: el vídeo se genera **plano a plano**, un job por plano.
 - **Dependencias.** Un job con dependencias pendientes queda en `blocked`. Si un padre falla, sus hijos pasan a `failed` con `error_code=DEPENDENCY_FAILED`.
-- **Reintentos.** Automáticos solo si el engine marca el error como `retryable`, hasta dos reintentos: `max_attempts=3` cuenta los tres intentos totales. La identidad durable y recuperación se concretan en [ADR-0043](ADR-0043-identidad-durable-de-intentos.md). `VRAM_EXCEEDED` se reintenta una vez en modo `offload` si el descriptor lo tiene.
+- **Reintentos.** Automáticos solo si el error es `retryable`: lo marca el engine o, en el caso dudoso de [ADR-0090](ADR-0090-reintento-acotado-de-intentos-dudosos.md), el server tras confirmar la ausencia, hasta dos reintentos: `max_attempts=3` cuenta los tres intentos totales. La identidad durable y recuperación se concretan en [ADR-0043](ADR-0043-identidad-durable-de-intentos.md). `VRAM_EXCEEDED` se reintenta una vez en modo `offload` si el descriptor lo tiene.
 - **Recuperación.** Al arrancar:
   - `queued` y `blocked` se conservan;
-  - `running` pasa a `interrupted`; se reconcilia el intento vigente y se conserva su ID/payload/cursor conforme a ADR-0043, sin consumir un retry por pérdida de acuse;
+  - `running` pasa a `interrupted`; se reconcilia el intento vigente y se conserva su ID/payload/cursor conforme a ADR-0043, sin consumir un retry por pérdida de acuse; si el engine confirma la ausencia y el reenvío no es seguro (salida previa), se aplica el reintento acotado de [ADR-0090](ADR-0090-reintento-acotado-de-intentos-dudosos.md);
   - se reconcilian temporales de intentos con propiedad acreditada; ausencia de registro o ficheros parciales no prueban éxito ni autorizan limpiar salidas ajenas.
 - **Cancelación.** El server marca `cancel_requested_at` y la propaga al engine (`DELETE /v1/jobs/{id}`).
 - **Cambio de modelo.** Antes de despachar a un engine distinto del que tiene la VRAM, el dispatcher llama a `POST /v1/unload` y espera a que `/v1/health` muestre la VRAM liberada. Las tareas que el descriptor marca como `device: cpu` (p. ej. `audio.beats`) van por el carril `cpu` y no descargan la GPU: así no se recarga ACE-Step después de cada análisis.

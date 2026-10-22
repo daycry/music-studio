@@ -381,3 +381,30 @@ Revisión corta del fix6 (`5d989b4..3ec7112`), lentes A y B:
 | # | Grado | Gap | Tarea | Corrección | Evidencia |
 |---|---|---|---|---|---|
 | 1 | Minor | `normcase` iguala mayúsculas también en carpetas de Windows que las distinguen. Un gemelo en minúsculas creado a mano (`songs/s/takes/t`), con un manifiesto que declara `songs/S/takes/T`, da «valid» aunque las salidas verificadas son las del gemelo. Los ULID del server van siempre en mayúsculas; el contexto privado se busca por hash | T-05 | deuda aceptada (Minor; no bloquea) | `verify_manifest.py:47,54-56`; sonda `cs5probe.py` con `fsutil … setCaseSensitiveInfo` |
+
+## Revisión de dos lentes — intento 1: Fase 2 (T-04) — siete Important pendientes
+
+Lentes A, B y D (D por la ruta `worker`/`queue`; C no aplica), sobre el diff `e5974f1..b613714`.
+
+**Lente A por criterio:**
+- CA-1 parcial (gaps I1, I2).
+- CA-2 ✓.
+- CA-3 ✓ en código; falta la evidencia en Docker (I3).
+- CA-4 ✓ en código; falta el ADR (I3b).
+- CA-5 ✓.
+- CA-6 sin verificar por RAM; según el implementer, 2570 passed.
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| I1 | Important | Un post que muere tras `claim_job` y antes de crear su `cpu_execution` se queda `interrupted` para siempre, o `running` ocupando un carril si no hay backends. `resumable_jobs`, `claim_resume` y `claim_job` lo ignoran | T-04 | pendiente (implementer) | `execution.py:411-446,118-119,674-706,779`; reproducido (lente A) |
+| I2 | Important | La reanudación con intents `prepared` (republicar desde el staging y `resume-skip.json`) no tiene ningún test | T-04 | pendiente (implementer) | `execution.py:804-818,1034-1047`; `audio_child.py:181-190,232` |
+| I3 | Important | No hay evidencia en Docker de cancelar un post **interrumpido**: la pegada era de un post en curso | T-04 | pendiente (orquestador) | `tasks.md` (verificación de T-04) |
+| I3b | Important | CA-4 (fallo sintético retryable que consume un intento) contradice ADR-0018 §20, ADR-0043 §16 y `sistema.md:103,106`. Falta un ADR y actualizar esos documentos | T-04 | corregido: ADR-0090, con ADR-0018, ADR-0043 y `sistema.md` actualizados | `recovery.py:51-68`, `runtime.py:248-255` |
+| B1 | Important | Inversión del orden de los locks: `claim_resume` toma `_guard` dentro de la barrera y `execute` los toma al revés. Resultado: `PublicationTimeout` y un post nuevo `failed` para siempre | T-04 | pendiente (implementer) | `execution.py:84,504,963-969,779`; reproducido (lente B) |
+| B2 | Important | Una reanudación o cancelación rechazada se repite cada 0,1 s y cada transacción sin efecto hace `mark_gap`, que corta todos los SSE (también lo señala D) | T-04 | pendiente (implementer) | `publications.py:346-352`, `execution.py:533,1242`, `runtime.py:563-569`; reproducido |
+| B3 | Important | `_occupied_slots` mira `job_executions` y no los `owners` retenidos, y filtra `deleted_at` aunque el proceso siga vivo. Puede haber 3 grupos CPU vivos | T-04 | pendiente (implementer) | `execution.py:84-100,576,1086-1088` |
+| m1 | Minor | Una identidad nula cuenta como muerte sin sondear; el ledger decía «en Windows sigue `unknown`» | T-04 | pendiente (implementer y ledger) | `execution.py:393-394,973-1005` |
+| m2 | Minor | La cláusula de CA-2 «ni de otro owner» no tiene test | T-04 | pendiente (implementer) | `test_worker_resume.py:53-90` |
+| B4 | Minor | Un líder zombi o un `/proc` ausente cuenta como muerte aunque el grupo siga vivo (otro espacio de PID) | T-04 | pendiente (implementer, si es barato) | `execution.py:58-59,133` |
+| B5 | Minor | El reintento de CA-4 deja huérfano el `data/tmp/<attempt antiguo>` | T-04 | se trata junto a H5 | `runtime.py:247-255`, `recovery.py:108` |
+| D1 | Minor | `sweep_cancelled` relee cada 2 s todos los cancelados del histórico (N+1). Con 500, unos 125 ms cada 2 s en el pool de 2 hilos | T-04 | pendiente (implementer) | `cleanup.py:91-124`, `runtime.py:772`; medido |
