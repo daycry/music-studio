@@ -24,7 +24,7 @@ from .admission import Admission, Claim, occupancy_filters
 from .backends.http import HttpEngineBackend
 from .backends.protocol import BackendFailure, ConfirmedAbsent
 from .cancellation import Cancellation, local_jobs
-from .cleanup import sweep_cancelled
+from .cleanup import CancelSweeper
 from .dispatcher import Dispatcher, Resident
 from .events import EventBus, EventConsumer
 from .provenance import MUSIC_TASKS, SelectedProvenance, capture_before_send
@@ -596,14 +596,15 @@ class QueueRuntime:
         if not force and now < getattr(self, "_sweep_at", 0.0):
             return
         self._sweep_at = now + getattr(self, "sweep_s", 2.0)
-        try:
-            await self.dbcall(
-                sweep_cancelled,
+        if getattr(self, "_sweeper", None) is None:
+            self._sweeper = CancelSweeper(
                 self.engine,
                 owner,
                 self.settings.data_dir,
                 getattr(self.engine, "studio_logger", None),
             )
+        try:
+            await self.dbcall(self._sweeper.run, force)
         except Exception:  # noqa: BLE001 -- la limpieza nunca para la cola
             self.logger.warning("queue.cleanup_failed")
 

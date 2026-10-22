@@ -8,6 +8,7 @@ una excepción que aborte el bucle de la cola.
 import logging
 import re
 import shutil
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from sqlalchemy import select
@@ -84,12 +85,23 @@ def _generation_id(job):
     return None
 
 
-def cancelled_targets(session, owner_id):
-    """``(job_id, (partes...))`` de lo que un job cancelado ya no necesita."""
-    targets = []
+def cancelled_targets(session, owner_id, since=None, retry=(), report=None):
+    """``(job_id, (partes...))`` de lo que un job cancelado ya no necesita.
+
+    ``since`` acota el barrido a los cancelados tocados desde entonces y
+    ``retry`` añade los aplazados (otro job vivo los necesitaba). ``report``
+    recoge cuántos se examinaron y cuáles hay que reintentar.
+    """
+    targets, deferred, scanned = [], set(), 0
     cancelled = local_jobs(owner_id).where(models.Job.status == "cancelled")
+    if since is not None:
+        cancelled = cancelled.where(
+            (models.Job.updated_at >= since) | models.Job.id.in_(list(retry))
+        )
     for job in session.scalars(cancelled):
+        scanned += 1
         if needed_by_live_job(session, job.id):
+            deferred.add(job.id)
             continue
         for attempt_id in session.scalars(
             select(models.JobAttempt.id).where(models.JobAttempt.job_id == job.id)
@@ -103,22 +115,66 @@ def cancelled_targets(session, owner_id):
             targets.append((job.id, ("tmp", "_server_cpu", execution_id)))
             targets.append((job.id, ("tmp", "_server_inputs", execution_id)))
         generation = _generation_id(job)
-        if generation is None or needed_by_live_job(session, generation):
+        if generation is None:
+            continue
+        if needed_by_live_job(session, generation):
+            deferred.add(job.id)
             continue
         for attempt_id in session.scalars(
             select(models.JobAttempt.id).where(models.JobAttempt.job_id == generation)
         ):
             targets.append((job.id, ("tmp", attempt_id)))
+    if report is not None:
+        report.update(scanned=scanned, deferred=deferred)
     return targets
 
 
-def sweep_cancelled(engine, owner_id, data_dir, log=None):
-    """Borra ``data/tmp/<attempt>`` y temporales de posts cancelados. Idempotente."""
-    with Session(engine) as session:
-        targets = cancelled_targets(session, owner_id)
+def _remove_targets(targets, data_dir, log):
     removed = 0
     for job_id, parts in targets:
         removed += bool(
             remove_data_dir(data_dir, *parts, log=log, extra={"job_id": job_id})
         )
     return removed
+
+
+def sweep_cancelled(engine, owner_id, data_dir, log=None):
+    """Barrido completo de ``data/tmp`` de los cancelados. Idempotente."""
+    with Session(engine) as session:
+        targets = cancelled_targets(session, owner_id)
+    return _remove_targets(targets, data_dir, log)
+
+
+class CancelSweeper:
+    """Barrido incremental: el histórico entero solo se lee al arrancar.
+
+    Después solo se examinan los cancelados tocados desde el barrido anterior
+    (con un margen para commits en vuelo) y los aplazados porque otro job vivo
+    aún necesitaba sus salidas. El estado vive en memoria: sin migración.
+    """
+
+    MARGIN_S = 5
+
+    def __init__(self, engine, owner_id, data_dir, log=None):
+        self.engine, self.owner_id = engine, owner_id
+        self.data_dir, self.log = data_dir, log
+        self.since, self.deferred, self.last_scanned = None, set(), 0
+
+    def run(self, force=False):
+        started = datetime.now(timezone.utc)
+        since = None if force or self.since is None else self.since
+        report = {}
+        with Session(self.engine) as session:
+            targets = cancelled_targets(
+                session,
+                self.owner_id,
+                since=since,
+                retry=self.deferred,
+                report=report,
+            )
+        self.last_scanned = report["scanned"]
+        removed = _remove_targets(targets, self.data_dir, self.log)
+        self.deferred = report["deferred"]
+        margin = started - timedelta(seconds=self.MARGIN_S)
+        self.since = margin.isoformat(timespec="microseconds").replace("+00:00", "Z")
+        return removed

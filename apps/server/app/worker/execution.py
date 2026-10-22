@@ -4,9 +4,11 @@ import hashlib
 import json
 import logging
 import os
+import re
 import secrets
 import shutil
 import threading
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from queue import Empty
@@ -60,6 +62,32 @@ def _probe_birth(pid):
     return int(fields[19])
 
 
+def _probe_group(leader):
+    """``True`` si queda algún proceso vivo en el grupo/sesión de ``leader``.
+
+    Un líder zombi o ausente no prueba que el grupo haya muerto: sus hijos pueden
+    seguir escribiendo. Sin ``/proc`` no se puede saber y se lanza ``OSError``.
+    """
+    proc = Path("/proc")
+    if not (proc / "self" / "stat").exists():
+        raise OSError("PROC_UNAVAILABLE")
+    for entry in proc.iterdir():
+        if not entry.name.isdigit():
+            continue
+        try:
+            fields = (entry / "stat").read_text().rsplit(")", 1)[1].split()
+        except (FileNotFoundError, ProcessLookupError):
+            continue  # terminó mientras se recorría
+        if fields[0] in {"Z", "X"}:
+            continue
+        if leader in (int(fields[2]), int(fields[3])):
+            return True
+    return False
+
+
+_ULID = re.compile(r"[0-9A-Z]{26}")
+
+
 class CpuAudioService:
     def __init__(
         self, engine, root, *, coordinator, bus, ffmpeg, owner_id=None, logger=None
@@ -72,33 +100,53 @@ class CpuAudioService:
         self.job_executions = {}
         self._guard = threading.RLock()
         self._birth_probe = _probe_birth
+        self._group_probe = _probe_group
         self._resumed = set()
         self._skipped = {}
+        self._owner_jobs = {}
+        self._backoff = {}
+        self.backoff_s = 5.0
 
-    def _occupied_slots(self, session):
-        """Ejecuciones CPU vivas: ``running`` más las ``interrupted`` con dueño aquí.
-
-        Un job ``interrupted`` sin dueño vivo (reinicio) no ocupa carril; tampoco
-        los borrados ni los de otro owner.
-        """
+    def _live_jobs(self):
+        """Jobs con ejecución viva o custodia retenida en este proceso."""
         with self._guard:
-            live = set(self.job_executions)
+            return set(self.job_executions) | set(self._owner_jobs.values())
+
+    def _backed_off(self, key):
+        with self._guard:
+            return self._backoff.get(key, 0.0) > time.monotonic()
+
+    def _back_off(self, key):
+        with self._guard:
+            self._backoff[key] = time.monotonic() + self.backoff_s
+
+    def _occupied_slots(self, executor, live=None):
+        """Slots CPU ocupados: todo owner vivo o retenido más los ``running`` de SQL.
+
+        ``live`` es un snapshot de ``_live_jobs()`` tomado FUERA de la barrera del
+        coordinador (orden único: ``_guard`` antes que la barrera). Un owner vivo
+        ocupa slot aunque su fila esté borrada o cambiase de estado; un
+        ``interrupted`` sin dueño (reinicio), un borrado o el de otro owner, no.
+        """
+        if live is None:
+            live = self._live_jobs()
         mine = (
             models.Job.owner_id == self.owner_id
             if self.owner_id is not None
             else models.Job.owner_id.is_not(None)
         )
-        return session.scalar(
+        sql = executor.scalar(
             select(func.count())
             .select_from(models.Job)
             .where(
                 models.Job.lane == "cpu",
                 models.Job.deleted_at.is_(None),
                 mine,
-                (models.Job.status == "running")
-                | ((models.Job.status == "interrupted") & models.Job.id.in_(live)),
+                models.Job.status == "running",
+                models.Job.id.not_in(live),
             )
         )
+        return sql + len(live)
 
     def claim_job(self, job_id):
         """Atomically acquire one of the two server CPU slots for post.audio."""
@@ -230,6 +278,8 @@ class CpuAudioService:
             .replace("+00:00", "Z")
         )
         with Session(self.engine) as session, session.begin():
+            self._requeue_orphans(session, stamp)
+            session.flush()
             rows = session.execute(
                 select(models.Job, models.CpuExecution)
                 .join(models.CpuExecution, models.CpuExecution.job_id == models.Job.id)
@@ -258,9 +308,65 @@ class CpuAudioService:
                 count += 1
         try:
             self._clean_staging()
+            self._clean_orphan_inputs()
         except Exception:  # noqa: BLE001 -- la limpieza nunca aborta el arranque
             self.log.error("worker.cleanup.failed")
         return count
+
+    def _requeue_orphans(self, session, stamp):
+        """Posts ``running``/``interrupted`` sin ninguna ``cpu_execution`` (I1).
+
+        Murieron tras ``claim_job`` y antes de reservar su ejecución: no hay
+        proceso ni staging propio que proteger, así que vuelven a ``queued``.
+        """
+        has_execution = (
+            select(models.CpuExecution.id)
+            .where(models.CpuExecution.job_id == models.Job.id)
+            .exists()
+        )
+        live = self._live_jobs()
+        for job in session.scalars(
+            select(models.Job).where(
+                models.Job.task == "post.audio",
+                models.Job.lane == "cpu",
+                models.Job.status.in_(["running", "interrupted"]),
+                models.Job.deleted_at.is_(None),
+                self._owner_filter(),
+                ~has_execution,
+                models.Job.id.not_in(live),
+            )
+        ):
+            job.status = "queued"
+            job.attempt = 0
+            job.started_at = None
+            job.error_code = None
+            job.error = None
+            job.updated_at = stamp
+
+    def _clean_orphan_inputs(self):
+        """Copias parciales de ``_prepare`` sin ``cpu_execution`` (nombre ULID).
+
+        Las entradas de engine usan ``uuid4().hex`` y nunca casan con un ULID.
+        """
+        base = self.root / "data" / "tmp" / "_server_inputs"
+        if not base.is_dir() or self._link(base):
+            return
+        with self.engine.connect() as connection:
+            known = {
+                row[0]
+                for row in connection.exec_driver_sql("SELECT id FROM cpu_execution")
+            }
+        with self._guard:
+            alive = set(self.owners) | set(self.job_executions.values())
+        for entry in sorted(base.iterdir()):
+            if _ULID.fullmatch(entry.name) and entry.name not in known | alive:
+                remove_data_dir(
+                    self.root / "data",
+                    "tmp",
+                    "_server_inputs",
+                    entry.name,
+                    log=self.log,
+                )
 
     @staticmethod
     def _link(path):
@@ -399,9 +505,12 @@ class CpuAudioService:
             return False
         try:
             current = self._birth_probe(leader)
+            if current is not None and current == birth:
+                return False  # el líder sigue vivo
+            # Líder ausente, zombi o pid reutilizado: aún hay que ver su grupo.
+            return not self._group_probe(leader)
         except (OSError, ValueError, IndexError):
             return False
-        return current is None or current != birth
 
     def _owner_filter(self):
         if self.owner_id is not None:
@@ -453,22 +562,25 @@ class CpuAudioService:
         ``prepared`` con un lease y un epoch nuevos, que son las únicas
         transiciones que ya admiten los triggers. Devuelve el id de la
         ejecución a reanudar o ``None`` si no procede.
+
+        Orden único de locks: todo lo que necesita ``_guard`` (snapshots de
+        owners y ocupación) y todas las lecturas baratas ocurren ANTES de entrar
+        en la barrera del coordinador; dentro de ella no se toma ``_guard``. Un
+        rechazo no abre transacción ni invalida el feed, y se recuerda un rato.
         """
+        key = ("resume", job_id)
         with self._guard:
             if job_id in self._resumed or job_id in self.job_executions:
                 return None
             alive = set(self.owners)
-        with Session(self.engine) as session:
-            status = session.scalar(
-                select(models.Job.status).where(models.Job.id == job_id)
-            )
-        if status != "interrupted":
+        if self._backed_off(key):
             return None
+        live = self._live_jobs()
         stamp = models.utc_now()
 
-        def claim(connection):
+        def read(executor):
             job = (
-                connection.execute(
+                executor.execute(
                     select(models.Job.__table__).where(
                         models.Job.id == job_id,
                         models.Job.task == "post.audio",
@@ -483,7 +595,7 @@ class CpuAudioService:
                 .one_or_none()
             )
             cpu = (
-                connection.execute(
+                executor.execute(
                     select(models.CpuExecution.__table__)
                     .where(
                         models.CpuExecution.job_id == job_id,
@@ -496,12 +608,28 @@ class CpuAudioService:
                 .mappings()
                 .one_or_none()
             )
+            return job, cpu
+
+        with Session(self.engine) as session:
+            job, cpu = read(session)
+            if job is None or cpu is None:
+                return None
+            if (
+                cpu["id"] in alive
+                or not self._process_dead(cpu["process_identity"])
+                or self._occupied_slots(session) >= 2
+            ):
+                self._back_off(key)
+                return None
+
+        def claim(connection):
+            job, cpu = read(connection)
             if (
                 job is None
                 or cpu is None
                 or cpu["id"] in alive
                 or not self._process_dead(cpu["process_identity"])
-                or self._occupied_slots(connection) >= 2
+                or self._occupied_slots(connection, live=live) >= 2
             ):
                 return None
             revision = cas(
@@ -530,10 +658,14 @@ class CpuAudioService:
             )
             return cpu["id"]
 
-        execution_id = self.publisher.transaction(claim)
-        if execution_id is not None:
-            with self._guard:
-                self._resumed.add(job_id)
+        execution_id = self.publisher.transaction(
+            claim, wrote=lambda value: value is not None
+        )
+        if execution_id is None:
+            self._back_off(key)
+            return None
+        with self._guard:
+            self._resumed.add(job_id)
         return execution_id
 
     def pending_cancellations(self):
@@ -970,6 +1102,20 @@ class CpuAudioService:
                 self.publisher.reconcile(plan, execution_id)
                 return self._stored_results(plan, execution_id)
             skipped = self._skipped.pop(execution_id, set())
+            # Rastro durable ANTES de lanzar: si el server muere entre el lanzamiento
+            # y la CAS que guarda la identidad real, no se prueba una muerte falsa.
+            launching = self.publisher.transaction(
+                lambda connection: cas(
+                    connection,
+                    "cpu_execution",
+                    execution_id,
+                    cpu["revision"],
+                    "prepared",
+                    process_identity={"launching": True},
+                ),
+                wrote=lambda value: True,
+            )
+            cpu = dict(cpu, revision=launching)
             group = LinuxGroup(
                 "audio",
                 run,
@@ -985,6 +1131,7 @@ class CpuAudioService:
             )
             owner = Owner(group, execution_id, cpu["supervisor_epoch"], 3600)
             self.owners[execution_id] = owner
+            self._owner_jobs[execution_id] = plan.post_job_id
         results = []
         try:
 
@@ -1086,6 +1233,7 @@ class CpuAudioService:
             if owner.receipt is not None and owner.receipt.release_gate:
                 with self._guard:
                     self.owners.pop(execution_id, None)
+                    self._owner_jobs.pop(execution_id, None)
 
     def _stored_results(self, plan, execution_id):
         results = []
@@ -1161,18 +1309,22 @@ class CpuAudioService:
 
         Solo con prueba de muerte del proceso anterior: la custodia pasa a
         ``confirmed`` y la ``cpu_execution`` y sus intents quedan en estados
-        finales válidos. Sin prueba no cambia nada y devuelve ``False``.
+        finales válidos. Sin prueba no cambia nada, no abre transacción ni
+        invalida el feed, devuelve ``False`` y no se vuelve a sondear enseguida.
         """
+        key = ("cancel", job_id)
         with self._guard:
             live = set(self.owners)
             if job_id in self.job_executions:
                 return False
+        if self._backed_off(key):
+            return False
         stamp = models.utc_now()
         songs = []
 
-        def cancel(connection):
+        def read(executor):
             job = (
-                connection.execute(
+                executor.execute(
                     select(models.Job.__table__).where(
                         models.Job.id == job_id,
                         models.Job.task == "post.audio",
@@ -1186,9 +1338,9 @@ class CpuAudioService:
                 .one_or_none()
             )
             if job is None:
-                return False
+                return None, []
             executions = (
-                connection.execute(
+                executor.execute(
                     select(models.CpuExecution.__table__).where(
                         models.CpuExecution.job_id == job_id,
                         models.CpuExecution.deleted_at.is_(None),
@@ -1198,10 +1350,23 @@ class CpuAudioService:
                 .mappings()
                 .all()
             )
-            if any(
+            return job, executions
+
+        def proven(executions):
+            return not any(
                 row["id"] in live or not self._process_dead(row["process_identity"])
                 for row in executions
-            ):
+            )
+
+        with Session(self.engine) as session:
+            job, executions = read(session)
+            if job is None or not proven(executions):
+                self._back_off(key)
+                return False
+
+        def cancel(connection):
+            job, executions = read(connection)
+            if job is None or not proven(executions):
                 return False
             for row in executions:
                 revision = row["revision"]
@@ -1239,7 +1404,8 @@ class CpuAudioService:
             songs.append(job["song_id"])
             return True
 
-        if not self.publisher.transaction(cancel):
+        if not self.publisher.transaction(cancel, wrote=bool):
+            self._back_off(key)
             return False
         for song_id in songs:
             try:

@@ -124,6 +124,35 @@ def tool(ffmpeg, plan):
     return pin
 
 
+def read_resume_skip(directory, plan):
+    """Takes que el server ya empaquetó en un intento anterior (reanudación).
+
+    El hijo no las reprocesa. Fichero ausente: ninguna. Forma, duplicados o ids
+    ajenos al plan → ``PROVENANCE_MISMATCH``.
+    """
+    marker = Path(directory) / "resume-skip.json"
+    if not marker.exists():
+        return set()
+
+    def pairs(items):
+        keys = [key for key, _ in items]
+        if len(set(keys)) != len(keys):
+            raise ValueError("PROVENANCE_MISMATCH")
+        return dict(items)
+
+    value = json.loads(read_file(marker, limit=65536), object_pairs_hook=pairs)
+    ids = {entry.authority.take_id for entry in plan.takes}
+    skip = value.get("skip") if isinstance(value, dict) else None
+    if (
+        set(value) != {"skip"}
+        or not isinstance(skip, list)
+        or len(set(skip)) != len(skip)
+        or not set(skip) <= ids
+    ):
+        raise ValueError("PROVENANCE_MISMATCH")
+    return set(skip)
+
+
 def stage(root, execution_id, entry):
     a = entry.authority
     return safe_path(

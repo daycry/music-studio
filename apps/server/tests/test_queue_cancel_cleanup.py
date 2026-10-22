@@ -25,9 +25,9 @@ def _status(engine, jid, status):
     with engine.begin() as connection:
         connection.execute(
             text(
-                "UPDATE job SET status=:s, finished_at='2026-10-22T00:00:00Z' WHERE id=:i"
+                "UPDATE job SET status=:s, finished_at='2026-10-22T00:00:00Z', updated_at=:u WHERE id=:i"
             ),
-            {"s": status, "i": jid},
+            {"s": status, "i": jid, "u": models.utc_now()},
         )
 
 

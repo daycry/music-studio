@@ -164,6 +164,7 @@ def _reserved_world(tmp_path, *, identity=DEAD):
         )
     service = _service(engine, tmp_path)
     service._birth_probe = lambda pid: None  # el proceso anterior ya no existe
+    service._group_probe = lambda leader: False  # ni ningún miembro de su grupo
     assert service.reconcile_startup() == 1
     return engine, service
 

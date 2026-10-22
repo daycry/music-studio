@@ -343,13 +343,23 @@ class Publisher:
             raise ValueError("CPU_EXECUTION_REQUIRES_RECOVERY")
         return accepted
 
-    def transaction(self, callback):
+    def transaction(self, callback, *, wrote=None):
+        """Ejecuta ``callback`` bajo la barrera.
+
+        ``wrote(value)`` dice si la transacción escribió algo: una transacción sin
+        efecto no invalida el feed (``mark_gap`` corta todos los SSE).
+        """
+
         def commit():
             with self.engine.begin() as connection:
                 value = callback(connection)
             # State changed durably: clients must reconcile until allwriters
             # composition assigns the actual application event builder.
-            return CommitPublication(value=value, publications=(), invalidate=True)
+            return CommitPublication(
+                value=value,
+                publications=(),
+                invalidate=True if wrote is None else bool(wrote(value)),
+            )
 
         return self.coordinator.commit_and_publish(commit, self.bus).value
 

@@ -24,6 +24,7 @@ from app.worker.packages import (
     TOOL_PIN,
     create_package,
     read_file,
+    read_resume_skip,
     stage,
     tool,
 )
@@ -178,16 +179,7 @@ def main():
     pin = json.loads(read_file(TOOL_PIN, limit=65536))
     binary = TOOL_PIN.parent.parent / pin["dest"] / "bin/ffmpeg"
     tool(binary, plan)
-    skip = set()
-    marker = directory / "resume-skip.json"
-    if marker.exists():
-        # Reanudación: las takes ya empaquetadas en el intento anterior no se
-        # reprocesan (su staging lo republica el server).
-        value = json.loads(read_file(marker, limit=65536), object_pairs_hook=pairs)
-        ids = {entry.authority.take_id for entry in plan.takes}
-        if set(value) != {"skip"} or not set(value["skip"]) <= ids:
-            raise ValueError("PROVENANCE_MISMATCH")
-        skip = set(value["skip"])
+    skip = read_resume_skip(directory, plan)
     registry = socket.socket(fileno=int(registry_fd))
     registry.settimeout(5)
     launcher = FfmpegLauncher(registry, binary)
