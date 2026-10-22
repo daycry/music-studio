@@ -125,6 +125,20 @@ verificacion: obligatoria
   - si el engine no responde → sigue esperando como ahora.
 - [ ] CA-5 (gap 6): `reconcile_startup` es idempotente. Un segundo arranque sin cambios no incrementa `revision` ni reescribe filas ya `interrupted`.
 - [ ] CA-6: la suite de cola (`-k "queue or dispatcher or retry or recovery or cancel"`) y la del server completa siguen en verde.
+- **Implementación** (2026-10-22, 3,05 h IA medidas). Commits `2917030` (GPU dudoso y borrado de `data/tmp` al cancelar) y `b613714` (reanudar `post.audio`).
+  - **RED → GREEN por CA** (implementer):
+    - CA-2: `test_ca2_*`, `assert False is True`.
+    - CA-5: `test_ca5_reconcile_startup_is_idempotent`, `1 == 0`.
+    - CA-4: `test_ca4_*`, `'interrupted' == 'failed'`.
+    - CA-3: 6 tests de `sweep_cancelled` en rojo y `test_ca3_interrupted_post_can_be_cancelled`.
+    - CA-1: 9 tests `test_ca1_*`, por falta de `resumable_jobs`/`claim_resume`.
+  - **Prueba de muerte del proceso:** compara el `starttime` de `/proc/<leader>` con el `birth` guardado. En Windows, sin `/proc`, no prueba nada y la custodia sigue `unknown`.
+  - **Suite completa del server en Windows** (implementer): `2570 passed, 75 skipped`, 0 failed, 0 errors. Focales comprobados por el orquestador: 63 passed. `ruff` limpio.
+- **Verificación en Docker** (orquestador, 2026-10-22):
+  - **Linux real:** resume_linux, resume, cancel_cleanup, gpu_doubt, los worker_* y los dispatcher cpu/recovery dan **92 passed, 5 skipped** (junctions). Los tests de cola necesitan que exista `.cache/dev-cycle/m1/t04-queue-tests` dentro de `/studio`.
+  - **CA-1 de punta a punta:** SIGKILL con el `.pending-*` presente y arranque de nuevo → el **mismo take** pasa a `ready`, el post queda `succeeded` en la misma `cpu_execution` (ordinal 1, `finished/confirmed`) y la intent `committed`. `verify_manifest.py` da `all valid`.
+  - **CA-3 de punta a punta:** `POST /api/jobs/<post>/cancel` con el post en curso → 202. Job, `cpu_execution` y take quedan `cancelled` (`confirmed`), sin `.pending`, con `_server_cpu/<exec>` y `_server_inputs/<exec>` borrados y sin el tmp crudo de la generación.
+  - **Hallazgo H5 (anterior a T-04):** una generación **correcta** deja en `data/tmp` el `_server_inputs/<exec>/0.wav` (copia del WAV), `_server_cpu/<exec>/` con sus JSON, la salida `output-0.json` del attempt de `audio.beats` y directorios `_server_inputs/<hex>`. Es una fuga de disco que crece con cada canción.
 - **Changelog**: Si el server se reinicia a mitad de una canción, el post-proceso se reanuda solo hasta dejar el take listo. Los trabajos se pueden cancelar sin dejar restos, y la cola no se queda bloqueada.
 
 ### T-05 — Post-proceso y publicación sencilla de takes
