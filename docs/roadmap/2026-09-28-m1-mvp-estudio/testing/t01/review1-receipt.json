@@ -1,0 +1,137 @@
+{
+  "utc": "2026-10-07T02:57:55.660615+00:00",
+  "attempt": 1,
+  "status": "FIX_REQUIRED",
+  "lenses": [
+    "A",
+    "B",
+    "C"
+  ],
+  "performance_lens": false,
+  "gaps": [
+    {
+      "id": "A-01",
+      "severity": "Important",
+      "issue": "Host400 and explicit alien OriginGET200 contradict approved CA14"
+    },
+    {
+      "id": "B-01",
+      "severity": "Minor",
+      "issue": "405 response drops Allow"
+    }
+  ],
+  "authorization_focus": {
+    "dimensions": 1,
+    "total_dimensions": 8,
+    "demonstrated_additional_vulnerabilities": 0,
+    "static_only": true
+  },
+  "originals": {
+    "a": {
+      "cli-metadata.json": {
+        "bytes": 749,
+        "sha256": "6ac5b1c680ca51328518aa64f2b9fca0585705a9fffd61e84b900c124473bf25"
+      },
+      "cli-original.jsonl": {
+        "bytes": 6259,
+        "sha256": "39c8b45be6ba34d3335457a30525e99675558371a111d598c15dfa74acd2dfb7"
+      },
+      "cli-stderr-original.txt": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "final-original.md": {
+        "bytes": 5884,
+        "sha256": "9180a2e7fee5a0055ee2e6b729ce95c0b65ef1552d5cbd0d4d9df3637467cbb5"
+      },
+      "packet-seals.json": {
+        "bytes": 7262,
+        "sha256": "0f3f5cd92c44d47ee2aa04b1677bf6c77802a0f0f9c32fd84ceaf940a0d71ef1"
+      },
+      "prompt-original.txt": {
+        "bytes": 368188,
+        "sha256": "437e63f68fa871755eb2dd3970b9bb3e26d9b0a9a291f348cb11d225fda6519c"
+      }
+    },
+    "b": {
+      "cli-metadata.json": {
+        "bytes": 749,
+        "sha256": "762167dbe960d33b309e7c5fcd90184fbd44f7be14911e14d2c5e186c9fcddc3"
+      },
+      "cli-original.jsonl": {
+        "bytes": 2218,
+        "sha256": "d08424506e907d1d01cd1230a49ef810f59acc00ef41fcfdd3d7dcb556fe5f33"
+      },
+      "cli-stderr-original.txt": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "final-original.md": {
+        "bytes": 1623,
+        "sha256": "fb80617172d24e5b923e438e1952f971f96148fb4541929429a02f9efc6ddef8"
+      },
+      "packet-seals.json": {
+        "bytes": 7262,
+        "sha256": "0f3f5cd92c44d47ee2aa04b1677bf6c77802a0f0f9c32fd84ceaf940a0d71ef1"
+      },
+      "prompt-original.txt": {
+        "bytes": 365548,
+        "sha256": "b1b245cb8703ff5a3a87d5877787d7244aac4f5951d47e54f05cf33c26a8fe5e"
+      }
+    },
+    "c": {
+      "cli-metadata.json": {
+        "bytes": 749,
+        "sha256": "317f194f49c405212dc20827d2b2fe7f8e5c76f92e01ee9501fbf193fc2e06ab"
+      },
+      "cli-original.jsonl": {
+        "bytes": 3241,
+        "sha256": "4a36ca6f942d667155997656008ed61c65309f8fbfc335b2832353e6deba1d8c"
+      },
+      "cli-stderr-original.txt": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "final-original.md": {
+        "bytes": 2877,
+        "sha256": "ffdf2f4b931fb3f35d1001456336cab72909ceab1571a91293cfb4695284dbda"
+      },
+      "packet-seals.json": {
+        "bytes": 7262,
+        "sha256": "0f3f5cd92c44d47ee2aa04b1677bf6c77802a0f0f9c32fd84ceaf940a0d71ef1"
+      },
+      "prompt-original.txt": {
+        "bytes": 366047,
+        "sha256": "500604bb081cd0a338466534b2c932c953ed7e9776e8133d78d5840f2168d021"
+      }
+    },
+    "auth": {
+      "cli-metadata.json": {
+        "bytes": 695,
+        "sha256": "792fe53833607fd5b79c1371914800ec548c8543c097f553884129949754f183"
+      },
+      "cli-original.jsonl": {
+        "bytes": 3088,
+        "sha256": "aa8c6a91ff9c8dc9a10ccd1080172d890e64edc2ae02eddcd61e01c6a5c97d50"
+      },
+      "cli-stderr-original.txt": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "final-original.md": {
+        "bytes": 2728,
+        "sha256": "4ec105d1605c530eee3e121f1727c25e993dd33e9a3e688e250b350343d834cf"
+      },
+      "prompt-original.txt": {
+        "bytes": 97234,
+        "sha256": "a818ed31f5601be33fa551910190585bff243087b8a471b5c840b8fae2d0f000"
+      },
+      "source-seals.json": {
+        "bytes": 2650,
+        "sha256": "930d4f469c9761c0ea648d6715cbcda06bb614b0c758bafd3927671973621fb7"
+      }
+    }
+  },
+  "no_independent_qa": true,
+  "no_task_closed": true
+}

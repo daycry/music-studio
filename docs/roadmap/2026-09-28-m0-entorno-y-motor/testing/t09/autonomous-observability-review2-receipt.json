@@ -1,0 +1,83 @@
+{
+  "published_at_utc": "2026-10-06T23:51:14.877916+00:00",
+  "lenses": [
+    "A",
+    "B",
+    "D"
+  ],
+  "critical": 0,
+  "important": 1,
+  "minor": 0,
+  "verified_freezes": {
+    "sources-freeze.json": 64,
+    "t20-docs-freeze.json": 12
+  },
+  "scope_exit": 0,
+  "selector": {
+    "lente_c": false,
+    "modo": "auto",
+    "motivos": [],
+    "lente_d": true,
+    "modo_d": "auto",
+    "motivos_d": [
+      {
+        "tipo": "contenido",
+        "fichero": "scripts/eval/benchmark.py",
+        "patron": "sleep-bloqueante",
+        "linea": 80
+      },
+      {
+        "tipo": "contenido",
+        "fichero": "scripts/eval/benchmark_observation.py",
+        "patron": "sleep-bloqueante",
+        "linea": 662
+      }
+    ],
+    "base": "--files",
+    "ficheros": 4,
+    "avisos": []
+  },
+  "verdicts": [
+    {
+      "id": "R09-O1",
+      "status": "corregido CPU",
+      "evidence": "Relojes de operaciones y FILETIMEs ligados a la adquisición; control y variantes inválidas comprobados."
+    },
+    {
+      "id": "R09-O2",
+      "status": "corregido CPU",
+      "evidence": "Originales/contexto previo completos; prueba de préstamo de sesión rechazada."
+    },
+    {
+      "id": "R09-O3",
+      "status": "corregido CPU",
+      "evidence": "Baseline histórico preservado y nuevo baseline sólo tras health idle/loadednull."
+    },
+    {
+      "id": "R09-O4",
+      "status": "corregido CPU con residuo R09-O4a",
+      "evidence": "Cadena preserva y valida segmentos; nuevo defecto de reloj histórico cuando WSL/browser siguen a Windows."
+    },
+    {
+      "id": "R09-O5",
+      "status": "corregido CPU",
+      "evidence": "Muestra1,6s no suma espera fija; operación5s termina con gapmáx1,602996s."
+    },
+    {
+      "id": "R09-O4a (B2-01)",
+      "status": "pendiente",
+      "evidence": "benchmark_observation.py:585 usa finWindows+1ms para now histórico. Windows90,01/WSL90,21: muestra válida con now90,3, cadena rechazada auto_query_bracket_invalid con now90,011."
+    }
+  ],
+  "remaining_gap": {
+    "id": "R09-O4a",
+    "reviewer_id": "B2-01",
+    "severity": "Important",
+    "location": "scripts/eval/benchmark_observation.py:585",
+    "status": "pending"
+  },
+  "qa_pass": false,
+  "gpu_verified": false,
+  "task20_doc_approval_preserved": true,
+  "report_sha256": "309b07e5ce97f87235f137a4f3ef182f68472234407b2acb12b09a65c0a5cfc0"
+}

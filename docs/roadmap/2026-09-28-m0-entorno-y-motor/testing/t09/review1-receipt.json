@@ -1,0 +1,85 @@
+{
+  "attempt": 1,
+  "task": "T-09",
+  "lenses": [
+    "A",
+    "B",
+    "C",
+    "D"
+  ],
+  "context_limitation": "D reused C after fresh-thread allocation rejected; no implementation or A/B output in context",
+  "sources_unchanged": 32,
+  "diff_sha256": "84a047145d748dc4953a2592744467940ffbd76ba728dc917070599eb29d82b6",
+  "counts": {
+    "critical": 0,
+    "important": 7,
+    "minor": 0
+  },
+  "gaps": [
+    {
+      "id": "R09-01",
+      "grade": "Important",
+      "origins": "A1/B3",
+      "location": "scripts/eval/benchmark_runner.py:297",
+      "title": "Duración solicitada no validada",
+      "scenario": "Solicitud30s, WAV8frames/48k y telemetría concordante pasan output/fidelity/row valid con duración real0,0001666667s.",
+      "verdict": "pending"
+    },
+    {
+      "id": "R09-02",
+      "grade": "Important",
+      "origins": "A2",
+      "location": "scripts/eval/benchmark_evidence.py:170",
+      "title": "VRAM en reposo ausente del informe",
+      "scenario": "Baseline1497,123MiB existe en plan privado pero no aparece en Markdown canónico, pese a CA3.",
+      "verdict": "pending"
+    },
+    {
+      "id": "R09-03",
+      "grade": "Important",
+      "origins": "A3",
+      "location": "scripts/eval/benchmark_evidence.py:167",
+      "title": "Copia, amortización y dispersión omitidas",
+      "scenario": "copy_s12345,678 desaparece del informe; falta amortización bind/copia y dispersión previstas por diseño§5.6/§5.9.",
+      "verdict": "pending"
+    },
+    {
+      "id": "R09-04",
+      "grade": "Important",
+      "origins": "B1/D1",
+      "location": "scripts/eval/benchmark_runtime.py:56",
+      "title": "Stream bloquea muestreo periódico",
+      "scenario": "51eventos en2,516s producen1muestra con interval_s1. La inactividad no limita duración de llamada. SFT50pasos×0,8s daría1frente≈40muestras (escenario, noGPUmedido).",
+      "verdict": "pending"
+    },
+    {
+      "id": "R09-05",
+      "grade": "Important",
+      "origins": "B2",
+      "location": "scripts/eval/benchmark.py:365",
+      "title": "Cleanup por error rompe resume",
+      "scenario": "Error health transitorio elimina contenedor sin cleanup.json; resume inspeccionaIDeliminado y fallaDOCKER_ACTION_FAILED después deTRANSPORT_UNAVAILABLE.",
+      "verdict": "pending"
+    },
+    {
+      "id": "R09-06",
+      "grade": "Important",
+      "origins": "B4",
+      "location": "scripts/eval/benchmark_evidence.py:141",
+      "title": "Carga cold mezclada con warm sin carga",
+      "scenario": "8cold×31s+24warm×0s producen recomendación carga mediana0,000s pese a mediana cold31s.",
+      "verdict": "pending"
+    },
+    {
+      "id": "R09-07",
+      "grade": "Important",
+      "origins": "B5",
+      "location": "scripts/eval/benchmark_runner.py:367",
+      "title": "Verificador acepta captura contradictoria",
+      "scenario": "Recibos rehasheados con guidance_scale1frenteCFG7, metadataLMduración300frente30 o arguments_sha256DiTincorrecto pasan fidelity_valid. La captura actualrechaza esos parámetros conINVALID_PARAMS: fallo del verificador, no prueba de inferencia incorrecta.",
+      "verdict": "pending"
+    }
+  ],
+  "reported_at": "2026-10-06T17:28:09.278278+00:00",
+  "gpu_executed": false
+}

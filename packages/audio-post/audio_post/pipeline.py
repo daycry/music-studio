@@ -4,6 +4,7 @@ import hashlib
 import json
 import math
 import re
+import stat
 import subprocess
 import uuid
 from contextlib import contextmanager
@@ -16,36 +17,78 @@ from . import make_peaks, validate_audio
 from .manifest import safe_path
 
 
+def _directory_identity(path):
+    try:
+        info = path.lstat()
+    except OSError as error:
+        raise ValueError("UNSAFE_PATH") from error
+    if (
+        not stat.S_ISDIR(info.st_mode)
+        or stat.S_ISLNK(info.st_mode)
+        or getattr(info, "st_file_attributes", 0) & 0x400
+        or getattr(info, "st_reparse_tag", 0)
+    ):
+        raise ValueError("UNSAFE_PATH")
+    return (
+        info.st_dev,
+        info.st_ino,
+        info.st_mode,
+        # Native child creation can change this observed bit with stable FileId.
+        getattr(info, "st_file_attributes", 0) & ~0x10000000,
+        getattr(info, "st_reparse_tag", 0),
+    )
+
+
 @contextmanager
-def _staging_directory(destination):
+def _staging_directory(destination, check_owned):
     # Inherit the destination ACL on Windows, including restricted local runtimes.
     staging = destination / (".post-" + uuid.uuid4().hex)
+    check_owned()
     staging.mkdir()
+    identity = _directory_identity(staging)
+
+    def check_staging():
+        check_owned()
+        if (
+            staging.is_symlink()
+            or staging.is_junction()
+            or _directory_identity(staging) != identity
+        ):
+            raise ValueError("UNSAFE_PATH")
+
     try:
-        yield staging
+        yield staging, check_staging
     finally:
         for filename in ("master.flac", "listen.mp3", "peaks.json"):
+            check_staging()
             (staging / filename).unlink(missing_ok=True)
+        check_staging()
         staging.rmdir()
 
 
-def _ffmpeg(binary, args):
-    result = subprocess.run(
-        [str(binary), "-nostdin", "-hide_banner", *args],
-        capture_output=True,
-        timeout=300,
-        check=False,
+def _ffmpeg(binary, args, *, launch=None):
+    result = (
+        launch(binary, args)
+        if launch is not None
+        else subprocess.run(
+            [str(binary), "-nostdin", "-hide_banner", *args],
+            capture_output=True,
+            timeout=300,
+            check=False,
+        )
     )
     if result.returncode:
         raise ValueError("AUDIO_TRANSCODE_FAILED")
     return result
 
 
-def measure_audio(path, *, ffmpeg):
+def measure_audio(path, *, ffmpeg, launch=None):
     samples, sr = sf.read(path, dtype="float64", always_2d=True)
     loudness = float(pyln.Meter(sr).integrated_loudness(samples))
     result = _ffmpeg(
-        ffmpeg, ["-i", str(path), "-af", "ebur128=peak=true", "-f", "null", "-"]
+        ffmpeg,
+        ["-i", str(path), "-af", "ebur128=peak=true", "-f", "null", "-"],
+        launch=launch,
     )
     matches = re.findall(
         r"Peak:\s+(-?\d+(?:\.\d+)?) dBFS",
@@ -56,15 +99,38 @@ def measure_audio(path, *, ffmpeg):
     return {"lufs": loudness, "true_peak_dbtp": float(matches[-1])}
 
 
-def process_audio(source, destination, *, expected_duration_s, ffmpeg):
+def process_audio(
+    source, destination, *, expected_duration_s, ffmpeg, root=None, launch=None
+):
     source, destination = Path(source), Path(destination)
-    root = Path(__file__).resolve().parents[3]
+    root = (
+        Path(__file__).resolve().parents[3] if root is None else Path(root).absolute()
+    )
+    if (
+        not root.is_dir()
+        or any(p.is_symlink() or p.is_junction() for p in (root, *root.parents))
+        or ".." in root.parts
+    ):
+        raise ValueError("UNSAFE_PATH")
     if not source.absolute().is_relative_to(
         root
     ) or not destination.absolute().is_relative_to(root):
         raise ValueError("UNSAFE_PATH")
     source = safe_path(root, source.absolute().relative_to(root).as_posix())
     destination = safe_path(root, destination.absolute().relative_to(root).as_posix())
+    if destination.exists():
+        raise FileExistsError(destination)
+    root_identity = _directory_identity(root)
+
+    def check_root():
+        if (
+            any(p.is_symlink() or p.is_junction() for p in (root, *root.parents))
+            or _directory_identity(root) != root_identity
+        ):
+            raise ValueError("UNSAFE_PATH")
+        safe_path(root, destination.relative_to(root).as_posix())
+
+    check_root()
     samples, sr = sf.read(source, dtype="float64", always_2d=True)
     meta = validate_audio(samples, sr, expected_duration_s)
     if sr not in (32000, 44100, 48000):
@@ -77,12 +143,21 @@ def process_audio(source, destination, *, expected_duration_s, ffmpeg):
     gain_db = -14 - loudness
     limiter = False
     ceiling_db = -1.5
+    check_root()
     destination.mkdir(parents=True, exist_ok=False)
+    destination_identity = _directory_identity(destination)
+
+    def check_owned():
+        check_root()
+        if _directory_identity(destination) != destination_identity:
+            raise ValueError("UNSAFE_PATH")
+
     try:
-        with _staging_directory(destination) as staging:
+        with _staging_directory(destination, check_owned) as (staging, check_staging):
             staging = Path(staging)
             master = staging / "master.flac"
             listen = staging / "listen.mp3"
+            check_staging()
             sf.write(master, samples, sr, format="FLAC", subtype="PCM_24")
             for _ in range(16):
                 filters = [f"volume={gain_db:.8f}dB"]
@@ -92,6 +167,7 @@ def process_audio(source, destination, *, expected_duration_s, ffmpeg):
                     )
                 if listen_sr != sr:
                     filters.append("aresample=resampler=soxr")
+                check_staging()
                 _ffmpeg(
                     ffmpeg,
                     [
@@ -110,8 +186,10 @@ def process_audio(source, destination, *, expected_duration_s, ffmpeg):
                         "320k",
                         str(listen),
                     ],
+                    launch=launch,
                 )
-                measured = measure_audio(listen, ffmpeg=ffmpeg)
+                check_staging()
+                measured = measure_audio(listen, ffmpeg=ffmpeg, launch=launch)
                 delta = -14 - measured["lufs"]
                 if abs(delta) <= 0.5 and measured["true_peak_dbtp"] <= -1.0:
                     break
@@ -123,6 +201,7 @@ def process_audio(source, destination, *, expected_duration_s, ffmpeg):
             else:
                 raise ValueError("AUDIO_TARGET_UNREACHABLE")
             peaks = staging / "peaks.json"
+            check_staging()
             peaks.write_text(
                 json.dumps(make_peaks(samples), allow_nan=False) + "\n",
                 encoding="utf-8",
@@ -134,6 +213,7 @@ def process_audio(source, destination, *, expected_duration_s, ffmpeg):
                 ("peaks.json", "application/json", "peaks"),
             ]:
                 path = staging / filename
+                check_staging()
                 with path.open("rb") as stream:
                     digest = hashlib.file_digest(stream, "sha256").hexdigest()
                 asset_meta = dict(meta) if role != "peaks" else {}
@@ -154,6 +234,7 @@ def process_audio(source, destination, *, expected_duration_s, ffmpeg):
                     }
                 )
             for output in outputs:
+                check_staging()
                 (staging / output["path"]).rename(destination / output["path"])
         return {
             "outputs": outputs,
@@ -167,6 +248,8 @@ def process_audio(source, destination, *, expected_duration_s, ffmpeg):
         }
     except BaseException:
         for name in ("master.flac", "listen.mp3", "peaks.json"):
+            check_owned()
             (destination / name).unlink(missing_ok=True)
+        check_owned()
         destination.rmdir()
         raise

@@ -71,6 +71,11 @@ def test_real_preflight_failure_classified_vram(tmp_path, monkeypatch, batch, du
     )
     model = adapter.AceStepAdapter()
     model.runtime = SimpleNamespace(
+        torch=SimpleNamespace(
+            cuda=SimpleNamespace(
+                synchronize=lambda: None, reset_peak_memory_stats=lambda: None
+            )
+        ),
         dit=SimpleNamespace(),
         lm=None,
         generate_music=lambda *a, **kw: SimpleNamespace(**result),

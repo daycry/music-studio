@@ -1,0 +1,14 @@
+{
+  "analysis_sha256": "f593d5411394c46154982cdfb9a010e9457f8bcc43797096173d28e7ecdac73f",
+  "reference_lyrics_sha256": "11166bbef6bff52aef1e992754576c5bf1326137e40e95e00d943b4c64e92ee2",
+  "detected_language": "English",
+  "recognized_token_count": 86,
+  "spanish_marker_occurrences": 40,
+  "english_marker_occurrences": 3,
+  "tokens_in_reference_vocabulary": 84,
+  "longest_shared_contiguous_token_run": 43,
+  "heuristic_only": true,
+  "ground_truth_audio_transcript_available": false,
+  "wer": null,
+  "text_printed": false
+}

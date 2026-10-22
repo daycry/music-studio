@@ -1,0 +1,60 @@
+{
+  "date": "2026-10-06",
+  "session": "01M47EM0TM0XV6EFJHXX7ETSR7",
+  "scope": "T-16 retry2 actual GPU generation failed; no published takes",
+  "groups": [
+    {
+      "configuration": "sft",
+      "job_id": "01M47EM4GN8N4FPEAYA4BPB7WE",
+      "exit_code": 1,
+      "wall_s": 187.40600000000268,
+      "preflight": {
+        "gpu_used_mib": 1315.0,
+        "gpu_total_mib": 12227.0,
+        "ollama_empty": true,
+        "state": "idle",
+        "loaded": null,
+        "image_digest": "sha256:9e4fc86fe17269ef80ad6649d9f80b02f8d1f0c7af160f3f9d0fde362dfd8f84"
+      },
+      "stop_reason": null,
+      "unload_confirmed": true
+    }
+  ],
+  "outputs": [],
+  "cleanup": {
+    "status": "removed",
+    "container_id": "7813b01348c3055fba1c1f7bb213315b20871fe1bcac3beec3ab256d261611a4",
+    "logs_exit_code": 0,
+    "stop_exit_code": 0,
+    "remove_exit_code": 0
+  },
+  "host_preflight": {
+    "gpu_used_mib": 1315.0,
+    "gpu_total_mib": 12227.0,
+    "ollama_empty": true
+  },
+  "observed_cli_error": "INTERNAL",
+  "root_exec_exit_code": 1,
+  "harness_source_sha256": "e412df614b4e5f608d747f78a97e84a6691e5d112ceb059b9be8cdaa3e9a92a2",
+  "monitor_samples": 93,
+  "memory_samples": 93,
+  "max_total_minus_free_mb": 9557.65234375,
+  "max_wsl_used_excluding_available_mib": 4462.578125,
+  "max_wsl_swap_used_mib": 1.359375,
+  "memory_scope_note": "NVML total minus free is aggregate including reserved memory; WSL RAM/swap are not Windows sharedGPU or a direct spill measurement",
+  "private_evidence": {
+    ".cache/dev-cycle/t16/runtime/01M47EM0TM0XV6EFJHXX7ETSR7/preflight.json": "6878d87143c2e049709669ac5eefd55e24a5645901bc3269f9be8064fbc4d835",
+    ".cache/dev-cycle/t16/runtime/01M47EM0TM0XV6EFJHXX7ETSR7/groups.json": "cba1622a7ceaff21b86fc44c0c7adbb6d531e521519cd66067a91ba1aa98d130",
+    ".cache/dev-cycle/t16/runtime/01M47EM0TM0XV6EFJHXX7ETSR7/owned-outputs.json": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f",
+    ".cache/dev-cycle/t16/runtime/01M47EM0TM0XV6EFJHXX7ETSR7/sft-private.log": "8c7469b957b96b347a91d64dfcc76b9933b7301af21da938baaf44130eb5cb44",
+    ".cache/dev-cycle/t16/runtime/01M47EM0TM0XV6EFJHXX7ETSR7/music-studio-t16-comparison-sft-cleanup.json": "6143f444a91faa79214483c5304e704d25a96d71bbb3c8babf4a93fde36549f0",
+    ".cache/dev-cycle/t16/runtime/01M47EM0TM0XV6EFJHXX7ETSR7/music-studio-t16-comparison-sft-container.log": "7ed369864898bf466efdb582fb7076e7a53f989d0c8f1179427bde5c1a5b31ec",
+    ".cache/dev-cycle/t16/runtime/01M47EM0TM0XV6EFJHXX7ETSR7/job-01M47EM4GN8N4FPEAYA4BPB7WE-monitor.json": "bac772293d55d6bd102806a982285625966397082061896fb5a15b3ab66645f2",
+    ".cache/dev-cycle/t16/runtime/01M47EM0TM0XV6EFJHXX7ETSR7/memory-samples.json": "b6e229b73f82e0cc22a0bbb41461597e9440fd22eb204495fa57cc236ab5d5b8"
+  },
+  "native_failure_cause_proven": false,
+  "musical_quality_approved": false,
+  "winner": null,
+  "task_completed": false,
+  "flags_are_snapshot_at_publication": true
+}

@@ -17,11 +17,11 @@
 - **Orden dentro de una misma prioridad.** FIFO. Además, se agrupan los jobs que usan **el mismo modelo** antes de cambiar de modelo, sin retrasar ninguno más de `STUDIO_MAX_REORDER_S` (120 s por defecto).
 - **Sin expropiación.** Un job en curso no se interrumpe. Por eso los trabajos largos se trocean: el vídeo se genera **plano a plano**, un job por plano.
 - **Dependencias.** Un job con dependencias pendientes queda en `blocked`. Si un padre falla, sus hijos pasan a `failed` con `error_code=DEPENDENCY_FAILED`.
-- **Reintentos.** Automáticos solo si el engine marca el error como `retryable`, hasta `max_attempts` (2 por defecto). `VRAM_EXCEEDED` se reintenta una vez en modo `offload` si el descriptor lo tiene.
+- **Reintentos.** Automáticos solo si el engine marca el error como `retryable`, hasta dos reintentos: `max_attempts=3` cuenta los tres intentos totales. La identidad durable y recuperación se concretan en [ADR-0043](ADR-0043-identidad-durable-de-intentos.md). `VRAM_EXCEEDED` se reintenta una vez en modo `offload` si el descriptor lo tiene.
 - **Recuperación.** Al arrancar:
   - `queued` y `blocked` se conservan;
-  - `running` pasa a `interrupted` y se reencola si la petición es idempotente (lleva semilla fija);
-  - se limpian los temporales huérfanos.
+  - `running` pasa a `interrupted`; se reconcilia el intento vigente y se conserva su ID/payload/cursor conforme a ADR-0043, sin consumir un retry por pérdida de acuse;
+  - se reconcilian temporales de intentos con propiedad acreditada; ausencia de registro o ficheros parciales no prueban éxito ni autorizan limpiar salidas ajenas.
 - **Cancelación.** El server marca `cancel_requested_at` y la propaga al engine (`DELETE /v1/jobs/{id}`).
 - **Cambio de modelo.** Antes de despachar a un engine distinto del que tiene la VRAM, el dispatcher llama a `POST /v1/unload` y espera a que `/v1/health` muestre la VRAM liberada. Las tareas que el descriptor marca como `device: cpu` (p. ej. `audio.beats`) van por el carril `cpu` y no descargan la GPU: así no se recarga ACE-Step después de cada análisis.
 - **Una petición = una cadena de jobs.** Primero el job de generación, con N salidas, `seed + i` y los takes compartiendo `job_id`. Después `post.audio` en el carril `cpu`. Por último un `audio.beats` por take. Todos se crean en la misma transacción; los dependientes quedan en `blocked`. El detalle, junto con el reintento manual y la recuperación, está en [`../arquitectura/sistema.md`](../arquitectura/sistema.md) §3.

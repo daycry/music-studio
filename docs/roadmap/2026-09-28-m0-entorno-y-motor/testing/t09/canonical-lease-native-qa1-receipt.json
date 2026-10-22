@@ -1,0 +1,41 @@
+{
+  "utc": "2026-10-08T01:33:25.688881+00:00",
+  "status": "SCOPED_CANONICAL_LEASE_NATIVE_QA_PASS",
+  "tests": 127,
+  "canonical": 102,
+  "neighbors": 25,
+  "whole_coverage": {
+    "covered_lines": 417,
+    "num_statements": 447,
+    "percent_covered": 90.34941763727122,
+    "percent_covered_display": "90",
+    "missing_lines": 30,
+    "excluded_lines": 0,
+    "percent_statements_covered": 93.28859060402685,
+    "percent_statements_covered_display": "93",
+    "num_branches": 154,
+    "num_partial_branches": 28,
+    "covered_branches": 126,
+    "missing_branches": 28,
+    "percent_branches_covered": 81.81818181818181,
+    "percent_branches_covered_display": "82"
+  },
+  "births": 129,
+  "cleanups": 129,
+  "protected_exact": 67,
+  "current_sources": {
+    "scripts/eval/benchmark_canonical.py": {
+      "sha256": "f60d0271037e50dc324323401827a2d0321e8d9faf90aeaed35fd5374697a8a8",
+      "bytes": 28915
+    },
+    "scripts/eval/tests/test_benchmark_canonical.py": {
+      "sha256": "c33bb47fe12623ceb1b3736d30211bb6a7d36184dab798e7cb0f00bb48797c9b",
+      "bytes": 86313
+    }
+  },
+  "component_task_quality_acceptance": false,
+  "actual_model_tokens_EUR_AIhours": null,
+  "estimated_predeclared": 1.5,
+  "protected_dependencies_exact": 65,
+  "root_QA_map_exact": 67
+}

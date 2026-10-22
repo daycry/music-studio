@@ -1,0 +1,111 @@
+{
+  "unit": "T04-U1-independent-native-QA1",
+  "status": "SCOPED_U1_NATIVE_QA_PASS",
+  "utc": "2026-10-08T01:07:46.739974+00:00",
+  "tests": {
+    "passed": 215,
+    "failed": 0,
+    "skipped": 0,
+    "neighbors": 25,
+    "u1": 190,
+    "baseline_runs": 1
+  },
+  "whole_coverage": "whole-current-coverage.json",
+  "coverage_data": ".coverage",
+  "coverage_original_copy": "coverage-original-data",
+  "coverage_json": "coverage-final.json",
+  "junit": "baseline.junit.xml",
+  "source_before": "sources-before.json",
+  "source_after": "sources-after.json",
+  "source_count": 72,
+  "root_protected_count": 62,
+  "root_protected_exact": true,
+  "commands": {
+    "baseline": {
+      "receipt": "baseline.command.json",
+      "exit": 0
+    },
+    "ruff-check": {
+      "receipt": "ruff-check.command.json",
+      "exit": 0
+    },
+    "ruff-format": {
+      "receipt": "ruff-format.command.json",
+      "exit": 0
+    },
+    "ledger-lint": {
+      "receipt": "ledger-lint.command.json",
+      "exit": 0
+    },
+    "wheel-smoke": {
+      "receipt": "wheel-smoke.command.json",
+      "exit": 0
+    },
+    "wheel-import-current": {
+      "receipt": "wheel-import-current.command.json",
+      "exit": 0
+    }
+  },
+  "neighbor_custody": "Exact predecessor command copies and entire AST; schema Path binding redirected only by private autouse fixture to nested own phase.",
+  "native_ownership": "native-ownership-cleanup.json",
+  "historical_red_records": "historical-red-verification.json",
+  "wheel": {
+    "wheel": "server-0.1.0-py3-none-any.whl",
+    "sha256": "6475825af556d9110f2e8d5bd4b2a46515b4e598a70be272828e29b587c54ebb",
+    "bytes": 75369,
+    "current_queue_exact": {
+      "app/queue/admission.py": "81fa543d4a9ab52eb37b1571b4109f9c6b8e65562567bc704bbc8e6a1033080c",
+      "app/queue/dispatcher.py": "c239bbf372174b3f15fbbc7d1ff82257e5e83b3bde5290e2f270933b94cb6e4c",
+      "app/queue/inputs.py": "1b5460402cc59e5720b61fadc171216d40a23ae1ce3e1af5844d2cfbe8483890",
+      "app/queue/resolver.py": "80cbfa88d69ee8ce9518b822eca968ec8860d867c954e836f7cf06c378aced65",
+      "app/queue/__init__.py": "688c1153e32b1c37dea8ea9dcca1649e306bc10a8b3cf45d257d84a0e927864f",
+      "app/queue/backends/http.py": "7688edef1f7e276004126ffe49ad1951648b01901c5eb5c47a4a50c113738403",
+      "app/queue/backends/protocol.py": "48ca5a6b14929f2a8ea14408dde2240468e817f9df7f0cd7243f4b7c6d623f15",
+      "app/queue/backends/__init__.py": "857fa877e5987db077e485c4ee7f9b546dee6141efed5d66e7434096f87460d1"
+    },
+    "import_argv": [
+      ".venv\\Scripts\\python.exe",
+      "-B",
+      ".cache\\dev-cycle\\m1\\t04-u1-native-qa1\\wheel_import.py"
+    ],
+    "import_exit": 0,
+    "modules": {
+      "app": ".cache\\dev-cycle\\m1\\t04-u1-native-qa1\\wheel-runtime\\app\\__init__.py",
+      "app.queue": ".cache\\dev-cycle\\m1\\t04-u1-native-qa1\\wheel-runtime\\app\\queue\\__init__.py",
+      "app.queue.admission": ".cache\\dev-cycle\\m1\\t04-u1-native-qa1\\wheel-runtime\\app\\queue\\admission.py",
+      "app.queue.dispatcher": ".cache\\dev-cycle\\m1\\t04-u1-native-qa1\\wheel-runtime\\app\\queue\\dispatcher.py",
+      "app.queue.inputs": ".cache\\dev-cycle\\m1\\t04-u1-native-qa1\\wheel-runtime\\app\\queue\\inputs.py",
+      "app.queue.resolver": ".cache\\dev-cycle\\m1\\t04-u1-native-qa1\\wheel-runtime\\app\\queue\\resolver.py",
+      "app.queue.backends": ".cache\\dev-cycle\\m1\\t04-u1-native-qa1\\wheel-runtime\\app\\queue\\backends\\__init__.py",
+      "app.queue.backends.http": ".cache\\dev-cycle\\m1\\t04-u1-native-qa1\\wheel-runtime\\app\\queue\\backends\\http.py",
+      "app.queue.backends.protocol": ".cache\\dev-cycle\\m1\\t04-u1-native-qa1\\wheel-runtime\\app\\queue\\backends\\protocol.py"
+    },
+    "build": "real Hatchling 1.32.4 from copied hash-verified cached wheels",
+    "scope": "extracted current wheel import with existing managed venv dependencies; no pip install, no clean dependency reinstall, no Docker/Linux claim"
+  },
+  "Docker": "Not used: fresh native real wheel and imports resolve packaging concern; no Linux or clean installed-runtime claim.",
+  "OpenAPI": "N/A no API contract or source change",
+  "Playwright": "N/A no UI scope",
+  "TDD": "N/A independent QA; historical RED records verified read-only",
+  "task_acceptance": false,
+  "U2_acceptance": false,
+  "U3_acceptance": false,
+  "global_acceptance": false,
+  "estimated_weight": 1.5,
+  "actual_model": null,
+  "actual_tokens": null,
+  "actual_EUR": null,
+  "actual_AIhours": null,
+  "limitations": [
+    "Catalog, policy, HTTP Mock/ASGI and injected interleavings synthetic; SQLite/file filesystem native Windows.",
+    "No real engine/GPU/VRAM guarantee, production throughput or realtime guarantee.",
+    "Original first tool inspection outputs exist in tool transcript only: separate subprocess stdout/stderr UNKNOWN.",
+    "First generated wheel child imported successfully but lacked separate pre-execution archive; independent targeted wheel-import-current archives runner first and is official import custody.",
+    "Historical schema and T08 helper qualifications do not become new acceptance; no 522-case schema rerun.",
+    "Pytest emitted Unknown config option cache_dir because cacheprovider disabled; cache remains confined/disabled.",
+    "First finalize failed on BOM in byte-exact neighbor clone during AST parsing; private parser corrected to utf-8-sig, no tests/source changed or baseline rerun.",
+    "Second finalize encountered historical fix3 dict inventory vs fix4 list inventory; private reader accepts both, original error retained.",
+    "CLI logs/metadata/final are externally root-owned; exact top-level exclusions recorded by file-inventory.json.",
+    "Initial inventory attempt failed hashing its redirected stderr while open; actual error preserved. Direct inventory succeeds after streams close. No baseline repeated."
+  ]
+}

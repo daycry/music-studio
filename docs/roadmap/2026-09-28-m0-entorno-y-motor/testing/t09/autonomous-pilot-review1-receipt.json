@@ -1,0 +1,43 @@
+{
+  "published_utc": "2026-10-07T00:24:02.137670+00:00",
+  "attempt": 1,
+  "scope": "private pilot only; product approvals preserved",
+  "lenses": [
+    "A",
+    "B",
+    "D"
+  ],
+  "remaining_gaps": [
+    "B-L05"
+  ],
+  "critical": 0,
+  "important": 1,
+  "minor": 0,
+  "previous_gaps": {
+    "B4-L01": "corrected CPU",
+    "B4-L02": "corrected CPU",
+    "B4-L03": "corrected CPU",
+    "B4-L04": "corrected CPU"
+  },
+  "source": {
+    "bytes": 13873,
+    "sha256": "befe6fccf6ab556b3094f1eb9789cc865fd6245c93a558d7e20d71ecdc3659cd"
+  },
+  "sources_unchanged": 64,
+  "docs_unchanged": 12,
+  "reviewer_source": "Original structured agent messages; root-derived publication",
+  "delayed_d": "Fresh D launched after A/B completed because of thread capacity; not reused",
+  "qa_pass": false,
+  "gpu_executed": false,
+  "b_reproducer": {
+    "exit_code": 1,
+    "started_utc": "2026-10-07T00:21:49.6998616Z",
+    "finished_utc": "2026-10-07T00:21:49.9429658Z",
+    "source": "Reviewer original message, in-memory full run() rig"
+  },
+  "incidents": [
+    "A PowerShell Get-Date -AsUTC unsupported and coverage JSON parser case collision; resolved RO",
+    "B initial basetemp parent missing and wrapper import error; not product RED",
+    "Root fix1 acceptance first UTF8 decode failed before writes; decoded original UTF16 BOM logs without test rerun"
+  ]
+}

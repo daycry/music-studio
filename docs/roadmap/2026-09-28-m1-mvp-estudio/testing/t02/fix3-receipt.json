@@ -1,0 +1,195 @@
+{
+  "utc": "2026-10-07T18:00:06.499184+00:00",
+  "status": "FIX3_CANDIDATE_CUSTODIED_FRESH_REVIEW4_QA_PENDING",
+  "sources": {
+    "apps/server/README.md": {
+      "sha256": "f91224b3f4a7e344d95a8ec5681c32566e99a17647e56aaf837a597c3912734f",
+      "bytes": 6306
+    },
+    "apps/server/alembic.ini": {
+      "sha256": "13cdfa146e51b68c87a55e040b22bbbd617264fdb9fa77fa77fb2a134087b58b",
+      "bytes": 100
+    },
+    "apps/server/app/backup.py": {
+      "sha256": "8a677bd8a25c05be484db10464a0010e0462be127e4f96881a90faa0896bcf1d",
+      "bytes": 7774
+    },
+    "apps/server/app/closure_rows.py": {
+      "sha256": "d8e6588850edc024438b242a69a4e9bf2ac2f73da5951bd93e67a6a3856af666",
+      "bytes": 4132
+    },
+    "apps/server/app/db.py": {
+      "sha256": "a598f4c1a24f898dd70a8b4f335418789e888cfa1ee329e70e344dfcdb868ce6",
+      "bytes": 3057
+    },
+    "apps/server/app/main.py": {
+      "sha256": "6baf9a0c4a2832910c6912949169732560a1f63d65f5ad2488f70c5694b4f4df",
+      "bytes": 2772
+    },
+    "apps/server/app/migrations/__init__.py": {
+      "sha256": "26578ae0326059d901d2abf14bb6edf1114dd924cb118e9d76dc547ce5faa52e",
+      "bytes": 53
+    },
+    "apps/server/app/migrations/env.py": {
+      "sha256": "7c3e00a37e441db20fa776907e7059d1b4763fe29f4b89988ca843245e48ddf2",
+      "bytes": 1610
+    },
+    "apps/server/app/migrations/fix1_invariants.py": {
+      "sha256": "98d084b9b2072967032a1b5c39014d9a56fb89a0bd85da997430652e8df0b59c",
+      "bytes": 9518
+    },
+    "apps/server/app/migrations/fix2_invariants.py": {
+      "sha256": "af29038e57aaa8f353cbb7a7ea2f988c29025927a688beff48c13e2124c4e84e",
+      "bytes": 7355
+    },
+    "apps/server/app/migrations/fix3_invariants.py": {
+      "sha256": "7e02a483f7f92f1ff85259e9bab2a532343085379d4dc81c310f6c50903e1af0",
+      "bytes": 645
+    },
+    "apps/server/app/migrations/initial_invariants.py": {
+      "sha256": "91c5cd6e6bc05b0e62dcd0403a10a55826bed9a6cb63abf89d2c133aeed4e4c6",
+      "bytes": 9711
+    },
+    "apps/server/app/migrations/initial_relations.json": {
+      "sha256": "456c0b2a3f9fba88afb1fb2d40b5ae4df8386516bf5649bd51e2093dc0364910",
+      "bytes": 3679
+    },
+    "apps/server/app/migrations/versions/0001_initial.py": {
+      "sha256": "762e019de05c245e08172814fba3138e5fb8311b5c987f6ffc715bef50f5eac5",
+      "bytes": 3450
+    },
+    "apps/server/app/migrations/versions/0001_schema.sql": {
+      "sha256": "9fe867481051286ff592e9b668deae8d65cf88f475d6e7faf9a7cdf8d53a3998",
+      "bytes": 46637
+    },
+    "apps/server/app/migrations/versions/0002_snapshot_metadata.py": {
+      "sha256": "ad9358218a3c863f8b5a1343cda226f530f4467eb446194220f130776b2fbf02",
+      "bytes": 3076
+    },
+    "apps/server/app/migrations/versions/0003_snapshot_guards.py": {
+      "sha256": "35648983fd5fee7412678ddba9abdc781e0143cf239a8e30ed82ca535c0b7ecc",
+      "bytes": 334
+    },
+    "apps/server/app/migrations/versions/0004_snapshot_promotion.py": {
+      "sha256": "b50439cc88ac5b6e17ac4d8b87d15af5acf9675136f588422061e01a51d335ae",
+      "bytes": 343
+    },
+    "apps/server/app/migrations/versions/__init__.py": {
+      "sha256": "321bbcdfa7b590f46141a0963ee2e2001ee2f58bcdc51ec587b943c304cc91e1",
+      "bytes": 30
+    },
+    "apps/server/app/models/__init__.py": {
+      "sha256": "8eb427c94c35f3b92785701126953595ca0e70be82813f772a35f3cdfe7b5e2a",
+      "bytes": 20222
+    },
+    "apps/server/app/models/song-v1.schema.json": {
+      "sha256": "3624202fe67f4a195a0bce117f97432e2964732b7937aa48180247872eab16f1",
+      "bytes": 63010
+    },
+    "apps/server/app/models/timeline-v1.schema.json": {
+      "sha256": "d85666a0dbb7f9e67a6d7442d2e44d6b971ca9584eb424941b6330e582948660",
+      "bytes": 1772
+    },
+    "apps/server/app/snapshots.py": {
+      "sha256": "46ebd8df1f06f4597dd75131e96bd9aa2af31e71d0f437a6d3e47aaaf36cd02d",
+      "bytes": 26441
+    },
+    "apps/server/pyproject.toml": {
+      "sha256": "e33b73a4b0bc6bfb3d525c74712783d01e2a90e60cf3c3b4099daeb82d5ae4ab",
+      "bytes": 607
+    },
+    "apps/server/tests/test_persistence_t02.py": {
+      "sha256": "7ca513aa97c67c0ea7bf7544497a84e79c4d160003a7708069fe6e5ec9363abc",
+      "bytes": 35466
+    },
+    "apps/server/tests/test_review_fix1_t02.py": {
+      "sha256": "081aca6f9a6964bd8690d0339bc7aed8eecc79725c5c503f59f2435ccd726537",
+      "bytes": 31432
+    },
+    "apps/server/tests/test_review_fix2_t02.py": {
+      "sha256": "c29048ddb7f0aed49f86172e5c118201b88f7f6e93087b8b19b4fcfb01d10a46",
+      "bytes": 31357
+    },
+    "apps/server/tests/test_review_fix3_t02.py": {
+      "sha256": "518bf487698e8703e6307187c679c0dff5ec2340a71e61507697c37883dfc591",
+      "bytes": 12896
+    },
+    "apps/server/tests/test_schema_t02.py": {
+      "sha256": "b319b4cb9c877d014e9cd017e60d0296c2a7400cdf42450cec74d14e9c6ea049",
+      "bytes": 2047
+    },
+    "packages/contracts/song-v1.schema.json": {
+      "sha256": "3624202fe67f4a195a0bce117f97432e2964732b7937aa48180247872eab16f1",
+      "bytes": 63010
+    },
+    "packages/contracts/timeline-v1.schema.json": {
+      "sha256": "d85666a0dbb7f9e67a6d7442d2e44d6b971ca9584eb424941b6330e582948660",
+      "bytes": 1772
+    },
+    "uv.lock": {
+      "sha256": "aa222669e00ce27ccdfe5f739858ec78f95cbfabc25de7c7c1fbd5784f4f0582",
+      "bytes": 107385
+    }
+  },
+  "source_count": 32,
+  "preimages_verified": 29,
+  "prior_originals_verified": 850,
+  "old_closed_flat_verified": 282,
+  "private_evidence_audit_checks": 18,
+  "suite": {
+    "cases": 330,
+    "passed": 327,
+    "windows_symlink_skips": 3
+  },
+  "exact_ledger_tests": 30,
+  "coverage_whole_modules": {
+    "apps/server/app/migrations/fix3_invariants.py": {
+      "covered_lines": 4,
+      "num_statements": 4,
+      "percent_covered": 100.0,
+      "percent_covered_display": "100",
+      "missing_lines": 0,
+      "excluded_lines": 0,
+      "percent_statements_covered": 100.0,
+      "percent_statements_covered_display": "100"
+    },
+    "apps/server/app/migrations/versions/0004_snapshot_promotion.py": {
+      "covered_lines": 10,
+      "num_statements": 10,
+      "percent_covered": 100.0,
+      "percent_covered_display": "100",
+      "missing_lines": 0,
+      "excluded_lines": 0,
+      "percent_statements_covered": 100.0,
+      "percent_statements_covered_display": "100"
+    },
+    "apps/server/app/snapshots.py": {
+      "covered_lines": 351,
+      "num_statements": 380,
+      "percent_covered": 92.36842105263158,
+      "percent_covered_display": "92",
+      "missing_lines": 29,
+      "excluded_lines": 0,
+      "percent_statements_covered": 92.36842105263158,
+      "percent_statements_covered_display": "92"
+    }
+  },
+  "covered_statements": [
+    365,
+    394
+  ],
+  "wheel_resources": 28,
+  "querycounts": {
+    "20": 38,
+    "200": 38,
+    "405": 55,
+    "historical_RED405": 4500,
+    "max_IN": 400
+  },
+  "original_cli_exit_start_end_cleanup": null,
+  "historical_root_testconfig": "ONEhead→0003command;assertsunchanged;sixhistoricalcasesgreen",
+  "external_T11_changes": "Oldfinisher verified currentstagebeforestyle. NewrootauthorizedT11lintactor maychange run/metrics outsideT02scope; nofalseallprotectedunchangedclaim.",
+  "review_counter_next": 4,
+  "regular_limit_reached_rootdecision_continue_without_reset": true,
+  "no_QA_Git_M03_task_acceptance": true
+}

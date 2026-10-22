@@ -1,0 +1,162 @@
+{
+  "utc": "2026-10-09T02:58:42.193931+00:00",
+  "technical_component_accepted": true,
+  "scope": "FIRSTcause guarded primary exception preservation through native episode/canonical ingest and secondary abort/logging failures; not full benchmark or universal cleanup guarantees",
+  "current_sources": {
+    "scripts/eval/benchmark_process.py": {
+      "sha256": "be47fffa422e5ad778c838c6a57389ff8fa6a22ca9e9e12241745c62ccc48404",
+      "bytes": 33771
+    },
+    "scripts/eval/benchmark_coordinator.py": {
+      "sha256": "e38cd9caf76bf71e97faeb25e2120c51985fb5feef823527f5cd715d5a1bfee9",
+      "bytes": 23771
+    },
+    "scripts/eval/benchmark_canonical_runtime.py": {
+      "sha256": "5a7098b6e2b18665d4a30ca990501daddf0cbaec088c91421a524838a0103a5a",
+      "bytes": 47372
+    },
+    "scripts/eval/benchmark_canonical_integration.py": {
+      "sha256": "8445b94909a6af51fe6afb1f544520f9d83de0890010a552b7295743888389a5",
+      "bytes": 13107
+    },
+    "scripts/eval/benchmark_episode.py": {
+      "sha256": "9fc4a466cdf171849be333bf4aac5672fe501deb4139389a1a9abe67826f68f5",
+      "bytes": 33681
+    },
+    "scripts/eval/benchmark_runtime.py": {
+      "sha256": "9d6f5a751b04d97b1db86732757dda0e7d58e489e523d3df99f089e762ae4f94",
+      "bytes": 55950
+    }
+  },
+  "current_QA": {
+    "cases": 274,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0
+  },
+  "current_raw_count": 300,
+  "run_uuid": "1284941a-a166-4f9c-b5cd-2c0ce1bc7529",
+  "current_whole_each": {
+    "scripts\\eval\\benchmark_canonical_integration.py": {
+      "covered_lines": 185,
+      "num_statements": 208,
+      "percent_covered": 86.94029850746269,
+      "percent_covered_display": "87",
+      "missing_lines": 23,
+      "excluded_lines": 0,
+      "percent_statements_covered": 88.9423076923077,
+      "percent_statements_covered_display": "89",
+      "num_branches": 60,
+      "num_partial_branches": 8,
+      "covered_branches": 48,
+      "missing_branches": 12,
+      "percent_branches_covered": 80.0,
+      "percent_branches_covered_display": "80"
+    },
+    "scripts\\eval\\benchmark_canonical_runtime.py": {
+      "covered_lines": 668,
+      "num_statements": 746,
+      "percent_covered": 85.4417670682731,
+      "percent_covered_display": "85",
+      "missing_lines": 78,
+      "excluded_lines": 0,
+      "percent_statements_covered": 89.54423592493298,
+      "percent_statements_covered_display": "90",
+      "num_branches": 250,
+      "num_partial_branches": 67,
+      "covered_branches": 183,
+      "missing_branches": 67,
+      "percent_branches_covered": 73.2,
+      "percent_branches_covered_display": "73"
+    },
+    "scripts\\eval\\benchmark_coordinator.py": {
+      "covered_lines": 303,
+      "num_statements": 347,
+      "percent_covered": 83.74164810690424,
+      "percent_covered_display": "84",
+      "missing_lines": 44,
+      "excluded_lines": 0,
+      "percent_statements_covered": 87.31988472622479,
+      "percent_statements_covered_display": "87",
+      "num_branches": 102,
+      "num_partial_branches": 29,
+      "covered_branches": 73,
+      "missing_branches": 29,
+      "percent_branches_covered": 71.56862745098039,
+      "percent_branches_covered_display": "72"
+    },
+    "scripts\\eval\\benchmark_episode.py": {
+      "covered_lines": 354,
+      "num_statements": 390,
+      "percent_covered": 87.07865168539325,
+      "percent_covered_display": "87",
+      "missing_lines": 36,
+      "excluded_lines": 0,
+      "percent_statements_covered": 90.76923076923077,
+      "percent_statements_covered_display": "91",
+      "num_branches": 144,
+      "num_partial_branches": 33,
+      "covered_branches": 111,
+      "missing_branches": 33,
+      "percent_branches_covered": 77.08333333333333,
+      "percent_branches_covered_display": "77"
+    },
+    "scripts\\eval\\benchmark_process.py": {
+      "covered_lines": 421,
+      "num_statements": 481,
+      "percent_covered": 82.66666666666667,
+      "percent_covered_display": "83",
+      "missing_lines": 60,
+      "excluded_lines": 0,
+      "percent_statements_covered": 87.52598752598753,
+      "percent_statements_covered_display": "88",
+      "num_branches": 194,
+      "num_partial_branches": 55,
+      "covered_branches": 137,
+      "missing_branches": 57,
+      "percent_branches_covered": 70.61855670103093,
+      "percent_branches_covered_display": "71"
+    },
+    "scripts\\eval\\benchmark_runtime.py": {
+      "covered_lines": 601,
+      "num_statements": 722,
+      "percent_covered": 80.5168986083499,
+      "percent_covered_display": "81",
+      "missing_lines": 121,
+      "excluded_lines": 0,
+      "percent_statements_covered": 83.2409972299169,
+      "percent_statements_covered_display": "83",
+      "num_branches": 284,
+      "num_partial_branches": 61,
+      "covered_branches": 209,
+      "missing_branches": 75,
+      "percent_branches_covered": 73.59154929577464,
+      "percent_branches_covered_display": "74"
+    }
+  },
+  "source_copies_checked": 5404,
+  "inventory_files_checked": 15613,
+  "review3_clean": true,
+  "limits": [
+    "Module closure not exhaustively asserted: transient loaded/unloaded modules unobserved; dependency/managed interpreter physical copies exist.",
+    "Native stderr DEVNULL; full RPC and blocked ReadFile not observed.",
+    "After-death instructions/finalizers UNKNOWN.",
+    "Uninstrumented foreign-witness and non-owned-child Popen resources/waits have test evidence only; complete independent resource census UNKNOWN.",
+    "Cleanup disposition labels are observations, not independent positive cleanup certificates.",
+    "Discovery/bootstrap shell PID custody UNKNOWN; original tool responses retained in conversation."
+  ],
+  "native_births": 301,
+  "missing_native_traces": 2,
+  "open_gaps": [
+    "B4-02 sources/deadline",
+    "B4-03 startup sharedbudget",
+    "B4-04 binding",
+    "R09T13 CLI",
+    "GPU/cadence/calibration/FINAL/fullT09"
+  ],
+  "formal_attempt": 4,
+  "next_formal": 5,
+  "T10_rebate_preserved": true,
+  "startup_ADR0059_ownership_transfer_authorized": true,
+  "implementation_authorized": true
+}

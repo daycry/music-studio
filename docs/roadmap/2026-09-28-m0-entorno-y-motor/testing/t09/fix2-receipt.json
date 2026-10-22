@@ -1,0 +1,346 @@
+{
+  "status": "DONE_CPU_WITH_CONCERNS",
+  "task_complete": false,
+  "receipt_sha256": "bb16eda4c9266b74e9dc49c2f8c633e7099eba13622f11965d3235f1bdf4e00f",
+  "freeze_sha256": "34ad386a0f4dd089f7b5b9d2ec4a3ffd779be0eff30352f07cc11feb4621d339",
+  "source_file_count": 33,
+  "baseline_preimages_verified": 32,
+  "files": {
+    "scripts/eval/benchmark.py": {
+      "sha256": "f6d23e58327fdb73768ffdb5470952d99ba6cef010c061404a6f413423c1fbcc",
+      "bytes": 25599
+    },
+    "scripts/eval/benchmark_evidence.py": {
+      "sha256": "c81557dce895cd364df862d6d1b05adc26e87acec40f348eaf53b3a0d3b5027a",
+      "bytes": 12501
+    },
+    "scripts/eval/benchmark_observers.py": {
+      "sha256": "b6b9a6e6b73a069b2cefc80da93a08bb80959e7fa2fe7334c30739d34de0171d",
+      "bytes": 4708
+    },
+    "scripts/eval/benchmark_plan.py": {
+      "sha256": "f6f7a17434f60b9c3c6d716e68e1251f8c164713171d959fd4b01989a5bcb89e",
+      "bytes": 8101
+    },
+    "scripts/eval/benchmark_runner.py": {
+      "sha256": "29be452a6946641f5c2391b99392eca35dc141d3d391faf913509e9e11b02c32",
+      "bytes": 20822
+    },
+    "scripts/eval/benchmark_runtime.py": {
+      "sha256": "f90a8a4379bc1e2994eebf820990d8fed0c84a845937662c01f9f3f12849ca79",
+      "bytes": 20011
+    },
+    "scripts/eval/benchmark_storage.py": {
+      "sha256": "fedd8cd519641918ef903db39905c2975e71faa4c17ca4c952947a3a1219efcc",
+      "bytes": 6854
+    },
+    "scripts/eval/benchmark_windows.py": {
+      "sha256": "afe9250743320b69a992fc822a4f0136a85701d8565ef03b97ad58679130dcce",
+      "bytes": 10772
+    },
+    "apps/engines/acestep/benchmark_profiles.py": {
+      "sha256": "1a2ea2cf4783a10f63705c9d0e026b3618e342f058c44f2e78578f172f53514c",
+      "bytes": 1308
+    },
+    "apps/engines/acestep/descriptor.py": {
+      "sha256": "64fab407f9d48d2fb29d3142149d40bc69ce9db755341d536de643ccba630e2f",
+      "bytes": 5235
+    },
+    "apps/engines/acestep/input_profile.py": {
+      "sha256": "14a5fd28ef81a0094ea17b0d346671186d9511813b9d4ecea0606dbb8abb60af",
+      "bytes": 2671
+    },
+    "apps/engines/acestep/adapter.py": {
+      "sha256": "92ca199ad9d8985a036adde2ff0817285ba5866477fe708626b5f453b7e0f106",
+      "bytes": 33041
+    },
+    "apps/engines/acestep/preflight.py": {
+      "sha256": "1396db79adac7119f0cb2e2029c3701f26665282fd09b288741372e079a4484b",
+      "bytes": 15715
+    },
+    "apps/engines/acestep/engine_acestep.py": {
+      "sha256": "7bb9d82ca5af289dcd2732af71f9a86ff73ba6053746f07256a9296d94bc4183",
+      "bytes": 983
+    },
+    "apps/engines/common/engine_common/server.py": {
+      "sha256": "53fa2a4ccb3a9beb171eb0cae11edc3352dd5c7a21d462152880f44e7fabf096",
+      "bytes": 20019
+    },
+    "scripts/eval/tests/conftest.py": {
+      "sha256": "8ecdbf0e0d8b5c92d222852dccdd2731169197acc73920a43baf9762500cf122",
+      "bytes": 503
+    },
+    "scripts/eval/tests/test_benchmark_cli.py": {
+      "sha256": "a8adeae4bbc4985f3d4365dfcb799fc2079f3003e9d9d1626b38b69dbfe43f12",
+      "bytes": 2761
+    },
+    "scripts/eval/tests/test_benchmark_evidence.py": {
+      "sha256": "ad0e65153701a5c0db37d13443bbcf705bab278831b333f5d386992dc20b7f2c",
+      "bytes": 5869
+    },
+    "scripts/eval/tests/test_benchmark_integration_cpu.py": {
+      "sha256": "7072f0ea3ce819f86110b219840abad803b780a294b8f80ca7dce34221b3f17a",
+      "bytes": 15812
+    },
+    "scripts/eval/tests/test_benchmark_observers.py": {
+      "sha256": "331dd63da1ebb64617453f9528d480a0906e579f9720a03f4418131b36b06cba",
+      "bytes": 2664
+    },
+    "scripts/eval/tests/test_benchmark_plan.py": {
+      "sha256": "9e5cd202226fc58a503a2fd90e0e610492600d24f241fbcf8404df3b52fb2939",
+      "bytes": 2133
+    },
+    "scripts/eval/tests/test_benchmark_runner.py": {
+      "sha256": "4c364371733ae2a1fcf2262cf19721d369570f3b1bea20d7a6f688e57686b11b",
+      "bytes": 19716
+    },
+    "scripts/eval/tests/test_benchmark_runtime.py": {
+      "sha256": "755e99fc32b7b80a210fa92ff6422a97ab10c79a498d6669b795446a319bffc3",
+      "bytes": 11404
+    },
+    "scripts/eval/tests/test_benchmark_windows_cpu.py": {
+      "sha256": "b0ff148f680bc89776b76b1cd5992744dbe45167d2223df8e0a3b3fd74aa76d0",
+      "bytes": 8395
+    },
+    "apps/engines/acestep/tests/test_benchmark_profiles.py": {
+      "sha256": "2463acd8e9749a6fb8fa22a2ba16f3da4e02225bf2da6ea40987b4129a1f81f2",
+      "bytes": 6857
+    },
+    "apps/engines/acestep/tests/test_adapter.py": {
+      "sha256": "65bc8ffc2d8bdf6850aa1bb47e4f06efdc4c575dfe7bba1dd6bd9ff046e2d0b5",
+      "bytes": 20952
+    },
+    "apps/engines/acestep/tests/test_dit_resolution.py": {
+      "sha256": "b9638942d152fa178a80326466db9d14ed98ee6a4b5980d1b7823d141700f4fd",
+      "bytes": 7289
+    },
+    "apps/engines/acestep/tests/test_review_fixes.py": {
+      "sha256": "734b6dcf524b4bada60fe6c8fa3e3708d6e4b11f6b6b67a5a538e438d5934152",
+      "bytes": 9779
+    },
+    "apps/engines/acestep/tests/test_shift.py": {
+      "sha256": "4639db1d539368277d22c9f3d10c60cb1211a5b776e01e694f23cfc413b843c0",
+      "bytes": 4046
+    },
+    "apps/engines/acestep/tests/test_preflight_vram.py": {
+      "sha256": "095d1310bc7f06b3bb00edbceefb92b5a08ef8a1271470b9a84b54332772921e",
+      "bytes": 5014
+    },
+    "apps/engines/common/tests/test_benchmark_telemetry.py": {
+      "sha256": "d7bb65085d3a21a7725d0be7f971883de3a1d4d98ff851128ab4d97fad771e7b",
+      "bytes": 975
+    },
+    "models/models.lock.json": {
+      "sha256": "9ca1c9549ab88e8f7c985a634203aacfad03ee334e9b4506e4d466817d9177d9",
+      "bytes": 26164
+    },
+    "scripts/eval/tests/test_benchmark_deadline.py": {
+      "sha256": "f761ab8f6b573068fd6e708dfd55feddc6d07bcb86784fe6facadd2c80056a05",
+      "bytes": 10021
+    }
+  },
+  "changed_files": [
+    "scripts/eval/benchmark_runner.py",
+    "scripts/eval/benchmark_runtime.py",
+    "scripts/eval/tests/test_benchmark_runtime.py",
+    "scripts/eval/tests/test_benchmark_deadline.py"
+  ],
+  "unchanged_prior_files": 29,
+  "non_owned_prior_files_unchanged": 28,
+  "owned_test_runner_unchanged": true,
+  "artifacts": {
+    "coverage-final.json": {
+      "sha256": "a9ebca4104144c6f499172f6d4b07e26a634a13f2e78b360c88282ef72104cd1",
+      "bytes": 311368
+    },
+    "diagnose.py": {
+      "sha256": "72e44cd2d1ee42c6c43b29676a5cf5cc1d0ad791984caf82b6e7160267f9216b",
+      "bytes": 2582
+    },
+    "diagnostic-baseline.txt": {
+      "sha256": "4307696fcb9cb8c2479d5b3845d3953162d8073ef3bfb8ebb11f3ae5f70fd5c9",
+      "bytes": 442
+    },
+    "diagnostic-phases-1-3.md": {
+      "sha256": "e245850be6b650c6685cac8f124bb6fc99a8ae887e8b4b7ea45c050f63a63dec",
+      "bytes": 4118
+    },
+    "expected-current.json": {
+      "sha256": "b4fa72d748c88b8cf362a42c4d916fe941a2c2ca9e3b9a19646421540f941c07",
+      "bytes": 3759
+    },
+    "freeze-delivery.py": {
+      "sha256": "6ca4d12c047f3f91309f3185bee306104197886dded8325914e665a6d2726378",
+      "bytes": 6053
+    },
+    "freeze.json": {
+      "sha256": "34ad386a0f4dd089f7b5b9d2ec4a3ffd779be0eff30352f07cc11feb4621d339",
+      "bytes": 5711
+    },
+    "full-cpu.json": {
+      "sha256": "203b1e1b32e3e01a6a5f86cfafe682c4314d0f3f572d42a886c80004a0749996",
+      "bytes": 553
+    },
+    "full-cpu.txt": {
+      "sha256": "03de6ced60a148f6991990f39eae90856b8873cfa5d4719be706342997f8fa7d",
+      "bytes": 6324
+    },
+    "green-directed.txt": {
+      "sha256": "9c9f896d9ce39d6b18f1dd75cdebd028b696a1f30e2cca04f40f5e535b51626b",
+      "bytes": 1106
+    },
+    "isolated-fix.diff": {
+      "sha256": "760a07337fb4ca1a92bbc284808b46461e4cbefc6c62a515e263d86b23ba8e68",
+      "bytes": 22590
+    },
+    "red-cadence.json": {
+      "sha256": "01cc8cd53d0e692ae4d147ab6084b4e85280b3d1c8226bd3e4298c296d0b95bd",
+      "bytes": 346
+    },
+    "red-cadence.txt": {
+      "sha256": "f501911d0293babc627c83cb714fea6cb2a349bdb1a3a75bd127410cebbb5382",
+      "bytes": 4940
+    },
+    "red-http.json": {
+      "sha256": "215fbccc14b87280dbe0f0e3f82313625c341aa6ded38291c02d05b324c19dfd",
+      "bytes": 340
+    },
+    "red-http.txt": {
+      "sha256": "6a16d2184953334bfd26323eb49bc13f64c1bd2be456ae7efd96526a186b0681",
+      "bytes": 4192
+    },
+    "red-late-terminal.txt": {
+      "sha256": "2784677972d1075a9c023841d4ef9566310c0850e86c09155fac03ec2a392865",
+      "bytes": 3828
+    },
+    "red-line-limit.txt": {
+      "sha256": "d2220318f9ab842280e70e7faceec6997ba94674d7d0c73fd7e7bda191dfe8a4",
+      "bytes": 4290
+    },
+    "red-original-deadline.txt": {
+      "sha256": "b8a1c0097686375154c19bc927a5a2b12ad00b9d24e521bf3362cf125bc70b5f",
+      "bytes": 3808
+    },
+    "replace-transport.py": {
+      "sha256": "8105d1cff5ac14af0a2efa0fae236d1d1233c6e626d6b9ffa037e8ea7ab3e16f",
+      "bytes": 6421
+    },
+    "ruff.txt": {
+      "sha256": "af352a86840ad0af3d37ea0d9197f868363a6dac6b1c2ef5d2722f6b41d2d9af",
+      "bytes": 42
+    },
+    "task-brief.md": {
+      "sha256": "a0557868e34fda0e75edf9f7dd80ce891613220f07c85de286cd67f66d916e12",
+      "bytes": 18346
+    },
+    "task-brief.stderr.txt": {
+      "sha256": "b7ad4619bf5dd054ae3a14aee6a599f24fbf2f7a84e0da45e7779d2d93dbec08",
+      "bytes": 279
+    },
+    "verify-baseline.py": {
+      "sha256": "ed9569a55b26411f5ab2c868b291016a8153d6cce73d749d109d460979328b2b",
+      "bytes": 744
+    }
+  },
+  "red_evidence": [
+    {
+      "id": "red-http",
+      "target": "scripts/eval/tests/test_benchmark_deadline.py::test_deadline_bounds_real_http_parser[events-extension]",
+      "error": "E       AssertionError: ('extension', 'events', 0.3)",
+      "timestamp": "2026-10-06T18:02:57.8906318Z",
+      "timestamp_source": "run-check record"
+    },
+    {
+      "id": "red-cadence",
+      "target": "scripts/eval/tests/test_benchmark_deadline.py::test_sampling_budget_includes_sensor_and_global_deadline[0.5]",
+      "error": "E           assert [0.0, 1.5, 3.0] == [0, 1, 2, 3]",
+      "timestamp": "2026-10-06T18:03:23.8703716Z",
+      "timestamp_source": "run-check record"
+    },
+    {
+      "id": "red-late-terminal",
+      "target": "scripts/eval/tests/test_benchmark_deadline.py::test_terminal_received_after_global_deadline_is_not_accepted",
+      "error": "E       Failed: DID NOT RAISE ObservationTimeout",
+      "timestamp": "2026-10-06T18:03:58.949890+00:00",
+      "timestamp_source": "output file modification time after command"
+    },
+    {
+      "id": "red-original-deadline",
+      "target": "scripts/eval/tests/test_benchmark_deadline.py::test_status_query_keeps_original_global_deadline",
+      "error": "E       AssertionError: assert None == 3.0",
+      "timestamp": "2026-10-06T18:06:07.399215+00:00",
+      "timestamp_source": "output file modification time after command"
+    },
+    {
+      "id": "red-line-limit",
+      "target": "scripts/eval/tests/test_benchmark_deadline.py::test_event_line_limit_applies_before_json_decode",
+      "error": "E       AssertionError: assert [{'seq': 1, '...xxxxxxxxxx'}}] == []",
+      "timestamp": "2026-10-06T18:06:51.522939+00:00",
+      "timestamp_source": "output file modification time after command"
+    }
+  ],
+  "full_cpu": {
+    "started_utc": "2026-10-06T18:07:39.7996184Z",
+    "finished_utc": "2026-10-06T18:08:03.5880645Z",
+    "exit_code": 0,
+    "command": "uv run --frozen --no-sync --all-packages pytest scripts/eval/tests apps/engines/acestep/tests apps/engines/common/tests -m 'not gpu' -q -p no:cacheprovider --basetemp=.cache/dev-cycle/t09/fix2/tmp-full-final --cov=scripts/eval --cov=apps/engines/acestep --cov=apps/engines/common/engine_common --cov-report=json:.cache/dev-cycle/t09/fix2/coverage-final.json --cov-report=term:skip-covered",
+    "output_sha256": "03de6ced60a148f6991990f39eae90856b8873cfa5d4719be706342997f8fa7d",
+    "passed": 267,
+    "skipped": 5,
+    "deselected_gpu": 1,
+    "warnings": 1
+  },
+  "coverage": {
+    "method": "official pytest-cov JSON; arithmetic file mean of same 15 production modules, excludes tests; not shared Git diff/changed lines/individual minimum",
+    "mean_percent": 87.45013740456639,
+    "minimum_file_percent": 67.96116504854369,
+    "by_file": {
+      "scripts/eval/benchmark.py": 72.5609756097561,
+      "scripts/eval/benchmark_evidence.py": 100.0,
+      "scripts/eval/benchmark_observers.py": 79.03225806451613,
+      "scripts/eval/benchmark_plan.py": 89.53488372093024,
+      "scripts/eval/benchmark_runner.py": 73.5930735930736,
+      "scripts/eval/benchmark_runtime.py": 73.31189710610933,
+      "scripts/eval/benchmark_storage.py": 67.96116504854369,
+      "scripts/eval/benchmark_windows.py": 88.8157894736842,
+      "apps/engines/acestep/benchmark_profiles.py": 95.65217391304348,
+      "apps/engines/acestep/descriptor.py": 100.0,
+      "apps/engines/acestep/input_profile.py": 100.0,
+      "apps/engines/acestep/adapter.py": 90.0804289544236,
+      "apps/engines/acestep/preflight.py": 90.625,
+      "apps/engines/acestep/engine_acestep.py": 100.0,
+      "apps/engines/common/engine_common/server.py": 90.58441558441558
+    }
+  },
+  "diagnostic_phases_1_3": {
+    "path": ".cache/dev-cycle/t09/fix2/diagnostic-phases-1-3.md",
+    "sha256": "e245850be6b650c6685cac8f124bb6fc99a8ae887e8b4b7ea45c050f63a63dec",
+    "replay_uses": "32 frozen preimages, no current source import"
+  },
+  "implementation_response": [
+    "R09-04a absolute deadline at each socket raw read/send/connect/parser boundary",
+    "R09-04b stream budget subtracts sensor cost from sample period/global deadline"
+  ],
+  "derived_guards": [
+    "request_before preserves original deadline",
+    "4MiB NDJSON line limit before decode with newline"
+  ],
+  "full_diff_sha256": "049391410cf3fbf4835de8dbc428d622a9e2074cc5751d1d312c64ad3efb20ca",
+  "full_diff_bytes": 227678,
+  "fix_diff_sha256": "760a07337fb4ca1a92bbc284808b46461e4cbefc6c62a515e263d86b23ba8e68",
+  "fix_diff_bytes": 22590,
+  "root_format_check": {
+    "exit_code": 0,
+    "result": "4 files already formatted"
+  },
+  "review_attempt_next": 3,
+  "r09_07_partial_rebate_preserved": true,
+  "remaining": [
+    "Root independent review3/QA",
+    "Manual Windows TaskManager/browser calibration",
+    "Root GPU/runtime INT8/offload/load/fit/matrix160 and actual report"
+  ],
+  "context_limitation": "Implementer context reused after two fresh-thread allocations rejected; no claim of fresh context",
+  "gpu_executed": false,
+  "qa_passed": false
+}

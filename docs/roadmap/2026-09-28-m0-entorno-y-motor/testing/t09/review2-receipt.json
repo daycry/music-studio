@@ -1,0 +1,57 @@
+{
+  "task": "T-09",
+  "attempt": 2,
+  "lenses": [
+    "A",
+    "B",
+    "C",
+    "D"
+  ],
+  "all_contexts_fresh": true,
+  "reported_at": "2026-10-06T17:58:58.455198+00:00",
+  "counts": {
+    "critical": 0,
+    "important": 2,
+    "minor": 0
+  },
+  "gaps": [
+    {
+      "id": "R09-04a",
+      "origin": "B2",
+      "grade": "Important",
+      "location": "scripts/eval/benchmark_runtime.py:94",
+      "title": "El parser chunked puede superar el plazo global",
+      "scenario": "HTTPResponse válido: cabecera de chunk 36\\r\\n enviada byte a byte cada 25 ms. Un presupuesto de 40 ms devuelve done tras aproximadamente 109 ms. read1 llama internamente a readline y efectúa varias lecturas con timeout de inactividad; el límite externo no las interrumpe.",
+      "verdict": "pendiente"
+    },
+    {
+      "id": "R09-04b",
+      "origin": "D2",
+      "grade": "Important",
+      "location": "scripts/eval/benchmark_runner.py:119",
+      "title": "El presupuesto del stream no descuenta el coste del sensor",
+      "scenario": "Observación CPU de 4 s, intervalo de 1 s y sensor síncrono de 0,5 s: tres muestras, intervalos 1,500/1,500 s. Concede otro segundo al stream después del sensor. La latencia real de los sensores no se ha medido; el caso sintético demuestra el defecto de programación.",
+      "verdict": "pendiente"
+    }
+  ],
+  "previous_gap_outcomes": {
+    "R09-01": "corregido: duración solicitada validada con tolerancia nativa 1921/48000 s",
+    "R09-02": "corregido: baseline real publicado, sin inventar observaciones ausentes",
+    "R09-03": "corregido: copia, amortización y dispersión publicadas por separado",
+    "R09-04": "parcial: quedan R09-04a y R09-04b",
+    "R09-05": "corregido: recibo duradero de cleanup y resume sin duplicar jobs",
+    "R09-06": "corregido: carga cold separada de warm",
+    "R09-07": "corregido para CFG/metadatos/formato; subcaso SHA64hex descartado (rebatido)"
+  },
+  "sources_unchanged": 32,
+  "diff_sha256": "85e2efafd71cd418b589683c9f3bd80b3acd7b11e6e767b62e19d50c3f9f580b",
+  "cpu_test_counts_overlapping": {
+    "A": 39,
+    "B": 39,
+    "C": 13,
+    "D": 16
+  },
+  "gpu_executed": false,
+  "qa_passed": false,
+  "r09_07_partial_rebate_preserved": true
+}

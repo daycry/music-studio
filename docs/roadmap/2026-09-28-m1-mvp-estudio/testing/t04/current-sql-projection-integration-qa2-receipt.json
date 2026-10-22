@@ -1,0 +1,86 @@
+{
+  "status": "FAILED",
+  "ownership": [],
+  "counts": {
+    "passed": 1051,
+    "failed": 1,
+    "skipped": 3,
+    "cases": 1055
+  },
+  "actual_wait_exit": 1,
+  "actual_child_pid": 12796,
+  "utc_start": "2026-10-09T04:07:23.562044+00:00",
+  "utc_end": "2026-10-09T04:15:01.193995+00:00",
+  "full_baseline_runs": 1,
+  "repeated": false,
+  "migration_case": [
+    {
+      "classname": "apps.server.tests.test_persistence_t02",
+      "name": "test_schema_populated_migration_cycle",
+      "seconds": 1.618,
+      "status": "passed",
+      "message": null,
+      "detail": null
+    }
+  ],
+  "original801": [
+    {
+      "classname": "apps.server.tests.test_dispatcher_retry",
+      "name": "test_global_busy_gpu_negative_once_and_available_cpu_native[801]",
+      "seconds": 12.348,
+      "status": "failed",
+      "message": "TimeoutError",
+      "detail": "fut = <coroutine object Event.wait at 0x000001C82CA6F5A0>, timeout = 10\n\n    async def wait_for(fut, timeout):\n        \"\"\"Wait for the single Future or coroutine to complete, with timeout.\n    \n        Coroutine will be wrapped in Task.\n    \n        Returns result of the Future or coroutine.  When a timeout occurs,\n        it cancels the task and raises TimeoutError.  To avoid the task\n        cancellation, wrap it in shield().\n    \n        If the wait is cancelled, the task is also cancelled.\n    \n        If the task suppresses the cancellation and returns a value instead,\n        that value is returned.\n    \n        This function is a coroutine.\n        \"\"\"\n        # The special case for timeout <= 0 is for the following case:\n        #\n        # async def test_waitfor():\n        #     func_started = False\n        #\n        #     async def func():\n        #         nonlocal func_started\n        #         func_started = True\n        #\n        #     try:\n        #         await asyncio.wait_for(func(), 0)\n        #     except asyncio.TimeoutError:\n        #         assert not func_started\n        #     else:\n        #         assert False\n        #\n        # asyncio.run(test_waitfor())\n    \n    \n        if timeout is not None and timeout <= 0:\n            fut = ensure_future(fut)\n    \n            if fut.done():\n                return fut.result()\n    \n            await _cancel_and_wait(fut)\n            try:\n                return fut.result()\n            except exceptions.CancelledError as exc:\n                raise TimeoutError from exc\n    \n        async with timeouts.timeout(timeout):\n>           return await fut\n                   ^^^^^^^^^\n\n..\\..\\..\\..\\..\\uv\\python\\cpython-3.12-windows-x86_64-none\\Lib\\asyncio\\tasks.py:520: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\nself = <asyncio.locks.Event object at 0x000001C82F0B1850 [unset]>\n\n    async def wait(self):\n        \"\"\"Block until the internal flag is true.\n    \n        If the internal flag is true on entry, return True\n        immediately.  Otherwise, block until another coroutine calls\n        set() to set the flag to true, then return True.\n        \"\"\"\n        if self._value:\n            return True\n    \n        fut = self._get_loop().create_future()\n        self._waiters.append(fut)\n        try:\n>           await fut\nE           asyncio.exceptions.CancelledError\n\n..\\..\\..\\..\\..\\uv\\python\\cpython-3.12-windows-x86_64-none\\Lib\\asyncio\\locks.py:212: CancelledError\n\nThe above exception was the direct cause of the following exception:\n\nengine = Engine(sqlite:///.cache/dev-cycle/m1/t04-current-sql-projection-integration-qa2/queue-fixtures/06dfb38116af43fdabf9b5751ee0521a/studio.sqlite)\nsize = 801\n\n    @pytest.mark.parametrize(\"size\", [200, 400, 801])\n    def test_global_busy_gpu_negative_once_and_available_cpu_native(engine, size):\n        from test_dispatcher_admission import add\n    \n        retry_id, owner, _ = failed_attempts(engine, size)\n        with Session(engine) as session, session.begin():\n            session.get(Job, retry_id).priority = \"interactive\"\n            song = session.get(Job, retry_id).song_id\n            for _ in range(size):\n                session.add(\n                    Job(\n                        owner_id=owner,\n                        song_id=song,\n                        task=\"music.instrumental\",\n                        lane=\"gpu\",\n                        engine_id=\"mock\",\n                        model_id=\"mock\",\n                        priority=\"interactive\",\n                        request={\n                            \"params\": {\"style\": \"literal\", \"duration_s\": 30},\n                            \"mode\": \"bf16\",\n                        },\n                    )\n                )\n        cpu_id, _ = add(\n            engine,\n            task=\"audio.beats\",\n            lane=\"cpu\",\n            priority=\"batch\",\n            engine_id=\"other\",\n            model_id=\"other\",\n            request={\"params\": {}, \"mode\": \"bf16\"},\n        )\n        busy, cpu = StatefulRetryBackend(), StatefulRetryBackend(\"other\")\n        busy.force_busy = True\n    \n        async def run():\n            runtime = QueueRuntime(engine, settings(), backends={\"mock\": busy, \"cpu\": cpu})\n            sent = asyncio.Event()\n            submit = cpu.submit\n            ticks = []\n    \n            async def heartbeat():\n                while not runtime.stop.is_set():\n                    ticks.append(True)\n                    await asyncio.sleep(0)\n    \n            async def submitted(request):\n                ack = await submit(request)\n                runtime.stop.set()\n                sent.set()\n                return ack\n    \n            cpu.submit = submitted\n            beat = asyncio.create_task(heartbeat())\n            await runtime.start()\n            positive = []\n            original_resolve = runtime.resolver.resolve\n    \n            async def resolve(*args, **kwargs):\n                before = (busy.health_calls, busy.calls)\n                result = await original_resolve(*args, **kwargs)\n                positive.append(\n                    (before, (busy.health_calls - before[0], busy.calls - before[1]))\n                )\n                return result\n    \n            runtime.resolver.resolve = resolve\n            try:\n                await asyncio.wait_for(sent.wait(), 10)\n                await runtime.task\n                with Session(engine) as session:\n                    assert session.get(JobAttempt, cpu.posts[0].job_id).job_id == cpu_id\n                    assert session.get(Job, retry_id).attempt == 1\n                    assert (\n                        session.scalar(select(JobAttempt.id).where(JobAttempt.ordinal == 2))\n                        is None\n                    )\n                print(\n                    {\n                        \"global_busy_rows_each_population\": size,\n                        \"busy_health\": busy.health_calls,\n                        \"busy_models\": busy.calls,\n                        \"cpu_health_fresh_positive\": cpu.health_calls,\n                        \"cpu_models\": cpu.calls,\n                        \"heartbeat\": len(ticks),\n                        \"native_file\": engine.url.database,\n                        \"synthetic_engine\": True,\n                    }\n                )\n                assert positive == [((1, 1), (1, 1))]\n                assert busy.health_calls == busy.calls == 2\n                assert not busy.posts and not busy.unloads and ticks\n                assert len(cpu.posts) == 1\n            finally:\n                await runtime.close()\n                await beat\n            assert not runtime.native and engine.pool.checkedout() == 0\n    \n>       asyncio.run(run())\n\napps\\server\\tests\\test_dispatcher_retry.py:1470: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n..\\..\\..\\..\\..\\uv\\python\\cpython-3.12-windows-x86_64-none\\Lib\\asyncio\\runners.py:195: in run\n    return runner.run(main)\n           ^^^^^^^^^^^^^^^^\n..\\..\\..\\..\\..\\uv\\python\\cpython-3.12-windows-x86_64-none\\Lib\\asyncio\\runners.py:118: in run\n    return self._loop.run_until_complete(task)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n..\\..\\..\\..\\..\\uv\\python\\cpython-3.12-windows-x86_64-none\\Lib\\asyncio\\base_events.py:691: in run_until_complete\n    return future.result()\n           ^^^^^^^^^^^^^^^\napps\\server\\tests\\test_dispatcher_retry.py:1440: in run\n    await asyncio.wait_for(sent.wait(), 10)\n..\\..\\..\\..\\..\\uv\\python\\cpython-3.12-windows-x86_64-none\\Lib\\asyncio\\tasks.py:519: in wait_for\n    async with timeouts.timeout(timeout):\n               ^^^^^^^^^^^^^^^^^^^^^^^^^\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\nself = <Timeout [expired]>\nexc_type = <class 'asyncio.exceptions.CancelledError'>\nexc_val = CancelledError(), exc_tb = <traceback object at 0x000001C82CDD9740>\n\n    async def __aexit__(\n        self,\n        exc_type: Optional[Type[BaseException]],\n        exc_val: Optional[BaseException],\n        exc_tb: Optional[TracebackType],\n    ) -> Optional[bool]:\n        assert self._state in (_State.ENTERED, _State.EXPIRING)\n    \n        if self._timeout_handler is not None:\n            self._timeout_handler.cancel()\n            self._timeout_handler = None\n    \n        if self._state is _State.EXPIRING:\n            self._state = _State.EXPIRED\n    \n            if self._task.uncancel() <= self._cancelling and exc_type is exceptions.CancelledError:\n                # Since there are no new cancel requests, we're\n                # handling this.\n>               raise TimeoutError from exc_val\nE               TimeoutError\n\n..\\..\\..\\..\\..\\uv\\python\\cpython-3.12-windows-x86_64-none\\Lib\\asyncio\\timeouts.py:115: TimeoutError"
+    }
+  ],
+  "current_whole_six_ge80_zero_excl": true,
+  "old1029_missing": [],
+  "new_case_count": 26,
+  "physical_precopy_count": 8393,
+  "copies_mismatch": [],
+  "source_delta": [],
+  "end_loaded_gaps": 0,
+  "old_SQL_failure_cause": "UNKNOWN",
+  "actual_CPU_submit_delta": "UNKNOWN",
+  "three_windows_symlink_skips": [
+    {
+      "classname": "apps.server.tests.test_logging_paths",
+      "name": "test_logging_confines_symlink_sink[directory]",
+      "seconds": 0.001,
+      "status": "skipped",
+      "message": "Windows exige privilegio symlink; probado en Docker Linux",
+      "detail": "/.cache\\dev-cycle\\m1\\t04-current-sql-projection-integration-qa2\\baseline\\inputs\\apps\\server\\tests\\test_logging_paths.py:8: Windows exige privilegio symlink; probado en Docker Linux"
+    },
+    {
+      "classname": "apps.server.tests.test_logging_paths",
+      "name": "test_logging_confines_symlink_sink[file]",
+      "seconds": 0.0,
+      "status": "skipped",
+      "message": "Windows exige privilegio symlink; probado en Docker Linux",
+      "detail": "/.cache\\dev-cycle\\m1\\t04-current-sql-projection-integration-qa2\\baseline\\inputs\\apps\\server\\tests\\test_logging_paths.py:8: Windows exige privilegio symlink; probado en Docker Linux"
+    },
+    {
+      "classname": "apps.server.tests.test_persistence_t02",
+      "name": "test_snapshot_symlink_directory_rejected",
+      "seconds": 0.195,
+      "status": "skipped",
+      "message": "Este host no permite crear symlinks; prueba Linux en Docker",
+      "detail": "/.cache\\dev-cycle\\m1\\t04-current-sql-projection-integration-qa2\\baseline\\inputs\\apps\\server\\tests\\test_persistence_t02.py:829: Este host no permite crear symlinks; prueba Linux en Docker"
+    }
+  ],
+  "native_OS_pending_descendants": "UNKNOWN",
+  "transient_unloaded_closure": "UNKNOWN",
+  "TDD": "n/a independent readonly verification, private structural config only",
+  "actual_model": null,
+  "actual_tokens": null,
+  "actual_EUR": null,
+  "actual_AI_hours": null,
+  "ledger_docs_ADR_Git_acceptance_modified": false,
+  "no_full_T04_T05_T06_hito_GPU_E2E_acceptance": true,
+  "previous_QA1": "FAILED 1051PASS/1FAIL/3SKIP missing private Alembic ini; sealed evidence untouched",
+  "preflight_repair": "directory incorrectly added to capture files; preserved before first real baseline, no product RED",
+  "postprocessing_history": [
+    "First report helper failed on qa2/old-recipes/coverage.ini path; preserved qa_finish.before-recipe-path-repair.py and changed only private report path to qa1-recipes; no tests rerun.",
+    "Initial tool JavaScript syntax error before report file creation; no test/product execution."
+  ]
+}

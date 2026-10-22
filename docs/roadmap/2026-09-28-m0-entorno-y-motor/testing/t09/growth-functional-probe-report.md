@@ -1,0 +1,5 @@
+# T09 — prueba canónica de crecimiento y rebate
+
+130 episodios CPU sintéticos canónicos con procesos, archivos y relojes reales: historial323.202bytes. Dos renovaciones reales pasan; frames21.138bytes y prerequisites21.694bytes. Runtime devuelve un seal con ruta/hash/tamaño, no los arrays del historial. **R09-T10/B3-01 descartado (rebatido)** con código y evidencia nativa; no se fabrica un RED de desbordamiento. El resultado no acredita calibración, cadencia1Hz,160 ni GPU.
+
+R09-T13 confirmado: cada delta vuelve a abrir70/140 archivos anteriores para prefijos10/20. Instrumentación pass-through preserva el lector canónico. Otro RED afecta binding en validate_delta interno; no demuestra bypass del RPC público, que ya aplica guardas. Producción intacta, una nueva prueba canónica añadida; ejecución1PASS/3FAIL exit1 preservada. No cobertura/QA/aceptación. O2 permanece elegida para inmutabilidad y coste incremental; sus interfaces acotadas se conservan como regresión positiva. Revisión4 mantiene todos los veredictos y este rebate sin reset.

@@ -1,0 +1,104 @@
+{
+  "task": "T-09",
+  "attempt": 4,
+  "reported_at": "2026-10-06T18:37:34.438155+00:00",
+  "lenses": {
+    "A": {
+      "agent": "/root/review_t09_cpu_a4",
+      "fresh": true,
+      "counts": {
+        "critical": 0,
+        "important": 0,
+        "minor": 0
+      },
+      "tests_passed": 55,
+      "test_batches": [
+        {
+          "passed": 45,
+          "seconds": 0.87
+        },
+        {
+          "passed": 10,
+          "seconds": 0.46
+        }
+      ],
+      "warning": "cache_dir with cache provider disabled",
+      "conclusion": "R09-08 conforms CPU; all real GPU CA remain open"
+    },
+    "B": {
+      "agent": "/root/review_t09_cpu_b4",
+      "fresh": true,
+      "counts": {
+        "critical": 0,
+        "important": 0,
+        "minor": 0
+      },
+      "tests_passed": 55,
+      "seconds": 1.32,
+      "additional": "in-memory six sensor costs and shared budget controls",
+      "conclusion": "R09-08 corrected, no new correctness defect"
+    },
+    "C": {
+      "agent": "/root/review_t09_cpu_c4",
+      "fresh": true,
+      "counts": {
+        "critical": 0,
+        "important": 0,
+        "minor": 0
+      },
+      "tests_passed": 32,
+      "seconds": 0.12,
+      "additional": "three in-memory identity/sequence/token/302-close probes",
+      "probe_setup_errors": "temporary path and JSON quoting fixed, then probes repeated; no source edits",
+      "conclusion": "no introduced security findings"
+    },
+    "D": {
+      "agent": "/root/review_t09_cpu_d4",
+      "fresh": true,
+      "counts": {
+        "critical": 0,
+        "important": 0,
+        "minor": 0
+      },
+      "tests_passed": 32,
+      "deselected": 7,
+      "seconds": 0.53,
+      "additional": "3700-second simulated clocks, not elapsed GPU measurement",
+      "conclusion": "bounded O(1) extra work per loop, no performance finding"
+    }
+  },
+  "all_contexts_fresh": true,
+  "counts": {
+    "critical": 0,
+    "important": 0,
+    "minor": 0
+  },
+  "gaps": [],
+  "previous_gap_outcomes": {
+    "R09-01": "corrected",
+    "R09-02": "corrected",
+    "R09-03": "corrected",
+    "R09-04a": "corrected",
+    "R09-04b": "corrected",
+    "R09-05": "corrected",
+    "R09-06": "corrected",
+    "R09-07": "verifiable fields corrected; dynamic SHA64hex partial rebate preserved",
+    "R09-08": "corrected in CPU support"
+  },
+  "sources_unchanged": 33,
+  "fix_diff_sha256": "143b3460b1557e1f47dee5d5c7b16bc4bdfd9e7f0638c30ccbfaeea3048aa071",
+  "fix_diff_bytes": 6550,
+  "full_diff_sha256": "26a6367e5e85fb44b591c4aaabe02cbb93f489e8e0cd817c9a01cf2e2ba23362",
+  "full_diff_bytes": 232673,
+  "scope_exit": 0,
+  "scope_warnings": [],
+  "scope_user_exclusions": {},
+  "test_counts_overlap": true,
+  "cpu_review_complete": true,
+  "task_complete": false,
+  "gpu_executed": false,
+  "qa_passed": false,
+  "computer_use_stopped_by_owner": true,
+  "continuation": "one additional concrete correction/review selected by root under standing owner delegation; attempts1/2/3 retained, no new point approval",
+  "evidence_origin": "reviewer final handoffs; root independently verified frozen sources and diff, no reviewer stdout archive claimed"
+}

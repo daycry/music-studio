@@ -1,0 +1,112 @@
+{
+  "utc": "2026-10-08T03:39:38.787902+00:00",
+  "technical_component_accepted": true,
+  "scope": "ADR0050 opt-in isolated canonical process bootstrap/MUX/ingest/watchdog dependency ONLY",
+  "sources": {
+    "scripts/eval/benchmark_canonical_runtime.py": {
+      "sha256": "b84ce942c1e8ac9726acea55ceeb22b8ee0666b1e8a94aa9aea8cbdc4de247a7",
+      "bytes": 42917
+    },
+    "scripts/eval/benchmark_process.py": {
+      "sha256": "d1d0556925d0f294e06ca79c6a3a8f220091c9dd8602981dcfc2e18df42e8631",
+      "bytes": 30738
+    },
+    "scripts/eval/tests/test_benchmark_canonical_runtime.py": {
+      "sha256": "ec70abecbd64a7d50dc303a74f9c6a359cca97bb74ac47c31b393bf5961032c1",
+      "bytes": 39620
+    }
+  },
+  "inventory_verified_files": 18440,
+  "current_tests": {
+    "PASS": 76,
+    "PDH_explicitly_deselected": 1
+  },
+  "whole_current_coverage": {
+    "scripts\\eval\\benchmark_canonical_runtime.py": {
+      "covered_lines": 614,
+      "num_statements": 684,
+      "percent_covered": 85.33916849015317,
+      "percent_covered_display": "85",
+      "missing_lines": 70,
+      "excluded_lines": 0,
+      "percent_statements_covered": 89.76608187134502,
+      "percent_statements_covered_display": "90",
+      "num_branches": 230,
+      "num_partial_branches": 64,
+      "covered_branches": 166,
+      "missing_branches": 64,
+      "percent_branches_covered": 72.17391304347827,
+      "percent_branches_covered_display": "72"
+    },
+    "scripts\\eval\\benchmark_process.py": {
+      "covered_lines": 383,
+      "num_statements": 443,
+      "percent_covered": 81.58319870759289,
+      "percent_covered_display": "82",
+      "missing_lines": 60,
+      "excluded_lines": 0,
+      "percent_statements_covered": 86.45598194130926,
+      "percent_statements_covered_display": "86",
+      "num_branches": 176,
+      "num_partial_branches": 50,
+      "covered_branches": 122,
+      "missing_branches": 54,
+      "percent_branches_covered": 69.31818181818181,
+      "percent_branches_covered_display": "69"
+    }
+  },
+  "protected_sources": 69,
+  "native_launch_cleanup_pairs": 108,
+  "assigned_births_observed": 107,
+  "dispositions": {
+    "CLOSED_CONFIRMED": 91,
+    "UNKNOWN_QUARANTINED": 17
+  },
+  "negative_cleanup_errors_qualified": [
+    {
+      "uuid": "031a2966c8174f21ba3ad27491f3f9a1",
+      "test": ".cache/dev-cycle/t09/canonical-process-native-qa2/tests/test_benchmark_process.py::test_kill_on_job_close_fallback_wakes_owned_reader",
+      "errors": [
+        "simulated TerminateJobObject failure"
+      ],
+      "disposition": "UNKNOWN_QUARANTINED"
+    },
+    {
+      "uuid": "a3e75c9196dd4e4fb38c85e72757d919",
+      "test": ".cache/dev-cycle/t09/canonical-process-native-qa2/tests/test_benchmark_canonical_runtime.py::test_cleanup_error_keeps_unknown_quarantine_and_shared_receipt",
+      "errors": [
+        "[WinError 87] The parameter is incorrect."
+      ],
+      "disposition": "UNKNOWN_QUARANTINED"
+    },
+    {
+      "uuid": "e824006967844efa9e125c0e24b18e48",
+      "test": ".cache/dev-cycle/t09/canonical-process-native-qa2/tests/test_benchmark_canonical_runtime.py::test_bootstrap_attack_precedes_factory_filesystem_effects[challenge]",
+      "errors": [
+        "cleanup_original_ownership_changed"
+      ],
+      "disposition": "UNKNOWN_QUARANTINED"
+    },
+    {
+      "uuid": "fa940b3ed3c5483bafa8c5bc3e6211af",
+      "test": ".cache/dev-cycle/t09/canonical-process-native-qa2/tests/test_benchmark_process.py::test_enumeration_failure_still_terminates_and_joins",
+      "errors": [
+        "simulated member enumeration failure"
+      ],
+      "disposition": "UNKNOWN_QUARANTINED"
+    }
+  ],
+  "review_counter": 6,
+  "formal_integrated_next": 4,
+  "QA1_setup_failure_preserved": true,
+  "QA2_single_fresh_baseline_no_historical_union": true,
+  "not_accepted": [
+    "physical zero-byte CustodyStore ReadFile blocking/interruption",
+    "Episode/provider/coordinator/row tickets/prerequisites/live CLI integration",
+    "packs FINAL typed restore",
+    "cadence13h/matrix160/GPU/calibration/music quality",
+    "T09/M0 complete or perfect historic provenance"
+  ],
+  "next": "Concrete bounded integration handoff under ADR0050 before changing Episode/provider authority",
+  "actual_model_tokens_EUR_AIhours": null
+}

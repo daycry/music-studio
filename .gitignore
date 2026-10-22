@@ -20,6 +20,8 @@ htmlcov/
 # Node
 node_modules/
 .next/
+apps/web/test-results/
+apps/web/playwright-report/
 
 # Secretos (solo se versiona .env.example)
 .env
@@ -31,6 +33,9 @@ models/*
 # Herramientas descargadas: solo se versiona el lock
 tools/*
 !tools/tools.lock.json
+!tools/web-linux.lock.json
+!tools/web-dependencies.lock.json
+!tools/ffmpeg-linux.lock.json
 
 # Datos generados en ejecución (ver docs/arquitectura/datos.md §2)
 data/
@@ -59,3 +64,7 @@ Thumbs.db
 
 # Exportación generada para Kwipu (se reconstruye desde docs/knowledge/approved)
 .claude/knowledge-services/kwipu-export/
+.claude/knowledge-index.sqlite
+
+# Auditorías privadas de seguridad del proyecto
+docs/security-scan/

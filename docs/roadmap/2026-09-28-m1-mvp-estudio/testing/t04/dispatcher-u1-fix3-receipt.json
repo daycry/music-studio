@@ -1,0 +1,99 @@
+{
+  "unit": "T04-U1-fix3",
+  "status": "CORRECTED_FOR_FRESH_REVIEW_AND_INDEPENDENT_QA",
+  "utc": "2026-10-08T00:24:43.983350+00:00",
+  "owned": [
+    "apps/server/app/queue/dispatcher.py",
+    "apps/server/app/queue/admission.py",
+    "apps/server/tests/test_dispatcher_scanning.py"
+  ],
+  "findings": [
+    "B3-01",
+    "D3-01"
+  ],
+  "sources_before": "sources-before.json",
+  "sources_after": "sources-after.json",
+  "frozen_current_sources": "final-current-frozen-sources-before/",
+  "final_source_manifest": "final-current-frozen-sources-before.json",
+  "protected_count": 26,
+  "protected_exact": true,
+  "final_tests": 206,
+  "predecessor_cases": 189,
+  "new_cases": 17,
+  "original_scanning_cases": 39,
+  "original_scanning_definitions_exact": true,
+  "final_command": "final-current-frozen.command.json",
+  "final_junit": "final-current-frozen.junit.xml",
+  "official_coverage_json": "coverage-final.json",
+  "official_coverage_data": ".coverage",
+  "official_coverage_original_data_copy": "coverage-original-data",
+  "whole_changed_production": {
+    "apps/server/app/queue/dispatcher.py": {
+      "covered_lines": 128,
+      "num_statements": 145,
+      "percent_covered": 88.27586206896552,
+      "percent_covered_display": "88",
+      "missing_lines": 17,
+      "excluded_lines": 0,
+      "percent_statements_covered": 88.27586206896552,
+      "percent_statements_covered_display": "88"
+    },
+    "apps/server/app/queue/admission.py": {
+      "covered_lines": 192,
+      "num_statements": 203,
+      "percent_covered": 94.58128078817734,
+      "percent_covered_display": "95",
+      "missing_lines": 11,
+      "excluded_lines": 0,
+      "percent_statements_covered": 94.58128078817734,
+      "percent_statements_covered_display": "95"
+    }
+  },
+  "resolver_unchanged_qualified_coverage": {
+    "covered_lines": 151,
+    "num_statements": 163,
+    "percent_covered": 92.63803680981596,
+    "percent_covered_display": "93",
+    "missing_lines": 12,
+    "excluded_lines": 0,
+    "percent_statements_covered": 92.63803680981596,
+    "percent_statements_covered_display": "93"
+  },
+  "zero_excluded": true,
+  "same_current_frozen_bytes": true,
+  "trace_union": false,
+  "red_evidence": "red-index.json",
+  "native_profiles": "native-occupancy-heartbeat.json",
+  "occupancy_queries_per_snapshot": [
+    1,
+    1,
+    1
+  ],
+  "screen_occupancy_queries_on_event_loop": 0,
+  "fresh_preflight_and_transactional_occupancy_preserved": true,
+  "postcommit_known_unknown_retention": "6 native after_commit controls + retained prepared attempts/staging; no submit/retarget",
+  "ruff_check": "ruff-check-final.command.json",
+  "ruff_format": "ruff-format-final.command.json",
+  "t08_terminal_qualification": "global-helper-current-qualification.json",
+  "actual_model": null,
+  "actual_tokens": null,
+  "actual_EUR": null,
+  "actual_AIhours": null,
+  "estimates_only": true,
+  "estimate_allocation": "allocation-root.json",
+  "task_acceptance": false,
+  "global_acceptance": false,
+  "quality_acceptance": false,
+  "report": "report.md",
+  "inventory": "file-inventory.json",
+  "limitations": [
+    "Las lecturas iniciales sólo tienen las salidas de la herramienta, no recibos de subprocess separados.",
+    "baseline-postcommit-controls: 4 fallos de fixture por hook SELECT antes de commit; no cuentan como RED. Corregido el hook con señal after_commit y seis controles baseline pasaron.",
+    "green-minimal-regressions: 3 fallos del adapter de test por load ausente al alcanzar el tail; los RED originales fallaron antes por la carrera real. Se añadió load al adapter, sin quitar ni debilitar asserts.",
+    "Pred189 queda con sus bytes/helper históricos. Final206 es una ejecución nueva con el helper terminal de T08 actual y las mismas fuentes congeladas.",
+    "Heartbeat y tiempos son evidencia descriptiva CPU nativa, con adapter Catalog sintético; no son benchmark GPU ni garantía de latencia máxima.",
+    "Bases SQLite privadas y staging durable de fallos se conservan como evidencia. No se realiza recuperación/retry/cancel.",
+    "finalize-delivery y finalize-delivery-paths fallaron al consultar claves de manifiesto/cobertura con separadores Windows. Sólo el generador privado se normalizó; no se repitieron tests ni se modificó producción. La lectura ConvertFrom-Json de PowerShell tampoco toleró las claves de coverage; no cuenta como verificación.",
+    "No aceptación global, calidad, tarea o hito; no writes en ledger/docs/Git."
+  ]
+}

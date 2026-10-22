@@ -1,0 +1,115 @@
+{
+  "utc": "2026-10-07T19:25:45.086175+00:00",
+  "sources": {
+    "apps/server/app/lyrics.py": {
+      "sha256": "19c1616c2280850fd94029ac2a4ac7a9a84f62e6da36eedbcb23b6e8b197eb9e",
+      "bytes": 5060
+    },
+    "packages/contracts/lyrics-cases.json": {
+      "sha256": "a1d1a57360e5ceec8c5fe3868509d4ec1dd7dc17dab7bd7981c8aa64c9a22433",
+      "bytes": 42267
+    },
+    "apps/server/app/main.py": {
+      "sha256": "c35df1a5401a56173556c7b8819e411cd5e4a9b15c6310b4203591e47bb13a37",
+      "bytes": 4472
+    },
+    "apps/server/app/settings.py": {
+      "sha256": "600a9bda16bd7ddbe4c2320404773a3aa5f2fbe1c1ca530e0e49c9c7eb786fce",
+      "bytes": 5087
+    },
+    "apps/server/app/errors.py": {
+      "sha256": "1b057e6f2976448a5841fba7975976525fc5d6e17ca6ca879c5758a66e87dd89",
+      "bytes": 1258
+    },
+    "apps/server/app/api_models.py": {
+      "sha256": "d70abb1c087ba66c3deff63d894d18f3e163fd1ba2c4a4307aabc7467b681d66",
+      "bytes": 515
+    },
+    "scripts/export_contracts.py": {
+      "sha256": "25c6c12dd334d9f64aed310e406d0b644013d2cac8ef4fa88026be6a5c6f44bb",
+      "bytes": 1611
+    },
+    "apps/server/tests/test_openapi_t03.py": {
+      "sha256": "9912163e4e1260dca9218d7ae3d239911852ff03997c050c887ace5e403aea92",
+      "bytes": 11067
+    },
+    "packages/contracts/openapi.json": {
+      "sha256": "1eb012d200fabd9ab08f3d3f2f4cdc938584b60a22c2af9490fafc014845fe0c",
+      "bytes": 4259
+    },
+    "apps/web/lib/generated/api.d.ts": {
+      "sha256": "1cd4fa5955b93eca116eb620561d9fbda0cac648f29c17e5ccebdf55885d16b2",
+      "bytes": 3663
+    },
+    "apps/web/package.json": {
+      "sha256": "269708d81dfc7ce19932de902a58b23e1d596aab73801beab1401fcf32d98d5c",
+      "bytes": 759
+    },
+    "package.json": {
+      "sha256": "896325efc05265f0cbc3673f691855824ca0a726821bf281a4a4695c2298a011",
+      "bytes": 169
+    },
+    "pnpm-lock.yaml": {
+      "sha256": "12b59d6fe736fd93ca145fdcbf5c327de9a991008da32863f7bd6c8d40934165",
+      "bytes": 31814
+    },
+    "apps/server/tests/test_lyrics.py": {
+      "sha256": "f874f68dbadae9fa0d081d6e2300f7800842ccf8f91685dfc3a6750445e9de9f",
+      "bytes": 1591
+    },
+    "apps/web/lib/lyrics.ts": {
+      "sha256": "0c94b2c582b9c2d609251dfe88dfb674ebee9f384f19fb7d59873b2ec4d2c984",
+      "bytes": 5083
+    },
+    "apps/web/lib/lyrics.test.ts": {
+      "sha256": "ce3d89150e0b2e41c8524d7c4d11ef1c38e92967d61a20c9142c15fd9798a725",
+      "bytes": 1321
+    },
+    "apps/web/tsconfig.json": {
+      "sha256": "ce5487c6e3ecdd4a5abe1190798390ab825e6e1e50b48dccb94cc62938c9fe1c",
+      "bytes": 215
+    },
+    "apps/web/vitest.config.ts": {
+      "sha256": "dde126355b2730591c9d7a7014f35381330b5dba4a577870cb344830e12d55f2",
+      "bytes": 444
+    }
+  },
+  "closed_nonCLI_count": 63,
+  "JUnit": {
+    "baseline-ts.junit.xml": {
+      "count": 112,
+      "fail": 0,
+      "skip": 110
+    },
+    "green-python.junit.xml": {
+      "count": 112,
+      "fail": 0,
+      "skip": 0
+    },
+    "green-ts.junit.xml": {
+      "count": 112,
+      "fail": 0,
+      "skip": 0
+    },
+    "red-python.junit.xml": {
+      "count": 1,
+      "fail": 1,
+      "skip": 0
+    }
+  },
+  "red_actual_exit": 1,
+  "fixture_count": 56,
+  "old_55_records_equal": true,
+  "protected16_exact": true,
+  "whole_python_coverage": {
+    "covered_lines": 66,
+    "num_statements": 66,
+    "percent_covered": 100.0,
+    "percent_covered_display": "100",
+    "missing_lines": 0,
+    "excluded_lines": 0,
+    "percent_statements_covered": 100.0,
+    "percent_statements_covered_display": "100"
+  },
+  "review_QA_Git_task_complete": false
+}

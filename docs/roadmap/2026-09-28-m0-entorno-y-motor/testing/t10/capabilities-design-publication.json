@@ -1,0 +1,29 @@
+{
+  "status": "approved_design_not_implemented",
+  "task": "M0/T-10",
+  "selected_option": "O1",
+  "private_design_sha256": "6a4de5222ff512198bd65382b777abaa73b57d9c3570d2654bec81739c14cd49",
+  "private_receipt_sha256": "8d7f0f22995e2d92e0485990d704933f7ae34bb9983d3f8974396483b50acb4a",
+  "public_design_sha256": "997f537f44cfc1446fb96a93e2000cfc010d1c7e52bf0d549d123a9ebf9ebf3d",
+  "local_sources_checked": 30,
+  "official_sources_checked": 11,
+  "frozen_sources_checked": 6,
+  "authorized_source_drift": [
+    {
+      "path": "apps/engines/acestep/adapter.py",
+      "recorded_sha256": "df35a733c312c535840c03296c99fa4ddd642dc0650e9944d6c2232d995c7229",
+      "current_sha256": "92ca199ad9d8985a036adde2ff0817285ba5866477fe708626b5f453b7e0f106",
+      "reason": "root ledger or concurrent T09 implementation; revalidate interfaces after freeze"
+    },
+    {
+      "path": "scripts/eval/benchmark.py",
+      "recorded_sha256": "b84e321043d8ed7ed0c1f99d390ea07c751c6a37865e89a2cbbeaba6ffdd2e68",
+      "current_sha256": "5f36916b85fd38cb76cc747096b842c01c8a332ae4a4ff4ca3a83de5c2b88460",
+      "reason": "root ledger or concurrent T09 implementation; revalidate interfaces after freeze"
+    }
+  ],
+  "projection": "frontmatter links rebased to public destination; original preserved",
+  "verified_capabilities_added": 0,
+  "models_loaded": 0,
+  "task_completed": false
+}

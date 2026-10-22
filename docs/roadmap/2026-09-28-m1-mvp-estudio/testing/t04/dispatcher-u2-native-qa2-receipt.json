@@ -1,0 +1,593 @@
+{
+  "status": "SCOPED_CURRENT_NATIVE_QA_PASS",
+  "utc": "2026-10-08T04:15:34.766466+00:00",
+  "concerns": [],
+  "baseline": {
+    "passed": 428,
+    "skipped": 2
+  },
+  "HTTP_separate": {
+    "passed": 2
+  },
+  "whole_each_eight": {
+    "apps/server/app/queue/events.py": {
+      "covered_lines": 52,
+      "num_statements": 54,
+      "percent_covered": 96.29629629629629,
+      "percent_covered_display": "96",
+      "missing_lines": 2,
+      "excluded_lines": 0,
+      "percent_statements_covered": 96.29629629629629,
+      "percent_statements_covered_display": "96"
+    },
+    "apps/server/app/queue/retry.py": {
+      "covered_lines": 98,
+      "num_statements": 104,
+      "percent_covered": 94.23076923076923,
+      "percent_covered_display": "94",
+      "missing_lines": 6,
+      "excluded_lines": 0,
+      "percent_statements_covered": 94.23076923076923,
+      "percent_statements_covered_display": "94"
+    },
+    "apps/server/app/queue/recovery.py": {
+      "covered_lines": 48,
+      "num_statements": 50,
+      "percent_covered": 96.0,
+      "percent_covered_display": "96",
+      "missing_lines": 2,
+      "excluded_lines": 0,
+      "percent_statements_covered": 96.0,
+      "percent_statements_covered_display": "96"
+    },
+    "apps/server/app/queue/cancellation.py": {
+      "covered_lines": 32,
+      "num_statements": 34,
+      "percent_covered": 94.11764705882354,
+      "percent_covered_display": "94",
+      "missing_lines": 2,
+      "excluded_lines": 0,
+      "percent_statements_covered": 94.11764705882354,
+      "percent_statements_covered_display": "94"
+    },
+    "apps/server/app/queue/runtime.py": {
+      "covered_lines": 336,
+      "num_statements": 369,
+      "percent_covered": 91.0569105691057,
+      "percent_covered_display": "91",
+      "missing_lines": 33,
+      "excluded_lines": 0,
+      "percent_statements_covered": 91.0569105691057,
+      "percent_statements_covered_display": "91"
+    },
+    "apps/server/app/queue/admission.py": {
+      "covered_lines": 195,
+      "num_statements": 206,
+      "percent_covered": 94.66019417475728,
+      "percent_covered_display": "95",
+      "missing_lines": 11,
+      "excluded_lines": 0,
+      "percent_statements_covered": 94.66019417475728,
+      "percent_statements_covered_display": "95"
+    },
+    "apps/server/app/queue/dispatcher.py": {
+      "covered_lines": 144,
+      "num_statements": 160,
+      "percent_covered": 90.0,
+      "percent_covered_display": "90",
+      "missing_lines": 16,
+      "excluded_lines": 0,
+      "percent_statements_covered": 90.0,
+      "percent_statements_covered_display": "90"
+    },
+    "apps/server/app/main.py": {
+      "covered_lines": 99,
+      "num_statements": 103,
+      "percent_covered": 96.11650485436893,
+      "percent_covered_display": "96",
+      "missing_lines": 4,
+      "excluded_lines": 0,
+      "percent_statements_covered": 96.11650485436893,
+      "percent_statements_covered_display": "96"
+    }
+  },
+  "trace": "coverage-original-data; single fresh baseline; HTTP excluded from trace",
+  "source_count": 94,
+  "source_drift": {},
+  "historical_original_count": 27739,
+  "historical_drift": {
+    "changed_or_missing": {},
+    "added": {}
+  },
+  "native_records": 52,
+  "native_file_metadata_count": 306,
+  "commands": {
+    "diagnostic-final-audit.command.json": {
+      "argv": [
+        "/.venv\\Scripts\\python.exe",
+        "-B",
+        "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\qa2-audit.py"
+      ],
+      "started_utc": "2026-10-08T04:14:07.491805+00:00",
+      "finished_utc": "2026-10-08T04:14:14.045979+00:00",
+      "exit_code": 0,
+      "child": {
+        "pid": 24832,
+        "uuid": "8f018bf0-f347-4107-8a92-f287f070c3a6",
+        "observed_utc": "2026-10-08T04:14:07.513606+00:00",
+        "argv": [
+          "/.venv\\Scripts\\python.exe",
+          "-B",
+          "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\qa2-audit.py"
+        ],
+        "FILETIME": "UNKNOWN",
+        "Job": "UNKNOWN"
+      },
+      "cleanup": "wait returned; direct child reaped"
+    },
+    "final-audit.command.json": {
+      "argv": [
+        "/.venv\\Scripts\\python.exe",
+        "-B",
+        "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\qa2-audit.py"
+      ],
+      "started_utc": "2026-10-08T04:15:29.484802+00:00",
+      "finished_utc": "2026-10-08T04:15:35.411130+00:00",
+      "exit_code": 0,
+      "child": {
+        "pid": 26856,
+        "uuid": "5b07d56f-4dc2-4443-afe7-3d53b11ac743",
+        "observed_utc": "2026-10-08T04:15:29.525280+00:00",
+        "argv": [
+          "/.venv\\Scripts\\python.exe",
+          "-B",
+          "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\qa2-audit.py"
+        ],
+        "FILETIME": "UNKNOWN",
+        "Job": "UNKNOWN"
+      },
+      "cleanup": "wait returned; direct child reaped"
+    },
+    "final-current.command.json": {
+      "argv": [
+        "/.venv\\Scripts\\python.exe",
+        "-B",
+        "-m",
+        "pytest",
+        ".cache/dev-cycle/m1/t04-u2-native-qa2/neighbors/test_settings.py",
+        ".cache/dev-cycle/m1/t04-u2-native-qa2/neighbors/test_logging_token.py",
+        ".cache/dev-cycle/m1/t04-u2-native-qa2/neighbors/test_schema_t02.py",
+        ".cache/dev-cycle/m1/t04-u2-native-qa2/neighbors/test_security_errors.py",
+        ".cache/dev-cycle/m1/t04-u2-native-qa2/neighbors/test_logging_paths.py",
+        ".cache/dev-cycle/m1/t04-u2-native-qa2/neighbors/test_token_persistence.py",
+        "apps/server/tests/test_queue_backend.py",
+        "apps/server/tests/test_queue_resolver.py",
+        "apps/server/tests/test_dispatcher_admission.py",
+        "apps/server/tests/test_queue_inputs.py",
+        "apps/server/tests/test_dispatcher_scanning.py",
+        "apps/server/tests/test_dispatcher_events.py",
+        "apps/server/tests/test_dispatcher_recovery.py",
+        "apps/server/tests/test_dispatcher_retry.py",
+        "apps/server/tests/test_dispatcher_cancellation.py",
+        "apps/server/tests/test_dispatcher_lifespan.py",
+        "-q",
+        "-s",
+        "-p",
+        "no:cacheprovider",
+        "--basetemp=.cache/dev-cycle/m1/t04-u2-native-qa2/base-final-current",
+        "--cov-config=.cache/dev-cycle/m1/t04-u2-native-qa2/coverage.ini",
+        "--cov=app.queue",
+        "--cov=app.main",
+        "--cov-report=term-missing",
+        "--cov-report=json:.cache/dev-cycle/m1/t04-u2-native-qa2/coverage-final.json",
+        "--junitxml=.cache/dev-cycle/m1/t04-u2-native-qa2/final-current.junit.xml"
+      ],
+      "started_utc": "2026-10-08T04:10:58.348706+00:00",
+      "finished_utc": "2026-10-08T04:13:24.105219+00:00",
+      "exit_code": 0,
+      "child": {
+        "uuid": "990b600b-f1e0-4726-bc91-e2449137bffd",
+        "pid": 22524,
+        "observed_utc": "2026-10-08T04:10:58.354154+00:00",
+        "FILETIME": "UNKNOWN",
+        "Job": "UNKNOWN",
+        "argv": [
+          "/.venv\\Scripts\\python.exe",
+          "-B",
+          "-m",
+          "pytest",
+          ".cache/dev-cycle/m1/t04-u2-native-qa2/neighbors/test_settings.py",
+          ".cache/dev-cycle/m1/t04-u2-native-qa2/neighbors/test_logging_token.py",
+          ".cache/dev-cycle/m1/t04-u2-native-qa2/neighbors/test_schema_t02.py",
+          ".cache/dev-cycle/m1/t04-u2-native-qa2/neighbors/test_security_errors.py",
+          ".cache/dev-cycle/m1/t04-u2-native-qa2/neighbors/test_logging_paths.py",
+          ".cache/dev-cycle/m1/t04-u2-native-qa2/neighbors/test_token_persistence.py",
+          "apps/server/tests/test_queue_backend.py",
+          "apps/server/tests/test_queue_resolver.py",
+          "apps/server/tests/test_dispatcher_admission.py",
+          "apps/server/tests/test_queue_inputs.py",
+          "apps/server/tests/test_dispatcher_scanning.py",
+          "apps/server/tests/test_dispatcher_events.py",
+          "apps/server/tests/test_dispatcher_recovery.py",
+          "apps/server/tests/test_dispatcher_retry.py",
+          "apps/server/tests/test_dispatcher_cancellation.py",
+          "apps/server/tests/test_dispatcher_lifespan.py",
+          "-q",
+          "-s",
+          "-p",
+          "no:cacheprovider",
+          "--basetemp=.cache/dev-cycle/m1/t04-u2-native-qa2/base-final-current",
+          "--cov-config=.cache/dev-cycle/m1/t04-u2-native-qa2/coverage.ini",
+          "--cov=app.queue",
+          "--cov=app.main",
+          "--cov-report=term-missing",
+          "--cov-report=json:.cache/dev-cycle/m1/t04-u2-native-qa2/coverage-final.json",
+          "--junitxml=.cache/dev-cycle/m1/t04-u2-native-qa2/final-current.junit.xml"
+        ]
+      },
+      "cleanup": "wait returned; direct child reaped",
+      "environment": {
+        "TEMP": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\temp",
+        "TMP": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\temp",
+        "UV_CACHE_DIR": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\uv-cache",
+        "COVERAGE_FILE": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\coverage-original-data",
+        "STUDIO_QUEUE_TEST_ROOT": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\fixtures",
+        "STUDIO_TEST_ROOT": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\fixtures",
+        "PYTHONPATH": "/apps\\server;/apps\\server\\tests;/packages\\engine-contract\\src;",
+        "RUFF_CACHE_DIR": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\ruff-cache",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "XDG_CACHE_HOME": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\uv-cache",
+        "HF_HOME": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\uv-cache\\hf",
+        "TORCH_HOME": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\uv-cache\\torch"
+      }
+    },
+    "invalid-first-final-audit.command.json": {
+      "argv": [
+        "/.venv\\Scripts\\python.exe",
+        "-B",
+        "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\qa2-audit.py"
+      ],
+      "started_utc": "2026-10-08T04:13:49.514861+00:00",
+      "finished_utc": "2026-10-08T04:13:49.670724+00:00",
+      "exit_code": 1,
+      "child": {
+        "pid": 16052,
+        "uuid": "debee866-ec98-453a-a3a4-1a29593981a1",
+        "observed_utc": "2026-10-08T04:13:49.533879+00:00",
+        "argv": [
+          "/.venv\\Scripts\\python.exe",
+          "-B",
+          "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\qa2-audit.py"
+        ],
+        "FILETIME": "UNKNOWN",
+        "Job": "UNKNOWN"
+      },
+      "cleanup": "wait returned; direct child reaped"
+    },
+    "invalid-normalization-final-audit.command.json": {
+      "argv": [
+        "/.venv\\Scripts\\python.exe",
+        "-B",
+        "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\qa2-audit.py"
+      ],
+      "started_utc": "2026-10-08T04:14:36.082182+00:00",
+      "finished_utc": "2026-10-08T04:14:36.235434+00:00",
+      "exit_code": 1,
+      "child": {
+        "pid": 16388,
+        "uuid": "e9a4e4d5-cdac-40fc-b7e7-4270bf99297f",
+        "observed_utc": "2026-10-08T04:14:36.109990+00:00",
+        "argv": [
+          "/.venv\\Scripts\\python.exe",
+          "-B",
+          "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\qa2-audit.py"
+        ],
+        "FILETIME": "UNKNOWN",
+        "Job": "UNKNOWN"
+      },
+      "cleanup": "wait returned; direct child reaped"
+    },
+    "ledger-lint.command.json": {
+      "argv": [
+        "/.venv\\Scripts\\python.exe",
+        "-B",
+        "<plugin>/agent-kits/shared/ledger-lint.py",
+        "/docs\\roadmap\\2026-09-28-m1-mvp-estudio\\tasks.md"
+      ],
+      "started_utc": "2026-10-08T04:13:26.629713+00:00",
+      "finished_utc": "2026-10-08T04:13:26.683459+00:00",
+      "exit_code": 0,
+      "child": {
+        "uuid": "9a50ee68-45b7-4b24-b465-6787b9d87227",
+        "pid": 5564,
+        "observed_utc": "2026-10-08T04:13:26.634214+00:00",
+        "FILETIME": "UNKNOWN",
+        "Job": "UNKNOWN",
+        "argv": [
+          "/.venv\\Scripts\\python.exe",
+          "-B",
+          "<plugin>/agent-kits/shared/ledger-lint.py",
+          "/docs\\roadmap\\2026-09-28-m1-mvp-estudio\\tasks.md"
+        ]
+      },
+      "cleanup": "wait returned; direct child reaped",
+      "environment": {
+        "TEMP": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\temp",
+        "TMP": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\temp",
+        "UV_CACHE_DIR": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\uv-cache",
+        "COVERAGE_FILE": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\coverage-original-data",
+        "STUDIO_QUEUE_TEST_ROOT": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\fixtures",
+        "STUDIO_TEST_ROOT": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\fixtures",
+        "PYTHONPATH": "/apps\\server;/apps\\server\\tests;/packages\\engine-contract\\src;",
+        "RUFF_CACHE_DIR": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\ruff-cache",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "XDG_CACHE_HOME": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\uv-cache",
+        "HF_HOME": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\uv-cache\\hf",
+        "TORCH_HOME": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\uv-cache\\torch"
+      }
+    },
+    "ruff-check.command.json": {
+      "argv": [
+        "/.venv\\Scripts\\python.exe",
+        "-B",
+        "-m",
+        "ruff",
+        "check",
+        "apps/server/app/queue/events.py",
+        "apps/server/app/queue/retry.py",
+        "apps/server/app/queue/recovery.py",
+        "apps/server/app/queue/cancellation.py",
+        "apps/server/app/queue/runtime.py",
+        "apps/server/app/queue/admission.py",
+        "apps/server/app/queue/dispatcher.py",
+        "apps/server/app/main.py",
+        "apps/server/tests/test_queue_backend.py",
+        "apps/server/tests/test_queue_resolver.py",
+        "apps/server/tests/test_dispatcher_admission.py",
+        "apps/server/tests/test_queue_inputs.py",
+        "apps/server/tests/test_dispatcher_scanning.py",
+        "apps/server/tests/test_dispatcher_events.py",
+        "apps/server/tests/test_dispatcher_recovery.py",
+        "apps/server/tests/test_dispatcher_retry.py",
+        "apps/server/tests/test_dispatcher_cancellation.py",
+        "apps/server/tests/test_dispatcher_lifespan.py"
+      ],
+      "started_utc": "2026-10-08T04:13:26.431491+00:00",
+      "finished_utc": "2026-10-08T04:13:26.509650+00:00",
+      "exit_code": 0,
+      "child": {
+        "uuid": "7671752d-e113-4eb0-91d3-ff8baefaa6be",
+        "pid": 15984,
+        "observed_utc": "2026-10-08T04:13:26.436000+00:00",
+        "FILETIME": "UNKNOWN",
+        "Job": "UNKNOWN",
+        "argv": [
+          "/.venv\\Scripts\\python.exe",
+          "-B",
+          "-m",
+          "ruff",
+          "check",
+          "apps/server/app/queue/events.py",
+          "apps/server/app/queue/retry.py",
+          "apps/server/app/queue/recovery.py",
+          "apps/server/app/queue/cancellation.py",
+          "apps/server/app/queue/runtime.py",
+          "apps/server/app/queue/admission.py",
+          "apps/server/app/queue/dispatcher.py",
+          "apps/server/app/main.py",
+          "apps/server/tests/test_queue_backend.py",
+          "apps/server/tests/test_queue_resolver.py",
+          "apps/server/tests/test_dispatcher_admission.py",
+          "apps/server/tests/test_queue_inputs.py",
+          "apps/server/tests/test_dispatcher_scanning.py",
+          "apps/server/tests/test_dispatcher_events.py",
+          "apps/server/tests/test_dispatcher_recovery.py",
+          "apps/server/tests/test_dispatcher_retry.py",
+          "apps/server/tests/test_dispatcher_cancellation.py",
+          "apps/server/tests/test_dispatcher_lifespan.py"
+        ]
+      },
+      "cleanup": "wait returned; direct child reaped",
+      "environment": {
+        "TEMP": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\temp",
+        "TMP": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\temp",
+        "UV_CACHE_DIR": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\uv-cache",
+        "COVERAGE_FILE": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\coverage-original-data",
+        "STUDIO_QUEUE_TEST_ROOT": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\fixtures",
+        "STUDIO_TEST_ROOT": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\fixtures",
+        "PYTHONPATH": "/apps\\server;/apps\\server\\tests;/packages\\engine-contract\\src;",
+        "RUFF_CACHE_DIR": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\ruff-cache",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "XDG_CACHE_HOME": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\uv-cache",
+        "HF_HOME": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\uv-cache\\hf",
+        "TORCH_HOME": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\uv-cache\\torch"
+      }
+    },
+    "ruff-format.command.json": {
+      "argv": [
+        "/.venv\\Scripts\\python.exe",
+        "-B",
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "apps/server/app/queue/events.py",
+        "apps/server/app/queue/retry.py",
+        "apps/server/app/queue/recovery.py",
+        "apps/server/app/queue/cancellation.py",
+        "apps/server/app/queue/runtime.py",
+        "apps/server/app/queue/admission.py",
+        "apps/server/app/queue/dispatcher.py",
+        "apps/server/app/main.py",
+        "apps/server/tests/test_queue_backend.py",
+        "apps/server/tests/test_queue_resolver.py",
+        "apps/server/tests/test_dispatcher_admission.py",
+        "apps/server/tests/test_queue_inputs.py",
+        "apps/server/tests/test_dispatcher_scanning.py",
+        "apps/server/tests/test_dispatcher_events.py",
+        "apps/server/tests/test_dispatcher_recovery.py",
+        "apps/server/tests/test_dispatcher_retry.py",
+        "apps/server/tests/test_dispatcher_cancellation.py",
+        "apps/server/tests/test_dispatcher_lifespan.py"
+      ],
+      "started_utc": "2026-10-08T04:13:26.535062+00:00",
+      "finished_utc": "2026-10-08T04:13:26.604166+00:00",
+      "exit_code": 0,
+      "child": {
+        "uuid": "d5af9b8f-eeed-4a2f-832a-348d52b6f0af",
+        "pid": 25740,
+        "observed_utc": "2026-10-08T04:13:26.539128+00:00",
+        "FILETIME": "UNKNOWN",
+        "Job": "UNKNOWN",
+        "argv": [
+          "/.venv\\Scripts\\python.exe",
+          "-B",
+          "-m",
+          "ruff",
+          "format",
+          "--check",
+          "apps/server/app/queue/events.py",
+          "apps/server/app/queue/retry.py",
+          "apps/server/app/queue/recovery.py",
+          "apps/server/app/queue/cancellation.py",
+          "apps/server/app/queue/runtime.py",
+          "apps/server/app/queue/admission.py",
+          "apps/server/app/queue/dispatcher.py",
+          "apps/server/app/main.py",
+          "apps/server/tests/test_queue_backend.py",
+          "apps/server/tests/test_queue_resolver.py",
+          "apps/server/tests/test_dispatcher_admission.py",
+          "apps/server/tests/test_queue_inputs.py",
+          "apps/server/tests/test_dispatcher_scanning.py",
+          "apps/server/tests/test_dispatcher_events.py",
+          "apps/server/tests/test_dispatcher_recovery.py",
+          "apps/server/tests/test_dispatcher_retry.py",
+          "apps/server/tests/test_dispatcher_cancellation.py",
+          "apps/server/tests/test_dispatcher_lifespan.py"
+        ]
+      },
+      "cleanup": "wait returned; direct child reaped",
+      "environment": {
+        "TEMP": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\temp",
+        "TMP": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\temp",
+        "UV_CACHE_DIR": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\uv-cache",
+        "COVERAGE_FILE": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\coverage-original-data",
+        "STUDIO_QUEUE_TEST_ROOT": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\fixtures",
+        "STUDIO_TEST_ROOT": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\fixtures",
+        "PYTHONPATH": "/apps\\server;/apps\\server\\tests;/packages\\engine-contract\\src;",
+        "RUFF_CACHE_DIR": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\ruff-cache",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "XDG_CACHE_HOME": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\uv-cache",
+        "HF_HOME": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\uv-cache\\hf",
+        "TORCH_HOME": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\uv-cache\\torch"
+      }
+    },
+    "stale-gate-final-audit.command.json": {
+      "argv": [
+        "/.venv\\Scripts\\python.exe",
+        "-B",
+        "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\qa2-audit.py"
+      ],
+      "started_utc": "2026-10-08T04:15:04.078815+00:00",
+      "finished_utc": "2026-10-08T04:15:09.279664+00:00",
+      "exit_code": 0,
+      "child": {
+        "pid": 19900,
+        "uuid": "d0a3daa7-dd46-4d18-aff1-58bf0de40b2e",
+        "observed_utc": "2026-10-08T04:15:04.117559+00:00",
+        "argv": [
+          "/.venv\\Scripts\\python.exe",
+          "-B",
+          "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\qa2-audit.py"
+        ],
+        "FILETIME": "UNKNOWN",
+        "Job": "UNKNOWN"
+      },
+      "cleanup": "wait returned; direct child reaped"
+    },
+    "supplemental-http.command.json": {
+      "argv": [
+        "/.venv\\Scripts\\python.exe",
+        "-B",
+        "-m",
+        "pytest",
+        "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\test_http_recovery_probe.py",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "--basetemp=/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\base-http",
+        "--junitxml=/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\supplemental-http.junit.xml"
+      ],
+      "started_utc": "2026-10-08T04:13:24.141655+00:00",
+      "finished_utc": "2026-10-08T04:13:26.403948+00:00",
+      "exit_code": 0,
+      "child": {
+        "uuid": "f7f4101c-0b74-4682-a0b3-86b11c2f8c2a",
+        "pid": 460,
+        "observed_utc": "2026-10-08T04:13:24.149166+00:00",
+        "FILETIME": "UNKNOWN",
+        "Job": "UNKNOWN",
+        "argv": [
+          "/.venv\\Scripts\\python.exe",
+          "-B",
+          "-m",
+          "pytest",
+          "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\test_http_recovery_probe.py",
+          "-q",
+          "-p",
+          "no:cacheprovider",
+          "--basetemp=/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\base-http",
+          "--junitxml=/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\supplemental-http.junit.xml"
+        ]
+      },
+      "cleanup": "wait returned; direct child reaped",
+      "environment": {
+        "TEMP": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\temp",
+        "TMP": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\temp",
+        "UV_CACHE_DIR": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\uv-cache",
+        "COVERAGE_FILE": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\coverage-original-data",
+        "STUDIO_QUEUE_TEST_ROOT": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\fixtures",
+        "STUDIO_TEST_ROOT": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\fixtures",
+        "PYTHONPATH": "/apps\\server;/apps\\server\\tests;/packages\\engine-contract\\src;",
+        "RUFF_CACHE_DIR": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\ruff-cache",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "XDG_CACHE_HOME": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\uv-cache",
+        "HF_HOME": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\uv-cache\\hf",
+        "TORCH_HOME": "/.cache\\dev-cycle\\m1\\t04-u2-native-qa2\\uv-cache\\torch"
+      }
+    }
+  },
+  "FILETIME": "UNKNOWN",
+  "Job": "UNKNOWN",
+  "TDD": "n/a independent QA; historical RED read-only",
+  "UI_Playwright_PDF": "n/a scoped native CLI component; M1 test-plan not passed",
+  "full_T04_acceptance": false,
+  "U3_acceptance": false,
+  "weight_estimated": 2,
+  "actual_model": null,
+  "actual_tokens": null,
+  "actual_EUR": null,
+  "actual_AIhours": null,
+  "bootstrap_observation": {
+    "argv": [
+      "powershell",
+      "-NoProfile",
+      "-ExecutionPolicy",
+      "Bypass",
+      "-File",
+      ".cache/dev-cycle/m1/t04-u2-native-qa2/bootstrap.ps1"
+    ],
+    "exec_session": 92200,
+    "exit_code": 0,
+    "observed_launch_utc": "UNKNOWN",
+    "pid": "UNKNOWN",
+    "FILETIME": "UNKNOWN",
+    "Job": "UNKNOWN",
+    "raw_stdout": "bootstrap.stdout.txt",
+    "raw_stderr": "bootstrap.stderr.txt",
+    "prelaunch_archive": "prelaunch-archive"
+  },
+  "delivery_plumbing_incidents": "own-plumbing-repair.json; failures preserved, only private audit repaired, no pytest rerun",
+  "canonical_neighbor_parity": "canonical-six-functions-AST-parity.json;42definitions, assertions/decorators/parameters exact;2function path plumbing changes",
+  "official_data_verification": "official-data-current-source-verification.json;8normalized current source statement sets exact"
+}

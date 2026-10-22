@@ -1,0 +1,27 @@
+> Publicación: las rutas locales se han anonimizado. Los argv y originales exactos se conservan en la evidencia privada.
+
+# Diagnóstico acotado: fases 1–3
+
+Causa probada en el run observado: el terminal autenticado `error` de read/seq1/index1 marca `ReplySlot.terminal`; el hijo envía después `result` en index2. `ReplySlot.admit` rechaza ese segundo terminal, la excepción atraviesa `ParentMux.deliver` y hace salir `OwnedProcess._read` antes del EOF real. El aborto desde el hilo llamador termina el Job y une el lector ya salido, pero no puede observar EOF con un lector muerto. `resources_returned=false` y `UNKNOWN_QUARANTINED` son honestos.
+
+## Fase 1
+
+Dos ejecuciones exclusivamente del nodeid autorizado: baseline sin cobertura y trace sin cobertura. Ambas exit pytest **1**, fallo genuino en la aserción original línea326. Original stdout/stderr/JUnit, argv UTC, archivos/config/gate/closures anteriores a cada Popen están en cada run. El orquestador exterior salió0: no confundirlo con pytest1. Test ec70ab… y proceso d1d055… conservan los hashes históricos exactos. No GREEN ni fix ejecutado.
+
+## Fases 2–3 y descartes
+
+`causal-witnesses.json` conserva la secuencia y monotonic_ns. En trace: error admitido42151578799700; caller WorkerFailure42151578869600; cleanup caller42151578945000; result index2 con terminal=true42151579497800; `_read` ValueError42151579530600. El lector retorna sin EOF y luego el recibo certifica reader_joined=true, reader_eof=false, Jobempty=true. Esto confirma el mecanismo por transición real, no por ausencia de API ni testdouble. No depende de cobertura: baseline también falla. No es autojoin: caller_is_reader=false. No es falta de tiempo para unir un lector vivo: ya salió por excepción. No es autenticación inválida del error inicial: fue admitido; el rechazo posterior es segundo terminal. Handler_close_observed=false es consecuencia de aborto Mux forzado, no condición necesaria del predicado confirmed.
+
+La fixture protegida convierte el progress index1 a error dentro de `_signed` sin terminar su iterador; `serve_mux` conserva el flujo y encola el result index2. Esta condición se mantiene intacta. El protocolo rechaza correctamente el segundo terminal; el problema de cierre es que el rechazo también termina el único observador de EOF. Se prueba esta trayectoria, no universalidad bajo todo scheduling. El histórico76PASS pertenece a otro hash de runtime; comparación estática en historical-runtime-diff.txt. No se ha probado qué cambio o scheduling explica su verde histórico; no se atribuye causalmente a integración ni a cobertura y no se repiten esas suites.
+
+## Fix propuesto, sin aplicar
+
+Alcance productivo mínimo justificable: `benchmark_canonical_runtime.py` para comunicar explícitamente la revocación tras terminal error autenticado y `benchmark_process.py` para separar rechazo lógico y observación física de cierre. Diseñar una transición de drain de la tubería de proceso propio revocado: conservar el error original y rechazo de terminal extra, nunca aceptar nuevos resultados ni publicar progreso; observar realmente lectura vacía después de terminar el Job, dentro del presupuesto existente. No marcar EOF por Jobempty ni por lector terminado. No cambiar indiscriminadamente rechazos previos al terminal: los otros parámetros protegidos conservan cuarentena. Revisar carreras entre notificación, revocación y receive antes de implementar.
+
+Regresión propuesta: conservar byte a byte el caso exacto como RED; añadir pruebas de la transición con proceso/Job/evento reales que distingan error remoto admitido, terminal posterior rechazado y EOF físico observado por hilo lector. Mantener pruebas negativas protegidas y error/progreso/recibo inmutable. Test nuevo primero, RED causal y sólo después fix mínimo; revisión fresca/QA y cobertura WHOLE por fichero cambiado corresponden a la autorización posterior. No hay diseño de GREEN validado en este diagnóstico.
+
+## Custodia y límites
+
+`source-before.json`/`source-after.json` verifican fuentes scripts/eval completas y configuración archivada; test protegido y proceso históricos exactos. Cierres/PID/FILETIME/asignación están en native-ownership-cleanup.json: cuatro nacimientos reales. Protocol workers UNKNOWN; sensores CLOSED_CONFIRMED. Al final sólo MainThread del runner en ambos runs. Handles de proceso/Job/pipes son cerrados por el cleanup real según código/recibos; cierre individual de event nativo del test se ejecuta en finally pero no está instrumentado, por tanto UNKNOWN como hecho individual. Cierre de handler/threads internos de hijos terminados UNKNOWN; no recursos extranjeros terminados. stdout RPC completo no capturado en baseline; trace copia frame causante y metadatos admitidos; stderr hijo DEVNULL y por tanto indisponible, sin fabricar originales. stdout/stderr padre completos conservados.
+
+Incidente de lectura: la primera llamada combinada leyó accidentalmente CONTINUE más allá de Historial; no se usó como estado vigente. Runner privado no propaga el exit de pytest: ambos exits se distinguen arriba. No reparaciones de fixtures ni alteraciones semánticas. TDD n/a para informe/config; diagnóstico usa RED existente, no reclama ciclo GREEN. Sin cobertura, PDH, red, instalaciones, GPU, UI, Docker, WSL, Git, docs, conocimiento, ledger ni subagentes. Fase4 no autorizada y no ejecutada. FullT09/cadencia160/calibración/ReadFileZeroBytes/SLA/material/liveCLI pendientes. Costes/tokens/horas reales NULL; originales CLI reservados intactos. Revisión y QA ROOT pendientes.

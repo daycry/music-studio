@@ -1,0 +1,54 @@
+{
+  "utc": "2026-10-08T20:30:51.781432+00:00",
+  "technical_component_accepted": true,
+  "scope": "Unchanged FFmpeg helper: native Linux Bookworm/amd64 check, execution, codec smoke, executable modes and no-clobber publish primitive only",
+  "current_sources": {
+    "scripts/fetch_ffmpeg_linux.py": {
+      "bytes": 20408,
+      "sha256": "02f11245ee8609341c3f9ebc2ea8dde350e701a22442eac8b21dbb2b6d425401"
+    },
+    "tests/test_fetch_ffmpeg_linux.py": {
+      "bytes": 17288,
+      "sha256": "4f2770d3f89439e9581e2ba457978f6f42b64ac28ea2685f647b278db9fbae7d"
+    }
+  },
+  "source_count_verified": 14,
+  "original_inventory_files": 242,
+  "payload_files": 69,
+  "prior_windows_scope_files": 70,
+  "count_basis_adjudication": "No missing artifact:69payload files +1 separate archive cache=70 in prior QA. Native report discrepancy reflects a different inventory root. Original report/receipt retained.",
+  "cache_extra_path": ".cache/fetch/ffmpeg-linux-acquisition/2d41cbea0ca1a15029b638330740f78d6f5aeb062355bf425433fc938705350a.tar.xz",
+  "native_checks": {
+    "global_check": 0,
+    "private_baseline": 0,
+    "ffmpeg_without_execute": 2,
+    "ffmpeg_restored": 0,
+    "ffprobe_without_execute": 2,
+    "ffprobe_restored": 0,
+    "absent_destination": "published",
+    "existing_destination": "EEXIST; source and destination witnesses preserved"
+  },
+  "container_base_image": "sha256:392307d22300de8b5986851a12d9176dfc0fc073e65bf6523ebd7dcbeb23564e",
+  "own_containers_removed": 2,
+  "license_flags": {
+    "version3": true,
+    "gpl": false,
+    "nonfree": false
+  },
+  "license_scope": "binary self-report LGPL3+ and captured flags/notices; dependency notice completeness and redistribution UNKNOWN",
+  "qa_receipt": {
+    "bytes": 2594,
+    "sha256": "017edd0b5f3331840c1792264d42b807663eda2ab481889d1856e26e6fd60a51"
+  },
+  "limits": [
+    "full native acquire/extraction/lock/publication",
+    "audio_post worker/song integration",
+    "legal redistribution compliance",
+    "other Linux distributions",
+    "Rights/music quality",
+    "T05/M1/E2E/GPU"
+  ],
+  "first_attempt_fixture_failure_retained": true,
+  "actual_model_tokens_EUR_IAhours": null,
+  "full_T05_M1_accepted": false
+}

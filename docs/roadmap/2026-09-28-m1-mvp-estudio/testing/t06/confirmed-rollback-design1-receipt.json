@@ -1,0 +1,24 @@
+{
+  "status": "DESIGN_DELIVERED_ROOT_SELECTION_PENDING",
+  "owned_runtime": [],
+  "recommended": "O1",
+  "proposed_runtime": [
+    "apps/server/app/publication.py",
+    "apps/server/app/queue/events.py"
+  ],
+  "proposed_new_test": "apps/server/tests/test_publication_confirmed_rollback.py",
+  "implemented": false,
+  "tests_run": 0,
+  "native_reproduction": false,
+  "tdd": "n/a: prose design",
+  "finding": "VULN-001 remains open",
+  "qa246": "historical accepted, not waiver",
+  "source_handoff": "NOT_VERIFIED; required before future fix",
+  "provider": null,
+  "model": null,
+  "tokens": null,
+  "eur": null,
+  "ai_hours": null,
+  "copies": "source-hashes.json",
+  "utc": "2026-10-09T06:04:50.9669588Z"
+}

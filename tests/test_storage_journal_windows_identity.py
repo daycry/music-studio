@@ -704,7 +704,7 @@ def test_fix1_poisoned_boundary_is_typed_before_query():
     namespace = dict(m.__dict__)
     namespace["_authority_record"] = lambda authority, operation: (row, session)
     namespace["_native_live"] = lambda *args: called.append("query")
-    exec(compile(tree, inspect.getsourcefile(m), "exec"), namespace)  # noqa: S102 - AST del código propio fijado
+    exec(compile(tree, "<CPU-AST-boundary-poison>", "exec"), namespace)  # noqa: S102 - AST CPU no coverage original
     m._io._KERNEL_POISONED = True
     with pytest.raises(m.IdentityError) as error:
         namespace["_issue_acquisition_admission"](
@@ -720,6 +720,352 @@ def cpu_record(module, execute):
         module._CpuIdentityOps(execute), principal_sid=SID, primary_group_sid=SID
     )
     return module._CPU_AUTHORITIES[authority]
+
+
+def test_cpu_factory_invalid_callback_never_registers_authority():
+    m = load()
+    with pytest.raises(ValueError, match="CAPABILITY_INVALID"):
+        m._assemble_cpu_identity_session(
+            m._CpuIdentityOps(None), principal_sid=SID, primary_group_sid=SID
+        )
+    assert m._CPU_AUTHORITIES == {} and m._CPU_CAPABILITIES == {}
+    assert m._io._LIVE_IDENTITY_SESSIONS == {}
+
+
+@pytest.mark.parametrize(
+    "operation", ["alias_bootstrap", "source_gate", "unknown_gate", "authority_info"]
+)
+def test_principal_protection_guards_refuse_registered_cpu_before_resource_loader(
+    operation,
+):
+    import inspect
+
+    m = load()
+    abi = importlib.import_module(m.__package__ + ".storage_journal_windows_abi")
+    callbacks = []
+    record = cpu_record(m, callbacks.append)
+    loaders = []
+    loader_codes = {
+        inspect.unwrap(m._bootstrap_native).__code__,
+        inspect.unwrap(abi._new_native_identity_backend).__code__,
+    }
+    prior = sys.getprofile()
+
+    def observe(python_frame, event, arg):
+        if event == "call" and python_frame.f_code in loader_codes:
+            loaders.append(python_frame.f_code.co_name)
+
+    expected = (
+        "OWNER_RETIRE_REQUIRED"
+        if operation in {"alias_bootstrap", "unknown_gate"}
+        else "CAPABILITY_INVALID"
+    )
+    if operation == "unknown_gate":
+        record.state = "unknown"
+    try:
+        sys.setprofile(observe)
+        with pytest.raises(m.IdentityError, match=expected):
+            if operation == "alias_bootstrap":
+                m._require_canonical_identity_instance()
+            elif operation == "authority_info":
+                m._identity_info(record.capability)
+            else:
+                m._native_live(record, "query")
+    finally:
+        sys.setprofile(prior)
+    assert callbacks == loaders == [] and record.source == "cpu_double"
+    assert m._io._LIVE_IDENTITY_SESSIONS == {} and record.admissions == {}
+
+
+@pytest.mark.parametrize("operation", ["complete", "abort"])
+def test_cpu_pin_terminal_unknown_reference_stops_before_target_or_queries(operation):
+    m = load()
+    sdk = TokenSdk(m)
+    record = cpu_record(m, sdk.execute)
+    admission = m._issue_cpu_acquisition_admission(
+        record.capability, scope=m._AdmissionScope.CANDIDATE_READ_ONLY
+    )
+    acquisition = importlib.import_module(
+        m.__package__ + ".storage_journal_windows_acquisition"
+    )
+    owner_callbacks = []
+    owner = acquisition._assemble_cpu_acquisition_owner(
+        acquisition._AcquisitionOps(*((owner_callbacks.append,) * 4)),
+        principal_sid=SID,
+        primary_group_sid=SID,
+    )
+    before = tuple(record.calls)
+    function = (
+        m._complete_cpu_acquisition_admission_pin
+        if operation == "complete"
+        else m._abort_cpu_acquisition_admission_pin
+    )
+    with pytest.raises(m.IdentityError, match="ADMISSION_REQUIRED"):
+        function(object(), owner=owner)
+    assert tuple(record.calls) == before and record.pins == {}
+    assert (
+        record.admissions[admission].state == "live" and record.source == "cpu_double"
+    )
+    assert (
+        owner_callbacks == []
+        and acquisition._LIVE_ACQUISITION_OWNERS[owner].source == "cpu_double"
+    )
+
+
+def test_cpu_unknown_sdk_query_does_not_invoke_any_callback():
+    m = load()
+    callbacks = []
+    record = cpu_record(m, callbacks.append)
+    frame = m._CpuFrame()
+    step = m._QueryStep("ReadFile")
+    with pytest.raises(ValueError, match="PRINCIPAL_UNACCREDITED"):
+        m._cpu_call(record, frame, step)
+    assert callbacks == [] and record.calls == [] and frame.plan == [step]
+    assert record.source == "cpu_double" and not m._io._KERNEL_POISONED
+
+
+def test_cpu_second_close_keeps_first_true_and_never_retries_sdk_callback():
+    m = load()
+    sdk = TokenSdk(m)
+    record = cpu_record(m, sdk.execute)
+    frame = m._CpuFrame()
+    handle = m._cpu_open(record, frame, thread=False, offset=8)
+    result, known_call = m._cpu_call(
+        record, frame, m._QueryStep("CloseHandle", token=handle)
+    )
+    assert result.success is True and known_call.close_attempted
+    before = tuple(sdk.calls)
+    with pytest.raises(ValueError, match="RESOURCE_UNKNOWN"):
+        m._cpu_call(record, frame, m._QueryStep("CloseHandle", token=handle))
+    assert tuple(sdk.calls) == before and sdk.calls.count("CloseHandle") == 1
+    failed_call = record.calls[-1]
+    assert failed_call.raw_result is None and not failed_call.close_attempted
+    assert known_call.raw_result is result and frame.handles[handle] is True
+    assert record.state == "unknown" and m._io._KERNEL_POISONED
+
+
+@pytest.mark.parametrize(
+    "cut", ["user_attributes", "postcleanup_thread", "postquery_unknown"]
+)
+def test_cpu_query_semantic_or_custody_cut_uses_actual_callback_and_retained_frame(cut):
+    import threading
+
+    m = load()
+    sdk = TokenSdk(m)
+    reached = []
+    record = None
+
+    def execute(call):
+        result = sdk.execute(call)
+        step = call.frame_ref.plan[call.ordinal]
+        if (
+            cut == "user_attributes"
+            and step.function == "GetTokenInformation"
+            and step.info_class == 1
+            and not step.sizing
+        ):
+            struct.pack_into("<I", call.frame_ref.storage, step.offset + 8, 2)
+            reached.append(call)
+        elif (
+            cut == "postcleanup_thread"
+            and step.function == "CloseHandle"
+            and sdk.calls.count("CloseHandle") == 2
+        ):
+            call.frame_ref.thread_id = threading.get_native_id() + 1
+            reached.append(call)
+        elif (
+            cut == "postquery_unknown"
+            and step.function == "OpenThreadToken"
+            and sdk.calls.count("OpenThreadToken") == 2
+        ):
+            record.state = "unknown"
+            reached.append(call)
+        return result
+
+    record = cpu_record(m, execute)
+    with pytest.raises(
+        ValueError,
+        match="PRINCIPAL_UNACCREDITED"
+        if cut == "user_attributes"
+        else "RESOURCE_UNKNOWN",
+    ):
+        m._issue_cpu_acquisition_admission(
+            record.capability, scope=m._AdmissionScope.CANDIDATE_READ_ONLY
+        )
+    assert (
+        len(reached) == 1 and record.admissions == {} and record.source == "cpu_double"
+    )
+    assert record.frame is not None and len(record.frame.storage) == 131328
+    if cut == "user_attributes":
+        assert record.state == "revoked" and record.frame.cleanup_complete
+        assert sdk.calls.count("CloseHandle") == 1 and not m._io._KERNEL_POISONED
+    else:
+        assert record.state == "unknown" and m._io._KERNEL_POISONED
+        assert sdk.calls.count("CloseHandle") == (
+            2 if cut == "postcleanup_thread" else 0
+        )
+        assert reached[0].raw_result is not None
+
+
+@pytest.mark.parametrize(
+    "sid", [None, bytearray(SID), b"", bytes(69), bytes(12), bytes([1, 2]) + bytes(10)]
+)
+def test_cpu_session_rejects_unaccredited_binary_sid_before_callbacks(sid):
+    m = load()
+    callbacks = []
+    with pytest.raises(ValueError, match="PRINCIPAL_UNACCREDITED"):
+        m._assemble_cpu_identity_session(
+            m._CpuIdentityOps(callbacks.append),
+            principal_sid=sid,
+            primary_group_sid=SID,
+        )
+    assert callbacks == [] and m._CPU_AUTHORITIES == {}
+    assert m._io._LIVE_IDENTITY_SESSIONS == {}
+
+
+@pytest.mark.parametrize(
+    "fault", ["pid", "frame_thread", "revoked", "plan_limit", "poison"]
+)
+def test_cpu_query_invalid_lease_stops_second_callback_after_actual_first(fault):
+    import threading
+
+    m = load()
+    callbacks = []
+
+    def execute(call):
+        callbacks.append(call.function)
+        return m._ContextPseudoResult(2**64 - 1)
+
+    record = cpu_record(m, execute)
+    frame = m._CpuFrame()
+    first, first_call = m._cpu_call(record, frame, m._QueryStep("GetCurrentProcess"))
+    assert first.value == 2**64 - 1 and first_call.phase == "recognized"
+    if fault == "pid":
+        record.pid += 1
+    elif fault == "frame_thread":
+        frame.thread_id = threading.get_native_id() + 1
+    elif fault == "revoked":
+        record.state = "revoked"
+    elif fault == "plan_limit":
+        frame.plan.extend(m._QueryStep("GetCurrentProcess") for _ in range(27))
+    else:
+        m._io._KERNEL_POISONED = True
+    expected = (
+        "OWNER_MISMATCH"
+        if fault in {"pid", "frame_thread"}
+        else "OWNER_RETIRE_REQUIRED"
+    )
+    with pytest.raises(ValueError, match=expected):
+        m._cpu_call(record, frame, m._QueryStep("GetCurrentProcess"))
+    assert callbacks == ["GetCurrentProcess"] and record.calls == [first_call]
+    assert first_call.raw_result is first and record.source == "cpu_double"
+
+
+@pytest.mark.parametrize(
+    "fault",
+    [
+        "pid",
+        "root_authority",
+        "root_revoked",
+        "authority_revoked",
+        "probe_scope",
+        "principal",
+    ],
+)
+def test_cpu_admission_issuance_provenance_and_scope_stay_cpu_only(fault):
+    m = load()
+    sdk = TokenSdk(m)
+    callbacks = []
+
+    def execute(call):
+        callbacks.append(call.function)
+        return sdk.execute(call)
+
+    record = cpu_record(m, execute)
+    scope = m._AdmissionScope.CANDIDATE_READ_ONLY
+    if fault == "pid":
+        record.pid += 1
+    elif fault == "root_authority":
+        m._CPU_CAPABILITIES[record.policy_ref].authority_ref = object()
+    elif fault == "root_revoked":
+        m._CPU_CAPABILITIES[record.policy_ref].state = "revoked"
+    elif fault == "authority_revoked":
+        record.state = "revoked"
+    elif fault == "probe_scope":
+        scope = m._AdmissionScope.OWNED_PROBE_CANDIDATE
+    else:
+        record.principal_sid = SID[:-4] + struct.pack("<I", 22)
+    expected = {
+        "pid": "CAPABILITY_INVALID",
+        "root_authority": "CAPABILITY_INVALID",
+        "root_revoked": "CAPABILITY_REVOKED",
+        "authority_revoked": "CAPABILITY_REVOKED",
+        "probe_scope": "ADMISSION_REQUIRED",
+        "principal": "PRINCIPAL_UNACCREDITED",
+    }[fault]
+    with pytest.raises(ValueError, match=expected):
+        m._issue_cpu_acquisition_admission(record.capability, scope=scope)
+    assert record.admissions == {} and record.source == "cpu_double"
+    assert bool(callbacks) is (fault == "principal")
+    assert m._io._LIVE_IDENTITY_SESSIONS == {}
+
+
+@pytest.mark.parametrize("fault", ["thread_limit", "thread_epoch", "buffer_pending"])
+def test_cpu_observation_preflight_retains_history_without_callback(fault):
+    import threading
+
+    m = load()
+    callbacks = []
+    record = cpu_record(m, callbacks.append)
+    if fault == "thread_limit":
+        record.threads = {threading.Thread(): index for index in range(8)}
+    elif fault == "thread_epoch":
+        record.threads[threading.current_thread()] = threading.get_native_id() + 1
+    else:
+        record.frame = m._CpuFrame()
+    threads_before = dict(record.threads)
+    frame_before = record.frame
+    with pytest.raises(
+        ValueError,
+        match="OWNER_MISMATCH" if fault == "thread_epoch" else "OWNER_RETIRE_REQUIRED",
+    ):
+        m._cpu_observe(record)
+    assert callbacks == [] and record.state == "revoked"
+    assert record.threads == threads_before and record.frame is frame_before
+    assert record.counters == {"observations": 0, "subcalls": 0}
+
+
+@pytest.mark.parametrize(
+    "fault", ["pid", "admission_revoked", "authority_revoked", "policy", "unregistered"]
+)
+def test_cpu_admission_current_rejects_stale_reference_without_new_queries(fault):
+    m = load()
+    sdk = TokenSdk(m)
+    record = cpu_record(m, sdk.execute)
+    admission = m._issue_cpu_acquisition_admission(
+        record.capability, scope=m._AdmissionScope.CANDIDATE_READ_ONLY
+    )
+    calls_before = tuple(record.calls)
+    row = record.admissions[admission]
+    if fault == "pid":
+        record.pid += 1
+    elif fault == "admission_revoked":
+        row.state = "revoked"
+    elif fault == "authority_revoked":
+        record.state = "revoked"
+    elif fault == "policy":
+        row.policy_ref = object()
+    else:
+        record.admissions.pop(admission)
+    expected = (
+        "ADMISSION_REQUIRED"
+        if fault in {"pid", "unregistered"}
+        else "CAPABILITY_REVOKED"
+    )
+    with pytest.raises(m.IdentityError, match=expected):
+        m._cpu_admission_current(record, admission, "complete")
+    assert tuple(record.calls) == calls_before and len(calls_before) > 0
+    assert type(admission) is m._CpuAdmission and record.source == "cpu_double"
 
 
 @pytest.mark.parametrize(
@@ -1097,7 +1443,7 @@ def test_fix1_boundary_poison_between_lookup_and_entry():
     namespace = dict(m.__dict__)
     namespace["_authority_record"] = authority_record
     namespace["_native_live"] = lambda *args: calls.append("query")
-    exec(compile(tree, inspect.getsourcefile(m), "exec"), namespace)  # noqa: S102 - AST del código propio fijado
+    exec(compile(tree, "<CPU-AST-lookup-poison>", "exec"), namespace)  # noqa: S102 - AST CPU no coverage original
 
     def issue():
         try:
@@ -1476,7 +1822,7 @@ def test_fix1_bootstrap_claim_to_entry_poison_is_typed():
         _kernel_domain=m._io._kernel_domain,
         KernelMemoryError=m._io.KernelMemoryError,
     )
-    exec(compile(tree, inspect.getsourcefile(m), "exec"), namespace)  # noqa: S102 - AST del código propio fijado
+    exec(compile(tree, "<CPU-AST-bootstrap-entry-poison>", "exec"), namespace)  # noqa: S102 - AST CPU no coverage original
     with pytest.raises(m.IdentityError) as error:
         namespace["_bootstrap_native"]()
     assert error.value.diagnostic.code == "OWNER_RETIRE_REQUIRED"

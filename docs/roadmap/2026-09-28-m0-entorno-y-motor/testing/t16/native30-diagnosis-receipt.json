@@ -1,0 +1,23 @@
+{
+  "task": "T-16",
+  "date": "2026-10-06",
+  "image": "sha256:9e4fc86fe17269ef80ad6649d9f80b02f8d1f0c7af160f3f9d0fde362dfd8f84",
+  "verified_previous_files": 27,
+  "verified_image_sources": 15,
+  "verified_evidence": 27,
+  "private_freeze_sha256": "8de1f4af395f81abe68489c9da64a7533413a79ba5908daa5a147d0c9501d572",
+  "cpu_defect_proven": true,
+  "gpu_resolved_branch_directly_captured": false,
+  "gpu_exception_code": "INVALID_PARAMS",
+  "partial_capture_contains_boundaries": true,
+  "lm_matches_actual_capture": true,
+  "cpu_private_text_tokens": {
+    "default": 151,
+    "resolved": 150
+  },
+  "cpu_private_lyrics_tokens": 256,
+  "gpu_executed_by_diagnosis": false,
+  "product_modified": false,
+  "task_complete": false,
+  "quality_approved": false
+}

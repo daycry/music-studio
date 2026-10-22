@@ -1,0 +1,17 @@
+{
+  "utc": "2026-10-07T23:07:09.750803+00:00",
+  "finding": "WEBTOOLS-TDD01",
+  "severity": "Important",
+  "scenario": "49 initial cases stopped at api/find_spec presence assertion before archive/configuration/probe behavior assertions. This is API availability evidence, not behavioral RED. Root earlier allowance was incorrect. No retrospective certification from subsequent GREEN/QA.",
+  "evidence": {
+    "path": ".cache/dev-cycle/m1/t08-web-portable-tools/red.stdout.txt",
+    "sha256": "e40fdaedc5ff4cb718bb8d58a65af57fedf417613a75afb75cef39460cb2a93b",
+    "bytes": 119490
+  },
+  "reviewer_A_classification_rejected": "49 functional failures claim; rest of bounded review unaffected",
+  "decision": "Normal fresh implementer removes and rewrites functionality lacking genuine behavioral RED after test reaches intended outcome/effect. Preserve originals and genuine red-cache2 regression. Pending independent QA current remains useful functional evidence, does not close this process gap.",
+  "skill": "custom-agents:tdd hard law",
+  "actual_model_tokens_EUR_AIhours": null,
+  "technical_acceptance": false,
+  "next_component_inspection": 2
+}

@@ -1,0 +1,148 @@
+{
+  "utc": "2026-10-09T05:18:03.915668+00:00",
+  "owned": [
+    "apps/server/app/publication.py",
+    "apps/server/app/queue/events.py",
+    "apps/server/tests/test_publication_coordinator.py"
+  ],
+  "source": {
+    "apps/server/app/publication.py": {
+      "sha256": "3acb2ea922900ca810a46a9c9261bf02389bf21056efa8e14a1b3a85545ecafd",
+      "bytes": 4914
+    },
+    "apps/server/app/queue/events.py": {
+      "sha256": "aa1b1c0b8fce3fb7b768c2e3e40cedc765a96b89d19701ec5767aad67d1566b7",
+      "bytes": 13346
+    },
+    "apps/server/tests/test_publication_coordinator.py": {
+      "sha256": "ae6070f9f825ed08f96b4c42bc1bf843ff362eeeb4dac6dad1343eb46399b7b0",
+      "bytes": 13088
+    }
+  },
+  "red": {
+    "actual_behavior_failures": 3,
+    "passed_valid_case": 1,
+    "artifact": "red-real-bus/junit.xml",
+    "cause": "published True with durable SQLite value and empty actual ring"
+  },
+  "noncausal_harness_history": {
+    "green-focal": "1 failure: successful publisher double missing explicit True; repaired after actual append; original preserved"
+  },
+  "current_selected_whole_tests": {
+    "tests": 246,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "baseline_original": 239,
+    "added": 7
+  },
+  "coverage_single_fresh_trace": {
+    "apps\\server\\app\\event_snapshot.py": {
+      "covered_lines": 40,
+      "num_statements": 42,
+      "percent_covered": 93.75,
+      "percent_covered_display": "94",
+      "missing_lines": 2,
+      "excluded_lines": 0,
+      "percent_statements_covered": 95.23809523809524,
+      "percent_statements_covered_display": "95",
+      "num_branches": 22,
+      "num_partial_branches": 2,
+      "covered_branches": 20,
+      "missing_branches": 2,
+      "percent_branches_covered": 90.9090909090909,
+      "percent_branches_covered_display": "91"
+    },
+    "apps\\server\\app\\publication.py": {
+      "covered_lines": 69,
+      "num_statements": 75,
+      "percent_covered": 90.3225806451613,
+      "percent_covered_display": "90",
+      "missing_lines": 6,
+      "excluded_lines": 0,
+      "percent_statements_covered": 92.0,
+      "percent_statements_covered_display": "92",
+      "num_branches": 18,
+      "num_partial_branches": 3,
+      "covered_branches": 15,
+      "missing_branches": 3,
+      "percent_branches_covered": 83.33333333333333,
+      "percent_branches_covered_display": "83"
+    },
+    "apps\\server\\app\\queue\\events.py": {
+      "covered_lines": 220,
+      "num_statements": 230,
+      "percent_covered": 94.51612903225806,
+      "percent_covered_display": "95",
+      "missing_lines": 10,
+      "excluded_lines": 0,
+      "percent_statements_covered": 95.65217391304348,
+      "percent_statements_covered_display": "96",
+      "num_branches": 80,
+      "num_partial_branches": 7,
+      "covered_branches": 73,
+      "missing_branches": 7,
+      "percent_branches_covered": 91.25,
+      "percent_branches_covered_display": "91"
+    },
+    "apps\\server\\app\\sse.py": {
+      "covered_lines": 279,
+      "num_statements": 289,
+      "percent_covered": 95.22673031026252,
+      "percent_covered_display": "95",
+      "missing_lines": 10,
+      "excluded_lines": 0,
+      "percent_statements_covered": 96.53979238754326,
+      "percent_statements_covered_display": "97",
+      "num_branches": 130,
+      "num_partial_branches": 10,
+      "covered_branches": 120,
+      "missing_branches": 10,
+      "percent_branches_covered": 92.3076923076923,
+      "percent_branches_covered_display": "92"
+    }
+  },
+  "protected_parity": true,
+  "outside_owned_observed_drift": [
+    {
+      "path": "scripts/eval/benchmark_process.py",
+      "before": "ba881f6dd96d3483d3ffcccb39c1d9bf865d0c0c3b3f3161b685ba82477b3cfa",
+      "copy": {
+        "sha256": "ba881f6dd96d3483d3ffcccb39c1d9bf865d0c0c3b3f3161b685ba82477b3cfa",
+        "bytes": 40728
+      },
+      "current": {
+        "sha256": "e7601d1626e180ce633ac3d9e6c14d33d9ce37ab8140fb71ecd2e54e231314e7",
+        "bytes": 42269
+      },
+      "unchanged": false,
+      "owned": false
+    }
+  ],
+  "tool_custody": {
+    "python_exe": {
+      "sha256": "d7ae287c3b0bcc389b245e6e777f0e4d1385197dd16b8c91488dc1ca563bb3f4",
+      "bytes": 47104
+    },
+    "runner": {
+      "sha256": "0f05c2d0b6fb4935b193f749410ba180866eea393d2d731fc2a2400430104e9f",
+      "bytes": 5236
+    },
+    "managed_interpreter_library_dependencies": "TCB/UNKNOWN: not physically copied before first execution",
+    "OS": "TCB",
+    "transient_import_inventory": "UNKNOWN",
+    "no_retroactive_before_claim": true
+  },
+  "cleanup": {
+    "recorded_children": "all waited; actual PIDs and exits in actor-command-accounting.json",
+    "universal_process_census": "UNKNOWN",
+    "private_artifacts_retained": true
+  },
+  "actual_model": null,
+  "tokens": null,
+  "eur": null,
+  "ia_hours": null,
+  "QA2": "FAILED unchanged",
+  "acceptance": "pending fresh review2 and independent QA by Root",
+  "private_finalizer_history": "Initial quoting SyntaxError before body; original preimage/stderr retained; private repair successful; not causal RED."
+}

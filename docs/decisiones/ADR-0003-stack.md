@@ -6,12 +6,13 @@
 - **web:** Next.js (App Router), TypeScript, Tailwind, shadcn/ui, wavesurfer.js y next-intl. Gestor de paquetes: pnpm. Node 22 LTS.
 - **server:** Python 3.12 con FastAPI, SQLAlchemy 2, Alembic y Pydantic 2. Gestor de paquetes: uv. **No usa torch.** Se encarga también del post-proceso, el render y los manifiestos ([ADR-0017](ADR-0017-postproceso-y-manifiesto-en-el-server.md)).
 - **engines:** un contenedor Docker con `--gpus all` **por familia de modelo**. Todos implementan el mismo contrato `/v1` ([`../arquitectura/contrato-engines.md`](../arquitectura/contrato-engines.md)).
+  - `engine-llm` es la excepción: cliente `/v1` de Ollama compartido, sin GPU ni proceso de inferencia propio ([ADR-0035](ADR-0035-despliegue-docker-y-ollama-wsl.md)).
   - Cada uno lleva las versiones que exige su upstream. Ejemplo: ACE-Step 1.5 usa `torch 2.10+cu128` con Python 3.11, instalado con `uv sync --frozen` (su pyproject admite `>=3.11,<3.13`; se usa 3.11, igual que su Dockerfile oficial).
 - **Contratos** (code-first, [ADR-0019](ADR-0019-contratos-code-first.md)):
   - `packages/engine-contract` (Pydantic) para los engines;
   - `openapi.json` generado por FastAPI para la API del server;
   - los tipos TypeScript se generan a partir de él.
-- **Ejecución:** web y server en nativo (Windows), con recarga en caliente; los engines, en Docker (`docker compose --profile engines`). Un perfil «todo en contenedores» no forma parte de M1 (exigiría ffmpeg Linux en el server, nombres de servicio en `STUDIO_ENGINES` y hosts permitidos configurables).
+- **Ejecución:** desde [ADR-0035](ADR-0035-despliegue-docker-y-ollama-wsl.md), el despliegue del producto usa Docker Compose para web, server y engines. Ollama permanece como servicio compartido en WSL2, con un adaptador `/v1` en Docker. Sustituye el despliegue nativo anterior; su implementación queda pendiente en M1–M2.
 
 ## Motivo
 - Next.js + FastAPI era un requisito original y sigue teniendo sentido: el ecosistema de audio e inferencia vive en Python.

@@ -1,0 +1,65 @@
+{
+  "task": "T-09",
+  "attempt": 3,
+  "reported_at": "2026-10-06T18:21:54.978833+00:00",
+  "lenses": [
+    "A",
+    "B",
+    "C",
+    "D"
+  ],
+  "all_contexts_fresh": true,
+  "counts": {
+    "critical": 0,
+    "important": 1,
+    "minor": 0
+  },
+  "gaps": [
+    {
+      "id": "R09-08",
+      "grade": "Important",
+      "origins": [
+        "B3-01",
+        "A3-out-of-lens",
+        "D3-out-of-lens"
+      ],
+      "location": "scripts/eval/benchmark_runner.py:123",
+      "secondary_location": "scripts/eval/benchmark_runner.py:136",
+      "title": "Un sensor que consume el periodo impide observar el terminal del job",
+      "scenario": "Sensor síncrono1,5s, intervalo1s, horizonte4s, terminaldone disponible: fix1 devuelve done a1,51s; fix2 agota observación a4,5s con cero llamadas events/status y muestras0/1,5/3s. El nuevo guard omite ambos canales cuando remaining siempre es negativo.",
+      "verdict": "pendiente",
+      "scope": "CPU in-memory reproduction, no actual sensor latency or GPU performance claim"
+    }
+  ],
+  "previous_gap_outcomes": {
+    "R09-04a": "corrected",
+    "R09-04b": "corrected",
+    "R09-07": "partial rebate preserved; verifiable controls remain corrected"
+  },
+  "sources_unchanged": 33,
+  "diff_sha256": "760a07337fb4ca1a92bbc284808b46461e4cbefc6c62a515e263d86b23ba8e68",
+  "cpu_test_counts_overlapping": {
+    "A": 50,
+    "B": 50,
+    "C": 29,
+    "C_additional": 3,
+    "D": 27
+  },
+  "root_continuation_decision": {
+    "owner_standing_instruction": "implementar todo el roadmap, y toma las mejores deciciones en caso de que haya alternativas",
+    "selected_by": "root",
+    "selected_alternative": "seguir con una corrección concreta y una revisión adicional",
+    "authorization_basis": "previous explicit delegation to choose roadmap alternatives, not a new point approval",
+    "attempts_preserved": [
+      1,
+      2,
+      3
+    ],
+    "next_review_attempt": 4,
+    "additional_review_cycles_selected": 1,
+    "note": "No reset of previous attempts, no acceptance as debt, no change to goal scope; QA/GPU remain gated."
+  },
+  "gpu_executed": false,
+  "qa_passed": false,
+  "computer_use_stopped_by_owner": true
+}

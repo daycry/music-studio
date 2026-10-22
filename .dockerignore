@@ -1,11 +1,16 @@
 **
 !apps/
+!apps/web/**
 !apps/engines/
 !apps/engines/acestep/**
 !apps/engines/common/**
 !packages/
 !packages/engine-contract/**
 !packages/contracts/**
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
 **/__pycache__/
 **/.venv/
 **/.cache/
+**/node_modules/

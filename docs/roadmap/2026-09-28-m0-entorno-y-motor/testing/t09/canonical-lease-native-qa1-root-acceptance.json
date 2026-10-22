@@ -1,0 +1,52 @@
+{
+  "utc": "2026-10-08T01:36:22.029679+00:00",
+  "technical_component_accepted": true,
+  "scope": "Additive canonical lease API and shared accredit wrapper ONLY",
+  "sources": {
+    "scripts/eval/benchmark_canonical.py": {
+      "sha256": "f60d0271037e50dc324323401827a2d0321e8d9faf90aeaed35fd5374697a8a8",
+      "bytes": 28915
+    },
+    "scripts/eval/tests/test_benchmark_canonical.py": {
+      "sha256": "c33bb47fe12623ceb1b3736d30211bb6a7d36184dab798e7cb0f00bb48797c9b",
+      "bytes": 86313
+    }
+  },
+  "original_inventory_verified_files": 2265,
+  "current_tests": {
+    "total": 127,
+    "canonical": 102,
+    "neighbors": 25
+  },
+  "whole_current_canonical_coverage": {
+    "covered_lines": 417,
+    "num_statements": 447,
+    "percent_covered": 90.34941763727122,
+    "percent_covered_display": "90",
+    "missing_lines": 30,
+    "excluded_lines": 0,
+    "percent_statements_covered": 93.28859060402685,
+    "percent_statements_covered_display": "93",
+    "num_branches": 154,
+    "num_partial_branches": 28,
+    "covered_branches": 126,
+    "missing_branches": 28,
+    "percent_branches_covered": 81.81818181818181,
+    "percent_branches_covered_display": "82"
+  },
+  "protected_dependencies_verified": 65,
+  "native_birth_cleanup_pairs": 129,
+  "review_counter": 4,
+  "formal_integrated_next": 4,
+  "native_process_exit_scope": "Known exit codes preserved including negative controls; not all zero inferred",
+  "not_accepted": [
+    "native blocked store interruption or sampler throughput/cadence",
+    "dedicated process IPC/watchdog/bootstrap/ingest",
+    "episode/runtime/coordinator/rowreader and T13 old70/140 prefix IO",
+    "packs FINAL typed restart recovery",
+    "GPU13h/160 calibration music quality",
+    "T09/M0 complete or perfect historical custody"
+  ],
+  "next": "Fresh dedicated canonical typed-process bootstrap and ingress dependency under ADR0050",
+  "actual_model_tokens_EUR_AIhours": null
+}

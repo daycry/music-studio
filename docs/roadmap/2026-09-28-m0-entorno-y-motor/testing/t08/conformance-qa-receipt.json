@@ -1,0 +1,218 @@
+{
+  "created_at": "2026-10-06T03:58:24.694268+00:00",
+  "checks": {
+    "gpu_sources": {
+      "count": 22,
+      "mismatches": []
+    },
+    "gpu_artifacts": {
+      "count": 4,
+      "mismatches": []
+    },
+    "cpu_qa_sources": {
+      "count": 22,
+      "mismatches": []
+    },
+    "prior_artifacts": {
+      "count": 39,
+      "mismatches": []
+    },
+    "baselines": {
+      "count": 3,
+      "mismatches": []
+    },
+    "cpu_qa_artifacts": {
+      "count": 41,
+      "mismatches": []
+    },
+    "image_sources": {
+      "count": 19,
+      "mismatches": []
+    },
+    "fixture": true,
+    "junit_sha": true,
+    "junit_cases_match": true,
+    "cpu_junit": {
+      "count": 48,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "test_assertions": {
+      "alive_child_distinct_pid": true,
+      "unload_200": true,
+      "child_terminated": true,
+      "four_real_tests": true
+    },
+    "own_runtime_pickle_calls_absent": true,
+    "current_tag_identity": true,
+    "historical_clap_artifacts": {
+      "count": 14,
+      "mismatches": []
+    },
+    "historical_clap_non_delta_sources": {
+      "count": 18,
+      "mismatches": []
+    }
+  },
+  "image": "sha256:d20ae562803cb577c290f0229c0df07551a20647be92feca3d678f523b300c62",
+  "sources": {
+    "apps/engines/analysis/Dockerfile": "f123a4dfde01eea8b51aea97c19335fbb3321fc2a7effd8c40c134000d9955b4",
+    "apps/engines/analysis/engine_analysis/__init__.py": "5ee1d35be567a47472c7d5e3b8be7ec0fd714e3a5d09422568984b2b47a3f49b",
+    "apps/engines/analysis/engine_analysis/adapter.py": "1f5d201d9925c13a5c8508f8cca9b8a09af63c6d9eb30f92d6c4fe26b0c3f40d",
+    "apps/engines/analysis/engine_analysis/backend.py": "ec50ccf798bd3aa9f1d0df0aa06e3e5c639e783ec6c857cfbf93c0c3a81c933c",
+    "apps/engines/analysis/engine_analysis/descriptor.py": "5627a19c0a0eccd9c127b83ff7232f7f7b5a43fecf491121202a5cdd35c45e17",
+    "apps/engines/analysis/engine_analysis/resources/beat_this.json": "a9de09cfe66ca908f10438e1be93e88ae098b4d504ea872250e421594f1565df",
+    "apps/engines/analysis/engine_analysis/safety.py": "a22ab404fbc933d98de7b39982c002538a0a460aea8ab47769afd92b085bd43e",
+    "apps/engines/analysis/engine_analysis/server.py": "f0d9152837ba34d154608687d822d860f8318388e2a58ff3ecd39b973ef9d5a9",
+    "apps/engines/analysis/pyproject.toml": "35bb9f1b5769c4f8b775542d02f8811de25871e98f212a19e2f65b02fdd08b7e",
+    "apps/engines/analysis/README.md": "710867ee43f2fc80b6acae76bb50c83d4e9d2e840c3a8f743fd0d0c62aa803f7",
+    "apps/engines/analysis/tests/conftest.py": "f602a52735e468e1b6ee4b191dae5601aeb907b81c9c3505bc91fe737431418f",
+    "apps/engines/analysis/tests/test_analysis.py": "3cdf7ee22ee0dfa233437342d9b1c8084d79ed79afbe6ebac0446b44645c3b2b",
+    "apps/engines/analysis/tests/test_backend.py": "56aaa2d7cea00bde944887f67c0fe63af36aded57f818716adb782668b944ac4",
+    "apps/engines/analysis/tests/test_clap_prefix.py": "333e08a0ad8b49736b57b92f887deb5aac1efa25b587f663771a007266b4a62a",
+    "apps/engines/analysis/tests/test_clap_real.py": "3723964e9755cc1c7b43df23a6929adff53e57c214e7a813390d298b75982645",
+    "apps/engines/analysis/tests/test_gpu.py": "db6b199efb637665ba951240390eeab8b23cdbf0ebdfcc5f11038d9dd2694269",
+    "apps/engines/analysis/tests/test_loaders.py": "33f1bd8ab30590f23a6951d99627bf749156b5cece8ebf0b3806abb1af4f5c48",
+    "apps/engines/analysis/tests/test_safety.py": "bf2d9ded6c461f49e3a8bbfc0575199c8654c6d5cfcc0fa3e8dfca9a3519a417",
+    "apps/engines/analysis/tests/test_segments.py": "2ca14e5da4312fe87fdc48892a7fb9f3e20dacf19fdd5f51f3fd5bdf88647544",
+    "apps/engines/analysis/uv.lock": "9fbdd9e86d1b43d7613b6f0abcac302905e9391e26c3b0cf4d3fc346ff33e32f",
+    "docker-compose.yml": "635e1fcf13f91319114cba1dcfd3f34048dfed2b68f9c03c45cce94e44ca8ddf",
+    "apps/engines/analysis/tests/test_runtime_cache.py": "f4a914e06f7a66127a026855ab820d9878e75496074c37517a3aae62d62a0409"
+  },
+  "before_after_identical": true,
+  "gpu_junit_cases": [
+    {
+      "name": "test_transcribe_real_audio_returns_recognized_text_and_word_times",
+      "time_s": 117.165,
+      "failed": false,
+      "error": false,
+      "skipped": false
+    },
+    {
+      "name": "test_clap_real_audio_returns_finite_cosine_similarity",
+      "time_s": 29.005,
+      "failed": false,
+      "error": false,
+      "skipped": false
+    },
+    {
+      "name": "test_aesthetics_real_audio_returns_four_finite_axes",
+      "time_s": 21.342,
+      "failed": false,
+      "error": false,
+      "skipped": false
+    },
+    {
+      "name": "test_beats_cpu_returns_120_bpm_with_two_bpm_tolerance",
+      "time_s": 2.853,
+      "failed": false,
+      "error": false,
+      "skipped": false
+    }
+  ],
+  "outputs": {
+    "audio.aesthetics": {
+      "file": "data/tmp/0109B63FF0CF404991AFCDBD68/analysis.json",
+      "sha256": "89176be44ae235b88de4e856f5b8c04d5bca9b629ad15a1846b0e79db4f85970",
+      "hash_task_stages_match": true,
+      "revisions_match_lock": true,
+      "axes_exact": true,
+      "axes_finite": true
+    },
+    "audio.beats": {
+      "file": "data/tmp/0139282C8577E34759AF95182E/analysis.json",
+      "sha256": "00e4cdb69fa4da22b77eaec6c7b8e444831087d6443991e210372d911322ad07",
+      "hash_task_stages_match": true,
+      "revisions_match_lock": true,
+      "bpm": 120.0,
+      "tolerance_met": true,
+      "beat_count": 61
+    },
+    "audio.transcribe": {
+      "file": "data/tmp/01DAD0ED9C4ED3448581D0AEBA/analysis.json",
+      "sha256": "f593d5411394c46154982cdfb9a010e9457f8bcc43797096173d28e7ecdac73f",
+      "hash_task_stages_match": true,
+      "revisions_match_lock": true,
+      "text_nonempty": true,
+      "word_count": 87,
+      "times_finite_monotonic": true,
+      "last_word_end_s": 29.92,
+      "detected_language": "English"
+    },
+    "audio.clap": {
+      "file": "data/tmp/01F108367726F5418CBBE94D71/analysis.json",
+      "sha256": "6d8ef0dcb3bac11497d8bf78d8cfb83830da0b6233ad5167c3c7293f796a6e05",
+      "hash_task_stages_match": true,
+      "revisions_match_lock": true,
+      "score_finite_in_cosine_range": true,
+      "text_truncated": false
+    }
+  },
+  "image_probe_metadata": {
+    "uid": 10001,
+    "cache": "/studio/.cache/triton",
+    "mode": "0o755",
+    "owner": 10001,
+    "file_cache_manager_real": true,
+    "parent_import_without_torch": true,
+    "cuda_initialized": false
+  },
+  "gpu_executed_by_qa": false,
+  "gpu_evidence_executed_by": "root",
+  "gpu_suite_s": 174.941,
+  "own_mutations_scope": ".cache/dev-cycle/t08/conformance-qa/",
+  "task_complete": false,
+  "m0_complete": false,
+  "asr_accuracy_verified": false,
+  "musical_quality_approved": false,
+  "qa_gate": "n/a: no UI",
+  "pdf": "pending: no install performed",
+  "examined_document_hashes": {
+    "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t08/conformance-gpu-report.md": "4743b663f562f4c02318c4b231bb7ac73ef17ab7b41f07490f382b3f8a2225dd",
+    "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t08/conformance-gpu-receipt.json": "34b21873cadb004cc1d801f60c3a59bb97ec2aaf4e0795bfe610acf594097390",
+    "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t08/asr-cache-qa-report.md": "ba01590a7b76619d3f3fbdbb9ca0bbadb75b22de2f6a9b2d0affaf587658dbcf",
+    "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t08/asr-cache-qa-receipt.json": "aacbbe1d85c2fd62c24fcfba76e2dfef344e9cbf1c536ebb082602931c68d70b",
+    "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t08/asr-cache-review-1.md": "fa6a75f1531065335986d7cbf5ae30a8b1b40d1e194c3ac58215bf7f4722f219",
+    "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t08/asr-cache-fix-report.md": "7642daf66a2a48c7eb67aa29e96aff54eeb809841c1255c3bea0021e4b021b03",
+    "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t08/asr-cache-fix-receipt.json": "823fd14984fb5152a58acc24f564866819745234354d277305874ad82784eadb",
+    "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t08/integration-qa-report.md": "ea71fd3ab50eb8e959f909b755d6298c9157cd0bbcb99cefe322e36f1fe686b3",
+    "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t08/integration-qa-receipt.json": "f2dfe8c18e3daa3cc40b896698e8a72bc866ba1570b2ebc71231a6e8e4dda412",
+    "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t08/asr-cache-gpu-report.md": "92ab856136a2102c0c1cdc791e273a2ace21d37cdbd4f6585aad70a65869878b",
+    "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t08/asr-language-probe-receipt.json": "d760a9e6d5d073a8163c0a02a97961211eaf39d8f5ba2c25e6d15b5b3c73d300"
+  },
+  "status": "DONE_WITH_CONCERNS",
+  "technical_gaps": [],
+  "ledger_lint_exit": 0,
+  "build_receipt_exit": 0,
+  "coverage": "n/a: configuration; preceding CLAP backend official 88.9423% preserved",
+  "coverage_check_executed": false,
+  "qa_gate_executed": false,
+  "remaining": [
+    "T16 integration before T08 main integration",
+    "ASR language/accuracy and fidelity assessment",
+    "VRAM peak/spill unmeasured by canonical suite",
+    "M3 independent alignment and T10 capabilities",
+    "T09-T13 and listening/M0 closure"
+  ],
+  "selected_compose_metadata": {
+    "port": "127.0.0.1:8130:8130",
+    "mounts": {
+      "/models": "ro",
+      "/data": "ro",
+      "/data/tmp": "rw"
+    },
+    "token": "uninterpolated placeholder; value not read",
+    "offline": true,
+    "beats_device": "cpu"
+  },
+  "final_freeze_matches": true,
+  "own_artifacts": {
+    ".cache/dev-cycle/t08/conformance-qa/after.json": "1d5c316fab3b233fc6c3dd7773fe9eeef29fe3359d0b650d79d88bbf54357426",
+    ".cache/dev-cycle/t08/conformance-qa/before.json": "1d5c316fab3b233fc6c3dd7773fe9eeef29fe3359d0b650d79d88bbf54357426",
+    ".cache/dev-cycle/t08/conformance-qa/ledger-lint.log": "97c5a7350f0972b13c4e9a15cc87f98854bc45b3cb28ed80f432e05dfbba8dce",
+    ".cache/dev-cycle/t08/conformance-qa/probe.py": "fec75a983e0c1a8539d9240cce8403264661f9960fc54ad906faaf6da1c41f4c",
+    ".cache/dev-cycle/t08/conformance-qa/report.md": "b24f40c8635a9ef444e16a7208b2434af79266e3268419ea095b9c3f64124fc4",
+    ".cache/dev-cycle/t08/conformance-qa/seal.py": "0aaf391631a4a9153bc87739c4f844658b261e445b784b8add645d26388fb39e"
+  }
+}

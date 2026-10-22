@@ -26,7 +26,7 @@ generacion:
 | Métrica | Estimado | Real | Confianza |
 |---|---|---|---|
 | Tiempo humano | **88 h** (80 h sin la T-12 opcional) | 0 h | Media |
-| Tareas | **20** (19 obligatorias; T-14–T-19 adicionales autorizadas por el propietario) | [Ver ledger canónico](tasks.md) | — |
+| Tareas | **21** (20 obligatorias; T-14–T-20 adicionales autorizadas por el propietario) | [Ver ledger canónico](tasks.md) | — |
 
 ## Fases
 
@@ -35,7 +35,7 @@ generacion:
 | Fase 1 — Preparación | T-00, T-01 | 6 | Máquina lista y repositorio con su esqueleto |
 | Fase 2 — Cimientos compartidos | T-02, T-03, T-04 | 26 | Pesos seguros, contrato `/v1` con engine-mock, audio-post y manifiesto |
 | Fase 3 — Motor musical | T-05, T-06, T-07 | 19 | **🎯 Primera canción por CLI** |
-| Fase 4 — Medición y elección | T-08 … T-13 y T-14–T-19 adicionales | 37 (alcance inicial) | Benchmark, matriz de capacidades, batería de evaluación, escucha y decisión de modelo |
+| Fase 4 — Medición y elección | T-08 … T-13 y T-14–T-20 adicionales | 37 (alcance inicial) | Benchmark, matriz de capacidades, batería de evaluación, escucha, decisión de modelo y arquitectura de despliegue documentada |
 
 El detalle, los criterios y las verificaciones están en [`tasks.md`](tasks.md), el registro canónico del progreso.
 
@@ -75,3 +75,8 @@ Antes de perfeccionar o cambiar modelos, auditar qué instrucciones llegan realm
 ## Corrección de fidelidad — T-18/T-19, 2026-10-05
 
 El propietario autoriza implementar todo el roadmap y elegir las mejores alternativas. Se ejecutan las correcciones acreditadas por T-17 antes de cambiar modelos: preparación privada original/efectiva y diff (T-18), seguida de presupuesto nativo sin truncamiento y metadata efectiva (T-19). El detalle verificable queda en el ledger. T-16 y las comparaciones musicales requieren estos controles primero; T-08/T-12/T-13 conservan la evaluación de obediencia y naturalidad. Las horas originales corresponden al alcance inicial; el consumo adicional no está medido. No se declara calidad musical por pruebas de transporte.
+
+
+## Desarrollo de fuentes y presupuesto absoluto — 2026-10-09
+
+[ADR-0059](../../decisiones/ADR-0059-fuentes-y-presupuesto-absoluto-del-benchmark.md) adopta O2: verificador propio de fuentes, plazo absoluto desde la entrada y retención UNKNOWN de nacimientos o cleanup tardíos. Sustituye las ventanas renovadas por worker y las lecturas síncronas del supervisor fuera del presupuesto descritas anteriormente. Wiring y fixtures de contexto/plan coherentes se implementarán tras transferir las fuentes FIRSTcause; no acredita pruebas ni QA. Formal5 conserva formal3/4, rebateT10 y R09T13CLI pendiente.

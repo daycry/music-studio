@@ -3,14 +3,18 @@
 import math
 
 
-def inference_controls(params, *, sft=False):
+def inference_controls(params, *, sft=False, profile=None):
     """Valores efectivos; validación también para llamadas fuera de HTTP."""
-    steps = params.get("inference_steps", 50 if sft else 8)
+    steps = params.get(
+        "inference_steps", profile.default_steps if profile else (50 if sft else 8)
+    )
+    cfg_supported = profile.cfg_supported if profile else sft
+    maximum = profile.max_steps if profile else (200 if sft else 8)
     guidance = params.get("guidance_scale", 7.0)
     if (
         type(steps) is not int
-        or not 1 <= steps <= (200 if sft else 8)
-        or (not sft and "guidance_scale" in params)
+        or not 1 <= steps <= maximum
+        or (not cfg_supported and "guidance_scale" in params)
         or type(guidance) not in {int, float}
         or not 1 <= guidance <= 20
         or not math.isfinite(guidance)
@@ -25,6 +29,7 @@ DIT_LYRICS_LIMIT = 2048
 MAX_DURATION = 480
 UPSTREAM_REVISION = "dce621408bee8c31b4fcf4811682eb9359e1bc94"
 SOURCE_HASHES = {
+    "core/generation/handler/generate_music_request.py": "2761ac8afd0d55877ca1a83913cff35213f334417577baab26df5fbf12204a43",
     "gpu_config.py": "50e9ca449d2c328b348a73975bcee81ba378ec610072196b8f6cfa8e23b54afa",
     "inference.py": "2395a1e6340af075d3f9d2fad293a389beb61f0a11e1db79a5ad120f6d0ce9a2",
     "llm_inference.py": "afe1baf01d8a594bd06148bf9c79a0f66f84072b5158ae598340b34cc215b9c6",

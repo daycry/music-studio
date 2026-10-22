@@ -6,8 +6,13 @@ Cada hito es una iniciativa en `docs/roadmap/<YYYY-MM-DD>-<slug>/` con el format
 |-------|------|--------|-----------|-------------|--------------|----------|------|-------|
 | 2026-09-28 | `m0-entorno-y-motor` | M0 · Entorno, motor por CLI y elección de modelo | Crítica | **aprobada** | n/a | ~88 h (80 sin la opcional) | [spec](./2026-09-28-m0-entorno-y-motor/spec.md) | [tasks](./2026-09-28-m0-entorno-y-motor/tasks.md) |
 | 2026-09-28 | `m1-mvp-estudio` | M1 · MVP del estudio web | Alta | **aprobada** | n/a | ~153 h | [spec](./2026-09-28-m1-mvp-estudio/spec.md) | [tasks](./2026-09-28-m1-mvp-estudio/tasks.md) |
+| 2026-10-10 | `m2-iteracion-creativa` | M2 · Iteración creativa; apertura técnica ADR-0037 | Alta | **aprobada bajo delegación** | n/a | ~590 h base orientativas | [spec](./2026-10-10-m2-iteracion-creativa/spec.md) | [tasks](./2026-10-10-m2-iteracion-creativa/tasks.md) |
 
-## Hitos siguientes (sin carpeta todavía; se abren al cerrar el anterior)
+| 2026-10-11 | `m3-produccion-portada-video-letra` | M3 · Producción, portada y vídeo con letra | Alta | **aprobada bajo delegación** | n/a | pendiente de plan | [spec](./2026-10-11-m3-produccion-portada-video-letra/spec.md) | pendiente |
+
+## Secuencia de aceptación de hitos
+
+M2 dispone de spec, diseño O2 y plan aprobados bajo delegación; comienza por su contrato CPU independiente conforme ADR-0037; O1 de [cpu-contract-design.md](2026-10-10-m2-iteracion-creativa/cpu-contract-design.md) y ADR-0074 concretan origen, excepción SQL y formatos/API v2. La aceptación final conserva las condiciones siguientes. M3 dispone de requisitos aprobados bajo delegación y conserva diseño/plan pendientes; M4–M5 todavía no tienen carpeta. La preparación técnica no cierra ni acepta los hitos previos.
 
 | Hito | Contenido ([funcionalidades](../producto/funcionalidades.md)) | Condición para abrirlo |
 |---|---|---|
@@ -34,3 +39,8 @@ Cada hito es una iniciativa en `docs/roadmap/<YYYY-MM-DD>-<slug>/` con el format
 ## Histórico
 
 La iniciativa anterior `2026-07-27-plataforma-musical-ia` (planificación corporativa, 85 tareas, 2 completadas) está archivada en [`../archive/roadmap-2026-07-27/`](../archive/roadmap-2026-07-27/). No se continúa.
+
+
+## Apertura técnica y aceptación de hitos
+
+[ADR-0037](../decisiones/ADR-0037-avance-tecnico-condicionado.md) permite definir y construir unidades técnicamente independientes contra contratos/mock con spec/plan aprobados y dependencias explícitas. La aceptación final conserva el cierre previo y los umbrales de generaciones/uso real del roadmap; un mock no cuenta como generación musical. M0/T-13 mantiene la escucha humana. No se cierra ninguna tarea con su criterio propio pendiente ni se habilitan capacidades reales no verificadas.

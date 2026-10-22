@@ -1,0 +1,232 @@
+{
+  "unit_result": "READY_FOR_ROOT_REVIEW_WITH_DISJOINT_DRIFT_CONCERN",
+  "ownership_exact": [
+    "apps/server/app/publication.py",
+    "apps/server/app/event_snapshot.py",
+    "apps/server/app/sse.py",
+    "apps/server/app/queue/events.py",
+    "apps/server/tests/test_publication_coordinator.py",
+    "apps/server/tests/test_event_snapshot.py"
+  ],
+  "current_sources": {
+    "apps/server/app/publication.py": {
+      "sha256": "18ec8d3f15a7bfc11295e1f35392f168e913d70880e50ef879dd18f5804f14fd",
+      "bytes": 4333
+    },
+    "apps/server/app/event_snapshot.py": {
+      "sha256": "185accee01d67410de78bf88885e1aded9c099e8e48af2d86eca08c8c9cbf86a",
+      "bytes": 3534
+    },
+    "apps/server/app/sse.py": {
+      "sha256": "656d0f41c692a6e55d101d22022d3d464750fb18aa990d4c2bb3b516c3f2c6cd",
+      "bytes": 16636
+    },
+    "apps/server/app/queue/events.py": {
+      "sha256": "342be722085b2ab457040cbbaedf021edd4af1ea24b12a03b651c15103f1433a",
+      "bytes": 13014
+    },
+    "apps/server/tests/test_publication_coordinator.py": {
+      "sha256": "9618f429b19d2171a5d73e7a45a23742e1fd1e56824ad8a4a1878bca3fd110d0",
+      "bytes": 9862
+    },
+    "apps/server/tests/test_event_snapshot.py": {
+      "sha256": "280505023d868175415c5c198d823a58bda2fd3dbe46097299c934cc2e0df895",
+      "bytes": 10323
+    }
+  },
+  "final_selected_command": {
+    "argv": [
+      "/.venv\\Scripts\\python.exe",
+      "-m",
+      "pytest",
+      "-p",
+      "pytest_cov",
+      "-c",
+      "/.cache\\dev-cycle\\m1\\t06-coordinator-snapshot-unit1\\final-selected\\pytest.ini",
+      "--confcutdir",
+      "/.cache\\dev-cycle\\m1\\t06-coordinator-snapshot-unit1\\final-selected\\tests",
+      "-o",
+      "cache_dir=/.cache\\dev-cycle\\m1\\t06-coordinator-snapshot-unit1\\final-selected\\pytest-cache",
+      "--junitxml=/.cache\\dev-cycle\\m1\\t06-coordinator-snapshot-unit1\\final-selected\\junit.xml",
+      "/.cache\\dev-cycle\\m1\\t06-coordinator-snapshot-unit1\\final-selected\\tests\\test_publication_coordinator.py",
+      "/.cache\\dev-cycle\\m1\\t06-coordinator-snapshot-unit1\\final-selected\\tests\\test_event_snapshot.py",
+      "/.cache\\dev-cycle\\m1\\t06-coordinator-snapshot-unit1\\final-selected\\tests\\test_sse_bus.py",
+      "/.cache\\dev-cycle\\m1\\t06-coordinator-snapshot-unit1\\final-selected\\tests\\test_sse_frames.py",
+      "/.cache\\dev-cycle\\m1\\t06-coordinator-snapshot-unit1\\final-selected\\tests\\test_dispatcher_events.py",
+      "/.cache\\dev-cycle\\m1\\t06-coordinator-snapshot-unit1\\final-selected\\tests\\test_local_sessions.py",
+      "/.cache\\dev-cycle\\m1\\t06-coordinator-snapshot-unit1\\final-selected\\tests\\test_event_dtos.py",
+      "--cov=app.publication",
+      "--cov=app.event_snapshot",
+      "--cov=app.sse",
+      "--cov=app.queue.events",
+      "--cov-config=/.cache\\dev-cycle\\m1\\t06-coordinator-snapshot-unit1\\final-selected\\coverage.ini",
+      "--cov-report=json:/.cache\\dev-cycle\\m1\\t06-coordinator-snapshot-unit1\\final-selected\\coverage-original.json",
+      "--cov-report=term-missing"
+    ],
+    "started_utc": "2026-10-09T04:58:38.842849+00:00",
+    "runner_pid": 27052,
+    "environment": {
+      "PYTHONPYCACHEPREFIX": "/.cache\\dev-cycle\\m1\\t06-coordinator-snapshot-unit1\\pycache",
+      "TEMP": "/.cache\\dev-cycle\\m1\\t06-coordinator-snapshot-unit1\\temp",
+      "TMP": "/.cache\\dev-cycle\\m1\\t06-coordinator-snapshot-unit1\\temp",
+      "UV_CACHE_DIR": "/.cache\\dev-cycle\\m1\\t06-coordinator-snapshot-unit1\\uv-cache",
+      "STUDIO_TEST_ROOT": "/.cache\\dev-cycle\\m1\\t06-coordinator-snapshot-unit1\\fixtures",
+      "STUDIO_QUEUE_TEST_ROOT": "/.cache\\dev-cycle\\m1\\t06-coordinator-snapshot-unit1\\fixtures",
+      "PYTHONPATH": "/apps\\server;/.cache\\dev-cycle\\m1\\t06-coordinator-snapshot-unit1\\final-selected\\aliases;/packages\\engine-contract",
+      "COVERAGE_FILE": "/.cache\\dev-cycle\\m1\\t06-coordinator-snapshot-unit1\\final-selected\\.coverage",
+      "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"
+    },
+    "pid": 26672,
+    "exit_code": 0,
+    "ended_utc": "2026-10-09T04:58:51.196717+00:00"
+  },
+  "junit_counts": {
+    "total": 239,
+    "passed": 239,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "official_whole_each_current_single_trace": {
+    "apps/server/app/event_snapshot.py": {
+      "covered_lines": 40,
+      "num_statements": 42,
+      "percent_covered": 93.75,
+      "percent_covered_display": "94",
+      "missing_lines": 2,
+      "excluded_lines": 0,
+      "percent_statements_covered": 95.23809523809524,
+      "percent_statements_covered_display": "95",
+      "num_branches": 22,
+      "num_partial_branches": 2,
+      "covered_branches": 20,
+      "missing_branches": 2,
+      "percent_branches_covered": 90.9090909090909,
+      "percent_branches_covered_display": "91"
+    },
+    "apps/server/app/publication.py": {
+      "covered_lines": 65,
+      "num_statements": 71,
+      "percent_covered": 89.65517241379311,
+      "percent_covered_display": "90",
+      "missing_lines": 6,
+      "excluded_lines": 0,
+      "percent_statements_covered": 91.54929577464789,
+      "percent_statements_covered_display": "92",
+      "num_branches": 16,
+      "num_partial_branches": 3,
+      "covered_branches": 13,
+      "missing_branches": 3,
+      "percent_branches_covered": 81.25,
+      "percent_branches_covered_display": "81"
+    },
+    "apps/server/app/queue/events.py": {
+      "covered_lines": 217,
+      "num_statements": 227,
+      "percent_covered": 94.46254071661238,
+      "percent_covered_display": "94",
+      "missing_lines": 10,
+      "excluded_lines": 0,
+      "percent_statements_covered": 95.59471365638767,
+      "percent_statements_covered_display": "96",
+      "num_branches": 80,
+      "num_partial_branches": 7,
+      "covered_branches": 73,
+      "missing_branches": 7,
+      "percent_branches_covered": 91.25,
+      "percent_branches_covered_display": "91"
+    },
+    "apps/server/app/sse.py": {
+      "covered_lines": 279,
+      "num_statements": 289,
+      "percent_covered": 95.22673031026252,
+      "percent_covered_display": "95",
+      "missing_lines": 10,
+      "excluded_lines": 0,
+      "percent_statements_covered": 96.53979238754326,
+      "percent_statements_covered_display": "97",
+      "num_branches": 130,
+      "num_partial_branches": 10,
+      "covered_branches": 120,
+      "missing_branches": 10,
+      "percent_branches_covered": 92.3076923076923,
+      "percent_branches_covered_display": "92"
+    }
+  },
+  "coverage_zero_exclusions": true,
+  "coverage_line_and_branch_each_ge80": true,
+  "protected_exact": true,
+  "old_tests_byte_and_ast_exact": false,
+  "TrustedScope_ast_exact": true,
+  "current_source_parity": true,
+  "private_fixture_tests_config_parity": true,
+  "lint_exit": 0,
+  "format_check_exit": 0,
+  "red_phases": [
+    "red-core",
+    "red-barrier-faults",
+    "red-certified-fallback",
+    "red-null-certification"
+  ],
+  "noncausal_harness_history": [
+    "green-focal: missing pure-module aliases; collection error",
+    "green-focal-repaired: app path shadows stdlib logging; startup error",
+    "green-focal-aliases: pure module relative import; collection error"
+  ],
+  "native88_release": {
+    "cli_metadata": "/.cache\\dev-cycle\\m1\\t05-drain-combined-independent-qa1\\cli-metadata.json",
+    "finished_utc": "2026-10-09T04:43:13.535692+00:00",
+    "exit_code": 0,
+    "receipt_total": 88,
+    "no_own_pending_native_cases": true,
+    "foreign_transient_or_OS_census": "UNKNOWN"
+  },
+  "native_ownership": {
+    "pytest_children": "Popen pid/argv plus finite wait recorded per command; process exit reaped",
+    "threads": "test-owned threading.Thread; Event waits <=1s, contention20ms, joins<=2s and is_alive assertions",
+    "global_resource_closure": "UNKNOWN",
+    "system_DLLs_and_transient_native_inventory": "UNKNOWN"
+  },
+  "managed_physical_copies": {
+    "count": 8121,
+    "all_current_originals_equal": true,
+    "capture_before_first_test": true,
+    "initial_copy_shell_argv_UTC_exit_raw_receipt": "PARTIAL: commands in tool transcript, robocopy logs preserved; pre-import hash inventory was not produced",
+    "scope": "base interpreter corpus, .venv site-packages/scripts excluding __pycache__; post-run current byte comparison; source/fixture/runner copies before Popen every phase"
+  },
+  "full453_or801_executed": false,
+  "original_QA2_801_failure": "Preserved, unresolved; no waiver/retry/performance claim",
+  "full_T06_acceptance": false,
+  "runtime_shared_wiring": "PENDING deliberately; runtime.py protected",
+  "all_other_writers": "PENDING",
+  "DB_authority_resolver_WAL_read_register_H_coupling": "PENDING",
+  "replay_DB_reauthorization_delete_owner_epoch_invalidation": "PENDING",
+  "HTTP_SSE_session_bind_no_store_client_heartbeat_lifecycle_E2E": "PENDING; previous HTTP session acceptance unaffected",
+  "review_and_independent_QA": "ROOT pending",
+  "ledger_ADR_git_meter_mutated": false,
+  "tools_network_install_GPU_UI_Docker_WSL_Ollama_PDH_real_data": "Not used",
+  "actual_model": null,
+  "provider_tokens": null,
+  "eur": null,
+  "ia_hours": null,
+  "static_prosa_TDD": "n/a private runner/config/report; product has archived behavior RED",
+  "old_selected_tests_byte_and_ast_exact": true,
+  "all_old_tests_ast_exact": true,
+  "disjoint_nonselected_drift": {
+    "apps/server/tests/test_worker_native_linux_custody.py": {
+      "initial_precopy": {
+        "bytes": 43966,
+        "sha256": "022c343b497d98948faa661a6ec13981b43174380a34ed321bc4955259bec8b7"
+      },
+      "current": {
+        "bytes": 44154,
+        "sha256": "d20ea609f99d00b7aa31ef65e07771b5aca8cbb8398a7cdc940e9842998332f3"
+      },
+      "ast_exact": true,
+      "newline_normalized_exact": false,
+      "selected": false,
+      "owned": false,
+      "origin_actor": "UNKNOWN; no writes by this actor to this path"
+    }
+  }
+}

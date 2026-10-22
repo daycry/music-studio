@@ -38,6 +38,11 @@ def test_catalog_outputs(tmp_path):
     }
     assert set(descriptor.tasks) == expected
     assert descriptor.tasks["audio.beats"].device == "cpu"
+    beats_input = descriptor.tasks["audio.beats"].inputs
+    assert len(beats_input) == 1
+    assert beats_input[0].role == "master"
+    assert beats_input[0].media_types == ["audio/wav", "audio/flac"]
+    assert beats_input[0].required is True
     for task in sorted(expected):
         events = []
         output = tmp_path / task
@@ -109,5 +114,16 @@ def test_media_and_analysis(tmp_path):
         lambda e: None,
         CancelToken(),
     )
+    assert result["result"] == {
+        "task": "audio.beats",
+        "analysis": {
+            "bpm": 120.0,
+            "beats_s": [0.0, 0.5, 1.0, 1.5],
+                "downbeats_s": [0.0],
+        },
+        "stages": [
+            {"task": "audio.beats", "model_id": "mock", "revision": "synthetic-v1"}
+        ],
+    }
     data = json.loads((tmp_path / result["artifacts"][0]["filename"]).read_text())
     assert data["bpm"] == 120 and data["beats"] == [0, 0.5, 1, 1.5]

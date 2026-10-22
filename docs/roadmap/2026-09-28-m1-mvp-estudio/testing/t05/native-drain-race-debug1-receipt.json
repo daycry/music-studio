@@ -1,0 +1,70 @@
+{
+  "status": "PARTIAL_NO_PRODUCTION_CHANGE",
+  "utc": "2026-10-09T01:29:58.248978+00:00",
+  "ownership": [
+    "apps/server/app/worker/custody.py",
+    "apps/server/tests/test_worker_native_linux_custody.py",
+    "apps/server/tests/test_worker_native_custody.py"
+  ],
+  "hypotheses_attempted": [
+    "H1"
+  ],
+  "H2": "not executed; no second causal claim",
+  "causal_RED": false,
+  "reason": "Old facade returned UNKNOWN_QUARANTINED/cancelled, not CLOSED_CONFIRMED; native group closure authority remained false despite confirmed final journal. The regression failed on reason, not the required unsafe release assertion.",
+  "native": {
+    "tests": 1,
+    "passed": 0,
+    "failed": 1,
+    "errors": 0,
+    "skips": 0,
+    "actual_state": "UNKNOWN_QUARANTINED",
+    "actual_reason": "cancelled",
+    "controlled_delivery": true,
+    "spontaneous_os_failure": false
+  },
+  "physical_wire_hex": "000000107b",
+  "timeline": "runs/red-h1-linux/proof/drain-truncated.json",
+  "original_fixture_unchanged": true,
+  "production_changed": false,
+  "original_tests_restored": true,
+  "new_test_preserved_private": "attempted-regression",
+  "native_windows_executed": false,
+  "green": false,
+  "full_current_68_baseline_executed": false,
+  "current_coverage_acceptance": false,
+  "fresh_review": "not dispatched: no fix and no causal RED",
+  "QA2": "not dispatched: no fix and no GREEN",
+  "history": [
+    "Linux review1",
+    "Linux review2",
+    "Linux review3",
+    "QA1 actual 67PASS1FAIL",
+    "this diagnostic attempt failed on reason; not causal RED; no counter reset"
+  ],
+  "container": {
+    "cid": "da81abad2506d7b0e13dc49220faa6eb90e6a9a51fdae2e497f2875339cac3c5",
+    "registered_before_start": true,
+    "receipts": "runs/red-h1-linux/commands.json",
+    "inspect": "runs/red-h1-linux/inspect-stdout.txt",
+    "remove": "runs/red-h1-linux/remove-command.json",
+    "gone": "runs/red-h1-linux/gone-command.json"
+  },
+  "proof_limits": [
+    "UTC immediately after native spawn is post-observed, not prebirth proof",
+    "No complete managed host interpreter/source dependency closure snapshot before prepare.py imports",
+    "No independent foreign native witness in this diagnostic test; no foreign-survival claim",
+    "Controlled read delivery does not prove the original QA1 ordering",
+    "Native termination first returned insufficient closure authority; later containment recorded native waits. No fabricated successful initial termination.",
+    "Absent predeath thread/FD provenance remains UNKNOWN; no positive resource-return claim from dictionary/bool/Job alone"
+  ],
+  "private_finalize_history": "First finalizer restored owned tests then KeyError uv.lock absent in native apps/server-only source map; original script preserved. Private bookkeeping repaired, no native rerun or product RED.",
+  "model": null,
+  "tokens": null,
+  "EUR": null,
+  "AIhours": null,
+  "global_format_gate": "OPEN: prior unchanged contracts.py exit1 preserved as T05 global debt",
+  "new_format_command_executed": false,
+  "full_T05_acceptance": false,
+  "ledger_modified": false
+}

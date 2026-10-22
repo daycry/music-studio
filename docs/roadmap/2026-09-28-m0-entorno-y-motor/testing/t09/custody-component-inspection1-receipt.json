@@ -1,0 +1,28 @@
+{
+  "utc": "2026-10-07T22:06:06.224466+00:00",
+  "gap": "CUST-B01",
+  "grade": "Important",
+  "verdict": "confirmed native reviewer reproduction",
+  "scenario": "guard handle slot reused: close kills foreign handle and drops actual principal reference",
+  "component_inspection": 1,
+  "formal_T09_review4_still_after_integration": true,
+  "acceptance": false,
+  "sources": {
+    "scripts/eval/benchmark_custody.py": {
+      "sha256": "97834668dfdfb33489cb0cf3d79277c58659b9eaecc475beda2ddf9b06a622d8",
+      "bytes": 21958
+    },
+    "scripts/eval/tests/test_benchmark_custody.py": {
+      "sha256": "e04b52c07108f97608d8134d1a4bde2cce51688b6b578dccd543b0ba5e7af039",
+      "bytes": 25764
+    }
+  },
+  "Critical": 0,
+  "Important": 1,
+  "Minor": 0,
+  "lenses": [
+    "A",
+    "B"
+  ],
+  "C_D_selected": false
+}

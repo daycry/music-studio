@@ -1,0 +1,125 @@
+{
+  "status": "QA_CPU_PASS",
+  "directed_tests": 9,
+  "reused_junit": {
+    "tests": 91,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0
+  },
+  "reused_artifacts": 380,
+  "coverage": {
+    "covered_lines": 307,
+    "num_statements": 346,
+    "percent_covered": 88.72832369942196,
+    "percent_covered_display": "89",
+    "missing_lines": 39,
+    "excluded_lines": 0,
+    "percent_statements_covered": 88.72832369942196,
+    "percent_statements_covered_display": "89"
+  },
+  "sources59_preserved": true,
+  "protected30_preserved": true,
+  "root_coverage": {
+    "bytes": 53248,
+    "sha256": "153490fc264e69bcc7573506ab68a41a109bbdd7bcf6583d0915bdcd84c5d32d"
+  },
+  "gpu_used": false,
+  "task_complete": false,
+  "private_diagnostic_v2_checks": [
+    {
+      "case": "success",
+      "writer_mode": "normal",
+      "passed": true,
+      "signature_preserved": true,
+      "identity_preserved": true,
+      "original_restored": true
+    },
+    {
+      "case": "returned_error",
+      "writer_mode": "normal",
+      "passed": true,
+      "signature_preserved": true,
+      "identity_preserved": true,
+      "original_restored": true
+    },
+    {
+      "case": "raised_error",
+      "writer_mode": "normal",
+      "passed": true,
+      "signature_preserved": true,
+      "identity_preserved": true,
+      "original_restored": true
+    },
+    {
+      "case": "success",
+      "writer_mode": "oserror",
+      "passed": true,
+      "signature_preserved": true,
+      "identity_preserved": true,
+      "original_restored": true
+    },
+    {
+      "case": "returned_error",
+      "writer_mode": "oserror",
+      "passed": true,
+      "signature_preserved": true,
+      "identity_preserved": true,
+      "original_restored": true
+    },
+    {
+      "case": "raised_error",
+      "writer_mode": "oserror",
+      "passed": true,
+      "signature_preserved": true,
+      "identity_preserved": true,
+      "original_restored": true
+    },
+    {
+      "case": "success",
+      "writer_mode": "existing",
+      "passed": true,
+      "signature_preserved": true,
+      "identity_preserved": true,
+      "original_restored": true
+    },
+    {
+      "case": "returned_error",
+      "writer_mode": "existing",
+      "passed": true,
+      "signature_preserved": true,
+      "identity_preserved": true,
+      "original_restored": true
+    },
+    {
+      "case": "raised_error",
+      "writer_mode": "existing",
+      "passed": true,
+      "signature_preserved": true,
+      "identity_preserved": true,
+      "original_restored": true
+    }
+  ],
+  "private_helper_seals_v2": {
+    ".cache/dev-cycle/t10/song60-next/entry.py": {
+      "bytes": 1461,
+      "sha256": "ffd78eb5ab67cd7793191ab7d05c34e694fa0a6105810f2d47257b66d89a3d19"
+    },
+    ".cache/dev-cycle/t10/song60-next/diagnostic_factory.py": {
+      "bytes": 1974,
+      "sha256": "678b1299d5b1941348ad9c5ea334bcde0d0969eb9221e2373b7fec6901c241e8"
+    },
+    ".cache/dev-cycle/t10/run-native-song60-second.py": {
+      "bytes": 10679,
+      "sha256": "1372b370d6bdaa2c86a9aaaa411b5738e1f55bfd725c9f0d5d507f09d6066866"
+    }
+  },
+  "private_qa_receipt_sha256": "285725e9b256a9baa547a7d8a391d18cda77c1c6f50b2133c5c78daa2ef1f2a3",
+  "private_addendum_sha256": "5091395b33de7bef209499bed43d71575c1fc66a1472b6ef599081df7425755b",
+  "artifacts_root_verified": [
+    37,
+    24
+  ],
+  "writing_failure_observation": "corrected in private instrumentation; identity preserved even on OSError/FileExistsError",
+  "qa_gate_playwright": "n/a sin UI por diseño"
+}

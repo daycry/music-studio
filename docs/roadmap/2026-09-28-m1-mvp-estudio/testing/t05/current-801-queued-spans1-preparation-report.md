@@ -1,0 +1,17 @@
+> Publicación: las rutas locales se han anonimizado. Los argv y originales exactos se conservan en la evidencia privada.
+
+Preparación privada de diagnóstico 801; medición pendiente de lanzamiento exclusivo por Root tras QA Linux/FC01 terminales. Ownership de producto: []. Cero llamadas a Python, runner o pytest en esta unidad hasta esta entrega; no hay nuevo PASS/FAIL, JUnit ni cobertura.
+
+Se preservan los originales coarse y SQL, incluidos errores de bootstrap. El primer preparador PowerShell falló por una ruta de fixture inexistente antes de Python; se conserva su código original y se corrige únicamente la ruta privada. No es un RED causal.
+
+El monitor conserva las sondas originales de wait_for(10) y submit, delegación async sin tareas/sleeps añadidos y yield-from con send/throw/close. Añade agregados en memoria para consultas, iteración de Result/ScalarResult, writer UPDATE, padres, preload_references, dependencias/elegibilidad, flush, commit, after_commit y cierre. No sustituye SQL, datos, FIFO, autoridad del writer ni validación de contratos. La iteración devuelve los mismos valores; el propio objeto iterador instrumentado es distinto. No registra datos SQL.
+
+Límites de preparación: sondas todavía sin validación ejecutada. Materialización de Result comparte etiqueta entre snapshot y consultas anidadas; el árbol de spans permite separar el coste incluido en padres/preload. Construcción/comparación de snapshots, sorted y bucle de selección permanecen como residual del span queued; no se presenta ese residual como medición exclusiva de comparación. Conteo de hilos del agregado procede de los hilos reales, aún sin cota explícita implementada. Deben revisarse estos límites antes del lanzamiento; esta entrega no afirma conformidad completa con el monitor solicitado.
+
+La captura física usa enumeración estática de todo site-packages con fuentes, binarios, metadatos y recursos; excluye allí únicamente __pycache__. Captura además apps/server, packages y scripts, locks, configuración del venv y fuentes privadas. El estándar del intérprete y kernel Windows son TCB separado; no se afirma captura de todos los archivos del SO. sources-before.json/snapshot-complete.json son las evidencias reales al finalizar la preparación. audit-after.ps1 detectará módulos cargados sin copia previa y deriva NONCOMPLIANT sin copiar tarde ni permitir repetir.
+
+Historia preservada: SQL 1025 PASS / 1 FAIL / 3 SKIP. Coarse anterior: 801 PASS 9,458 s; CPU submit 7,024 s desde el wait original; queued 3,9749 s y self 3,9555 s; retry 1,6974 s; ContractJSON 69,98 ms y snapshot 19,44 ms. Causa original UNKNOWN; coste innecesario no demostrado. La CPU acumulada de Blender en aquella ventana no acredita atribución al deadline exacto. Overhead total del observador UNKNOWN sin control pareado autorizado.
+
+Única propuesta futura: tras revisar/completar las sondas y recibir el gate Root, realizar como máximo el caso 801 original con los cuatro targets de cobertura originales y auditar las copias de cada módulo cargado. Solo si demuestra repetición costosa e innecesaria, definir una unidad TDD concreta que conserve WAL, writer/CAS, prioridad/FIFO global, caché negativa por vuelta, CPU2 y rechazo de valores no nulos inválidos. No se propone optimización ahora.
+
+TDD n/a: medición sin implementación. Sin aceptación de SQL, WHOLE, T05, M1, calidad ni M0–M5. Modelo real, tokens, EUR y horas IA: NULL por falta de evidencia original del proveedor.

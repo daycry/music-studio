@@ -1,0 +1,406 @@
+{
+  "utc": "2026-10-07T06:58:41.503187+00:00",
+  "attempt": 3,
+  "maximum_regular_attempts": 3,
+  "lenses": {
+    "a": {
+      "metadata": {
+        "argv": [
+          "<local-path>/codex.exe",
+          "exec",
+          "--ephemeral",
+          "--ignore-user-config",
+          "--sandbox",
+          "read-only",
+          "--json",
+          "--color",
+          "never",
+          "-c",
+          "approval_policy=\"never\"",
+          "-C",
+          "",
+          "--output-last-message",
+          ".cache\\dev-cycle\\m1\\t02-review3\\a\\final-original.md",
+          "-"
+        ],
+        "started_utc": "2026-10-07T06:51:29.452275+00:00",
+        "finished_utc": "2026-10-07T06:52:21.240441+00:00",
+        "exit_code": 0,
+        "lane": "A",
+        "attempt": 3,
+        "limits": "exact INLINE static no own tests/live hashes"
+      },
+      "verdict": {
+        "sha256": "63794909ef4718038da77da2feceec7e98f6231b3affe55f44f5a4d9632fb4fd",
+        "bytes": 6091
+      },
+      "static_only": true
+    },
+    "b": {
+      "metadata": {
+        "argv": [
+          "<local-path>/codex.exe",
+          "exec",
+          "--ephemeral",
+          "--ignore-user-config",
+          "--sandbox",
+          "read-only",
+          "--json",
+          "--color",
+          "never",
+          "-c",
+          "approval_policy=\"never\"",
+          "-C",
+          "",
+          "--output-last-message",
+          ".cache\\dev-cycle\\m1\\t02-review3\\b\\final-original.md",
+          "-"
+        ],
+        "started_utc": "2026-10-07T06:51:29.453277+00:00",
+        "finished_utc": "2026-10-07T06:52:04.762934+00:00",
+        "exit_code": 0,
+        "lane": "B",
+        "attempt": 3,
+        "limits": "exact INLINE static no own tests/live hashes"
+      },
+      "verdict": {
+        "sha256": "eb90eee94e5ac1b2b7a0e79eed83681889823b37a6f4abe0beedff50339d9933",
+        "bytes": 3103
+      },
+      "static_only": true
+    },
+    "c": {
+      "metadata": {
+        "argv": [
+          "<local-path>/codex.exe",
+          "exec",
+          "--ephemeral",
+          "--ignore-user-config",
+          "--sandbox",
+          "read-only",
+          "--json",
+          "--color",
+          "never",
+          "-c",
+          "approval_policy=\"never\"",
+          "-C",
+          "",
+          "--output-last-message",
+          ".cache\\dev-cycle\\m1\\t02-review3\\c\\final-original.md",
+          "-"
+        ],
+        "started_utc": "2026-10-07T06:54:38.663159+00:00",
+        "finished_utc": "2026-10-07T06:55:09.757026+00:00",
+        "exit_code": 0,
+        "lane": "C",
+        "attempt": 3,
+        "limits": "exact INLINE static no own tests/live hashes"
+      },
+      "verdict": {
+        "sha256": "35cd0551b35cbb9905319f6caa06e306e52c139bf3d864a1a14a067bb5b5afea",
+        "bytes": 3469
+      },
+      "static_only": true
+    },
+    "d": {
+      "metadata": {
+        "argv": [
+          "<local-path>/codex.exe",
+          "exec",
+          "--ephemeral",
+          "--ignore-user-config",
+          "--sandbox",
+          "read-only",
+          "--json",
+          "--color",
+          "never",
+          "-c",
+          "approval_policy=\"never\"",
+          "-C",
+          "",
+          "--output-last-message",
+          ".cache\\dev-cycle\\m1\\t02-review3\\d\\final-original.md",
+          "-"
+        ],
+        "started_utc": "2026-10-07T06:54:38.658817+00:00",
+        "finished_utc": "2026-10-07T06:55:14.938447+00:00",
+        "exit_code": 0,
+        "lane": "D",
+        "attempt": 3,
+        "limits": "exact INLINE static no own tests/live hashes"
+      },
+      "verdict": {
+        "sha256": "d7420f6aa347fc58aa8cb0220a386d8bf3ed60372aa0fc0d45b853e461a01571",
+        "bytes": 2869
+      },
+      "static_only": true
+    }
+  },
+  "sources": {
+    "apps/server/README.md": {
+      "sha256": "f91224b3f4a7e344d95a8ec5681c32566e99a17647e56aaf837a597c3912734f",
+      "bytes": 6306
+    },
+    "apps/server/alembic.ini": {
+      "sha256": "13cdfa146e51b68c87a55e040b22bbbd617264fdb9fa77fa77fb2a134087b58b",
+      "bytes": 100
+    },
+    "apps/server/app/backup.py": {
+      "sha256": "8a677bd8a25c05be484db10464a0010e0462be127e4f96881a90faa0896bcf1d",
+      "bytes": 7774
+    },
+    "apps/server/app/db.py": {
+      "sha256": "a598f4c1a24f898dd70a8b4f335418789e888cfa1ee329e70e344dfcdb868ce6",
+      "bytes": 3057
+    },
+    "apps/server/app/main.py": {
+      "sha256": "6baf9a0c4a2832910c6912949169732560a1f63d65f5ad2488f70c5694b4f4df",
+      "bytes": 2772
+    },
+    "apps/server/app/migrations/__init__.py": {
+      "sha256": "26578ae0326059d901d2abf14bb6edf1114dd924cb118e9d76dc547ce5faa52e",
+      "bytes": 53
+    },
+    "apps/server/app/migrations/env.py": {
+      "sha256": "7c3e00a37e441db20fa776907e7059d1b4763fe29f4b89988ca843245e48ddf2",
+      "bytes": 1610
+    },
+    "apps/server/app/migrations/fix1_invariants.py": {
+      "sha256": "98d084b9b2072967032a1b5c39014d9a56fb89a0bd85da997430652e8df0b59c",
+      "bytes": 9518
+    },
+    "apps/server/app/migrations/initial_invariants.py": {
+      "sha256": "91c5cd6e6bc05b0e62dcd0403a10a55826bed9a6cb63abf89d2c133aeed4e4c6",
+      "bytes": 9711
+    },
+    "apps/server/app/migrations/initial_relations.json": {
+      "sha256": "456c0b2a3f9fba88afb1fb2d40b5ae4df8386516bf5649bd51e2093dc0364910",
+      "bytes": 3679
+    },
+    "apps/server/app/migrations/versions/0001_initial.py": {
+      "sha256": "762e019de05c245e08172814fba3138e5fb8311b5c987f6ffc715bef50f5eac5",
+      "bytes": 3450
+    },
+    "apps/server/app/migrations/versions/0001_schema.sql": {
+      "sha256": "9fe867481051286ff592e9b668deae8d65cf88f475d6e7faf9a7cdf8d53a3998",
+      "bytes": 46637
+    },
+    "apps/server/app/migrations/versions/0002_snapshot_metadata.py": {
+      "sha256": "ad9358218a3c863f8b5a1343cda226f530f4467eb446194220f130776b2fbf02",
+      "bytes": 3076
+    },
+    "apps/server/app/migrations/versions/__init__.py": {
+      "sha256": "321bbcdfa7b590f46141a0963ee2e2001ee2f58bcdc51ec587b943c304cc91e1",
+      "bytes": 30
+    },
+    "apps/server/app/models/__init__.py": {
+      "sha256": "8eb427c94c35f3b92785701126953595ca0e70be82813f772a35f3cdfe7b5e2a",
+      "bytes": 20222
+    },
+    "apps/server/app/models/song-v1.schema.json": {
+      "sha256": "3624202fe67f4a195a0bce117f97432e2964732b7937aa48180247872eab16f1",
+      "bytes": 63010
+    },
+    "apps/server/app/models/timeline-v1.schema.json": {
+      "sha256": "d85666a0dbb7f9e67a6d7442d2e44d6b971ca9584eb424941b6330e582948660",
+      "bytes": 1772
+    },
+    "apps/server/app/snapshots.py": {
+      "sha256": "f937fbb7aef696a390e410f9d6138d258af3b6496a47f336bf87e280aab24552",
+      "bytes": 25875
+    },
+    "apps/server/pyproject.toml": {
+      "sha256": "e33b73a4b0bc6bfb3d525c74712783d01e2a90e60cf3c3b4099daeb82d5ae4ab",
+      "bytes": 607
+    },
+    "apps/server/tests/test_persistence_t02.py": {
+      "sha256": "7ca513aa97c67c0ea7bf7544497a84e79c4d160003a7708069fe6e5ec9363abc",
+      "bytes": 35466
+    },
+    "apps/server/tests/test_review_fix1_t02.py": {
+      "sha256": "081aca6f9a6964bd8690d0339bc7aed8eecc79725c5c503f59f2435ccd726537",
+      "bytes": 31432
+    },
+    "apps/server/tests/test_schema_t02.py": {
+      "sha256": "b319b4cb9c877d014e9cd017e60d0296c2a7400cdf42450cec74d14e9c6ea049",
+      "bytes": 2047
+    },
+    "packages/contracts/song-v1.schema.json": {
+      "sha256": "3624202fe67f4a195a0bce117f97432e2964732b7937aa48180247872eab16f1",
+      "bytes": 63010
+    },
+    "packages/contracts/timeline-v1.schema.json": {
+      "sha256": "d85666a0dbb7f9e67a6d7442d2e44d6b971ca9584eb424941b6330e582948660",
+      "bytes": 1772
+    },
+    "uv.lock": {
+      "sha256": "aa222669e00ce27ccdfe5f739858ec78f95cbfabc25de7c7c1fbd5784f4f0582",
+      "bytes": 107385
+    },
+    "apps/server/app/closure_rows.py": {
+      "sha256": "d8e6588850edc024438b242a69a4e9bf2ac2f73da5951bd93e67a6a3856af666",
+      "bytes": 4132
+    },
+    "apps/server/app/migrations/fix2_invariants.py": {
+      "sha256": "af29038e57aaa8f353cbb7a7ea2f988c29025927a688beff48c13e2124c4e84e",
+      "bytes": 7355
+    },
+    "apps/server/app/migrations/versions/0003_snapshot_guards.py": {
+      "sha256": "35648983fd5fee7412678ddba9abdc781e0143cf239a8e30ed82ca535c0b7ecc",
+      "bytes": 334
+    },
+    "apps/server/tests/test_review_fix2_t02.py": {
+      "sha256": "0fea27d15b0363959e12125ac03b399129eb035cb509c6f84d0b4f1658e2a472",
+      "bytes": 31357
+    }
+  },
+  "originals": {
+    ".cache/dev-cycle/m1/t02-review3/a/cli-metadata.json": {
+      "sha256": "e8dcabc970e3c80f08f88b242f1ace4299eae43b44822cce86e4cf67811e143f",
+      "bytes": 717
+    },
+    ".cache/dev-cycle/m1/t02-review3/a/cli-original.jsonl": {
+      "sha256": "5b1c5dbafdecff1d6a414f1f1808fbda3714c278134150b4f1911be439c3819b",
+      "bytes": 6738
+    },
+    ".cache/dev-cycle/m1/t02-review3/a/cli-stderr-original.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    ".cache/dev-cycle/m1/t02-review3/a/final-original.md": {
+      "sha256": "63794909ef4718038da77da2feceec7e98f6231b3affe55f44f5a4d9632fb4fd",
+      "bytes": 6091
+    },
+    ".cache/dev-cycle/m1/t02-review3/a/packet-seals.json": {
+      "sha256": "f3ef4c2e102572a426a8e2b4128335ebba4191b3051ec06d1e58dcee8c9266d9",
+      "bytes": 12065
+    },
+    ".cache/dev-cycle/m1/t02-review3/a/prompt-original.txt": {
+      "sha256": "33ecb2b230f8407de2857de8d210616722bd38757a1e743dac7d95a839f8ccc0",
+      "bytes": 855004
+    },
+    ".cache/dev-cycle/m1/t02-review3/b/cli-metadata.json": {
+      "sha256": "fb1469850261a980e27d4d1603bf8dfacacbe7fa61111aff508362c570e8e5e3",
+      "bytes": 717
+    },
+    ".cache/dev-cycle/m1/t02-review3/b/cli-original.jsonl": {
+      "sha256": "00c55491253dadfd302fd434ded221a84556740e87b7d6c7d7d169b107dd7221",
+      "bytes": 3466
+    },
+    ".cache/dev-cycle/m1/t02-review3/b/cli-stderr-original.txt": {
+      "sha256": "743b169383b85a0dc0eef04ba699666c2ef9e10e18b1bd831bd05e7ee394b36d",
+      "bytes": 139
+    },
+    ".cache/dev-cycle/m1/t02-review3/b/final-original.md": {
+      "sha256": "eb90eee94e5ac1b2b7a0e79eed83681889823b37a6f4abe0beedff50339d9933",
+      "bytes": 3103
+    },
+    ".cache/dev-cycle/m1/t02-review3/b/packet-seals.json": {
+      "sha256": "f3ef4c2e102572a426a8e2b4128335ebba4191b3051ec06d1e58dcee8c9266d9",
+      "bytes": 12065
+    },
+    ".cache/dev-cycle/m1/t02-review3/b/prompt-original.txt": {
+      "sha256": "ac9a51b9c45f5e697870b142fe1afdc46526449d67a3029e5cb928ff0e861fe3",
+      "bytes": 852364
+    },
+    ".cache/dev-cycle/m1/t02-review3/c/cli-metadata.json": {
+      "sha256": "46796aa4c860b4292bd0af03a70a47696a907fa1921b33e0f5530ac92956b47d",
+      "bytes": 717
+    },
+    ".cache/dev-cycle/m1/t02-review3/c/cli-original.jsonl": {
+      "sha256": "2c9f9d006f69a6ac2ead0d970358cd10cdc19af588f3a22ac0282fda3e810457",
+      "bytes": 3835
+    },
+    ".cache/dev-cycle/m1/t02-review3/c/cli-stderr-original.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    ".cache/dev-cycle/m1/t02-review3/c/final-original.md": {
+      "sha256": "35cd0551b35cbb9905319f6caa06e306e52c139bf3d864a1a14a067bb5b5afea",
+      "bytes": 3469
+    },
+    ".cache/dev-cycle/m1/t02-review3/c/packet-seals.json": {
+      "sha256": "f3ef4c2e102572a426a8e2b4128335ebba4191b3051ec06d1e58dcee8c9266d9",
+      "bytes": 12065
+    },
+    ".cache/dev-cycle/m1/t02-review3/c/prompt-original.txt": {
+      "sha256": "5168d8f7e0d4d9f23d148486bb2a7bf404dba4da11faed236264876f3ec4d9b4",
+      "bytes": 852863
+    },
+    ".cache/dev-cycle/m1/t02-review3/d/cli-metadata.json": {
+      "sha256": "c7f7ffce8073986b61fd62fd8887df83ec66bdb066436538fb8a9e9c122cb26b",
+      "bytes": 717
+    },
+    ".cache/dev-cycle/m1/t02-review3/d/cli-original.jsonl": {
+      "sha256": "715f4874f38f6e4d78fa5dfbb49c2d458225477b50f77dca4f2f4986c138a0f5",
+      "bytes": 3230
+    },
+    ".cache/dev-cycle/m1/t02-review3/d/cli-stderr-original.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    ".cache/dev-cycle/m1/t02-review3/d/final-original.md": {
+      "sha256": "d7420f6aa347fc58aa8cb0220a386d8bf3ed60372aa0fc0d45b853e461a01571",
+      "bytes": 2869
+    },
+    ".cache/dev-cycle/m1/t02-review3/d/packet-seals.json": {
+      "sha256": "f3ef4c2e102572a426a8e2b4128335ebba4191b3051ec06d1e58dcee8c9266d9",
+      "bytes": 12065
+    },
+    ".cache/dev-cycle/m1/t02-review3/d/prompt-original.txt": {
+      "sha256": "e3dbfb287987f01f00e982bdffe040fa9a6c4c9cee2541057d137d38a123a971",
+      "bytes": 852704
+    }
+  },
+  "findings": [
+    {
+      "id": "R02-12",
+      "lens_ids": [
+        "A",
+        "B"
+      ],
+      "severity": "Important",
+      "title": "Promoción por SQL ordinario elude protección",
+      "location": "apps/server/app/migrations/fix2_invariants.py:84",
+      "scenario": "UPDATE song SET is_dependency_only=0[,title=...] permite promover soporte parcial fuera de restore; después FTS/dispatchable/children son editables.",
+      "status": "pending_reproduction"
+    },
+    {
+      "id": "R02-18",
+      "lens_ids": [
+        "D3-01"
+      ],
+      "severity": "Important",
+      "title": "Restore duplica SELECT por fila",
+      "location": "apps/server/app/snapshots.py:564,588",
+      "scenario": "405takes810assets añaden1215lecturas previas y vuelven a1215tras abrir escritura; cache/batch puede conservar colisiones sin cambiar semántica.",
+      "status": "pending_reproduction"
+    }
+  ],
+  "counts": {
+    "Critical": 0,
+    "Important": 2,
+    "Minor": 0
+  },
+  "prior_ids_preserved": true,
+  "corrected_original_scenarios": [
+    "R02-07",
+    "R02-10",
+    "R02-11",
+    "R02-13",
+    "R02-14",
+    "R02-15",
+    "R02-16",
+    "R02-17"
+  ],
+  "orchestrator_decision": {
+    "authority": "User delegates entire roadmap and best alternatives while absent; adversarial-review §5 returns decision to orchestrator after third attempt. Root chooses continue concrete fix, no new user approval and no silent debt.",
+    "after_attempt": 3,
+    "counter_not_reset": true,
+    "next_review": 4,
+    "choice": "continue_specific_fix3_then_fresh_review4_QA",
+    "scope": "Reproduce/adjudicate two remaining Important; immutable previous migrations/helpers and historic proofs; only snapshots plus NEW0004/helper/tests allowed.",
+    "task_acceptance": false
+  },
+  "qa_task_M03_Git_acceptance": false
+}

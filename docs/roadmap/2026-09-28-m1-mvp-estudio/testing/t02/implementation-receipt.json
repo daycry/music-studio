@@ -1,0 +1,238 @@
+{
+  "utc": "2026-10-07T04:41:53.270003+00:00",
+  "status": "DELIVERY_CUSTODY_FOR_REVIEW_ONLY",
+  "sources": {
+    "apps/server/alembic.ini": {
+      "bytes": 100,
+      "sha256": "13cdfa146e51b68c87a55e040b22bbbd617264fdb9fa77fa77fb2a134087b58b"
+    },
+    "apps/server/app/backup.py": {
+      "bytes": 7356,
+      "sha256": "f6517db23f1bcc3d64a53037a765b9bb5742e90ad70ef24c3fb511ac62cea32c"
+    },
+    "apps/server/app/db.py": {
+      "bytes": 2583,
+      "sha256": "7641b7d718ee53ba18307aa1e3c8e47755db6dc6ee1476ab9ca2c6f7192d388d"
+    },
+    "apps/server/app/main.py": {
+      "bytes": 2758,
+      "sha256": "2d223ad6e719ba58d4719ac5fbb673b930c6c8834bc6f2129ce79e97c4fbc94a"
+    },
+    "apps/server/app/migrations/__init__.py": {
+      "bytes": 53,
+      "sha256": "26578ae0326059d901d2abf14bb6edf1114dd924cb118e9d76dc547ce5faa52e"
+    },
+    "apps/server/app/migrations/env.py": {
+      "bytes": 669,
+      "sha256": "552e3eba3d0536d95bcf18ccfe995b3ad7ef4afc69d4dbee57b2c199540f4194"
+    },
+    "apps/server/app/migrations/initial_invariants.py": {
+      "bytes": 9711,
+      "sha256": "91c5cd6e6bc05b0e62dcd0403a10a55826bed9a6cb63abf89d2c133aeed4e4c6"
+    },
+    "apps/server/app/migrations/initial_relations.json": {
+      "bytes": 3679,
+      "sha256": "456c0b2a3f9fba88afb1fb2d40b5ae4df8386516bf5649bd51e2093dc0364910"
+    },
+    "apps/server/app/migrations/versions/0001_initial.py": {
+      "bytes": 3450,
+      "sha256": "762e019de05c245e08172814fba3138e5fb8311b5c987f6ffc715bef50f5eac5"
+    },
+    "apps/server/app/migrations/versions/0001_schema.sql": {
+      "bytes": 46637,
+      "sha256": "9fe867481051286ff592e9b668deae8d65cf88f475d6e7faf9a7cdf8d53a3998"
+    },
+    "apps/server/app/migrations/versions/__init__.py": {
+      "bytes": 30,
+      "sha256": "321bbcdfa7b590f46141a0963ee2e2001ee2f58bcdc51ec587b943c304cc91e1"
+    },
+    "apps/server/app/models/__init__.py": {
+      "bytes": 19898,
+      "sha256": "d7ec10eadeea81b3787f14d4b55c067a20290911bafe800f6929922066664392"
+    },
+    "apps/server/app/models/song-v1.schema.json": {
+      "bytes": 61985,
+      "sha256": "770650be540e22fd4b6206f7abd12a0ed4bd5fbc6d58a54cb15b55eae55d0d10"
+    },
+    "apps/server/app/models/timeline-v1.schema.json": {
+      "bytes": 1772,
+      "sha256": "d85666a0dbb7f9e67a6d7442d2e44d6b971ca9584eb424941b6330e582948660"
+    },
+    "apps/server/app/snapshots.py": {
+      "bytes": 11890,
+      "sha256": "ddcc32d2ec1759d5e0d3b7d4c5eb5d0c481aaf386878d61a469c293d29b330a1"
+    },
+    "apps/server/pyproject.toml": {
+      "bytes": 607,
+      "sha256": "e33b73a4b0bc6bfb3d525c74712783d01e2a90e60cf3c3b4099daeb82d5ae4ab"
+    },
+    "apps/server/README.md": {
+      "bytes": 4222,
+      "sha256": "961567f744597a21464be89239f3dd8758ae24b8962b185629d40dee0438e804"
+    },
+    "apps/server/tests/test_persistence_t02.py": {
+      "bytes": 35466,
+      "sha256": "7ca513aa97c67c0ea7bf7544497a84e79c4d160003a7708069fe6e5ec9363abc"
+    },
+    "apps/server/tests/test_schema_t02.py": {
+      "bytes": 2047,
+      "sha256": "b319b4cb9c877d014e9cd017e60d0296c2a7400cdf42450cec74d14e9c6ea049"
+    },
+    "packages/contracts/song-v1.schema.json": {
+      "bytes": 61985,
+      "sha256": "770650be540e22fd4b6206f7abd12a0ed4bd5fbc6d58a54cb15b55eae55d0d10"
+    },
+    "packages/contracts/timeline-v1.schema.json": {
+      "bytes": 1772,
+      "sha256": "d85666a0dbb7f9e67a6d7442d2e44d6b971ca9584eb424941b6330e582948660"
+    },
+    "uv.lock": {
+      "bytes": 107385,
+      "sha256": "aa222669e00ce27ccdfe5f739858ec78f95cbfabc25de7c7c1fbd5784f4f0582"
+    }
+  },
+  "originals_verified": 20,
+  "protected_verified": 71,
+  "preimages": 4,
+  "tests": {
+    "passed": 34,
+    "skip": 1,
+    "Linux_symlink_original_probe": true
+  },
+  "whole_production_modules": {
+    "apps/server/app/backup.py": {
+      "covered_lines": 106,
+      "num_statements": 118,
+      "percent_covered": 89.83050847457628,
+      "percent_covered_display": "90",
+      "missing_lines": 12,
+      "excluded_lines": 0,
+      "percent_statements_covered": 89.83050847457628,
+      "percent_statements_covered_display": "90"
+    },
+    "apps/server/app/db.py": {
+      "covered_lines": 49,
+      "num_statements": 51,
+      "percent_covered": 96.07843137254902,
+      "percent_covered_display": "96",
+      "missing_lines": 2,
+      "excluded_lines": 0,
+      "percent_statements_covered": 96.07843137254902,
+      "percent_statements_covered_display": "96"
+    },
+    "apps/server/app/main.py": {
+      "covered_lines": 47,
+      "num_statements": 58,
+      "percent_covered": 81.03448275862068,
+      "percent_covered_display": "81",
+      "missing_lines": 11,
+      "excluded_lines": 0,
+      "percent_statements_covered": 81.03448275862068,
+      "percent_statements_covered_display": "81"
+    },
+    "apps/server/app/migrations/__init__.py": {
+      "covered_lines": 0,
+      "num_statements": 0,
+      "percent_covered": 100.0,
+      "percent_covered_display": "100",
+      "missing_lines": 0,
+      "excluded_lines": 0,
+      "percent_statements_covered": 100.0,
+      "percent_statements_covered_display": "100"
+    },
+    "apps/server/app/migrations/env.py": {
+      "covered_lines": 14,
+      "num_statements": 16,
+      "percent_covered": 87.5,
+      "percent_covered_display": "88",
+      "missing_lines": 2,
+      "excluded_lines": 0,
+      "percent_statements_covered": 87.5,
+      "percent_statements_covered_display": "88"
+    },
+    "apps/server/app/migrations/initial_invariants.py": {
+      "covered_lines": 76,
+      "num_statements": 76,
+      "percent_covered": 100.0,
+      "percent_covered_display": "100",
+      "missing_lines": 0,
+      "excluded_lines": 0,
+      "percent_statements_covered": 100.0,
+      "percent_statements_covered_display": "100"
+    },
+    "apps/server/app/migrations/versions/0001_initial.py": {
+      "covered_lines": 40,
+      "num_statements": 40,
+      "percent_covered": 100.0,
+      "percent_covered_display": "100",
+      "missing_lines": 0,
+      "excluded_lines": 0,
+      "percent_statements_covered": 100.0,
+      "percent_statements_covered_display": "100"
+    },
+    "apps/server/app/migrations/versions/__init__.py": {
+      "covered_lines": 0,
+      "num_statements": 0,
+      "percent_covered": 100.0,
+      "percent_covered_display": "100",
+      "missing_lines": 0,
+      "excluded_lines": 0,
+      "percent_statements_covered": 100.0,
+      "percent_statements_covered_display": "100"
+    },
+    "apps/server/app/models/__init__.py": {
+      "covered_lines": 294,
+      "num_statements": 295,
+      "percent_covered": 99.66101694915254,
+      "percent_covered_display": "99",
+      "missing_lines": 1,
+      "excluded_lines": 0,
+      "percent_statements_covered": 99.66101694915254,
+      "percent_statements_covered_display": "99"
+    },
+    "apps/server/app/snapshots.py": {
+      "covered_lines": 167,
+      "num_statements": 184,
+      "percent_covered": 90.76086956521739,
+      "percent_covered_display": "91",
+      "missing_lines": 17,
+      "excluded_lines": 0,
+      "percent_statements_covered": 90.76086956521739,
+      "percent_statements_covered_display": "91"
+    }
+  },
+  "coverage": {
+    "covered": 793,
+    "statements": 838,
+    "percent": 94.63007159904535
+  },
+  "terminal_streams": {
+    "cli-metadata.json": {
+      "sha256": "6741867c5ca17210373dac960baa75977b4a7aa14d4574f7b5bc6f83980a0d8a",
+      "bytes": 734
+    },
+    "cli-original.jsonl": {
+      "sha256": "6d2b52fe37ce22ec8023f41a61a0b76d2c05a533b9d198166d9be8a3c7307f3c",
+      "bytes": 694792
+    },
+    "cli-prompt-original.txt": {
+      "sha256": "fe227ee1ddcc57fa79d766e2f9cf1f85b01542eab53781df98f71364dceed05d",
+      "bytes": 25522
+    },
+    "cli-stderr-original.txt": {
+      "sha256": "b1d42f8ed528f057e043ea8eda97998b8db118b2c6c8e15abd0a5c169f04384a",
+      "bytes": 306
+    }
+  },
+  "concern": "project/reconcile recorre tablas completas y todas las canciones tras cada commit; valorar coste con bibliotecas grandes en lente D",
+  "incidents": [
+    "Primeros GREEN conservados en conversaci\u00f3n sin UTC individual; recapturas GREEN finales individuales incluyen argv/UTC/exit",
+    "La primera fixture de schema us\u00f3 la ruta hist\u00f3rica hardcodeada t02-implementation2/fixtures; se crearon directorios nuevos, sin sobrescribir originales; se corrigi\u00f3 el test a la ruta privada actual",
+    "Un JSON de cobertura intermedio fue reemplazado por el recibo del runner al compartir basename; originales TXT/argv preservados y cobertura final recapturada en ruta distinta",
+    "Un RED de snapshot inicial fue error de fixture Alembic por helper en versions; no cuenta como RED; se conserva y el RED corregido es red-snapshot-corrected",
+    "Windows no permite symlink en esta sesi\u00f3n: skip; RED/GREEN y sonda final Linux reales prueban rechazo"
+  ],
+  "independent_review_qa_pending": true,
+  "not_task_accepted": true,
+  "no_real_library_or_quality_claim": true
+}

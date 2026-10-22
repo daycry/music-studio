@@ -1,0 +1,20 @@
+{
+  "utc": "2026-10-08T02:22:21.273507+00:00",
+  "Critical": 0,
+  "Important": 1,
+  "Minor": 0,
+  "findings": [
+    {
+      "id": "T08-NESTED-PNPM-01",
+      "severity": "Important",
+      "sources": [
+        "B-01"
+      ],
+      "scenario": "Root package gen script invokes pnpm --filter web gen; pnpm.py environment PATH contains only verified Node dir without pnpm launcher. Childshell cannot inherit PowerShell function, nestedpnpm fails. Static actual source/layout proof, not executed by reviewer."
+    }
+  ],
+  "decision": "Root confirms concrete regression of existing command. Fresh bounded TDD nativechild invocation correction under owner autonomous delegation; A clean B1Important, no counterreset and no fullT08 acceptance. Nextinspection2 plus independentQA with actualCLI metadata. Stable product cache for generated launcher must be outside sealed dev-cycle proof phases; verifiedofficial payloads remain unchanged.",
+  "technical_acceptance": false,
+  "next_component_inspection": 2,
+  "actual_model_tokens_EUR_AIhours": null
+}

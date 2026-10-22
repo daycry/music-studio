@@ -1,0 +1,53 @@
+[project]
+name = "engine-analysis"
+version = "0.1.0"
+description = "Análisis local de audio detrás del contrato /v1."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "engine-common",
+    "engine-contract",
+    "qwen-asr",
+    "beat-this",
+    "audiobox-aesthetics",
+    "transformers==4.57.6",
+    "accelerate==1.12.0",
+    "safetensors==0.8.0",
+    "huggingface-hub==0.36.2",
+    "einops==0.8.2",
+    "rotary-embedding-torch==0.9.1",
+    "tqdm==4.70.1",
+    "submitit==1.5.4",
+    "rich==15.0.0",
+    "qwen-omni-utils==0.0.9",
+    "nagisa==0.2.11",
+    "soynlp==0.0.493",
+    "sox==1.5.0",
+    "gradio==6.2.0",
+    "flask==3.1.3",
+    "pytz==2026.5",
+    "pytest==9.1.1",
+    "pytest-cov==7.1.0",
+    "httpx==0.28.1",
+    "numpy==2.2.6",
+    "soundfile==0.13.1",
+    "librosa==0.11.0",
+    "soxr==0.5.0.post1",
+]
+
+[tool.uv]
+# La base aprobada proporciona estas ABI: jamás sustituirlas por wheels de PyPI.
+exclude-dependencies = ["torch", "torchaudio", "torchvision"]
+
+[tool.uv.workspace]
+members = []
+
+[tool.uv.sources]
+engine-contract = { path = "../../../packages/engine-contract", editable = true }
+engine-common = { path = "../common", editable = true }
+qwen-asr = { git = "https://github.com/QwenLM/Qwen3-ASR.git", rev = "7c6daf77a2421100f5fb066495372c00129d39ff" }
+beat-this = { git = "https://github.com/CPJKU/beat_this.git", rev = "b95c8ab0c58c2d9fcfd40508ae8dffbc05ac4f5c" }
+audiobox-aesthetics = { git = "https://github.com/facebookresearch/audiobox-aesthetics.git", rev = "2618e9d451b456e9328b39495b5e6234678aa550" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["gpu: requiere GPU y pesos reales locales; incluye beats CPU dentro del engine"]

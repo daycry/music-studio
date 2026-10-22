@@ -1,5 +1,6 @@
 """Principal privado Windows; no concede autoridad sobre archivos."""
 
+import importlib
 import os
 import platform
 import struct
@@ -113,6 +114,10 @@ class _CpuAuthorityRecord:
     issuer_ref: object = None
     policy_ref: object = None
     epoch_ref: object = None
+    lock: object = field(default_factory=threading.RLock)
+    pins: dict = field(default_factory=dict)
+    owner_refs: dict = field(default_factory=dict)
+    pin_slots_reserved: int = 0
 
 
 _CPU_AUTHORITIES = {}
@@ -209,23 +214,626 @@ def _validate_current_admission(admission):
 
 
 def _bind_acquisition_owner(admission, *, owner):
-    _fail("ADMISSION_REQUIRED", "pin")
+    if type(admission) is not _AcquisitionAdmission:
+        _fail("ADMISSION_REQUIRED", "pin")
+    _validate_current_admission(admission)
+    acquisition = importlib.import_module(
+        ".storage_journal_windows_acquisition", __package__
+    )
+    owner_row = acquisition._owner_record(owner, "owner")
+    if (
+        owner_row.source != "native_windows_x64"
+        or owner_row.state is not acquisition._OwnerState.BUILDING
+        or owner_row.admission_ref is not admission
+        or not owner_row.lock._is_owned()
+        or not _io._NATIVE_BOUNDARY_LOCK._is_owned()
+    ):
+        _fail("CAPABILITY_INVALID", "pin")
+    with _io._REGISTRY_LOCK:
+        admission_row = _io._IDENTITY_CAPABILITIES[admission]
+    authority, session = _authority_record(
+        admission_row.principal_ratification_ref, "pin"
+    )
+    with session.lock:
+        _validate_current_admission(admission)
+        if owner in session.owner_refs:
+            _fail("CAPABILITY_INVALID", "pin")
+        if len(session.owner_refs) >= 4:
+            _fail("OWNER_RETIRE_REQUIRED", "pin")
+        if (
+            owner_row.pid != session.pid
+            or owner_row.principal_sid != authority.principal_sid
+            or owner_row.primary_group_sid != authority.primary_group_sid
+            or owner_row.policy_ref is not session.policy_ref
+            or owner_row.epoch_ref is not session.epoch_ref
+        ):
+            _fail("CAPABILITY_INVALID", "pin")
+        session.owner_refs[owner] = owner_row
+
+
+def _bind_cpu_acquisition_owner(admission, *, owner):
+    if type(admission) is not _CpuAdmission:
+        _fail("ADMISSION_REQUIRED", "pin")
+    source = next(
+        (
+            record
+            for record in _CPU_AUTHORITIES.values()
+            if admission in record.admissions
+        ),
+        None,
+    )
+    if source is None:
+        _fail("ADMISSION_REQUIRED", "pin")
+    acquisition, owner_row, _ = _acquisition_pin_target(owner, "pin")
+    if (
+        owner_row.source != "cpu_double"
+        or owner_row.state is not acquisition._OwnerState.LIVE
+        or owner_row.admission_ref is not None
+    ):
+        _fail("CAPABILITY_INVALID", "pin")
+    with source.lock:
+        _cpu_admission_current(source, admission, "pin")
+        if (
+            owner_row.principal_sid != source.principal_sid
+            or owner_row.primary_group_sid != source.primary_group_sid
+        ):
+            _fail("PRINCIPAL_UNACCREDITED", "pin")
+        owner_row.admission_ref = admission
+        owner_row.policy_ref = source.policy_ref
+        owner_row.epoch_ref = source.epoch_ref
+        source.owner_refs[owner] = owner_row
 
 
 def _pin_current_acquisition_admission(admission, *, owner):
-    _fail("ADMISSION_REQUIRED", "pin")
+    if type(admission) is not _AcquisitionAdmission:
+        _fail("ADMISSION_REQUIRED", "pin")
+    _validate_current_admission(admission)
+    acquisition, owner_row, frame = _acquisition_pin_target(owner, "pin")
+    with _io._REGISTRY_LOCK:
+        admission_row = _io._IDENTITY_CAPABILITIES[admission]
+    authority, session = _authority_record(
+        admission_row.principal_ratification_ref, "pin"
+    )
+    if (
+        owner_row.source != "native_windows_x64"
+        or session.owner_refs.get(owner) is not owner_row
+        or owner_row.admission_ref is not admission
+        or owner_row.policy_ref is not session.policy_ref
+        or owner_row.epoch_ref is not session.epoch_ref
+    ):
+        _fail("CAPABILITY_INVALID", "pin")
+    if (
+        owner_row.state
+        not in {acquisition._OwnerState.LIVE, acquisition._OwnerState.CLOSING}
+        or frame.phase is not acquisition._CallPhase.RESERVED
+        or frame.admission_pin is not None
+    ):
+        _fail("CAPABILITY_REVOKED", "pin")
+    if owner_row.state is acquisition._OwnerState.CLOSING and frame.operation not in {
+        "close",
+        "owner",
+    }:
+        _fail("CAPABILITY_REVOKED", "pin")
+    _pin_scope(admission_row.scope, frame, acquisition, "pin")
+    session.lock.acquire()
+    registered = False
+    try:
+        _validate_current_admission(admission)
+        counters = session.counters
+        if (
+            type(session.pin_slots_reserved) is not int
+            or not 0 <= session.pin_slots_reserved < 2048
+            or set(counters) != {"observations", "subcalls"}
+            or any(type(v) is not int or v < 0 for v in counters.values())
+            or counters["observations"] > 8190
+            or counters["subcalls"] > 229376 - 56
+            or any(
+                row.state in {"reserved", "active", "unknown"}
+                for row in session.pins.values()
+            )
+        ):
+            _revoke_session(session)
+            _fail("OWNER_RETIRE_REQUIRED", "pin")
+        pin = object.__new__(_AdmissionPin)
+        row = _AdmissionPinRecord(
+            pin,
+            admission,
+            owner,
+            session.capability,
+            os.getpid(),
+            threading.current_thread(),
+            threading.get_native_id(),
+            None,
+            None,
+            "reserved",
+            frame,
+            session.issuer_ref,
+            authority.principal_sid,
+            authority.primary_group_sid,
+            session.policy_ref,
+            session.epoch_ref,
+            frame.boundary_lease_ref,
+        )
+        session.pins[pin] = row
+        _register_identity(pin, row)
+        session.pin_slots_reserved += 1
+        frame.admission_pin = pin
+        registered = True
+        observation = _observe_current_effective_principal(session.capability)
+        row.pre_observation_ref = observation
+        observed = session.observations[observation]
+        if (
+            observed.principal_sid != authority.principal_sid
+            or observed.primary_group_sid != authority.primary_group_sid
+            or observed.token_stamp != authority.token_stamp
+        ):
+            _revoke_session(session)
+            row.state = "revoked"
+            session.lock.release()
+            _fail("PRINCIPAL_UNACCREDITED", "pin")
+        row.state = "active"
+        return pin
+    except BaseException as error:
+        if not registered:
+            session.lock.release()
+            raise
+        if row.state == "revoked":
+            raise
+        observed = next(reversed(session.observations.values()), None)
+        if (
+            observed is not None
+            and _finished_custody_error(session, observed.frame_ref, error)
+            and session.state != "unknown"
+            and not _io._KERNEL_POISONED
+        ):
+            row.state = "revoked"
+            session.lock.release()
+            raise
+        row.state = "unknown"
+        row.error = error
+        _native_poison(session, error)
+        if (
+            observed is not None
+            and _finished_custody_error(session, observed.frame_ref, error)
+            and error.cleanup is not None
+        ):
+            _fail(
+                error.diagnostic.code,
+                "pin",
+                error.diagnostic.win32_error,
+                cleanup=error.cleanup,
+            )
+        _fail("RESOURCE_UNKNOWN", "pin")
 
 
 def _complete_acquisition_admission_pin(pin, *, owner):
-    _fail("ADMISSION_REQUIRED", "complete")
+    row, session = _native_pin_record(pin, owner, "complete")
+    if row.state == "completed":
+        return
+    acquisition, _, frame = _acquisition_pin_target(owner, "complete")
+    if (
+        row.state != "active"
+        or frame is not row.target_frame_ref
+        or not session.lock._is_owned()
+        or frame.phase is not acquisition._CallPhase.RETURNED
+    ):
+        _fail("CAPABILITY_INVALID", "complete")
+    query_started = False
+    recognized_error = None
+    try:
+        _validate_current_admission(row.admission_ref)
+        with _io._REGISTRY_LOCK:
+            admission = _io._IDENTITY_CAPABILITIES[row.admission_ref]
+        authority, _ = _authority_record(
+            admission.principal_ratification_ref, "complete"
+        )
+        owner_row = acquisition._owner_record(owner, "info")
+        if (
+            session.owner_refs.get(owner) is not owner_row
+            or owner_row.admission_ref is not row.admission_ref
+            or owner_row.policy_ref is not row.policy_ref
+            or owner_row.epoch_ref is not row.epoch_ref
+            or row.boundary_lease_ref is not frame.boundary_lease_ref
+        ):
+            _fail("CAPABILITY_INVALID", "complete")
+        _pin_scope(admission.scope, frame, acquisition, "complete")
+        pre = session.observations.get(row.pre_observation_ref)
+        if (
+            type(pre) is not _EffectiveObservationRecord
+            or pre.capability is not row.pre_observation_ref
+            or pre.state != "live"
+            or pre.session_ref is not session.capability
+            or pre.issuer_ref is not row.issuer_ref
+        ):
+            _fail("CAPABILITY_INVALID", "complete")
+        query_started = True
+        observation = _observe_current_effective_principal(session.capability)
+        row.post_observation_ref = observation
+        observed = session.observations[observation]
+        if (
+            observed.principal_sid != pre.principal_sid
+            or observed.primary_group_sid != pre.primary_group_sid
+            or observed.token_stamp != pre.token_stamp
+            or observed.principal_sid != authority.principal_sid
+            or observed.primary_group_sid != authority.primary_group_sid
+            or observed.token_stamp != authority.token_stamp
+        ):
+            _revoke_session(session)
+            row.state = "revoked"
+            session.lock.release()
+            recognized_error = IdentityError(
+                IdentityDiagnostic("PRINCIPAL_UNACCREDITED", "complete")
+            )
+            raise recognized_error from None
+        _validate_current_admission(row.admission_ref)
+        _pin_scope(admission.scope, frame, acquisition, "complete")
+        row.state = "completed"
+        session.lock.release()
+    except BaseException as error:  # custodia fuerte de outputs y leases
+        if error is recognized_error:
+            raise
+        observed = next(reversed(session.observations.values()), None)
+        if (
+            type(error) is IdentityError
+            and (
+                not query_started
+                or (
+                    observed is not None
+                    and _finished_custody_error(session, observed.frame_ref, error)
+                )
+            )
+            and session.state != "unknown"
+            and not _io._KERNEL_POISONED
+        ):
+            _revoke_session(session)
+            row.state = "revoked"
+            session.lock.release()
+            raise
+        row.state = "unknown"
+        row.error = error
+        _native_poison(session, error)
+        if type(error) is IdentityError and error.cleanup is not None:
+            _fail(error.diagnostic.code, "complete", cleanup=error.cleanup)
+        _fail("RESOURCE_UNKNOWN", "complete")
 
 
 def _abort_acquisition_admission_pin(pin, *, owner):
-    _fail("ADMISSION_REQUIRED", "complete")
+    row, session = _native_pin_record(pin, owner, "complete")
+    if row.state == "aborted":
+        return
+    acquisition, _, frame = _acquisition_pin_target(owner, "complete")
+    if (
+        row.state != "active"
+        or frame is not row.target_frame_ref
+        or not session.lock._is_owned()
+        or frame.phase is not acquisition._CallPhase.RESERVED
+    ):
+        _fail("CAPABILITY_INVALID", "complete")
+    row.state = "aborted"
+    session.lock.release()
+
+
+def _validate_acquisition_backend_pin(pin, *, owner, frame):
+    row, session = _native_pin_record(pin, owner, "pin")
+    acquisition, owner_row, target = _acquisition_pin_target(owner, "pin")
+    if (
+        target is not frame
+        or row.target_frame_ref is not frame
+        or frame.admission_pin is not pin
+        or frame.phase is not acquisition._CallPhase.ENTERED
+        or row.state != "active"
+        or not session.lock._is_owned()
+        or row.boundary_lease_ref is not frame.boundary_lease_ref
+    ):
+        _fail("CAPABILITY_INVALID", "pin")
+    if (
+        owner_row.source != "native_windows_x64"
+        or session.owner_refs.get(owner) is not owner_row
+        or owner_row.admission_ref is not row.admission_ref
+        or owner_row.policy_ref is not row.policy_ref
+        or owner_row.epoch_ref is not row.epoch_ref
+    ):
+        _fail("CAPABILITY_INVALID", "pin")
+    if (
+        owner_row.state
+        not in {acquisition._OwnerState.LIVE, acquisition._OwnerState.CLOSING}
+        or (
+            owner_row.state is acquisition._OwnerState.CLOSING
+            and frame.operation != "close"
+        )
+        or frame.operation
+        not in {"locate", "descriptor", "open_anchor", "open_component", "close"}
+    ):
+        _fail("CAPABILITY_REVOKED", "pin")
+    _validate_current_admission(row.admission_ref)
+    with _io._REGISTRY_LOCK:
+        admission = _io._IDENTITY_CAPABILITIES[row.admission_ref]
+    _pin_scope(admission.scope, frame, acquisition, "pin")
+    observed = session.observations.get(row.pre_observation_ref)
+    authority, _ = _authority_record(admission.principal_ratification_ref, "pin")
+    if (
+        type(observed) is not _EffectiveObservationRecord
+        or observed.capability is not row.pre_observation_ref
+        or observed.state != "live"
+        or observed.session_ref is not session.capability
+        or observed.issuer_ref is not row.issuer_ref
+        or observed.principal_sid != row.principal_sid
+        or observed.primary_group_sid != row.primary_group_sid
+        or observed.token_stamp != authority.token_stamp
+    ):
+        _fail("PRINCIPAL_UNACCREDITED", "pin")
+
+
+def _native_pin_record(pin, owner, operation):
+    if type(pin) is not _AdmissionPin:
+        _fail("ADMISSION_REQUIRED", operation)
+    with _io._REGISTRY_LOCK:
+        row = _io._IDENTITY_CAPABILITIES.get(pin)
+    if type(row) is not _AdmissionPinRecord or row.capability is not pin:
+        _fail("ADMISSION_REQUIRED", operation)
+    _pin_thread_owner(row, owner, operation)
+    try:
+        session = _io._registered_native_session(row.session_ref)
+    except _io.KernelMemoryError:
+        _fail("CAPABILITY_INVALID", operation)
+    if (
+        session.pins.get(pin) is not row
+        or row.issuer_ref is not session.issuer_ref
+        or row.policy_ref is not session.policy_ref
+        or row.epoch_ref is not session.epoch_ref
+    ):
+        _fail("CAPABILITY_INVALID", operation)
+    return row, session
 
 
 def _pin_cpu_acquisition_admission(admission, *, owner):
-    _fail("ADMISSION_REQUIRED", "pin")
+    if type(admission) is not _CpuAdmission:
+        _fail("ADMISSION_REQUIRED", "pin")
+    source = next(
+        (
+            record
+            for record in _CPU_AUTHORITIES.values()
+            if admission in record.admissions
+        ),
+        None,
+    )
+    if source is None:
+        _fail("ADMISSION_REQUIRED", "pin")
+    acquisition, owner_row, frame = _acquisition_pin_target(owner, "pin")
+    admission_row = _cpu_admission_current(source, admission, "pin")
+    _pin_scope(admission_row.scope, frame, acquisition, "pin")
+    if (
+        source.pin_slots_reserved >= 2048
+        or source.counters["observations"] > 8190
+        or source.counters["subcalls"] > 229376 - 56
+        or any(row.state in {"reserved", "active"} for row in source.pins.values())
+    ):
+        _revoke_cpu_pin_source(source)
+        _fail("OWNER_RETIRE_REQUIRED", "pin")
+    source.lock.acquire()
+    pin = object.__new__(acquisition._CpuAdmissionPin)
+    row = _CpuAdmissionPinRecord(
+        pin,
+        admission,
+        owner,
+        source.capability,
+        os.getpid(),
+        threading.current_thread(),
+        threading.get_native_id(),
+        None,
+        None,
+        "reserved",
+        frame,
+    )
+    source.pins[pin] = row
+    source.pin_slots_reserved += 1
+    source.owner_refs[owner] = owner_row
+    frame.admission_pin = pin
+    try:
+        observed = _cpu_observe(source)
+        if observed != (
+            admission_row.principal_sid,
+            admission_row.primary_group_sid,
+            source.token_stamp,
+        ):
+            _revoke_cpu_pin_source(source)
+            row.state = "revoked"
+            source.lock.release()
+            _fail("PRINCIPAL_UNACCREDITED", "pin")
+        row.pre_observation_ref = observed
+        row.state = "active"
+        frame.admission_pin = pin
+        return pin
+    except IdentityError:
+        raise
+    except BaseException:  # noqa: BLE001 - custodia fuerte ante cortes; sin retry ni cleanup especulativo
+        row.state = "unknown"
+        _poison_cpu(source)
+        _fail("RESOURCE_UNKNOWN", "pin")
+
+
+def _complete_cpu_acquisition_admission_pin(pin, *, owner):
+    source = next(
+        (record for record in _CPU_AUTHORITIES.values() if pin in record.pins), None
+    )
+    if source is None:
+        _fail("ADMISSION_REQUIRED", "complete")
+    row = source.pins[pin]
+    _pin_thread_owner(row, owner, "complete")
+    if row.state == "completed":
+        return
+    _acquisition, _owner_row, frame = _acquisition_pin_target(owner, "complete")
+    if (
+        frame is not row.target_frame_ref
+        or not source.lock._is_owned()
+        or row.state != "active"
+        or (
+            type(_owner_row.admission_ref) is _CpuAdmission
+            and frame.phase is not _acquisition._CallPhase.RETURNED
+        )
+    ):
+        _fail("CAPABILITY_INVALID", "complete")
+    admission = _cpu_admission_current(source, row.admission_ref, "complete")
+    try:
+        observed = _cpu_observe(source)
+        row.post_observation_ref = observed
+        if observed != row.pre_observation_ref or observed != (
+            admission.principal_sid,
+            admission.primary_group_sid,
+            source.token_stamp,
+        ):
+            _revoke_cpu_pin_source(source)
+            row.state = "revoked"
+            source.lock.release()
+            _fail("PRINCIPAL_UNACCREDITED", "complete")
+        row.state = "completed"
+        source.lock.release()
+    except IdentityError:
+        raise
+    except BaseException:  # noqa: BLE001 - custodia fuerte ante cortes; sin retry ni cleanup especulativo
+        row.state = "unknown"
+        _poison_cpu(source)
+        _fail("RESOURCE_UNKNOWN", "complete")
+
+
+def _abort_cpu_acquisition_admission_pin(pin, *, owner):
+    source = next(
+        (record for record in _CPU_AUTHORITIES.values() if pin in record.pins), None
+    )
+    if source is None:
+        _fail("ADMISSION_REQUIRED", "complete")
+    row = source.pins[pin]
+    _pin_thread_owner(row, owner, "complete")
+    if row.state == "aborted":
+        return
+    acquisition, _, frame = _acquisition_pin_target(owner, "complete")
+    if (
+        frame is not row.target_frame_ref
+        or frame.phase is not acquisition._CallPhase.RESERVED
+        or row.state != "active"
+        or not source.lock._is_owned()
+    ):
+        _fail("CAPABILITY_INVALID", "complete")
+    row.state = "aborted"
+    source.lock.release()
+
+
+@dataclass
+class _CpuAdmissionPinRecord:
+    capability: object
+    admission_ref: object
+    owner_ref: object
+    session_ref: object
+    pid: int
+    thread_ref: object
+    thread_id: int
+    pre_observation_ref: object
+    post_observation_ref: object
+    state: str
+    target_frame_ref: object
+
+
+@dataclass
+class _AdmissionPinRecord(_CpuAdmissionPinRecord):
+    issuer_ref: object
+    principal_sid: bytes
+    primary_group_sid: bytes
+    policy_ref: object
+    epoch_ref: object
+    boundary_lease_ref: object
+    error: object = None
+
+
+def _acquisition_pin_target(owner, operation):
+    acquisition = importlib.import_module(
+        ".storage_journal_windows_acquisition", __package__
+    )
+    try:
+        record = acquisition._owner_record(owner, "locate")
+    except acquisition.AcquisitionError:
+        _fail("CAPABILITY_INVALID", operation)
+    if (
+        not record.lock._is_owned()
+        or not _io._NATIVE_BOUNDARY_LOCK._is_owned()
+        or len(record.inflight) != 1
+    ):
+        _fail("CAPABILITY_INVALID", operation)
+    call = record.inflight[0]
+    if (
+        type(call) is not acquisition._AcquisitionCallRecord
+        or type(call.frame) is not acquisition._AcquisitionCallFrame
+    ):
+        _fail("CAPABILITY_INVALID", operation)
+    frame = call.frame
+    if frame.owner_ref is not owner:
+        _fail("OWNER_MISMATCH", operation)
+    with _io._REGISTRY_LOCK:
+        binding = _io._BOUNDARY_LEASES.get(frame.boundary_lease_ref)
+    if type(frame.boundary_lease_ref) is not _io._KernelBoundaryLease or binding != (
+        os.getpid(),
+        threading.current_thread(),
+        threading.get_native_id(),
+    ):
+        _fail("CAPABILITY_INVALID", operation)
+    if record.source not in {"cpu_double", "native_windows_x64"}:
+        _fail("CAPABILITY_INVALID", operation)
+    return acquisition, record, frame
+
+
+def _pin_scope(scope, frame, acquisition, operation):
+    if (
+        type(scope) is not _AdmissionScope
+        or scope is _AdmissionScope.OWNED_PROBE_CANDIDATE
+    ):
+        _fail("ADMISSION_REQUIRED", operation)
+    if scope is _AdmissionScope.CANDIDATE_READ_ONLY and frame.operation in {
+        "open_anchor",
+        "open_component",
+    }:
+        profile = frame.record_ref.profile if frame.record_ref is not None else None
+        if profile not in {
+            acquisition._AcquireProfile.ANCHOR_CANDIDATE,
+            acquisition._AcquireProfile.PARENT_EXISTING,
+            acquisition._AcquireProfile.READ_EXISTING,
+        }:
+            _fail("ADMISSION_REQUIRED", operation)
+
+
+def _cpu_admission_current(source, admission, operation):
+    row = source.admissions.get(admission)
+    if (
+        type(row) is not _AdmissionRecord
+        or row.capability is not admission
+        or row.source != "cpu_double"
+        or source.source != "cpu_double"
+        or source.pid != os.getpid()
+    ):
+        _fail("ADMISSION_REQUIRED", operation)
+    if source.state != "live" or row.state != "live":
+        _fail("CAPABILITY_REVOKED", operation)
+    if (
+        row.issuer_ref is not source.issuer_ref
+        or row.policy_ref is not source.policy_ref
+        or row.epoch_ref is not source.epoch_ref
+    ):
+        _fail("CAPABILITY_REVOKED", operation)
+    return row
+
+
+def _revoke_cpu_pin_source(source):
+    source.state = "revoked"
+    for row in source.admissions.values():
+        row.state = "revoked"
+
+
+def _pin_thread_owner(row, owner, operation):
+    if (
+        row.owner_ref is not owner
+        or row.pid != os.getpid()
+        or row.thread_ref is not threading.current_thread()
+        or row.thread_id != threading.get_native_id()
+    ):
+        _fail("OWNER_MISMATCH", operation)
 
 
 @dataclass(frozen=True)
@@ -873,6 +1481,8 @@ class _IdentitySessionRecord:
     calls: list = field(default_factory=list)
     counters: dict = field(default_factory=lambda: {"observations": 0, "subcalls": 0})
     outcome: object = None
+    owner_refs: dict = field(default_factory=dict)
+    pin_slots_reserved: int = 0
 
 
 @dataclass
@@ -1584,7 +2194,26 @@ def _close_deployer_authority(deployer_authority):
         session.outcome = IdentityCloseOutcome(
             "unknown", (IdentityDiagnostic("OWNER_RETIRE_REQUIRED", "close"),)
         )
-        if session.pins or session.state == "unknown" or _io._KERNEL_POISONED:
+        if (
+            any(
+                type(pin) is not _AdmissionPinRecord
+                or pin.state not in {"completed", "aborted", "revoked"}
+                or pin.error is not None
+                for pin in session.pins.values()
+            )
+            or any(
+                owner.state.value != "closed"
+                or owner.outcome is None
+                or owner.outcome.state != "closed"
+                or owner.control is not None
+                or owner.inflight
+                or owner.backings
+                or owner.ops is not None
+                for owner in session.owner_refs.values()
+            )
+            or session.state == "unknown"
+            or _io._KERNEL_POISONED
+        ):
             return session.outcome
         outcome = _io._close_memory_context(session.workspace_context)
         if outcome.state != "closed":

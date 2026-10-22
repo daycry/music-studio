@@ -1,0 +1,14 @@
+{
+  "status": "bounded report for root review",
+  "report": "report.md",
+  "source_parity": true,
+  "files": 29,
+  "tests_run": 0,
+  "product_changes": 0,
+  "limitations": [
+    "initial context beforecopy not proven",
+    "raw command receipts not archived; UNKNOWN",
+    "selected protected7 may differ from unspecified parent list",
+    "no actual generation inspected"
+  ]
+}

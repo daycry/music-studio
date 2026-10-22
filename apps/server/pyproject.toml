@@ -4,11 +4,23 @@ version = "0.1.0"
 description = "FastAPI: fuente de verdad (SQLite), API, SSE, dispatcher y worker CPU. Sin torch."
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "alembic==1.20.0",
+    "audio-post",
     "engine-contract",
+    "fastapi==0.142.2",
+    "httpx==0.28.1",
+    "jsonschema==4.26.0",
+    "pydantic-settings==2.11.0",
+    "python-dotenv==1.1.1",
+    "sqlalchemy==2.0.54",
+    "studio-storage-guard",
+    "uvicorn==0.54.0",
 ]
 
 [tool.uv.sources]
+audio-post = { workspace = true }
 engine-contract = { workspace = true }
+studio-storage-guard = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

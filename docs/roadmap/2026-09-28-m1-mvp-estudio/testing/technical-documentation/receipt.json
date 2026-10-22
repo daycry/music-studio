@@ -1,0 +1,50 @@
+{
+  "utc": "2026-10-07T19:30:38.840329+00:00",
+  "sources": {
+    "docs/README.md": {
+      "sha256": "3313e9e545ba963e17360da9e8e86854b33e25edb67258069889c7dbf7ad4d0b",
+      "bytes": 4698
+    },
+    "apps/server/README.md": {
+      "sha256": "c135dfcc058f64068007c89ec4f143e152ed5c84311bcca754d3bd48f2a3b7bb",
+      "bytes": 7591
+    },
+    "docs/arquitectura/datos.md": {
+      "sha256": "cebfc170551c054422512c41100b772234dd68ea9a42cd529598e573fa532748",
+      "bytes": 17105
+    },
+    "docs/arquitectura/sistema.md": {
+      "sha256": "1c9873f01fb03cb93ef4f43aa06a665b013aa2215be14acc97dfc75b5434ef51",
+      "bytes": 15857
+    },
+    "docs/desarrollo/server-y-contratos.md": {
+      "sha256": "8f895af5a874f4de87a8c6c5ac2bc22887332c618eb12d6fb2159cd71669b65d",
+      "bytes": 13242
+    }
+  },
+  "reviews": {
+    "a": {
+      "exit": 0,
+      "verdict": {
+        "sha256": "330b27c7a72ee7027c04afd137582dafd16674c42d691d9f571c6f8a8b241384",
+        "bytes": 3307
+      },
+      "static_only": true
+    },
+    "b": {
+      "exit": 0,
+      "verdict": {
+        "sha256": "59a99aff7b2d473bc1f277eb18293a1630eaecf6507cc884a521f7ace7167c6f",
+        "bytes": 2164
+      },
+      "static_only": true
+    }
+  },
+  "root_independent_local_links": 106,
+  "root_anchor_checks": 2,
+  "issues": [],
+  "TDD": "n/a prose",
+  "scope": "five owned docs plus explicit review context hashes, no global concurrency stability claim",
+  "technical_documentation_accepted": true,
+  "Git_M0_M1_complete": false
+}

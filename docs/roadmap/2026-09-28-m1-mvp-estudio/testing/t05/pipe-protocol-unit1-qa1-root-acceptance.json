@@ -1,0 +1,41 @@
+{
+  "utc": "2026-10-08T21:47:26.685365+00:00",
+  "technical_component_accepted": true,
+  "scope": "T05 private pure bounded JSON protocol only after clean review1 A/B/C/D and independent QA",
+  "current_sources": {
+    "apps/server/app/worker/pipe_protocol.py": {
+      "sha256": "0674b9c6d3821548a5fc4922113644ef2b6eabee3d5153f23852948b88bd0214",
+      "bytes": 13567
+    },
+    "apps/server/tests/test_worker_pipe_protocol.py": {
+      "sha256": "989fce045a363a5c10f6eee7445499aa0068cdd2ba58499bd1bb668abcb34a62",
+      "bytes": 16938
+    }
+  },
+  "source_count_verified": 35,
+  "original_inventory_files": 57,
+  "tests": 110,
+  "whole_current_single_trace": {
+    "covered_lines": 238,
+    "num_statements": 240,
+    "percent_covered": 99.16666666666667,
+    "percent_covered_display": "99",
+    "missing_lines": 2,
+    "excluded_lines": 0,
+    "percent_statements_covered": 99.16666666666667,
+    "percent_statements_covered_display": "99"
+  },
+  "qa_receipt": {
+    "bytes": 16231,
+    "sha256": "0cb9ec36d6d3c5e84869ce4ca196585df4d66641d5ed595d19ac78c91d92f86f"
+  },
+  "full_T05_M1_accepted": false,
+  "limits": [
+    "Logicalbuffer262148 noRSSbenchmark",
+    "Epoch correlates not authentication; stopping is trustedcontext notphysicalproof",
+    "No nativepipes/custody/descendants/SQL/businessDTO/publishing/CPUslots/E2E proof",
+    "No reruncontracts74 since stdlibonly independentmodule",
+    "testPopenwait0 truthful, groupresourcesUNKNOWN"
+  ],
+  "actual_model_tokens_EUR_IAhours": null
+}

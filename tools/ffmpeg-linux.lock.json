@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "tool_id": "ffmpeg_linux_server",
+  "candidate": {
+    "sha_confidence": "API metadata and original provider checksum manifest agree; no archive bytes downloaded",
+    "license_recipe": "LGPLv3 with third-party libraries; flags --enable-version3; LICENSE_FILE COPYING.LGPLv3",
+    "release_id": 400057568,
+    "target": "linux x86_64 glibc >=2.28 linux >=4.18",
+    "bytes": 137863452,
+    "published_at": "2026-09-30T13:09:24Z",
+    "asset": "ffmpeg-n9.0.2-17-g2a571b6068-linux64-lgpl-9.0.tar.xz",
+    "asset_id": 600951837,
+    "release_tag": "autobuild-2026-09-30-13-08",
+    "url_mutability": "exact release tag plus SHA pin; provider can delete or replace assets",
+    "url": "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-09-30-13-08/ffmpeg-n9.0.2-17-g2a571b6068-linux64-lgpl-9.0.tar.xz",
+    "abi_runtime": "UNKNOWN",
+    "ffmpeg_commit": "2a571b606854520cf89804d8030c8b328e621689",
+    "sha256": "2d41cbea0ca1a15029b638330740f78d6f5aeb062355bf425433fc938705350a",
+    "provider": "BtbN/FFmpeg-Builds",
+    "recipe_commit": "6c9aec5fc9a72ec3abedd1fa84db141fa18cf52b",
+    "license_binary": "UNKNOWN"
+  },
+  "archive_format": "tar.xz",
+  "dest": "tools/ffmpeg-linux/n9.0.2-17-g2a571b6068",
+  "license_status": "recipe LGPLv3; binary and third-party notices verification pending",
+  "runtime_verified": false
+}

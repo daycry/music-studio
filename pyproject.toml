@@ -8,6 +8,7 @@ members = [
     "packages/engine-contract",
     "packages/audio-post",
     "packages/weights",
+    "packages/storage-guard",
     "apps/server",
     "apps/engines/common",
     "apps/engines/mock",

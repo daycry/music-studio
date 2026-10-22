@@ -15,15 +15,10 @@ uv python install
 echo "== uv sync --frozen =="
 uv sync --frozen
 
-if command -v pnpm >/dev/null 2>&1; then
-    if [ -f "$root/pnpm-lock.yaml" ]; then
-        echo "== pnpm install --frozen-lockfile =="
-        pnpm install --frozen-lockfile
-    else
-        echo "AVISO: no existe pnpm-lock.yaml todavía: omito 'pnpm install'. Genera el lockfile una vez con 'pnpm install' cuando pnpm esté disponible." >&2
-    fi
-else
-    echo "AVISO: pnpm no está instalado en esta máquina: omito la instalación de apps/web. Instala pnpm (por ejemplo 'corepack enable') para completar el bootstrap del front." >&2
+if [ ! -f "$root/pnpm-lock.yaml" ]; then
+    echo 'Bootstrap incompleto: falta pnpm-lock.yaml revisado.' >&2
+    exit 1
 fi
-
+echo '== pnpm install --frozen-lockfile --ignore-scripts =='
+bash "$root/scripts/pnpm.sh" install --frozen-lockfile --ignore-scripts
 echo "music-studio: bootstrap completo."

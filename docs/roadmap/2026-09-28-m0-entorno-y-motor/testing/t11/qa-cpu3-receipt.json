@@ -1,0 +1,62 @@
+{
+  "utc": "2026-10-07T19:14:12.360236+00:00",
+  "technical_CPU_unit_accepted": true,
+  "sources": {
+    "scripts/eval/run.py": {
+      "sha256": "75b6d207bc4e6fd63621f04ab8cbf473c405c67d7654da9b8d466df3b2da5ed4",
+      "bytes": 37762
+    },
+    "scripts/eval/metrics.py": {
+      "sha256": "b332e48a2e531d4f2adba3eb9e5499b49e8da5fdbb87f58fad923efc2f5a2f51",
+      "bytes": 13714
+    },
+    "scripts/eval/tests/test_evaluation_cpu.py": {
+      "sha256": "1db041fc644abef5c5fe1bf6b133e95050c57cc1f835f22dd6a76a95c9b7b6fb",
+      "bytes": 20762
+    },
+    "scripts/eval/tests/test_evaluation_guards.py": {
+      "sha256": "e43efd8416216e999738d549e9b14efd8126ed3dc45e979c4175125786cf2c99",
+      "bytes": 18088
+    },
+    "scripts/eval/tests/test_evaluation_fix1.py": {
+      "sha256": "8b00b5cf2a2ddac097d31fd4a11de370ca1bc0c5e75d27950f258b92dc0ca1dd",
+      "bytes": 23180
+    },
+    "scripts/eval/tests/test_evaluation_stream_silence.py": {
+      "sha256": "b7517c4bedca2576dd6d7e6087ed294d0a254e1903429bfa03e7fe659e847d84",
+      "bytes": 8904
+    }
+  },
+  "source_count": 6,
+  "closed_nonCLI_verified": 1134,
+  "prior_originals_verified": 1397,
+  "suite_pass": 130,
+  "additional_distinct_probe_pass": 4,
+  "additional_platform_skip": 1,
+  "whole_modules": {
+    "scripts/eval/run.py": {
+      "whole_module": true,
+      "covered": 439,
+      "statements": 483,
+      "excluded": 0,
+      "percent": 90.89026915113871
+    },
+    "scripts/eval/metrics.py": {
+      "whole_module": true,
+      "covered": 187,
+      "statements": 190,
+      "excluded": 0,
+      "percent": 98.42105263157895
+    }
+  },
+  "unit_qa_gate_exit": 0,
+  "dry_slots": 30,
+  "blocked_full_command_exit": 2,
+  "HTTP_before_prerequisites": 0,
+  "R11-06": "Minor explicitly pending",
+  "real_GT_floor": null,
+  "real_generated_songs": 0,
+  "human_approval": null,
+  "task_T11_M0_Git_acceptance": false,
+  "no_historical_cleanup_reinterpretation": true
+}

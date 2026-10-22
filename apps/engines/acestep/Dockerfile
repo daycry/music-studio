@@ -37,6 +37,7 @@ RUN curl -fL --retry 3 \
 
 COPY packages/engine-contract /studio/packages/engine-contract
 COPY packages/contracts /studio/packages/contracts
+COPY packages/storage-guard /studio/packages/storage-guard
 COPY apps/engines/common /studio/apps/engines/common
 COPY apps/engines/acestep /studio/apps/engines/acestep
 WORKDIR /studio/apps/engines/acestep

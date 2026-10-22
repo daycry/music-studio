@@ -1,0 +1,67 @@
+{
+  "utc": "2026-10-09T05:50:16.047668+00:00",
+  "status": "PARTIAL_DIAGNOSTIC_INVALID_REPRODUCTION",
+  "owned_product": [],
+  "native_original_case_count": 1,
+  "native_popen_count": 1,
+  "original_failure_remains": true,
+  "product_cause_proven": false,
+  "current_new_cause": "diagnostic child wrapper cannot import coverage because private PYTHONPATH omits venv site-packages",
+  "all_seven_byte_unchanged": true,
+  "source_capture_changed": [],
+  "native": [
+    {
+      "pid": 28632,
+      "exit": 1,
+      "direct_wait": true,
+      "stderr_bytes": 237,
+      "stored_bytes": 237,
+      "stderr_error": null,
+      "stderr_thread_joined": true,
+      "ownership": {
+        "pid": 28632,
+        "creation_time": 134359985005705361,
+        "job_member": true
+      },
+      "cleanup": {
+        "ownership": {
+          "pid": 28632,
+          "creation_time": 134359985005705361,
+          "job_member": true
+        },
+        "started_monotonic_ns": 41970147719600,
+        "finished_monotonic_ns": 41970148912700,
+        "finished_utc": "2026-10-09T05:48:20.6663532+00:00",
+        "job_empty": true,
+        "verified_member_count": 2,
+        "members_signalled": [
+          true,
+          true
+        ],
+        "process_signalled": true,
+        "original_ownership_verified": true,
+        "reader_joined": true,
+        "reader_eof": true,
+        "protocol_rejection": null,
+        "writer_joined": true,
+        "process_exit_code": 1,
+        "handler_close_observed": false,
+        "errors": [],
+        "resources_returned": true,
+        "disposition": "CLOSED_CONFIRMED"
+      },
+      "reader_alive": false,
+      "writers_alive": [],
+      "birth_alive": false,
+      "strong_refs": true
+    }
+  ],
+  "report": "report.md",
+  "inventory": "full-noncli-inventory.json",
+  "provider_model": null,
+  "tokens": null,
+  "EUR": null,
+  "hours": null,
+  "acceptance": false,
+  "next_probe_requires_root": true
+}

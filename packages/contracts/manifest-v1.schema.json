@@ -523,6 +523,14 @@
         }
       }
     },
+    "private_context": {
+      "type": "object",
+      "required": ["sha256"],
+      "properties": {
+        "sha256": {"$ref": "#/$defs/hash"}
+      },
+      "additionalProperties": false
+    },
     "preparation": {
       "type": "object",
       "required": [

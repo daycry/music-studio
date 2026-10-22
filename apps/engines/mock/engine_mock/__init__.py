@@ -79,6 +79,14 @@ def descriptor():
         "type": "object",
         "properties": {
             "duration_s": {"type": "number", "exclusiveMinimum": 0, "maximum": 600},
+            "style": {"type": "string"},
+            "lyrics": {"type": "string"},
+            "language": {"type": "string"},
+            "negative_prompt": {"type": "string"},
+            "key": {"type": "string"},
+            "time_signature": {"type": "string"},
+            "bpm": {"type": "number"},
+            "inference_steps": {"type": "integer", "minimum": 1},
             "_mock": {"type": "object"},
         },
     }
@@ -98,6 +106,17 @@ def descriptor():
                 "verified": True,
                 "device": "cpu",
                 "params_schema": schema,
+                "inputs": (
+                    [
+                        {
+                            "role": "master",
+                            "media_types": ["audio/wav", "audio/flac"],
+                            "required": True,
+                        }
+                    ]
+                    if task == "audio.beats"
+                    else []
+                ),
                 "features": {feature: {"verified": True} for feature in FEATURES},
                 "outputs": [{"media_type": media_type(task), "count": 1}],
                 "limits": {"duration_s": [0.001, 600]},
@@ -245,6 +264,7 @@ class MockAdapter:
                 token.wait(self.delay)
             return {"artifacts": [], "result": {"text": text}}
         artifacts = []
+        result = None
         count = request.get("n_outputs", 1)
         if task == "audio.stems":
             count *= 2
@@ -275,9 +295,11 @@ class MockAdapter:
                     struct.pack("<Q", len(header)) + header + struct.pack("<f", 0)
                 )
             else:
+                beats = [i / 2 for i in range(math.ceil(duration * 2))]
+                downbeats = [i * 2 for i in range(math.ceil(duration / 2))]
                 data = {
-                    "beats": [i / 2 for i in range(math.ceil(duration * 2))],
-                    "downbeats": [i * 2 for i in range(math.ceil(duration / 2))],
+                    "beats": beats,
+                    "downbeats": downbeats,
                     "bpm": 120,
                     "key": "C",
                     "text": "Lorem ipsum",
@@ -286,6 +308,22 @@ class MockAdapter:
                     "task": task,
                 }
                 path.write_text(json.dumps(data), encoding="utf-8")
+                if task == "audio.beats":
+                    result = {
+                        "task": "audio.beats",
+                        "analysis": {
+                            "bpm": 120.0,
+                            "beats_s": beats,
+                            "downbeats_s": downbeats,
+                        },
+                        "stages": [
+                            {
+                                "task": "audio.beats",
+                                "model_id": self.descriptor.id,
+                                "revision": self.descriptor.revision,
+                            }
+                        ],
+                    }
             seed = request.get("seed")
             artifacts.append(
                 {
@@ -298,6 +336,7 @@ class MockAdapter:
             emit(("progress", {"fraction": (index + 1) / count, "output_index": index}))
         return {
             "artifacts": artifacts,
+            "result": result,
             "vram_peak_mb": float(params.get("_mock", {}).get("vram_peak_mb", 0)),
         }
 

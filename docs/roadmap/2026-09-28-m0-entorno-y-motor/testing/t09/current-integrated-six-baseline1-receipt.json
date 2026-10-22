@@ -1,0 +1,295 @@
+{
+  "utc": "2026-10-08T23:46:00.289061+00:00",
+  "status": "MEASUREMENT_PASS",
+  "scope": "private CPU measurement producer; ownership=[]; no independent final QA or GPU proof",
+  "completion": {
+    "started_utc": "2026-10-08T23:40:12.656294+00:00",
+    "finished_utc": "2026-10-08T23:45:11.652400+00:00",
+    "exit": 0
+  },
+  "parent": {
+    "pid": 24092,
+    "utc": "2026-10-08T23:40:12.660799+00:00",
+    "argv": [
+      "/.venv\\Scripts\\python.exe",
+      "-B",
+      "-m",
+      "coverage",
+      "run",
+      "--rcfile",
+      "/.cache\\dev-cycle\\t09\\current-integrated-six-baseline1\\coverage.ini",
+      "-m",
+      "pytest",
+      "-p",
+      "instrument",
+      "scripts/eval/tests/test_benchmark_process.py",
+      "scripts/eval/tests/test_benchmark_canonical_runtime.py",
+      "scripts/eval/tests/test_benchmark_native_error_cleanup.py",
+      "scripts/eval/tests/test_benchmark_canonical_integration.py",
+      "scripts/eval/tests/test_benchmark_episode_v3.py",
+      "scripts/eval/tests/test_benchmark_coordinator_v3.py",
+      "scripts/eval/tests/test_benchmark_runtime.py",
+      "--confcutdir=scripts/eval/tests",
+      "--basetemp",
+      "/.cache\\dev-cycle\\t09\\current-integrated-six-baseline1\\baseline-current\\pytest-base",
+      "--junitxml",
+      "/.cache\\dev-cycle\\t09\\current-integrated-six-baseline1\\baseline-current\\junit.xml",
+      "-o",
+      "cache_dir=/.cache\\dev-cycle\\t09\\current-integrated-six-baseline1\\baseline-current\\pytest-cache",
+      "-q"
+    ],
+    "run_uuid": "52335119-ae2b-43fc-be99-231fdc9a8cf3"
+  },
+  "counts": {
+    "tests": 253,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "selection_compare": {
+    "selected": {
+      "exact_order_match": true,
+      "actual_count": 253,
+      "original_count": 253,
+      "added": [],
+      "missing": []
+    },
+    "deselected": {
+      "exact_order_match": true,
+      "actual_count": 13,
+      "original_count": 13,
+      "added": [],
+      "missing": []
+    }
+  },
+  "current_six": {
+    "scripts/eval/benchmark_process.py": {
+      "bytes": 32291,
+      "sha256": "51caccbc6e7ca4d0e5e78c33de536cf63d2f821c17ac451fe17f5c6e505b98ee"
+    },
+    "scripts/eval/benchmark_coordinator.py": {
+      "bytes": 22648,
+      "sha256": "bbb9e0d5f124bc45053a2bb063a6c0afabfb4eab2facc2ec2de87542eeb8a546"
+    },
+    "scripts/eval/benchmark_canonical_runtime.py": {
+      "bytes": 46500,
+      "sha256": "3b3e18902080ab0a0e9b0042ef9a4d2cc49a49526c7b7b0eab1b2cec6cd46258"
+    },
+    "scripts/eval/benchmark_canonical_integration.py": {
+      "bytes": 13107,
+      "sha256": "8445b94909a6af51fe6afb1f544520f9d83de0890010a552b7295743888389a5"
+    },
+    "scripts/eval/benchmark_episode.py": {
+      "bytes": 32650,
+      "sha256": "ce49d7a0b5aede6197798d21db2ff20ebfa0ff03734d046adfe2d24e4b645a13"
+    },
+    "scripts/eval/benchmark_runtime.py": {
+      "bytes": 55950,
+      "sha256": "9d6f5a751b04d97b1db86732757dda0e7d58e489e523d3df99f089e762ae4f94"
+    }
+  },
+  "whole": {
+    "scripts\\eval\\benchmark_canonical_integration.py": {
+      "summary": {
+        "covered_lines": 185,
+        "num_statements": 208,
+        "percent_covered": 86.19402985074628,
+        "percent_covered_display": "86",
+        "missing_lines": 23,
+        "excluded_lines": 0,
+        "percent_statements_covered": 88.9423076923077,
+        "percent_statements_covered_display": "89",
+        "num_branches": 60,
+        "num_partial_branches": 10,
+        "covered_branches": 46,
+        "missing_branches": 14,
+        "percent_branches_covered": 76.66666666666667,
+        "percent_branches_covered_display": "77"
+      },
+      "numerator": 231,
+      "denominator": 268,
+      "whole_percent": 86.19402985074628,
+      "gate": true
+    },
+    "scripts\\eval\\benchmark_canonical_runtime.py": {
+      "summary": {
+        "covered_lines": 650,
+        "num_statements": 736,
+        "percent_covered": 84.38133874239351,
+        "percent_covered_display": "84",
+        "missing_lines": 86,
+        "excluded_lines": 0,
+        "percent_statements_covered": 88.31521739130434,
+        "percent_statements_covered_display": "88",
+        "num_branches": 250,
+        "num_partial_branches": 68,
+        "covered_branches": 182,
+        "missing_branches": 68,
+        "percent_branches_covered": 72.8,
+        "percent_branches_covered_display": "73"
+      },
+      "numerator": 832,
+      "denominator": 986,
+      "whole_percent": 84.38133874239351,
+      "gate": true
+    },
+    "scripts\\eval\\benchmark_coordinator.py": {
+      "summary": {
+        "covered_lines": 287,
+        "num_statements": 331,
+        "percent_covered": 82.83062645011601,
+        "percent_covered_display": "83",
+        "missing_lines": 44,
+        "excluded_lines": 0,
+        "percent_statements_covered": 86.70694864048339,
+        "percent_statements_covered_display": "87",
+        "num_branches": 100,
+        "num_partial_branches": 30,
+        "covered_branches": 70,
+        "missing_branches": 30,
+        "percent_branches_covered": 70.0,
+        "percent_branches_covered_display": "70"
+      },
+      "numerator": 357,
+      "denominator": 431,
+      "whole_percent": 82.83062645011601,
+      "gate": true
+    },
+    "scripts\\eval\\benchmark_episode.py": {
+      "summary": {
+        "covered_lines": 340,
+        "num_statements": 377,
+        "percent_covered": 86.51252408477842,
+        "percent_covered_display": "87",
+        "missing_lines": 37,
+        "excluded_lines": 0,
+        "percent_statements_covered": 90.18567639257294,
+        "percent_statements_covered_display": "90",
+        "num_branches": 142,
+        "num_partial_branches": 33,
+        "covered_branches": 109,
+        "missing_branches": 33,
+        "percent_branches_covered": 76.7605633802817,
+        "percent_branches_covered_display": "77"
+      },
+      "numerator": 449,
+      "denominator": 519,
+      "whole_percent": 86.51252408477842,
+      "gate": true
+    },
+    "scripts\\eval\\benchmark_process.py": {
+      "summary": {
+        "covered_lines": 400,
+        "num_statements": 462,
+        "percent_covered": 81.90184049079754,
+        "percent_covered_display": "82",
+        "missing_lines": 62,
+        "excluded_lines": 0,
+        "percent_statements_covered": 86.58008658008659,
+        "percent_statements_covered_display": "87",
+        "num_branches": 190,
+        "num_partial_branches": 54,
+        "covered_branches": 134,
+        "missing_branches": 56,
+        "percent_branches_covered": 70.52631578947368,
+        "percent_branches_covered_display": "71"
+      },
+      "numerator": 534,
+      "denominator": 652,
+      "whole_percent": 81.90184049079754,
+      "gate": true
+    },
+    "scripts\\eval\\benchmark_runtime.py": {
+      "summary": {
+        "covered_lines": 601,
+        "num_statements": 722,
+        "percent_covered": 80.5168986083499,
+        "percent_covered_display": "81",
+        "missing_lines": 121,
+        "excluded_lines": 0,
+        "percent_statements_covered": 83.2409972299169,
+        "percent_statements_covered_display": "83",
+        "num_branches": 284,
+        "num_partial_branches": 61,
+        "covered_branches": 209,
+        "missing_branches": 75,
+        "percent_branches_covered": 73.59154929577464,
+        "percent_branches_covered_display": "74"
+      },
+      "numerator": 810,
+      "denominator": 1006,
+      "whole_percent": 80.5168986083499,
+      "gate": true
+    }
+  },
+  "parity": true,
+  "raw_trace_count": 254,
+  "birth_count": 255,
+  "dispositions": {
+    "CLOSED_CONFIRMED": 232,
+    "UNKNOWN_QUARANTINED": 23
+  },
+  "unpersisted_native_traces": [
+    {
+      "identifier": "1214da5393044940bf7368be054cfb6e",
+      "test": "scripts/eval/tests/test_benchmark_process.py::test_startup_block_bounded",
+      "pid": 12796,
+      "coverage": "UNKNOWN"
+    },
+    {
+      "identifier": "a77815a5ca85402682f03c8761d0387b",
+      "test": "scripts/eval/tests/test_benchmark_process.py::test_failed_assignment_never_opens_handler_gate",
+      "pid": 26856,
+      "coverage": "UNKNOWN"
+    }
+  ],
+  "formal_next_review": 4,
+  "formal_transition_review_counter_preserved": 3,
+  "important_preserved": [
+    "R09-T08",
+    "R09-T09",
+    "R09-T10 (rebate preserved)",
+    "R09-T11",
+    "R09-T12",
+    "R09-T13"
+  ],
+  "acceptance": "ROOT_ONLY_PENDING",
+  "full_task_accepted": false,
+  "TDD": "n/a: medición/configuración privada sin código de producto",
+  "actual_model": null,
+  "actual_tokens": null,
+  "eur_ai": null,
+  "hours_ai": null,
+  "limits": [
+    "physical ReadFile block UNTESTED",
+    "reader-close UNTESTED",
+    "native stderr DEVNULL UNKNOWN; original RPC not fully copied",
+    "existing checkpoints saved before death; finally not proof after kill",
+    "no GPU/PDH/NVML/WSL/Ollama/Docker execution; CPU dependency doubles",
+    "CLI activation/final packs/restores/material outside scope",
+    "no full T09/160 jobs/calibration/13h cadence/music quality acceptance",
+    "initial CONTINUE read inadvertently included history; only current section used",
+    "command preparation stdout available in tool conversation; no retrospective complete process custody claim"
+  ],
+  "private_delivery_helper_incident": {
+    "suite_repeated": false,
+    "first_tool_shell_exit": 1,
+    "second_stdout": "delivery-stdout.txt",
+    "repair": "normalize only lookup with str(Path(p)); metadata only, no source/test/runner changes, no baseline repeat",
+    "first_python_exit": "UNKNOWN",
+    "type": "private_delivery_helper_only_not_causal_RED",
+    "suite_exit": 0,
+    "original_files": [
+      "finalize.py.before-path-normalization",
+      "finalize.ps1.before-native-stdio",
+      "delivery1-launch-original.json",
+      "delivery1-stdout-original.txt",
+      "delivery1-stderr-original.txt"
+    ],
+    "second_stderr": "delivery-stderr.txt",
+    "static_cause": "finalizer looked up forward-slash source6 keys in Windows Path source archive mapping",
+    "second_python_exit": "UNKNOWN: Start-Process ExitCode returned null after WaitForExit; retained original delivery-completion.json",
+    "original_full_traceback": "UNKNOWN: PowerShell Stop interrupted native stderr capture; empty original stdio retained",
+    "second_shell_tool_exit": 0
+  }
+}

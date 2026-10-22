@@ -1,0 +1,598 @@
+{
+  "created_at": "2026-10-06T02:17:40.335501+00:00",
+  "scope": "T-08 CPU independent; no UI by design",
+  "cpu_status": "green",
+  "t08_status": "pending_gpu",
+  "image": "sha256:306e3b0fbc1170ee066e2aed099ef6638ea7dad7faf3ab5b67edfa90e64b70c9",
+  "suite": {
+    "passed": 45,
+    "deselected": 4,
+    "warnings": 1,
+    "exit_code": 0
+  },
+  "beats_cpu": {
+    "passed": 1,
+    "deselected": 3,
+    "bpm": 120,
+    "beats": 61,
+    "exit_code": 0
+  },
+  "coverage": {
+    "totals": {
+      "covered_lines": 346,
+      "num_statements": 382,
+      "percent_covered": 90.57591623036649,
+      "percent_covered_display": "91",
+      "missing_lines": 36,
+      "excluded_lines": 0,
+      "percent_statements_covered": 90.57591623036649,
+      "percent_statements_covered_display": "91"
+    },
+    "files": {
+      "engine_analysis/__init__.py": {
+        "covered_lines": 5,
+        "num_statements": 5,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "engine_analysis/adapter.py": {
+        "covered_lines": 74,
+        "num_statements": 82,
+        "percent_covered": 90.2439024390244,
+        "percent_covered_display": "90",
+        "missing_lines": 8,
+        "excluded_lines": 0,
+        "percent_statements_covered": 90.2439024390244,
+        "percent_statements_covered_display": "90"
+      },
+      "engine_analysis/backend.py": {
+        "covered_lines": 185,
+        "num_statements": 208,
+        "percent_covered": 88.9423076923077,
+        "percent_covered_display": "89",
+        "missing_lines": 23,
+        "excluded_lines": 0,
+        "percent_statements_covered": 88.9423076923077,
+        "percent_statements_covered_display": "89"
+      },
+      "engine_analysis/descriptor.py": {
+        "covered_lines": 41,
+        "num_statements": 41,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "engine_analysis/safety.py": {
+        "covered_lines": 32,
+        "num_statements": 36,
+        "percent_covered": 88.88888888888889,
+        "percent_covered_display": "89",
+        "missing_lines": 4,
+        "excluded_lines": 0,
+        "percent_statements_covered": 88.88888888888889,
+        "percent_statements_covered_display": "89"
+      },
+      "engine_analysis/server.py": {
+        "covered_lines": 9,
+        "num_statements": 10,
+        "percent_covered": 90.0,
+        "percent_covered_display": "90",
+        "missing_lines": 1,
+        "excluded_lines": 0,
+        "percent_statements_covered": 90.0,
+        "percent_statements_covered_display": "90"
+      }
+    },
+    "threshold": 80
+  },
+  "qa_gate": {
+    "applies": false,
+    "reason": "test-plan: n/a (sin UI); no fabricated Playwright results"
+  },
+  "coverage_check": {
+    "applies": false,
+    "gwt_sin_id": 0,
+    "test_plan_na": true,
+    "marcador_no_canonico": null,
+    "eximidos": [
+      "T-00",
+      "T-01",
+      "T-02",
+      "T-03",
+      "T-04",
+      "T-05",
+      "T-06",
+      "T-07",
+      "T-08",
+      "T-09",
+      "T-10",
+      "T-11",
+      "T-12",
+      "T-13",
+      "T-14",
+      "T-15",
+      "T-16",
+      "T-17",
+      "T-18",
+      "T-19"
+    ],
+    "eximidos_exigidos": false,
+    "rutas_ui": [],
+    "rutas_ui_origen": {},
+    "rutas_ui_degradado": null
+  },
+  "ledger": {
+    "exit_code": 0,
+    "incoherences": 0,
+    "warnings": 7
+  },
+  "checks_exit_codes": {
+    "imports": 0,
+    "contracts": 0,
+    "examples": 0,
+    "ast": 0,
+    "ruff": 0,
+    "format": 0,
+    "final_checks": 0
+  },
+  "sources_and_frozen_evidence": [
+    {
+      "path": "apps/engines/analysis/Dockerfile",
+      "expected": "dab04e80fb0e96248471b5debac39a4af9f726e7c8f31a2a2fd997501e0fd4ff",
+      "actual": "dab04e80fb0e96248471b5debac39a4af9f726e7c8f31a2a2fd997501e0fd4ff",
+      "ok": true
+    },
+    {
+      "path": "apps/engines/analysis/README.md",
+      "expected": "69e223a4201c92080f6859a5fea115e10b6a2fe97959b07c7b372f66920b2ca6",
+      "actual": "69e223a4201c92080f6859a5fea115e10b6a2fe97959b07c7b372f66920b2ca6",
+      "ok": true
+    },
+    {
+      "path": "apps/engines/analysis/engine_analysis/__init__.py",
+      "expected": "5ee1d35be567a47472c7d5e3b8be7ec0fd714e3a5d09422568984b2b47a3f49b",
+      "actual": "5ee1d35be567a47472c7d5e3b8be7ec0fd714e3a5d09422568984b2b47a3f49b",
+      "ok": true
+    },
+    {
+      "path": "apps/engines/analysis/engine_analysis/adapter.py",
+      "expected": "1f5d201d9925c13a5c8508f8cca9b8a09af63c6d9eb30f92d6c4fe26b0c3f40d",
+      "actual": "1f5d201d9925c13a5c8508f8cca9b8a09af63c6d9eb30f92d6c4fe26b0c3f40d",
+      "ok": true
+    },
+    {
+      "path": "apps/engines/analysis/engine_analysis/backend.py",
+      "expected": "5a3dce618f3f3de180f680097ee027fa3ab722af98789a29569f50a651a0ab45",
+      "actual": "5a3dce618f3f3de180f680097ee027fa3ab722af98789a29569f50a651a0ab45",
+      "ok": true
+    },
+    {
+      "path": "apps/engines/analysis/engine_analysis/descriptor.py",
+      "expected": "5627a19c0a0eccd9c127b83ff7232f7f7b5a43fecf491121202a5cdd35c45e17",
+      "actual": "5627a19c0a0eccd9c127b83ff7232f7f7b5a43fecf491121202a5cdd35c45e17",
+      "ok": true
+    },
+    {
+      "path": "apps/engines/analysis/engine_analysis/resources/beat_this.json",
+      "expected": "a9de09cfe66ca908f10438e1be93e88ae098b4d504ea872250e421594f1565df",
+      "actual": "a9de09cfe66ca908f10438e1be93e88ae098b4d504ea872250e421594f1565df",
+      "ok": true
+    },
+    {
+      "path": "apps/engines/analysis/engine_analysis/safety.py",
+      "expected": "a22ab404fbc933d98de7b39982c002538a0a460aea8ab47769afd92b085bd43e",
+      "actual": "a22ab404fbc933d98de7b39982c002538a0a460aea8ab47769afd92b085bd43e",
+      "ok": true
+    },
+    {
+      "path": "apps/engines/analysis/engine_analysis/server.py",
+      "expected": "f0d9152837ba34d154608687d822d860f8318388e2a58ff3ecd39b973ef9d5a9",
+      "actual": "f0d9152837ba34d154608687d822d860f8318388e2a58ff3ecd39b973ef9d5a9",
+      "ok": true
+    },
+    {
+      "path": "apps/engines/analysis/pyproject.toml",
+      "expected": "35bb9f1b5769c4f8b775542d02f8811de25871e98f212a19e2f65b02fdd08b7e",
+      "actual": "35bb9f1b5769c4f8b775542d02f8811de25871e98f212a19e2f65b02fdd08b7e",
+      "ok": true
+    },
+    {
+      "path": "apps/engines/analysis/tests/conftest.py",
+      "expected": "f602a52735e468e1b6ee4b191dae5601aeb907b81c9c3505bc91fe737431418f",
+      "actual": "f602a52735e468e1b6ee4b191dae5601aeb907b81c9c3505bc91fe737431418f",
+      "ok": true
+    },
+    {
+      "path": "apps/engines/analysis/tests/test_analysis.py",
+      "expected": "3cdf7ee22ee0dfa233437342d9b1c8084d79ed79afbe6ebac0446b44645c3b2b",
+      "actual": "3cdf7ee22ee0dfa233437342d9b1c8084d79ed79afbe6ebac0446b44645c3b2b",
+      "ok": true
+    },
+    {
+      "path": "apps/engines/analysis/tests/test_backend.py",
+      "expected": "56aaa2d7cea00bde944887f67c0fe63af36aded57f818716adb782668b944ac4",
+      "actual": "56aaa2d7cea00bde944887f67c0fe63af36aded57f818716adb782668b944ac4",
+      "ok": true
+    },
+    {
+      "path": "apps/engines/analysis/tests/test_clap_real.py",
+      "expected": "3723964e9755cc1c7b43df23a6929adff53e57c214e7a813390d298b75982645",
+      "actual": "3723964e9755cc1c7b43df23a6929adff53e57c214e7a813390d298b75982645",
+      "ok": true
+    },
+    {
+      "path": "apps/engines/analysis/tests/test_gpu.py",
+      "expected": "db6b199efb637665ba951240390eeab8b23cdbf0ebdfcc5f11038d9dd2694269",
+      "actual": "db6b199efb637665ba951240390eeab8b23cdbf0ebdfcc5f11038d9dd2694269",
+      "ok": true
+    },
+    {
+      "path": "apps/engines/analysis/tests/test_loaders.py",
+      "expected": "33f1bd8ab30590f23a6951d99627bf749156b5cece8ebf0b3806abb1af4f5c48",
+      "actual": "33f1bd8ab30590f23a6951d99627bf749156b5cece8ebf0b3806abb1af4f5c48",
+      "ok": true
+    },
+    {
+      "path": "apps/engines/analysis/tests/test_safety.py",
+      "expected": "bf2d9ded6c461f49e3a8bbfc0575199c8654c6d5cfcc0fa3e8dfca9a3519a417",
+      "actual": "bf2d9ded6c461f49e3a8bbfc0575199c8654c6d5cfcc0fa3e8dfca9a3519a417",
+      "ok": true
+    },
+    {
+      "path": "apps/engines/analysis/tests/test_segments.py",
+      "expected": "2ca14e5da4312fe87fdc48892a7fb9f3e20dacf19fdd5f51f3fd5bdf88647544",
+      "actual": "2ca14e5da4312fe87fdc48892a7fb9f3e20dacf19fdd5f51f3fd5bdf88647544",
+      "ok": true
+    },
+    {
+      "path": "apps/engines/analysis/uv.lock",
+      "expected": "9fbdd9e86d1b43d7613b6f0abcac302905e9391e26c3b0cf4d3fc346ff33e32f",
+      "actual": "9fbdd9e86d1b43d7613b6f0abcac302905e9391e26c3b0cf4d3fc346ff33e32f",
+      "ok": true
+    },
+    {
+      "path": "docker-compose.yml",
+      "expected": "c8bfb71861c5612ab4b870749e386412004649118bc610423899c8367026265d",
+      "actual": "c8bfb71861c5612ab4b870749e386412004649118bc610423899c8367026265d",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/.coverage",
+      "expected": "21b92b0a19b442528e619cba801747340afeab545371484e975cca6a459ede47",
+      "actual": "21b92b0a19b442528e619cba801747340afeab545371484e975cca6a459ede47",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/build-final.log",
+      "expected": "172ddb1bf83897bad0c4ab4c113e2736445ff99ac22740521b38b10016b08f82",
+      "actual": "172ddb1bf83897bad0c4ab4c113e2736445ff99ac22740521b38b10016b08f82",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/build-second.log",
+      "expected": "b616cef29a75f93d50ccfca23d315c48e57ea752d048d4ae27e7161bacf26b4f",
+      "actual": "b616cef29a75f93d50ccfca23d315c48e57ea752d048d4ae27e7161bacf26b4f",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/build.log",
+      "expected": "f14878afb3521750a604750a71eba776526dc9f81487191d49df2b79bbb46d12",
+      "actual": "f14878afb3521750a604750a71eba776526dc9f81487191d49df2b79bbb46d12",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/compose.json",
+      "expected": "de4e485c364a8570c0e8d3fb318b59f5b73062003428bfa6bbf5c5301319bde4",
+      "actual": "de4e485c364a8570c0e8d3fb318b59f5b73062003428bfa6bbf5c5301319bde4",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/coverage.json",
+      "expected": "708fdb767f9637d3a77822745ecd7520bc34e702c85ae8a40acd600f09eee4b5",
+      "actual": "708fdb767f9637d3a77822745ecd7520bc34e702c85ae8a40acd600f09eee4b5",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/cpu-before-silence.log",
+      "expected": "e7f5b80d2d846264a5d818659dcbb49835219a8404131d76e119076e043adac9",
+      "actual": "e7f5b80d2d846264a5d818659dcbb49835219a8404131d76e119076e043adac9",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/cpu-before-silence.xml",
+      "expected": "e143a0fd8ca327870facb593c3caa631294ed27ab0e19ae5f1ade0a5d05372ad",
+      "actual": "e143a0fd8ca327870facb593c3caa631294ed27ab0e19ae5f1ade0a5d05372ad",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/cpu-first.log",
+      "expected": "e7c357da6ceff0e8b81e4949464ae40b8e5a66af74a18b8c0a457f0f615b7ac5",
+      "actual": "e7c357da6ceff0e8b81e4949464ae40b8e5a66af74a18b8c0a457f0f615b7ac5",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/cpu-first.xml",
+      "expected": "f99f957ac4989c968616fcc8f2ad8e19d6b9e28a4c3a0c8717785c3da631ecd3",
+      "actual": "f99f957ac4989c968616fcc8f2ad8e19d6b9e28a4c3a0c8717785c3da631ecd3",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/cpu-intermediate.log",
+      "expected": "ba7f0e795fc3c3b8ba8ef3dfe173ddfe8e745b888cdd4211559321f9d35fd554",
+      "actual": "ba7f0e795fc3c3b8ba8ef3dfe173ddfe8e745b888cdd4211559321f9d35fd554",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/cpu-intermediate.xml",
+      "expected": "3813ce7d048ceb92d74888b313a41a59ada42bca4e0865beca33280ebfa7ee30",
+      "actual": "3813ce7d048ceb92d74888b313a41a59ada42bca4e0865beca33280ebfa7ee30",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/cpu.log",
+      "expected": "8a60d8147dc27f9d3f8a2eeccbc223cbfc5fd9db7f3a4dca8512f81c896f23b1",
+      "actual": "8a60d8147dc27f9d3f8a2eeccbc223cbfc5fd9db7f3a4dca8512f81c896f23b1",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/cpu.xml",
+      "expected": "76258c9c36aeecc6d60a7eae2fd6a3d84167ab98c91ac9268caa131ae453bc91",
+      "actual": "76258c9c36aeecc6d60a7eae2fd6a3d84167ab98c91ac9268caa131ae453bc91",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/freeze.py",
+      "expected": "13daf73ea00868dd9dbd118df0c434b1603bcc3901d3df79d625fa9bc50874a3",
+      "actual": "13daf73ea00868dd9dbd118df0c434b1603bcc3901d3df79d625fa9bc50874a3",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/green-expanded.log",
+      "expected": "9e432b9331b707a6999b885711e2cc0214ad4a65cb5bfc24209a82409f95c18e",
+      "actual": "9e432b9331b707a6999b885711e2cc0214ad4a65cb5bfc24209a82409f95c18e",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/green-expanded.xml",
+      "expected": "e206aaac9072c7c25dee4951fcb768803e6a4990ba78682edf7eed027801b21a",
+      "actual": "e206aaac9072c7c25dee4951fcb768803e6a4990ba78682edf7eed027801b21a",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/green.log",
+      "expected": "df1359510497b81bd179846b6a12a338e2946d642719c65ece12e736aa1e449a",
+      "actual": "df1359510497b81bd179846b6a12a338e2946d642719c65ece12e736aa1e449a",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/green.xml",
+      "expected": "833b4948da0915791e609440a2937a752f0f5bad2ba9e150e1ac147dd93ba005",
+      "actual": "833b4948da0915791e609440a2937a752f0f5bad2ba9e150e1ac147dd93ba005",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/image-source-check.log",
+      "expected": "a909c6bbdbe7aa370747e7f9727015130fd98df78824b4ce6f662c7e230f09d1",
+      "actual": "a909c6bbdbe7aa370747e7f9727015130fd98df78824b4ce6f662c7e230f09d1",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/images.log",
+      "expected": "0a20acf4095368704d514e2bfb0a43bf2dc7beaa561db8df9bc7542190af3fdc",
+      "actual": "0a20acf4095368704d514e2bfb0a43bf2dc7beaa561db8df9bc7542190af3fdc",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/import_probe.py",
+      "expected": "1a9e038b766c206ee3ec433304058c7c49107bfbc07027a1eb8a7c85c6998eb3",
+      "actual": "1a9e038b766c206ee3ec433304058c7c49107bfbc07027a1eb8a7c85c6998eb3",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/imports-final.log",
+      "expected": "ac96a422a265e04fe5cdf15805ceb8eac1c17c5648213ab6e9326866a8fa6ef2",
+      "actual": "ac96a422a265e04fe5cdf15805ceb8eac1c17c5648213ab6e9326866a8fa6ef2",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/imports-first.log",
+      "expected": "fa73914b06a99d13bf373d15688d9dd7985a28de8129501066d6eb3c7537cb71",
+      "actual": "fa73914b06a99d13bf373d15688d9dd7985a28de8129501066d6eb3c7537cb71",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/imports-path-first.log",
+      "expected": "f98922634fb6687fdd728bae548bb53cd910da3eda5c5d85f2e402c4d48ff4b3",
+      "actual": "f98922634fb6687fdd728bae548bb53cd910da3eda5c5d85f2e402c4d48ff4b3",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/imports.log",
+      "expected": "ac96a422a265e04fe5cdf15805ceb8eac1c17c5648213ab6e9326866a8fa6ef2",
+      "actual": "ac96a422a265e04fe5cdf15805ceb8eac1c17c5648213ab6e9326866a8fa6ef2",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/lock-host.log",
+      "expected": "88fd5f92d420dc1ce8d660abd9bd0e114e1ef011792a158b2b98d6bf441d56f8",
+      "actual": "88fd5f92d420dc1ce8d660abd9bd0e114e1ef011792a158b2b98d6bf441d56f8",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/lock.log",
+      "expected": "69070702514b8846c250129b5830b8ee915b18388e52a8978e49673185771c9a",
+      "actual": "69070702514b8846c250129b5830b8ee915b18388e52a8978e49673185771c9a",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/red-independent.log",
+      "expected": "f6c0259ea6b77484cc746094bb64ff57eda6c99ff373807d7b75e946337fd282",
+      "actual": "f6c0259ea6b77484cc746094bb64ff57eda6c99ff373807d7b75e946337fd282",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/red-independent.xml",
+      "expected": "3afebd3527c21b3d2e0f3542b6c9defe206f8a0fd373e9d53f9a7214c9dfce5f",
+      "actual": "3afebd3527c21b3d2e0f3542b6c9defe206f8a0fd373e9d53f9a7214c9dfce5f",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/red-system.log",
+      "expected": "ef0588375126c2d4b5bd45501ca5903faec514aa5ba91028140a380817a89d80",
+      "actual": "ef0588375126c2d4b5bd45501ca5903faec514aa5ba91028140a380817a89d80",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/red-system.xml",
+      "expected": "0f2f388bbb3eac945f6ac6b3c3ba92ab7e5909165d573052326d1928e52d5367",
+      "actual": "0f2f388bbb3eac945f6ac6b3c3ba92ab7e5909165d573052326d1928e52d5367",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/red.log",
+      "expected": "7955d32b0da4e63da4348bf3d8e3c3123599bf57898bdaeb2294a51a8079135c",
+      "actual": "7955d32b0da4e63da4348bf3d8e3c3123599bf57898bdaeb2294a51a8079135c",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/red.xml",
+      "expected": "9cec3e9367eb58e47162f66e96853bb9cecac971d31dca32a84a0ae4cfd88d3b",
+      "actual": "9cec3e9367eb58e47162f66e96853bb9cecac971d31dca32a84a0ae4cfd88d3b",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/report.md",
+      "expected": "f5e47800ec2d0734849de6a7742405ce210e68e7899f093d2dbc4dde2937cf81",
+      "actual": "f5e47800ec2d0734849de6a7742405ce210e68e7899f093d2dbc4dde2937cf81",
+      "ok": true
+    },
+    {
+      "path": ".cache/dev-cycle/t08/fix2/ruff.log",
+      "expected": "fb269b240c1fdaddf6a384e4ccda8b4e6c3063c289d27a56db5ec12935a26fc0",
+      "actual": "fb269b240c1fdaddf6a384e4ccda8b4e6c3063c289d27a56db5ec12935a26fc0",
+      "ok": true
+    }
+  ],
+  "pdf": "pending; to-pdf dependencies absent; no installation",
+  "evidence": [
+    {
+      "path": ".cache/dev-cycle/t08/qa/.coverage",
+      "sha256": "21b92b0a19b442528e619cba801747340afeab545371484e975cca6a459ede47"
+    },
+    {
+      "path": ".cache/dev-cycle/t08/qa/ast.log",
+      "sha256": "245f3f63a9da004b1737a57294b1df08a91d9f26d7e059ddfc5fb0d484321985"
+    },
+    {
+      "path": ".cache/dev-cycle/t08/qa/beats.log",
+      "sha256": "554f863be354c9bb7d6b7067ec8e5bf15e0e62aa45ca717fe37891b7ef2c2602"
+    },
+    {
+      "path": ".cache/dev-cycle/t08/qa/beats.xml",
+      "sha256": "1267eab2f2d99559cfef067f5719b5ecfa4c1410ca5d33cc5be94be95b53f7fd"
+    },
+    {
+      "path": ".cache/dev-cycle/t08/qa/contracts.log",
+      "sha256": "811b82e3c8c403acce420dc5493ea8c60ea777f3166c18b444f88ed505584542"
+    },
+    {
+      "path": ".cache/dev-cycle/t08/qa/coverage-check.log",
+      "sha256": "4fc6a5e29d4856b1c4aa4a2099a87318baf208bf755d64109c7d6c4e323ff896"
+    },
+    {
+      "path": ".cache/dev-cycle/t08/qa/coverage-summary.json",
+      "sha256": "d423403e6eaf99cea4137036cba40ffa87264a6012bc9f1cb1be9db916882d26"
+    },
+    {
+      "path": ".cache/dev-cycle/t08/qa/coverage.json",
+      "sha256": "0b00f7382273441a93a8bc71fe1245811da4f66af98a8135db5cd4ebb7e2bdef"
+    },
+    {
+      "path": ".cache/dev-cycle/t08/qa/coverage.xml",
+      "sha256": "fb4d3fc48820ad773c5c4973b7fbef4cbd12417fd5006546268ff40aec8d8e88"
+    },
+    {
+      "path": ".cache/dev-cycle/t08/qa/cpu.log",
+      "sha256": "8041d475a590c3e1e678761f08240995b9ce5b73deb42d25f971f71bde826718"
+    },
+    {
+      "path": ".cache/dev-cycle/t08/qa/cpu.xml",
+      "sha256": "c3f38a39c7cf6f44e7c2ae24e52a8e3bacc19b3e4dcfe5a11cb1dfee31751fdd"
+    },
+    {
+      "path": ".cache/dev-cycle/t08/qa/examples.log",
+      "sha256": "fe566d3c16076823adce87fb59a2663b53a09085805b3d9dd81a95180a57b856"
+    },
+    {
+      "path": ".cache/dev-cycle/t08/qa/final-checks.log",
+      "sha256": "2a7f85989db90a3d5c295ed4e0226d53a1e71f357e7c07e6b02c3329b53913a5"
+    },
+    {
+      "path": ".cache/dev-cycle/t08/qa/final_checks.py",
+      "sha256": "bf7b826790341fad49d4f7395c8f9d6b119c06d969545225fbccebb930773f85"
+    },
+    {
+      "path": ".cache/dev-cycle/t08/qa/format.log",
+      "sha256": "6cdd9b179e95470ab547024563dd513268489f0b3130fb78036435dc90f87459"
+    },
+    {
+      "path": ".cache/dev-cycle/t08/qa/freeze-after.json",
+      "sha256": "f5f022487150f8bee034d8d4d79b730a6d9ff81c3918e923d56304009553ed0f"
+    },
+    {
+      "path": ".cache/dev-cycle/t08/qa/freeze-before.json",
+      "sha256": "4c6e6cdb04caae50ad6175fe96c46c90bda507a6450108cc7e1e2d9e89f7832d"
+    },
+    {
+      "path": ".cache/dev-cycle/t08/qa/historical-fix1.log",
+      "sha256": "70616d55e13af3541aabf48b4ce869b6b833344b95ec5f3580edefe356359bc4"
+    },
+    {
+      "path": ".cache/dev-cycle/t08/qa/historical-original.log",
+      "sha256": "46a24826e4976a2eb10cf8107eff5f444a2310f568a229d7b891613141846570"
+    },
+    {
+      "path": ".cache/dev-cycle/t08/qa/image.log",
+      "sha256": "9d87f528e595be0dfc1f99e8502d1e8127c801b30e8c4eb87573862154923a91"
+    },
+    {
+      "path": ".cache/dev-cycle/t08/qa/imports-path-failed.log",
+      "sha256": "3b236f9f7891062c2da1b3c7d8d2e5314a978d76fd84a303b6fc7645b30dba2d"
+    },
+    {
+      "path": ".cache/dev-cycle/t08/qa/imports.log",
+      "sha256": "ac96a422a265e04fe5cdf15805ceb8eac1c17c5648213ab6e9326866a8fa6ef2"
+    },
+    {
+      "path": ".cache/dev-cycle/t08/qa/import_probe.py",
+      "sha256": "1a9e038b766c206ee3ec433304058c7c49107bfbc07027a1eb8a7c85c6998eb3"
+    },
+    {
+      "path": ".cache/dev-cycle/t08/qa/ledger.log",
+      "sha256": "ff45c2230f287f0aecccd0b626704b4e17476bd9ec0a2ea606649277d93837ac"
+    },
+    {
+      "path": ".cache/dev-cycle/t08/qa/links.json",
+      "sha256": "ad5763e9f5dcf4831628de0be882c1412feffd468482c0527698274729c99621"
+    },
+    {
+      "path": ".cache/dev-cycle/t08/qa/ruff.log",
+      "sha256": "af352a86840ad0af3d37ea0d9197f868363a6dac6b1c2ef5d2722f6b41d2d9af"
+    },
+    {
+      "path": ".cache/dev-cycle/t08/qa/write_report.py",
+      "sha256": "e75e27c497c8f6647020d181c5e79147b5b8627b526c3eddea5f71c553a8a26f"
+    },
+    {
+      "path": "docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/t08/qa-cpu-report.md",
+      "sha256": "8ad06b049860fb197d9b5b7d3e1bc3e7a879dc76ea042220bccdf5772b78ea4a"
+    }
+  ]
+}

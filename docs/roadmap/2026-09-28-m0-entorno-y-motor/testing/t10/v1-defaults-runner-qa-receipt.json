@@ -1,0 +1,128 @@
+{
+  "status": "CPU_QA_PASS",
+  "completed_utc": "2026-10-06T22:36:28.924331+00:00",
+  "scope": "Five private prepared /v1 default drivers only; independent CPU QA",
+  "command": ". ./scripts/env.ps1; uv run --frozen --no-sync --all-packages python -B .cache/dev-cycle/t10/v1-defaults-batch-qa/checks.py",
+  "exit_code": 0,
+  "gate": {
+    "status": "CPU_QA_PASS",
+    "tests": 89,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "custody_unchanged": true,
+    "exit_code": 0
+  },
+  "junit": [
+    "global.xml",
+    "case-1.xml",
+    "case-2.xml",
+    "case-3.xml",
+    "case-4.xml",
+    "case-5.xml"
+  ],
+  "commands": "commands.json",
+  "cases": [
+    {
+      "job_id": "01M49JY83KDDC5C1YA0JPMQ5FK",
+      "case": "music.song",
+      "seed": 102,
+      "owner": "03c17eb07cd54069b7778f9917cc674b",
+      "case_dir": ".cache/dev-cycle/t10/v1-defaults-batch/01M49JY83KDDC5C1YA0JPMQ5FK",
+      "raw_job": "data/tmp/01M49JY83KDDC5C1YA0JPMQ5FK",
+      "gpu_invocation": ". ./scripts/env.ps1; uv run --frozen --no-sync --all-packages python -B .cache/dev-cycle/t10/v1-defaults-batch/01M49JY83KDDC5C1YA0JPMQ5FK/run.py",
+      "cpu_invocation": ". ./scripts/env.ps1; uv run --frozen --no-sync --all-packages python -B .cache/dev-cycle/t10/v1-defaults-batch/01M49JY83KDDC5C1YA0JPMQ5FK/prepare.py"
+    },
+    {
+      "job_id": "01M49JY83KW7CE93GGAHGZ4FSV",
+      "case": "music.song",
+      "seed": 103,
+      "owner": "4a9df4cd81e0464abb6b0f6cf280f1d3",
+      "case_dir": ".cache/dev-cycle/t10/v1-defaults-batch/01M49JY83KW7CE93GGAHGZ4FSV",
+      "raw_job": "data/tmp/01M49JY83KW7CE93GGAHGZ4FSV",
+      "gpu_invocation": ". ./scripts/env.ps1; uv run --frozen --no-sync --all-packages python -B .cache/dev-cycle/t10/v1-defaults-batch/01M49JY83KW7CE93GGAHGZ4FSV/run.py",
+      "cpu_invocation": ". ./scripts/env.ps1; uv run --frozen --no-sync --all-packages python -B .cache/dev-cycle/t10/v1-defaults-batch/01M49JY83KW7CE93GGAHGZ4FSV/prepare.py"
+    },
+    {
+      "job_id": "01M49JY83KYKERDBMJV71WX34S",
+      "case": "music.instrumental",
+      "seed": 101,
+      "owner": "2bc76edc0dc446e586b5141548c4f69f",
+      "case_dir": ".cache/dev-cycle/t10/v1-defaults-batch/01M49JY83KYKERDBMJV71WX34S",
+      "raw_job": "data/tmp/01M49JY83KYKERDBMJV71WX34S",
+      "gpu_invocation": ". ./scripts/env.ps1; uv run --frozen --no-sync --all-packages python -B .cache/dev-cycle/t10/v1-defaults-batch/01M49JY83KYKERDBMJV71WX34S/run.py",
+      "cpu_invocation": ". ./scripts/env.ps1; uv run --frozen --no-sync --all-packages python -B .cache/dev-cycle/t10/v1-defaults-batch/01M49JY83KYKERDBMJV71WX34S/prepare.py"
+    },
+    {
+      "job_id": "01M49JY83K78ZHWA7RNZASW3J1",
+      "case": "music.instrumental",
+      "seed": 102,
+      "owner": "e7ed952d50384008b700c9c25d41f8a1",
+      "case_dir": ".cache/dev-cycle/t10/v1-defaults-batch/01M49JY83K78ZHWA7RNZASW3J1",
+      "raw_job": "data/tmp/01M49JY83K78ZHWA7RNZASW3J1",
+      "gpu_invocation": ". ./scripts/env.ps1; uv run --frozen --no-sync --all-packages python -B .cache/dev-cycle/t10/v1-defaults-batch/01M49JY83K78ZHWA7RNZASW3J1/run.py",
+      "cpu_invocation": ". ./scripts/env.ps1; uv run --frozen --no-sync --all-packages python -B .cache/dev-cycle/t10/v1-defaults-batch/01M49JY83K78ZHWA7RNZASW3J1/prepare.py"
+    },
+    {
+      "job_id": "01M49JY83KJVDNBMDZ5E04NXZP",
+      "case": "music.instrumental",
+      "seed": 103,
+      "owner": "366fad25313345b5a45b0ac99b7f416b",
+      "case_dir": ".cache/dev-cycle/t10/v1-defaults-batch/01M49JY83KJVDNBMDZ5E04NXZP",
+      "raw_job": "data/tmp/01M49JY83KJVDNBMDZ5E04NXZP",
+      "gpu_invocation": ". ./scripts/env.ps1; uv run --frozen --no-sync --all-packages python -B .cache/dev-cycle/t10/v1-defaults-batch/01M49JY83KJVDNBMDZ5E04NXZP/run.py",
+      "cpu_invocation": ". ./scripts/env.ps1; uv run --frozen --no-sync --all-packages python -B .cache/dev-cycle/t10/v1-defaults-batch/01M49JY83KJVDNBMDZ5E04NXZP/prepare.py"
+    }
+  ],
+  "batch_seals_validated": 113,
+  "per_case_root_relative_seals": 16,
+  "custody": {
+    "sources59": 59,
+    "protected32": 32,
+    "originals15_plus_accepted_fix": 16,
+    "before": "custody-before-qa.json",
+    "after": "custody-after-qa.json",
+    "preserved": true
+  },
+  "driver_imports": "Five fresh independent interpreter subprocesses; commands/Popen forbidden during import; no torch",
+  "captured_receipt_tests": "Synthetic variants of recorded accepted song receipt, clearly private; not inference or musical evidence",
+  "cpu_startup": "Recorded five CPU receipts validated; QA did not execute Docker or repeat preparers",
+  "gpu_execution_attempted": false,
+  "verified": false,
+  "musical_acceptance": null,
+  "task_complete": false,
+  "product_gaps": [],
+  "harness_incidents": [
+    {
+      "attempt": 1,
+      "exit_code": 1,
+      "failure": "Byte comparison CRLF vs LF and invalid ApiError mock arity; product unchanged",
+      "preserved": "attempt1-*.xml/txt/commands/custody plus checks-attempt1.preimage.py"
+    },
+    {
+      "attempt": 2,
+      "exit_code": 0,
+      "tests": 74
+    },
+    {
+      "attempt": 3,
+      "exit_code": 0,
+      "tests": 84
+    },
+    {
+      "attempt": 4,
+      "exit_code": 0,
+      "tests": 89
+    }
+  ],
+  "coverage": "n/a: private orchestration/prose, no product source changes",
+  "test_plan": "n/a (sin UI)",
+  "required_before_gpu": [
+    "Root explicit sequential invocation only",
+    "Fresh Ollama/NVML/PDH preflight; used NVML <=1600 MiB",
+    "Never rerun accepted music.song seed101",
+    "Abort first nonzero exit, no retry/resume or duplicate claim",
+    "Music quality/manual listening and T10 verification remain pending"
+  ],
+  "root_verified_artifacts": 434
+}

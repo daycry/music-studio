@@ -1,0 +1,251 @@
+{
+  "utc": "2026-10-09T02:47:14.865960+00:00",
+  "owned": [
+    "apps/server/app/worker/custody.py",
+    "apps/server/tests/test_worker_native_linux_custody.py",
+    "apps/server/tests/test_worker_native_custody.py"
+  ],
+  "production_modified": [
+    "apps/server/app/worker/custody.py"
+  ],
+  "uuid": "66649042-8205-44dc-af3e-00bb977fed03",
+  "causal_RED": true,
+  "red_receipt": {
+    "state": "CLOSED_CONFIRMED",
+    "reason": "cancelled",
+    "release_gate": true
+  },
+  "red_authorities": [
+    {
+      "method": "terminate",
+      "actual_return": true,
+      "monotonic_ns": 23495909116458
+    },
+    {
+      "method": "terminate",
+      "actual_return": true,
+      "monotonic_ns": 23495911821133
+    },
+    {
+      "method": "close",
+      "actual_return": true,
+      "monotonic_ns": 23495912470735
+    }
+  ],
+  "red_witness_cleanup": {
+    "witness_exited": true,
+    "actual_waitpid": [
+      9,
+      0
+    ],
+    "authorities": [
+      {
+        "method": "terminate",
+        "actual_return": true,
+        "monotonic_ns": 23495909116458
+      },
+      {
+        "method": "terminate",
+        "actual_return": true,
+        "monotonic_ns": 23495911821133
+      },
+      {
+        "method": "close",
+        "actual_return": true,
+        "monotonic_ns": 23495912470735
+      },
+      {
+        "method": "terminate",
+        "actual_return": true,
+        "monotonic_ns": 23495921000905
+      }
+    ]
+  },
+  "red_native_wait_snapshot": "UNKNOWN after handles legitimately closed; real backend disposition records native waits",
+  "red_full_command_metadata": "PARTIAL: overwritten by focal GREEN names; surviving RED source/JUnit/proof/native-call-used preserved. No retroproof.",
+  "focal_GREEN": {
+    "linux": 2
+  },
+  "fresh_suites": {
+    "linux": {
+      "cases": 41,
+      "passed": 40,
+      "failures": [
+        {
+          "name": "test_invalid_transport_retains_owner[backpressure]",
+          "text": "tmp_path = PosixPath('/tmp/tests/test_invalid_transport_retains6')\nmode = 'backpressure'\n\n    @pytest.mark.parametrize(\n        \"mode\", [\"truncated\", \"invalid\", \"eof\", \"flood\", \"nonfinite\", \"seq\", \"backpressure\"]\n    )\n    def test_invalid_transport_retains_owner(tmp_path, mode):\n        group = LinuxGroup(mode, tmp_path, ID, \"epoch\")\n        owner = Owner(group, ID, \"epoch\", 0.25)\n        owner.start()\n        receipt = owner.join(10)\n>       assert receipt.state == State.UNKNOWN_QUARANTINED\nE       AssertionError: assert <State.CLOSED...ED_CONFIRMED'> == <State.UNKNOW..._QUARANTINED'>\nE         \nE         - UNKNOWN_QUARANTINED\nE         + CLOSED_CONFIRMED\n\n/repo/apps/server/tests/test_worker_native_linux_custody.py:147: AssertionError"
+        }
+      ],
+      "errors": 0,
+      "skips": 0
+    },
+    "windows": {
+      "cases": 46,
+      "passed": 46,
+      "failures": [],
+      "errors": 0,
+      "skips": 0
+    }
+  },
+  "whole_current": {
+    "apps\\server\\app\\worker\\custody.py": {
+      "covered_lines": 201,
+      "num_statements": 222,
+      "percent_covered": 87.83783783783784,
+      "percent_covered_display": "88",
+      "missing_lines": 21,
+      "excluded_lines": 0,
+      "percent_statements_covered": 90.54054054054055,
+      "percent_statements_covered_display": "91",
+      "num_branches": 74,
+      "num_partial_branches": 13,
+      "covered_branches": 59,
+      "missing_branches": 15,
+      "percent_branches_covered": 79.72972972972973,
+      "percent_branches_covered_display": "80"
+    },
+    "apps\\server\\app\\worker\\custody_linux.py": {
+      "covered_lines": 229,
+      "num_statements": 257,
+      "percent_covered": 85.88588588588588,
+      "percent_covered_display": "86",
+      "missing_lines": 28,
+      "excluded_lines": 0,
+      "percent_statements_covered": 89.10505836575875,
+      "percent_statements_covered_display": "89",
+      "num_branches": 76,
+      "num_partial_branches": 19,
+      "covered_branches": 57,
+      "missing_branches": 19,
+      "percent_branches_covered": 75.0,
+      "percent_branches_covered_display": "75"
+    },
+    "apps\\server\\app\\worker\\custody_linux_supervisor.py": {
+      "covered_lines": 206,
+      "num_statements": 247,
+      "percent_covered": 81.65137614678899,
+      "percent_covered_display": "82",
+      "missing_lines": 41,
+      "excluded_lines": 0,
+      "percent_statements_covered": 83.40080971659918,
+      "percent_statements_covered_display": "83",
+      "num_branches": 80,
+      "num_partial_branches": 13,
+      "covered_branches": 61,
+      "missing_branches": 19,
+      "percent_branches_covered": 76.25,
+      "percent_branches_covered_display": "76"
+    },
+    "apps\\server\\app\\worker\\custody_windows.py": {
+      "covered_lines": 354,
+      "num_statements": 384,
+      "percent_covered": 88.18897637795276,
+      "percent_covered_display": "88",
+      "missing_lines": 30,
+      "excluded_lines": 0,
+      "percent_statements_covered": 92.1875,
+      "percent_statements_covered_display": "92",
+      "num_branches": 124,
+      "num_partial_branches": 30,
+      "covered_branches": 94,
+      "missing_branches": 30,
+      "percent_branches_covered": 75.80645161290323,
+      "percent_branches_covered_display": "76"
+    }
+  },
+  "required_facade_gate": true,
+  "original_ast_preserved": true,
+  "protected": {
+    "apps/server/app/worker/contracts.py": {
+      "before": "4f098507d03cce1c3e527dff9f0bfeaa2a46451e1ad94559055cb266a22a6282",
+      "after": "4f098507d03cce1c3e527dff9f0bfeaa2a46451e1ad94559055cb266a22a6282",
+      "exact": true
+    },
+    "apps/server/app/worker/custody_linux.py": {
+      "before": "04d99a7bd0c7e6c55ce0dffd43282bffcba322b783da09c07fcd513add024034",
+      "after": "04d99a7bd0c7e6c55ce0dffd43282bffcba322b783da09c07fcd513add024034",
+      "exact": true
+    },
+    "apps/server/app/worker/custody_linux_supervisor.py": {
+      "before": "dfed377ad9a2343e84e19631c484b9e51e04266e3a892709de53d5722d9068e0",
+      "after": "dfed377ad9a2343e84e19631c484b9e51e04266e3a892709de53d5722d9068e0",
+      "exact": true
+    },
+    "apps/server/app/worker/custody_windows.py": {
+      "before": "0ce95826b90c15e490fbf2cf2fd1c0d832bf99d4d88203810f1be9ee9c7ed884",
+      "after": "0ce95826b90c15e490fbf2cf2fd1c0d832bf99d4d88203810f1be9ee9c7ed884",
+      "exact": true
+    },
+    "apps/server/app/worker/pipe_protocol.py": {
+      "before": "0674b9c6d3821548a5fc4922113644ef2b6eabee3d5153f23852948b88bd0214",
+      "after": "0674b9c6d3821548a5fc4922113644ef2b6eabee3d5153f23852948b88bd0214",
+      "exact": true
+    },
+    "apps/server/app/worker/__init__.py": {
+      "before": "854e7118927bb8457577c916fece5b8aa7ece495257079d7472ec867b9c2fcb5",
+      "after": "854e7118927bb8457577c916fece5b8aa7ece495257079d7472ec867b9c2fcb5",
+      "exact": true
+    },
+    "apps/server/tests/fixtures/worker_custody_child.py": {
+      "before": "74025c3dc5c68986f5b56e6d9ed3bf05d3beb7ea07e0d34c8c18be57f96913ff",
+      "after": "74025c3dc5c68986f5b56e6d9ed3bf05d3beb7ea07e0d34c8c18be57f96913ff",
+      "exact": true
+    },
+    "apps/server/tests/test_worker_contracts.py": {
+      "before": "fc33331ff162f451a0993ca3f2efae267fa8f3949213dade03bae94caf2d93ec",
+      "after": "fc33331ff162f451a0993ca3f2efae267fa8f3949213dade03bae94caf2d93ec",
+      "exact": true
+    },
+    "apps/server/tests/test_worker_pipe_protocol.py": {
+      "before": "989fce045a363a5c10f6eee7445499aa0068cdd2ba58499bd1bb668abcb34a62",
+      "after": "989fce045a363a5c10f6eee7445499aa0068cdd2ba58499bd1bb668abcb34a62",
+      "exact": true
+    },
+    "apps/server/app/queue/events.py": {
+      "before": "67d81cdcd0abb5bba2ea391630e3b0efc7a053f25c04051bbd65e85cf4fc3733",
+      "after": "67d81cdcd0abb5bba2ea391630e3b0efc7a053f25c04051bbd65e85cf4fc3733",
+      "exact": true
+    },
+    "apps/server/app/sse.py": {
+      "before": "56c2724064b6220019601a84b85375123848d6aa1da24b465bb986c95bc8fc8e",
+      "after": "56c2724064b6220019601a84b85375123848d6aa1da24b465bb986c95bc8fc8e",
+      "exact": true
+    },
+    "uv.lock": {
+      "before": "aa222669e00ce27ccdfe5f739858ec78f95cbfabc25de7c7c1fbd5784f4f0582",
+      "after": "aa222669e00ce27ccdfe5f739858ec78f95cbfabc25de7c7c1fbd5784f4f0582",
+      "exact": true
+    },
+    "pyproject.toml": {
+      "before": "e485953b23b05279a1d84b1e9fcdb09949f440a5364f5a66018c545a362460bc",
+      "after": "e485953b23b05279a1d84b1e9fcdb09949f440a5364f5a66018c545a362460bc",
+      "exact": true
+    },
+    "apps/server/pyproject.toml": {
+      "before": "e33b73a4b0bc6bfb3d525c74712783d01e2a90e60cf3c3b4099daeb82d5ae4ab",
+      "after": "e33b73a4b0bc6bfb3d525c74712783d01e2a90e60cf3c3b4099daeb82d5ae4ab",
+      "exact": true
+    },
+    "apps/server/app/local_sessions.py": {
+      "before": "bfe4c960bfef34d245948d16e35d88972a200b5c4d8f27e76eebc4e6955730e0",
+      "after": "bfe4c960bfef34d245948d16e35d88972a200b5c4d8f27e76eebc4e6955730e0",
+      "exact": true
+    },
+    "apps/server/app/event_dtos.py": {
+      "before": "73d776692665061a1aa7ebda1a86bcfc90422557a64e9dcbdcea42a7cde13c20",
+      "after": "73d776692665061a1aa7ebda1a86bcfc90422557a64e9dcbdcea42a7cde13c20",
+      "exact": true
+    }
+  },
+  "launcher_history": "history/final01-launcher-timeout: incomplete 180s; removed/gone, no JUnit/final result; final02 wait budget420, original native timeouts unchanged",
+  "sourceguards": "current source/fixture/entry/instrument before spawns; private tool bytes captured before imports and read-only Linux mount, explicit base-runtime TCB",
+  "TDD_supplement": "Additional boundary cases are supporting coverage written after the minimal causal RED/fix; no independent RED per case claimed",
+  "independent_review": false,
+  "independent_QA": false,
+  "accepted": false,
+  "full_T05": false,
+  "model": null,
+  "tokens": null,
+  "EUR": null,
+  "IA_hours": null
+}

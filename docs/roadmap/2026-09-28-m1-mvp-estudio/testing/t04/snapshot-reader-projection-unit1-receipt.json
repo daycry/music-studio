@@ -1,0 +1,512 @@
+{
+  "utc": "2026-10-09T02:42:43.188348+00:00",
+  "status": "bounded_component_delivered_for_root_review_and_qa",
+  "acceptance": false,
+  "ownership": [
+    "apps/server/app/queue/admission.py",
+    "apps/server/app/queue/resolver.py",
+    "apps/server/tests/test_dispatcher_scanning.py"
+  ],
+  "protected": {
+    "apps/server/app/queue/retry.py": {
+      "sha256": "d76a4ef93a2b310d60b9f711e253298df21b25b5c5165be7dabedebc1badbdb3",
+      "bytes": 8763,
+      "matches_root_before": true
+    },
+    "apps/server/app/queue/runtime.py": {
+      "sha256": "8983200d86bb47e5362c92c14448d6bd09a01573c5c7c5cf08f6ad40593e9017",
+      "bytes": 24344,
+      "matches_root_before": true
+    },
+    "apps/server/app/models/__init__.py": {
+      "sha256": "9c86ef171968e799908068c1f98ce47186b9e2ed3337c019a7e9696d38dac0df",
+      "bytes": 28959,
+      "matches_root_before": true
+    },
+    "apps/server/tests/test_dispatcher_retry.py": {
+      "sha256": "8a47d239be08948db3fdf498d3e6846e8d0a9a37dec22edc96d5b53e67cd44fc",
+      "bytes": 70185,
+      "matches_root_before": true
+    }
+  },
+  "current_run": {
+    "argv": [
+      "/.venv\\Scripts\\python.exe",
+      "-m",
+      "pytest",
+      "apps/server/tests/test_dispatcher_admission.py",
+      "apps/server/tests/test_dispatcher_scanning.py",
+      "apps/server/tests/test_queue_resolver.py",
+      "apps/server/tests/test_queue_inputs.py",
+      "apps/server/tests/test_queue_references.py",
+      "apps/server/tests/test_queue_chains.py",
+      "apps/server/tests/test_queue_manual_retry.py",
+      "apps/server/tests/test_dispatcher_cancellation.py",
+      "apps/server/tests/test_dispatcher_recovery.py",
+      "-p",
+      "custody_probe",
+      "-q",
+      "--cov=app.queue.admission",
+      "--cov=app.queue.resolver",
+      "--cov-config=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1/coverage.ini",
+      "--cov-report=term-missing",
+      "--cov-report=json:/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1/coverage-current.json",
+      "--junitxml=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1\\selected-custody-complete\\junit.xml",
+      "-o",
+      "cache_dir=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1\\selected-custody-complete\\pytest-cache"
+    ],
+    "utc": "2026-10-09T02:39:30.515354+00:00",
+    "ended_utc": "2026-10-09T02:41:59.705860+00:00",
+    "exit": 0
+  },
+  "junit": {
+    "tests": 271,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "whole_coverage_each": {
+    "apps\\server\\app\\queue\\admission.py": {
+      "covered_lines": 223,
+      "num_statements": 235,
+      "percent_covered": 93.33333333333333,
+      "percent_covered_display": "93",
+      "missing_lines": 12,
+      "excluded_lines": 0,
+      "percent_statements_covered": 94.8936170212766,
+      "percent_statements_covered_display": "95",
+      "num_branches": 80,
+      "num_partial_branches": 9,
+      "covered_branches": 71,
+      "missing_branches": 9,
+      "percent_branches_covered": 88.75,
+      "percent_branches_covered_display": "89"
+    },
+    "apps\\server\\app\\queue\\resolver.py": {
+      "covered_lines": 153,
+      "num_statements": 165,
+      "percent_covered": 89.08296943231441,
+      "percent_covered_display": "89",
+      "missing_lines": 12,
+      "excluded_lines": 0,
+      "percent_statements_covered": 92.72727272727273,
+      "percent_statements_covered_display": "93",
+      "num_branches": 64,
+      "num_partial_branches": 9,
+      "covered_branches": 51,
+      "missing_branches": 13,
+      "percent_branches_covered": 79.6875,
+      "percent_branches_covered_display": "80"
+    }
+  },
+  "coverage_trace": "/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1\\selected-custody-complete\\.coverage",
+  "coverage_json": "/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1\\selected-custody-complete\\coverage-current.json",
+  "before_copies": 8409,
+  "before_bytes": 297534275,
+  "loaded_file_modules": 1007,
+  "loaded_file_gaps": [],
+  "builtin_frozen_namespace": 56,
+  "original_scanning_functions_ast_preserved": 21,
+  "candidate_writer_ast_identical": true,
+  "red": {
+    "run": {
+      "argv": [
+        "/.venv\\Scripts\\python.exe",
+        "-m",
+        "pytest",
+        "apps/server/tests/test_dispatcher_scanning.py::test_clean_snapshot_reader_avoids_job_entities",
+        "-q",
+        "--junitxml=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1\\red\\junit.xml",
+        "-o",
+        "cache_dir=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1\\red\\pytest-cache"
+      ],
+      "utc": "2026-10-09T02:22:51.015560+00:00",
+      "ended_utc": "2026-10-09T02:22:53.775605+00:00",
+      "exit": 1
+    },
+    "failure": "clean reader materialized one Job; intended zero; writer actual Job assertion passed"
+  },
+  "unrun_gates": [
+    "original timing-sensitive 801 covered with unchanged ten-second timeout",
+    "whole 32-file 1029 integration",
+    "fresh independent adversarial review",
+    "independent QA"
+  ],
+  "old_baseline": "1025 PASS / 1 FAIL / 3 SKIP remains open",
+  "measured_speedup": null,
+  "native_ownership_cleanup": {
+    "direct_managed_subprocesses": "Every runner subprocess has birth.json and terminal command.json and was waited by run.py; final inventory has inventory-command.json plus inventory-terminal.json and observed exec terminal exit 0. OS descendants UNKNOWN.",
+    "independent_os_descendant_enumeration": "UNKNOWN",
+    "foreign_processes_terminated": false
+  },
+  "actual_model": null,
+  "actual_tokens": null,
+  "actual_eur": null,
+  "actual_ai_hours": null,
+  "raw_cli_usage": "Root-reserved original CLI artifacts remain untouched; no inferred usage",
+  "history": [
+    {
+      "value": [
+        {
+          "argv": [
+            "/.venv\\Scripts\\python.exe",
+            "-m",
+            "pytest",
+            "apps/server/tests/test_dispatcher_scanning.py::test_clean_snapshot_reader_avoids_job_entities",
+            "-q",
+            "--junitxml=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1\\red\\junit.xml",
+            "-o",
+            "cache_dir=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1\\red\\pytest-cache"
+          ],
+          "utc": "2026-10-09T02:22:51.015560+00:00",
+          "ended_utc": "2026-10-09T02:22:53.775605+00:00",
+          "exit": 1
+        },
+        {
+          "argv": [
+            "/.venv\\Scripts\\python.exe",
+            "-m",
+            "pytest",
+            "apps/server/tests/test_dispatcher_scanning.py::test_snapshot_reader_preserves_orm_fallback",
+            "apps/server/tests/test_dispatcher_scanning.py::test_snapshot_reader_runs_json_processors_before_writer",
+            "apps/server/tests/test_dispatcher_scanning.py::test_snapshot_reader_canonical_processed_values",
+            "-q",
+            "--junitxml=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1\\semantics-before\\junit.xml",
+            "-o",
+            "cache_dir=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1\\semantics-before\\pytest-cache"
+          ],
+          "utc": "2026-10-09T02:23:36.128385+00:00",
+          "ended_utc": "2026-10-09T02:23:57.690713+00:00",
+          "exit": 1
+        },
+        {
+          "argv": [
+            "/.venv\\Scripts\\python.exe",
+            "-m",
+            "pytest",
+            "apps/server/tests/test_dispatcher_scanning.py::test_snapshot_reader_preserves_orm_fallback",
+            "apps/server/tests/test_dispatcher_scanning.py::test_snapshot_reader_runs_json_processors_before_writer",
+            "apps/server/tests/test_dispatcher_scanning.py::test_snapshot_reader_canonical_processed_values",
+            "-q",
+            "--junitxml=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1\\semantics-before-repaired\\junit.xml",
+            "-o",
+            "cache_dir=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1\\semantics-before-repaired\\pytest-cache"
+          ],
+          "utc": "2026-10-09T02:24:23.429244+00:00",
+          "ended_utc": "2026-10-09T02:24:44.252669+00:00",
+          "exit": 0
+        },
+        {
+          "argv": [
+            "/.venv\\Scripts\\python.exe",
+            "-m",
+            "pytest",
+            "apps/server/tests/test_dispatcher_scanning.py::test_clean_snapshot_reader_avoids_job_entities",
+            "-q",
+            "--junitxml=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1\\green\\junit.xml",
+            "-o",
+            "cache_dir=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1\\green\\pytest-cache"
+          ],
+          "utc": "2026-10-09T02:25:13.556811+00:00",
+          "ended_utc": "2026-10-09T02:25:16.248421+00:00",
+          "exit": 0
+        },
+        {
+          "argv": [
+            "/.venv\\Scripts\\python.exe",
+            "-m",
+            "ruff",
+            "format",
+            "apps/server/app/queue/admission.py",
+            "apps/server/app/queue/resolver.py",
+            "apps/server/tests/test_dispatcher_scanning.py"
+          ],
+          "utc": "2026-10-09T02:25:40.814331+00:00",
+          "ended_utc": "2026-10-09T02:25:40.949222+00:00",
+          "exit": 0
+        },
+        {
+          "argv": [
+            "/.venv\\Scripts\\python.exe",
+            "-m",
+            "pytest",
+            "apps/server/tests/test_dispatcher_admission.py",
+            "apps/server/tests/test_dispatcher_scanning.py",
+            "apps/server/tests/test_queue_resolver.py",
+            "apps/server/tests/test_queue_inputs.py",
+            "apps/server/tests/test_queue_references.py",
+            "apps/server/tests/test_queue_chains.py",
+            "apps/server/tests/test_queue_manual_retry.py",
+            "apps/server/tests/test_dispatcher_cancellation.py",
+            "apps/server/tests/test_dispatcher_recovery.py",
+            "-q",
+            "--cov=app.queue.admission",
+            "--cov=app.queue.resolver",
+            "--cov-config=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1/coverage.ini",
+            "--cov-report=term-missing",
+            "--cov-report=json:/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1/coverage-current.json",
+            "--junitxml=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1\\selected-current\\junit.xml",
+            "-o",
+            "cache_dir=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1\\selected-current\\pytest-cache"
+          ],
+          "utc": "2026-10-09T02:25:58.951107+00:00",
+          "ended_utc": "2026-10-09T02:28:28.890034+00:00",
+          "exit": 1
+        },
+        {
+          "argv": [
+            "/.venv\\Scripts\\python.exe",
+            "-m",
+            "pytest",
+            "apps/server/tests/test_dispatcher_scanning.py::test_snapshot_reader_revalidates_every_canonical_field",
+            "-q",
+            "--junitxml=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1\\concurrent-repaired\\junit.xml",
+            "-o",
+            "cache_dir=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1\\concurrent-repaired\\pytest-cache"
+          ],
+          "utc": "2026-10-09T02:29:16.966779+00:00",
+          "ended_utc": "2026-10-09T02:29:24.292467+00:00",
+          "exit": 1
+        },
+        {
+          "argv": [
+            "/.venv\\Scripts\\python.exe",
+            "-m",
+            "ruff",
+            "format",
+            "apps/server/app/queue/admission.py",
+            "apps/server/app/queue/resolver.py",
+            "apps/server/tests/test_dispatcher_scanning.py"
+          ],
+          "utc": "2026-10-09T02:30:06.959478+00:00",
+          "ended_utc": "2026-10-09T02:30:07.101707+00:00",
+          "exit": 0
+        },
+        {
+          "argv": [
+            "/.venv\\Scripts\\python.exe",
+            "-m",
+            "pytest",
+            "apps/server/tests/test_dispatcher_admission.py",
+            "apps/server/tests/test_dispatcher_scanning.py",
+            "apps/server/tests/test_queue_resolver.py",
+            "apps/server/tests/test_queue_inputs.py",
+            "apps/server/tests/test_queue_references.py",
+            "apps/server/tests/test_queue_chains.py",
+            "apps/server/tests/test_queue_manual_retry.py",
+            "apps/server/tests/test_dispatcher_cancellation.py",
+            "apps/server/tests/test_dispatcher_recovery.py",
+            "-q",
+            "--cov=app.queue.admission",
+            "--cov=app.queue.resolver",
+            "--cov-config=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1/coverage.ini",
+            "--cov-report=term-missing",
+            "--cov-report=json:/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1/coverage-current.json",
+            "--junitxml=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1\\selected-final\\junit.xml",
+            "-o",
+            "cache_dir=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1\\selected-final\\pytest-cache"
+          ],
+          "utc": "2026-10-09T02:30:22.167993+00:00",
+          "ended_utc": "2026-10-09T02:32:51.216582+00:00",
+          "exit": 1
+        },
+        {
+          "argv": [
+            "/.venv\\Scripts\\python.exe",
+            "-m",
+            "pytest",
+            "apps/server/tests/test_dispatcher_scanning.py::test_snapshot_reader_revalidates_every_canonical_field",
+            "-q",
+            "--junitxml=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1\\concurrent-isolated-fields\\junit.xml",
+            "-o",
+            "cache_dir=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1\\concurrent-isolated-fields\\pytest-cache"
+          ],
+          "utc": "2026-10-09T02:33:09.640968+00:00",
+          "ended_utc": "2026-10-09T02:33:15.914306+00:00",
+          "exit": 1
+        },
+        {
+          "argv": [
+            "/.venv\\Scripts\\python.exe",
+            "-m",
+            "pytest",
+            "apps/server/tests/test_dispatcher_scanning.py::test_snapshot_reader_revalidates_every_canonical_field",
+            "-q",
+            "--junitxml=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1\\concurrent-self-owned-fixture\\junit.xml",
+            "-o",
+            "cache_dir=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1\\concurrent-self-owned-fixture\\pytest-cache"
+          ],
+          "utc": "2026-10-09T02:33:55.617097+00:00",
+          "ended_utc": "2026-10-09T02:34:02.000898+00:00",
+          "exit": 0
+        },
+        {
+          "argv": [
+            "/.venv\\Scripts\\python.exe",
+            "-m",
+            "ruff",
+            "check",
+            "apps/server/app/queue/admission.py",
+            "apps/server/app/queue/resolver.py",
+            "apps/server/tests/test_dispatcher_scanning.py"
+          ],
+          "utc": "2026-10-09T02:34:46.837108+00:00",
+          "ended_utc": "2026-10-09T02:34:46.970725+00:00",
+          "exit": 1
+        },
+        {
+          "argv": [
+            "/.venv\\Scripts\\python.exe",
+            "-m",
+            "ruff",
+            "check",
+            "apps/server/app/queue/admission.py",
+            "apps/server/app/queue/resolver.py",
+            "apps/server/tests/test_dispatcher_scanning.py"
+          ],
+          "utc": "2026-10-09T02:35:01.918038+00:00",
+          "ended_utc": "2026-10-09T02:35:02.053401+00:00",
+          "exit": 0
+        },
+        {
+          "argv": [
+            "/.venv\\Scripts\\python.exe",
+            "-m",
+            "pytest",
+            "apps/server/tests/test_dispatcher_admission.py",
+            "apps/server/tests/test_dispatcher_scanning.py",
+            "apps/server/tests/test_queue_resolver.py",
+            "apps/server/tests/test_queue_inputs.py",
+            "apps/server/tests/test_queue_references.py",
+            "apps/server/tests/test_queue_chains.py",
+            "apps/server/tests/test_queue_manual_retry.py",
+            "apps/server/tests/test_dispatcher_cancellation.py",
+            "apps/server/tests/test_dispatcher_recovery.py",
+            "-p",
+            "custody_probe",
+            "-q",
+            "--cov=app.queue.admission",
+            "--cov=app.queue.resolver",
+            "--cov-config=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1/coverage.ini",
+            "--cov-report=term-missing",
+            "--cov-report=json:/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1/coverage-current.json",
+            "--junitxml=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1\\selected-current-final\\junit.xml",
+            "-o",
+            "cache_dir=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1\\selected-current-final\\pytest-cache"
+          ],
+          "utc": "2026-10-09T02:35:17.351741+00:00",
+          "ended_utc": "2026-10-09T02:37:40.106860+00:00",
+          "exit": 0
+        },
+        {
+          "argv": [
+            "/.venv\\Scripts\\python.exe",
+            "/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1/audit.py"
+          ],
+          "utc": "2026-10-09T02:38:15.142624+00:00",
+          "ended_utc": "2026-10-09T02:38:15.338420+00:00",
+          "exit": 0
+        },
+        {
+          "argv": [
+            "/.venv\\Scripts\\python.exe",
+            "-m",
+            "ruff",
+            "format",
+            "--check",
+            "apps/server/app/queue/admission.py",
+            "apps/server/app/queue/resolver.py",
+            "apps/server/tests/test_dispatcher_scanning.py"
+          ],
+          "utc": "2026-10-09T02:38:34.156968+00:00",
+          "ended_utc": "2026-10-09T02:38:34.288638+00:00",
+          "exit": 0
+        },
+        {
+          "argv": [
+            "/.venv\\Scripts\\python.exe",
+            "-m",
+            "pytest",
+            "apps/server/tests/test_dispatcher_admission.py",
+            "apps/server/tests/test_dispatcher_scanning.py",
+            "apps/server/tests/test_queue_resolver.py",
+            "apps/server/tests/test_queue_inputs.py",
+            "apps/server/tests/test_queue_references.py",
+            "apps/server/tests/test_queue_chains.py",
+            "apps/server/tests/test_queue_manual_retry.py",
+            "apps/server/tests/test_dispatcher_cancellation.py",
+            "apps/server/tests/test_dispatcher_recovery.py",
+            "-p",
+            "custody_probe",
+            "-q",
+            "--cov=app.queue.admission",
+            "--cov=app.queue.resolver",
+            "--cov-config=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1/coverage.ini",
+            "--cov-report=term-missing",
+            "--cov-report=json:/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1/coverage-current.json",
+            "--junitxml=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1\\selected-custody-complete\\junit.xml",
+            "-o",
+            "cache_dir=/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1\\selected-custody-complete\\pytest-cache"
+          ],
+          "utc": "2026-10-09T02:39:30.515354+00:00",
+          "ended_utc": "2026-10-09T02:41:59.705860+00:00",
+          "exit": 0
+        },
+        {
+          "argv": [
+            "/.venv\\Scripts\\python.exe",
+            "/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1/audit.py"
+          ],
+          "utc": "2026-10-09T02:42:27.947514+00:00",
+          "ended_utc": "2026-10-09T02:42:28.107770+00:00",
+          "exit": 0
+        },
+        {
+          "argv": [
+            "/.venv\\Scripts\\python.exe",
+            "/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1/finish.py"
+          ],
+          "utc": "2026-10-09T02:42:43.023448+00:00",
+          "ended_utc": "2026-10-09T02:42:43.195929+00:00",
+          "exit": 0
+        }
+      ],
+      "Count": 19
+    },
+    {
+      "argv": [
+        "/.venv\\Scripts\\python.exe",
+        "/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1/inventory.py"
+      ],
+      "utc": "2026-10-09T02:43:59.914938+00:00",
+      "pid": 24924,
+      "parent_pid": 23608,
+      "exit": 0,
+      "ended_utc": null,
+      "terminal_observed_utc": "2026-10-09T02:59:24.2522804Z",
+      "terminal_evidence": "write_stdin session 68435, chunk f706d4: terminal exit_code 0; files=166460; bytes=7379236824",
+      "independent_stderr": "UNKNOWN"
+    }
+  ],
+  "custody_limits": [
+    "Earlier runs had no loaded-module observer.",
+    "pytest.ini/coverage config first copies were after start of selected-current; subsequent captures are genuinely before launch.",
+    "selected-current-final PASS had four engine transitive sources not copied before; retained as qualified history.",
+    "Final loaded-file observation compares before source bytes with after bytes, not a universal dynamic-hook or native-code execution certificate.",
+    "Stdlib/bootstrap and Windows kernel are trusted computing base; no native OS process-tree cleanup certificate."
+  ],
+  "inventory_terminal": {
+    "argv": [
+      "/.venv\\Scripts\\python.exe",
+      "/.cache\\dev-cycle\\m1\\t04-snapshot-reader-projection-unit1/inventory.py"
+    ],
+    "utc": "2026-10-09T02:43:59.914938+00:00",
+    "pid": 24924,
+    "parent_pid": 23608,
+    "exit": 0,
+    "ended_utc": null,
+    "terminal_observed_utc": "2026-10-09T02:59:24.2522804Z",
+    "terminal_evidence": "write_stdin session 68435, chunk f706d4: terminal exit_code 0; files=166460; bytes=7379236824",
+    "independent_stderr": "UNKNOWN"
+  }
+}

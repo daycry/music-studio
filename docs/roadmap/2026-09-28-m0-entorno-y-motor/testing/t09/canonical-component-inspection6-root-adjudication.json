@@ -1,0 +1,27 @@
+{
+  "counter": 6,
+  "formal_integrated_next": 4,
+  "Critical": 0,
+  "Important": 0,
+  "Minor": 0,
+  "root_confirmed": "Read actual terminal A/B zero gaps; source3 hashes exact. B5-01 capacity64 and B5-02 error normalization corrected. A verifies67protected/8542sourcecopies/108birthcleanup qualified; B memory AST probes capacity/error PASS. Selector actual C/Dfalse. Root continued autonomous bounds without counter reset; QA still required.",
+  "utc": "2026-10-08T03:20:41.125295+00:00",
+  "component_acceptance": false,
+  "task_acceptance": false,
+  "next": ".cache/dev-cycle/t09/canonical-process-native-qa1",
+  "sources": {
+    "scripts/eval/benchmark_canonical_runtime.py": {
+      "sha256": "b84ce942c1e8ac9726acea55ceeb22b8ee0666b1e8a94aa9aea8cbdc4de247a7",
+      "bytes": 42917
+    },
+    "scripts/eval/benchmark_process.py": {
+      "sha256": "d1d0556925d0f294e06ca79c6a3a8f220091c9dd8602981dcfc2e18df42e8631",
+      "bytes": 30738
+    },
+    "scripts/eval/tests/test_benchmark_canonical_runtime.py": {
+      "sha256": "ec70abecbd64a7d50dc303a74f9c6a359cca97bb74ac47c31b393bf5961032c1",
+      "bytes": 39620
+    }
+  },
+  "actual_model_tokens_EUR_AIhours": null
+}

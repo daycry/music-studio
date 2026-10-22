@@ -4,6 +4,6 @@
   "private": true,
   "packageManager": "pnpm@9.12.0",
   "scripts": {
-    "gen": "echo 'pendiente: generar tipos TS desde packages/contracts/openapi.json (M1, ADR-0019)'"
+    "gen": "pnpm --filter web gen"
   }
 }

@@ -1,0 +1,41 @@
+{
+  "utc": "2026-10-08T20:16:33.380417+00:00",
+  "technical_component_accepted": true,
+  "scope": "T05 FFmpeg acquisition helper Windows only, review2 A/B/C clean and fresh independent QA",
+  "current_sources": {
+    "scripts/fetch_ffmpeg_linux.py": {
+      "bytes": 20408,
+      "sha256": "02f11245ee8609341c3f9ebc2ea8dde350e701a22442eac8b21dbb2b6d425401"
+    },
+    "tests/test_fetch_ffmpeg_linux.py": {
+      "bytes": 17288,
+      "sha256": "4f2770d3f89439e9581e2ba457978f6f42b64ac28ea2685f647b278db9fbae7d"
+    }
+  },
+  "source_count_verified": 10,
+  "original_inventory_files": 211,
+  "payload_files_verified": 70,
+  "junit_passed": 58,
+  "whole_current_single_trace": {
+    "covered_lines": 334,
+    "num_statements": 379,
+    "percent_covered": 88.12664907651715,
+    "percent_covered_display": "88",
+    "missing_lines": 45,
+    "excluded_lines": 0,
+    "percent_statements_covered": 88.12664907651715,
+    "percent_statements_covered_display": "88"
+  },
+  "qa_receipt": {
+    "bytes": 1709,
+    "sha256": "80fae6a7f1bc5844851a0003bdd1ec1c2b76204be4ea9374bbd58fc81eae5010"
+  },
+  "acceptance_limits": [
+    "Not fullT05/M1/worker/Linux Docker runtime/ABI/binary license/E2E acceptance",
+    "Mode/identity mutation tests explicitly TESTDOUBLE, native Windows emptylock effects tested",
+    "Per-RED independent helper copies missing remains original implementation limit",
+    "QA finalizer ExitCode NULL remains UNKNOWN; baseline/export/check actual Popen exits0 separately",
+    "Nested processes UNKNOWN; no cleanup certification beyond direct wait and private workspace empty"
+  ],
+  "actual_model_tokens_EUR_IAhours": null
+}

@@ -1,0 +1,173 @@
+{
+  "status": "concrete_unit_reviewable_pending_root_inspection2_and_independent_QA",
+  "owned": {
+    "scripts/eval/benchmark_episode.py": {
+      "sha256": "9fc4a466cdf171849be333bf4aac5672fe501deb4139389a1a9abe67826f68f5",
+      "bytes": 33681
+    },
+    "scripts/eval/tests/test_benchmark_canonical_integration.py": {
+      "sha256": "bb34835b71798afb49ab1461c28d8768a1c0ab1363bfba57db3c3246931e202b",
+      "bytes": 53266
+    }
+  },
+  "protected_context": "/.cache\\dev-cycle\\t09\\integrated-firstcause-inspection1-fix1\\protected-context.json",
+  "final": {
+    "completion": {
+      "started_utc": "2026-10-09T01:14:49.503392+00:00",
+      "finished_utc": "2026-10-09T01:20:07.971001+00:00",
+      "exit": 0
+    },
+    "passed": 266,
+    "deselected": 13,
+    "run_uuid": "2698d906-44f5-4722-8246-06c20dd0e1c7",
+    "whole_six": {
+      "scripts\\eval\\benchmark_canonical_integration.py": {
+        "summary": {
+          "covered_lines": 185,
+          "num_statements": 208,
+          "percent_covered": 86.94029850746269,
+          "percent_covered_display": "87",
+          "missing_lines": 23,
+          "excluded_lines": 0,
+          "percent_statements_covered": 88.9423076923077,
+          "percent_statements_covered_display": "89",
+          "num_branches": 60,
+          "num_partial_branches": 8,
+          "covered_branches": 48,
+          "missing_branches": 12,
+          "percent_branches_covered": 80.0,
+          "percent_branches_covered_display": "80"
+        },
+        "official_combined_percent": 86.94029850746269
+      },
+      "scripts\\eval\\benchmark_canonical_runtime.py": {
+        "summary": {
+          "covered_lines": 651,
+          "num_statements": 736,
+          "percent_covered": 84.27991886409737,
+          "percent_covered_display": "84",
+          "missing_lines": 85,
+          "excluded_lines": 0,
+          "percent_statements_covered": 88.45108695652173,
+          "percent_statements_covered_display": "88",
+          "num_branches": 250,
+          "num_partial_branches": 70,
+          "covered_branches": 180,
+          "missing_branches": 70,
+          "percent_branches_covered": 72.0,
+          "percent_branches_covered_display": "72"
+        },
+        "official_combined_percent": 84.27991886409737
+      },
+      "scripts\\eval\\benchmark_coordinator.py": {
+        "summary": {
+          "covered_lines": 303,
+          "num_statements": 347,
+          "percent_covered": 83.74164810690424,
+          "percent_covered_display": "84",
+          "missing_lines": 44,
+          "excluded_lines": 0,
+          "percent_statements_covered": 87.31988472622479,
+          "percent_statements_covered_display": "87",
+          "num_branches": 102,
+          "num_partial_branches": 29,
+          "covered_branches": 73,
+          "missing_branches": 29,
+          "percent_branches_covered": 71.56862745098039,
+          "percent_branches_covered_display": "72"
+        },
+        "official_combined_percent": 83.74164810690424
+      },
+      "scripts\\eval\\benchmark_episode.py": {
+        "summary": {
+          "covered_lines": 354,
+          "num_statements": 390,
+          "percent_covered": 87.07865168539325,
+          "percent_covered_display": "87",
+          "missing_lines": 36,
+          "excluded_lines": 0,
+          "percent_statements_covered": 90.76923076923077,
+          "percent_statements_covered_display": "91",
+          "num_branches": 144,
+          "num_partial_branches": 33,
+          "covered_branches": 111,
+          "missing_branches": 33,
+          "percent_branches_covered": 77.08333333333333,
+          "percent_branches_covered_display": "77"
+        },
+        "official_combined_percent": 87.07865168539325
+      },
+      "scripts\\eval\\benchmark_process.py": {
+        "summary": {
+          "covered_lines": 416,
+          "num_statements": 481,
+          "percent_covered": 81.77777777777777,
+          "percent_covered_display": "82",
+          "missing_lines": 65,
+          "excluded_lines": 0,
+          "percent_statements_covered": 86.48648648648648,
+          "percent_statements_covered_display": "86",
+          "num_branches": 194,
+          "num_partial_branches": 56,
+          "covered_branches": 136,
+          "missing_branches": 58,
+          "percent_branches_covered": 70.10309278350516,
+          "percent_branches_covered_display": "70"
+        },
+        "official_combined_percent": 81.77777777777777
+      },
+      "scripts\\eval\\benchmark_runtime.py": {
+        "summary": {
+          "covered_lines": 601,
+          "num_statements": 722,
+          "percent_covered": 80.5168986083499,
+          "percent_covered_display": "81",
+          "missing_lines": 121,
+          "excluded_lines": 0,
+          "percent_statements_covered": 83.2409972299169,
+          "percent_statements_covered_display": "83",
+          "num_branches": 284,
+          "num_partial_branches": 61,
+          "covered_branches": 209,
+          "missing_branches": 75,
+          "percent_branches_covered": 73.59154929577464,
+          "percent_branches_covered_display": "74"
+        },
+        "official_combined_percent": 80.5168986083499
+      }
+    },
+    "raw_count": 276,
+    "raw_copy_parity": "/.cache\\dev-cycle\\t09\\integrated-firstcause-inspection1-fix1\\raw-copy-parity.json",
+    "native_count": 277,
+    "native_dispositions": {
+      "CLOSED_CONFIRMED": 241,
+      "UNKNOWN_QUARANTINED": 36
+    }
+  },
+  "causal_red": "red-record-evidence: controlled recording OSError replaced PrimaryFailure; before rescue sensor remained live and no interrupted attempt",
+  "interrupted_record_io_inspection": "EpisodeAcquirer assigns dict and appends to built-in list; no fallible file I/O at this immediate frontier. No fabricated I/O regression.",
+  "unknowns": [
+    "Native stderr is production DEVNULL; original RPC stdout is not a complete saved transport transcript.",
+    "Native resource disposition UNKNOWN is retained independently of physical process exit.",
+    "Startup traces missing before forced native termination remain UNKNOWN; no after-death finalizer evidence invented.",
+    "Discovery shell raw command custody UNKNOWN; no retroactive PID/UTC fabrication."
+  ],
+  "not_accepted": [
+    "full component",
+    "T09",
+    "M0",
+    "CLI",
+    "GPU160",
+    "calibration",
+    "cadence13h",
+    "FINAL"
+  ],
+  "unimplemented": [
+    "B4-02",
+    "B4-03",
+    "B4-04",
+    "ADR59 ownership transfer",
+    "R09T13 CLI legacy"
+  ],
+  "finished_utc": "2026-10-09T01:20:44.950798+00:00"
+}

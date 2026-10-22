@@ -7,12 +7,11 @@ $env:UV_PYTHON_INSTALL_BIN = "0"      # sin accesos directos python3.x.exe en %U
 $env:UV_PROJECT_ENVIRONMENT = Join-Path $root ".venv"
 $env:HF_HOME               = Join-Path $root "models\.hf-cache"
 $env:TORCH_HOME            = Join-Path $root "models\.torch"
-$env:npm_config_store_dir = Join-Path $root ".cache\pnpm"   # pnpm lee npm_config_store_dir (no PNPM_STORE_DIR)
-# pnpm standalone vive en %PNPM_HOME%\bin; en sesiones abiertas antes de instalarlo no está en PATH.
-if (-not (Get-Command pnpm -ErrorAction SilentlyContinue)) {
-    $pnpmHome = [Environment]::GetEnvironmentVariable('PNPM_HOME', 'User')
-    if ($pnpmHome -and (Test-Path (Join-Path $pnpmHome 'bin\pnpm.cmd'))) { $env:Path = (Join-Path $pnpmHome 'bin') + ';' + $env:Path }
-}
+# Captura léxica: el cwd y las variables del llamador no eligen el entrypoint.
+$studioPnpmScript = Join-Path $PSScriptRoot 'pnpm.ps1'
+$studioPnpmClosure = { & $studioPnpmScript @args; $global:LASTEXITCODE = $LASTEXITCODE }.GetNewClosure()
+Set-Item -Path Function:global:pnpm -Value $studioPnpmClosure
+if (Test-Path Alias:pnpm) { Remove-Item Alias:pnpm -Force }
 
 $activate = Join-Path $root ".venv\Scripts\Activate.ps1"
 if (Test-Path $activate) {

@@ -1,0 +1,308 @@
+{
+  "utc": "2026-10-07T17:45:31.864536+00:00",
+  "attempt": 2,
+  "maximum_regular_attempts": 3,
+  "lenses": {
+    "a": {
+      "metadata": {
+        "argv": [
+          "<local-path>/codex.exe",
+          "exec",
+          "--ephemeral",
+          "--ignore-user-config",
+          "--sandbox",
+          "read-only",
+          "--json",
+          "--color",
+          "never",
+          "-c",
+          "approval_policy=\"never\"",
+          "-C",
+          "",
+          "--output-last-message",
+          ".cache\\dev-cycle\\t09\\transition-review2\\a\\final-original.md",
+          "-"
+        ],
+        "started_utc": "2026-10-07T07:07:33.860965+00:00",
+        "finished_utc": "2026-10-07T07:08:36.143021+00:00",
+        "exit_code": 0,
+        "lane": "A",
+        "attempt": 2,
+        "limits": "exact INLINE static no own tests/live hashes"
+      },
+      "static_only": true,
+      "verdict": {
+        "sha256": "7efa6b9d0be0714923ed18ce1332171056c68bd89b9a08a8aee1e122ad0ea3be",
+        "bytes": 4326
+      }
+    },
+    "b": {
+      "metadata": {
+        "argv": [
+          "<local-path>/codex.exe",
+          "exec",
+          "--ephemeral",
+          "--ignore-user-config",
+          "--sandbox",
+          "read-only",
+          "--json",
+          "--color",
+          "never",
+          "-c",
+          "approval_policy=\"never\"",
+          "-C",
+          "",
+          "--output-last-message",
+          ".cache\\dev-cycle\\t09\\transition-review2\\b\\final-original.md",
+          "-"
+        ],
+        "started_utc": "2026-10-07T07:09:05.689477+00:00",
+        "finished_utc": "2026-10-07T07:10:00.674065+00:00",
+        "exit_code": 0,
+        "lane": "B",
+        "attempt": 2,
+        "limits": "exact INLINE static no own tests/live hashes"
+      },
+      "static_only": true,
+      "verdict": {
+        "sha256": "e75f460fde7acfceed19bd846e4922cd35a42f1e827c5451a1a1494d72c17e8b",
+        "bytes": 2845
+      }
+    },
+    "d": {
+      "metadata": {
+        "argv": [
+          "<local-path>/codex.exe",
+          "exec",
+          "--ephemeral",
+          "--ignore-user-config",
+          "--sandbox",
+          "read-only",
+          "--json",
+          "--color",
+          "never",
+          "-c",
+          "approval_policy=\"never\"",
+          "-C",
+          "",
+          "--output-last-message",
+          ".cache\\dev-cycle\\t09\\transition-review2\\d\\final-original.md",
+          "-"
+        ],
+        "started_utc": "2026-10-07T07:10:56.295527+00:00",
+        "finished_utc": "2026-10-07T07:11:32.099838+00:00",
+        "exit_code": 0,
+        "lane": "D",
+        "attempt": 2,
+        "limits": "exact INLINE static no own tests/live hashes"
+      },
+      "static_only": true,
+      "verdict": {
+        "sha256": "af59a485b23a07f3c8e3d24af3abf7c2169168f1a2b801dd7bcc09e42c4a6e13",
+        "bytes": 2442
+      }
+    }
+  },
+  "sources": {
+    "scripts/eval/benchmark.py": {
+      "sha256": "f2239eecc58cea2475a1b127105f9999e1f2895596cb09ff408e8a9dbead462b",
+      "bytes": 52743
+    },
+    "scripts/eval/benchmark_calibration_v3.py": {
+      "sha256": "b46fb005e9d3e08971cdb508aacc0633f9867469f4ba72d03587bc42d06e4cb8",
+      "bytes": 6828
+    },
+    "scripts/eval/benchmark_coordinator.py": {
+      "sha256": "741d9034f0e0a9f5922dadc6773ee254446b5abda5c28b6eb75276b87bd067a1",
+      "bytes": 17394
+    },
+    "scripts/eval/benchmark_episode.py": {
+      "sha256": "cae68d1b9d496553e84fd487067cd1dee64c110a14b78eff22ac3e8adf1ead1f",
+      "bytes": 36952
+    },
+    "scripts/eval/benchmark_evidence.py": {
+      "sha256": "6f1ed4e9e7ae99651323daaf701e8675fb19043140e62fd1dfcf507d27bffa64",
+      "bytes": 13379
+    },
+    "scripts/eval/benchmark_observation.py": {
+      "sha256": "c15f4a9b7dfe5823d5fa003a9e195db59d698f9ff809eeebdfc4c426c27681ce",
+      "bytes": 58026
+    },
+    "scripts/eval/benchmark_observers.py": {
+      "sha256": "421e65c7a4dc5bd3d1ee85a122a2b4e47315dc1b9d07e546bdb6b7dd28b5b43c",
+      "bytes": 6772
+    },
+    "scripts/eval/benchmark_plan.py": {
+      "sha256": "7a4c1b86e219a9d868f97082cb145c2c7913861ca495e2856c9773960564d676",
+      "bytes": 10116
+    },
+    "scripts/eval/benchmark_provider.py": {
+      "sha256": "0bf9bfb3fe4eeab9924365cbe62ac9544657f9662978097bd5aea0eec7ac9e26",
+      "bytes": 4335
+    },
+    "scripts/eval/benchmark_runner.py": {
+      "sha256": "360dee6ac5df2d87a87b06d0939d174b7e4c6a3b7e62632ba923b44521f1c683",
+      "bytes": 31079
+    },
+    "scripts/eval/benchmark_runtime.py": {
+      "sha256": "993b59c61153efb1a38af4bcb282e07e2d5296942a7d6a76f68ffa68acda4454",
+      "bytes": 45747
+    },
+    "scripts/eval/benchmark_storage.py": {
+      "sha256": "fedd8cd519641918ef903db39905c2975e71faa4c17ca4c952947a3a1219efcc",
+      "bytes": 6854
+    },
+    "scripts/eval/tests/test_benchmark_calibration_v3.py": {
+      "sha256": "73ecc099ff8ca7371ece7d6477b73ce428742417362ab995b01c4125aea761d9",
+      "bytes": 20826
+    },
+    "scripts/eval/tests/test_benchmark_coordinator_v3.py": {
+      "sha256": "827ec737c12646a6d21ac0522b7e6709fcb5a99fe13a453c87fced75c0358dfc",
+      "bytes": 55622
+    },
+    "scripts/eval/tests/test_benchmark_episode_v3.py": {
+      "sha256": "5f7b6c5e5cac532981348a245b0bb98596875c77a5a627a2a11cc35f851bfcbf",
+      "bytes": 30671
+    },
+    "scripts/eval/tests/test_benchmark_integration_cpu.py": {
+      "sha256": "ddabdfab47f8f4a0645d9018133902361e5a0d7de7550f4601d18b73ad1d0e35",
+      "bytes": 15856
+    },
+    "scripts/eval/tests/test_benchmark_observation.py": {
+      "sha256": "2ec57c4ba351c1a8115c050547b2a8f909aa44aba60caf0b9e6b21b2384aa9cc",
+      "bytes": 67790
+    },
+    "scripts/eval/tests/test_benchmark_reacquisition.py": {
+      "sha256": "dd379ff3224ecfc924ebcd20964c74374813a50645e453917e002496d5b86dfe",
+      "bytes": 37113
+    }
+  },
+  "originals": {
+    ".cache/dev-cycle/t09/transition-review2/a/cli-metadata.json": {
+      "sha256": "e063292dd690591b287396c143a6b54633ca2d7432605c9d987e0e0b600b77ea",
+      "bytes": 725
+    },
+    ".cache/dev-cycle/t09/transition-review2/a/cli-original.jsonl": {
+      "sha256": "0c77ebef3e229035a409c4d4bbdc2e410a9e8bfad46c2fa7098f27689180dadd",
+      "bytes": 4925
+    },
+    ".cache/dev-cycle/t09/transition-review2/a/cli-stderr-original.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    ".cache/dev-cycle/t09/transition-review2/a/final-original.md": {
+      "sha256": "7efa6b9d0be0714923ed18ce1332171056c68bd89b9a08a8aee1e122ad0ea3be",
+      "bytes": 4326
+    },
+    ".cache/dev-cycle/t09/transition-review2/a/packet-seals.json": {
+      "sha256": "7c3c778154e22a970b1cad027c64c38aa68d9fd6ba1b7c1249234f5149dae2ed",
+      "bytes": 8606
+    },
+    ".cache/dev-cycle/t09/transition-review2/a/prompt-original.txt": {
+      "sha256": "043c78c83df7c12d95cf38d32db07ee431dd8129bdb9db92fbbaf222f175d084",
+      "bytes": 1043648
+    },
+    ".cache/dev-cycle/t09/transition-review2/b/cli-metadata.json": {
+      "sha256": "51eec4578ae6145ec342ecd251007c78b981b297c333362fb82dcf9aa4c47020",
+      "bytes": 725
+    },
+    ".cache/dev-cycle/t09/transition-review2/b/cli-original.jsonl": {
+      "sha256": "9f38d0937942aa3f0ee718d010c0819ddf5aac9fcb732b37c76627f3f55c4afb",
+      "bytes": 3512
+    },
+    ".cache/dev-cycle/t09/transition-review2/b/cli-stderr-original.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    ".cache/dev-cycle/t09/transition-review2/b/final-original.md": {
+      "sha256": "e75f460fde7acfceed19bd846e4922cd35a42f1e827c5451a1a1494d72c17e8b",
+      "bytes": 2845
+    },
+    ".cache/dev-cycle/t09/transition-review2/b/packet-seals.json": {
+      "sha256": "7c3c778154e22a970b1cad027c64c38aa68d9fd6ba1b7c1249234f5149dae2ed",
+      "bytes": 8606
+    },
+    ".cache/dev-cycle/t09/transition-review2/b/prompt-original.txt": {
+      "sha256": "7eb2e3a27e1de4fda4337d14f2e49808039f777b256e83d4c46aa1183f7b1464",
+      "bytes": 1041008
+    },
+    ".cache/dev-cycle/t09/transition-review2/d/cli-metadata.json": {
+      "sha256": "c65a2591cfb03c140a683824a841fe54fe94eb8de760bd1637678bd5fcdfdb28",
+      "bytes": 725
+    },
+    ".cache/dev-cycle/t09/transition-review2/d/cli-original.jsonl": {
+      "sha256": "bbd2adc51ea1a6a5acc012a1aa74b8744aee71d65beae285fb5ea112a5f41834",
+      "bytes": 2802
+    },
+    ".cache/dev-cycle/t09/transition-review2/d/cli-stderr-original.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    ".cache/dev-cycle/t09/transition-review2/d/final-original.md": {
+      "sha256": "af59a485b23a07f3c8e3d24af3abf7c2169168f1a2b801dd7bcc09e42c4a6e13",
+      "bytes": 2442
+    },
+    ".cache/dev-cycle/t09/transition-review2/d/packet-seals.json": {
+      "sha256": "7c3c778154e22a970b1cad027c64c38aa68d9fd6ba1b7c1249234f5149dae2ed",
+      "bytes": 8606
+    },
+    ".cache/dev-cycle/t09/transition-review2/d/prompt-original.txt": {
+      "sha256": "abf16b3ba318811631b74b89a7aae8ac6019ddb78139dc4022b5795f3520b049",
+      "bytes": 1041348
+    }
+  },
+  "counts": {
+    "Critical": 0,
+    "Important": 5,
+    "Minor": 0
+  },
+  "findings": [
+    {
+      "id": "R09-T03",
+      "lens": "A-03",
+      "severity": "Important",
+      "location": "benchmark.py:428;benchmark_runtime.py:1099",
+      "scenario": "ObservationTimeout elimina contenedor que comunica conservar/query_same_job.",
+      "status": "pending_reproduction"
+    },
+    {
+      "id": "R09-T04",
+      "lens": "A-04/B-03",
+      "severity": "Important",
+      "location": "benchmark.py:443,455,1247",
+      "scenario": "Fallo sampler durante shutdown puede publicar complete=true y exit0.",
+      "status": "pending_reproduction"
+    },
+    {
+      "id": "R09-T05",
+      "lens": "B-01",
+      "severity": "Important",
+      "location": "benchmark_coordinator.py:145,146,410",
+      "scenario": "Snapshot entre publicación de custodia y registro contiene recibo sin muestra, v3_audit_summary_mismatch.",
+      "status": "pending_reproduction"
+    },
+    {
+      "id": "R09-T06",
+      "lens": "B-02",
+      "severity": "Important",
+      "location": "benchmark.py:1125",
+      "scenario": "finished_session pasa observed_utc str como now al validador que exige datetime/Fraction; AttributeError en relectura legítima.",
+      "status": "pending_reproduction"
+    },
+    {
+      "id": "R09-T07",
+      "lens": "D-03",
+      "severity": "Important",
+      "location": "benchmark_coordinator.py:409,426;benchmark_runtime.py:830",
+      "scenario": "Auditoría transmite historial completo repetidamente;48000episodios superan64Mi caracteres y cada60Mi demanda≈52429RPC.",
+      "status": "pending_reproduction"
+    }
+  ],
+  "prior_ids_preserved": [
+    "R09-T01",
+    "R09-T02"
+  ],
+  "prior_original_scenarios_corrected_static": true,
+  "cleanup_historical_unknown_preserved": true,
+  "GPU_task_R09_acceptance": false
+}

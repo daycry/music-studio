@@ -1,0 +1,125 @@
+{
+  "utc": "2026-10-07T20:26:15.490360+00:00",
+  "sources": {
+    "apps/server/app/models/__init__.py": {
+      "sha256": "b8ce313a28dd496bfbfd7d3fb4428300e4c2571136d99fc6201daea1e52e8ea4",
+      "bytes": 23874
+    },
+    "apps/server/app/snapshots.py": {
+      "sha256": "a5b5015c67dbd7cc59f34e41d9662be37c4d2892c674b89fc3ea9108fa1c97a1",
+      "bytes": 27236
+    },
+    "packages/contracts/song-v1.schema.json": {
+      "sha256": "8ba9fd09e538462eff0aabbc70831cf81776ee31b2964c57da38b1bac8e5542d",
+      "bytes": 81493
+    },
+    "apps/server/app/models/song-v1.schema.json": {
+      "sha256": "8ba9fd09e538462eff0aabbc70831cf81776ee31b2964c57da38b1bac8e5542d",
+      "bytes": 81493
+    },
+    "apps/server/app/migrations/versions/0005_job_attempt.py": {
+      "sha256": "18c1c33471f900e5669d5fdfe81990580f83e6ebda10c55f53ea9ad4fc7a611b",
+      "bytes": 2862
+    },
+    "apps/server/app/migrations/job_attempt_invariants.py": {
+      "sha256": "73686fe129e54eb8c7fa21f421020560f2fdada08b904034412b0f3c4d5defd7",
+      "bytes": 16691
+    },
+    "apps/server/tests/test_job_attempt_schema.py": {
+      "sha256": "ec37bc374fcc931ca92ff152ec47de378e038b6ce728441cd6d3dd72afcd11b0",
+      "bytes": 33229
+    }
+  },
+  "new_tests_passed": 89,
+  "native_DB": {
+    "tests": 221,
+    "passed": 212,
+    "failures": [
+      {
+        "name": "test_fix3_additive_migration_cycles[0003-False]",
+        "message": "AssertionError: assert '0005' == '0004'\n  \n  - 0004\n  ?    ^\n  + 0005\n  ?    ^"
+      },
+      {
+        "name": "test_fix3_additive_migration_cycles[0003-True]",
+        "message": "AssertionError: assert '0005' == '0004'\n  \n  - 0004\n  ?    ^\n  + 0005\n  ?    ^"
+      },
+      {
+        "name": "test_fix3_additive_migration_cycles[0002-False]",
+        "message": "AssertionError: assert '0005' == '0004'\n  \n  - 0004\n  ?    ^\n  + 0005\n  ?    ^"
+      },
+      {
+        "name": "test_fix3_additive_migration_cycles[0002-True]",
+        "message": "AssertionError: assert '0005' == '0004'\n  \n  - 0004\n  ?    ^\n  + 0005\n  ?    ^"
+      },
+      {
+        "name": "test_fix3_additive_migration_cycles[0001-False]",
+        "message": "AssertionError: assert '0005' == '0004'\n  \n  - 0004\n  ?    ^\n  + 0005\n  ?    ^"
+      },
+      {
+        "name": "test_fix3_additive_migration_cycles[0001-True]",
+        "message": "AssertionError: assert '0005' == '0004'\n  \n  - 0004\n  ?    ^\n  + 0005\n  ?    ^"
+      },
+      {
+        "name": "test_fix3_additive_migration_cycles[base-False]",
+        "message": "AssertionError: assert '0005' == '0004'\n  \n  - 0004\n  ?    ^\n  + 0005\n  ?    ^"
+      },
+      {
+        "name": "test_fix3_additive_migration_cycles[base-True]",
+        "message": "AssertionError: assert '0005' == '0004'\n  \n  - 0004\n  ?    ^\n  + 0005\n  ?    ^"
+      }
+    ],
+    "skipped": [
+      {
+        "name": "test_snapshot_symlink_directory_rejected",
+        "reason": "Este host no permite crear symlinks; prueba Linux en Docker"
+      }
+    ],
+    "errors": []
+  },
+  "whole_module_coverage": {
+    "apps/server/app/models/__init__.py": {
+      "covered_lines": 336,
+      "num_statements": 338,
+      "percent_covered": 99.40828402366864,
+      "percent_covered_display": "99",
+      "missing_lines": 2,
+      "excluded_lines": 0,
+      "percent_statements_covered": 99.40828402366864,
+      "percent_statements_covered_display": "99"
+    },
+    "apps/server/app/snapshots.py": {
+      "covered_lines": 360,
+      "num_statements": 385,
+      "percent_covered": 93.50649350649351,
+      "percent_covered_display": "94",
+      "missing_lines": 25,
+      "excluded_lines": 0,
+      "percent_statements_covered": 93.50649350649351,
+      "percent_statements_covered_display": "94"
+    },
+    "apps/server/app/migrations/job_attempt_invariants.py": {
+      "covered_lines": 173,
+      "num_statements": 185,
+      "percent_covered": 93.51351351351352,
+      "percent_covered_display": "94",
+      "missing_lines": 12,
+      "excluded_lines": 0,
+      "percent_statements_covered": 93.51351351351352,
+      "percent_statements_covered_display": "94"
+    },
+    "apps/server/app/migrations/versions/0005_job_attempt.py": {
+      "covered_lines": 18,
+      "num_statements": 18,
+      "percent_covered": 100.0,
+      "percent_covered_display": "100",
+      "missing_lines": 0,
+      "excluded_lines": 0,
+      "percent_statements_covered": 100.0,
+      "percent_statements_covered_display": "100"
+    }
+  },
+  "excluded_lines": 0,
+  "review_QA_pending": true,
+  "task_complete": false,
+  "actual_usage": null
+}

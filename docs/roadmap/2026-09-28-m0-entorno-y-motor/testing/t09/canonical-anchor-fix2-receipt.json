@@ -1,0 +1,114 @@
+{
+  "status": "B01_CORRECTED_FOR_FRESH_REVIEW_AND_INDEPENDENT_QA",
+  "utc": "2026-10-08T00:22:00.886265+00:00",
+  "owned": [
+    "scripts/eval/benchmark_canonical.py",
+    "scripts/eval/tests/test_benchmark_canonical.py"
+  ],
+  "sources_before3": {
+    "scripts/eval/benchmark_canonical.py": {
+      "sha256": "4b95880a09dfc15b8eb6adb92bf31bb62c19356feb39cb9e07f3369d8ebdd94e",
+      "bytes": 23714
+    },
+    "scripts/eval/tests/test_benchmark_canonical.py": {
+      "sha256": "143a588f92dfd300dbb852f5639591de36800abb7ab300e671541f687369f946",
+      "bytes": 56894
+    },
+    "scripts/eval/benchmark_episode.py": {
+      "sha256": "d30156baf73520b35e7b2bd0b31db9900e31e1f90da906d0f90779d7a492e211",
+      "bytes": 30199
+    }
+  },
+  "sources_after3": {
+    "scripts/eval/benchmark_canonical.py": {
+      "sha256": "02de0aa40e2948c13a69c4b057543492079e9b942bbd9928c3b2b98bad3ecd45",
+      "bytes": 24087
+    },
+    "scripts/eval/tests/test_benchmark_canonical.py": {
+      "sha256": "38ba18fa8cd9e3b9745d8980c6e884c66cbed4ac0ee50f9975e93ccf27bee760",
+      "bytes": 61295
+    },
+    "scripts/eval/benchmark_episode.py": {
+      "sha256": "d30156baf73520b35e7b2bd0b31db9900e31e1f90da906d0f90779d7a492e211",
+      "bytes": 30199
+    }
+  },
+  "protected_exact_count": 62,
+  "red": [
+    {
+      "case": "attempt",
+      "phase": "red-attempt",
+      "utc": "2026-10-08T00:17:02.626986+00:00",
+      "behavior": "accepted changed pid=0 instead of original native PID",
+      "exit": 1
+    },
+    {
+      "case": "both",
+      "phase": "baseline-both",
+      "utc": "2026-10-08T00:17:07.948471+00:00",
+      "behavior": "accepted changed pid=0 instead of original native PID",
+      "exit": 1
+    },
+    {
+      "case": "transition",
+      "phase": "baseline-transition",
+      "utc": "2026-10-08T00:17:08.702251+00:00",
+      "behavior": "accepted changed pid=0 instead of original native PID",
+      "exit": 1
+    }
+  ],
+  "final": {
+    "cases": 94,
+    "predecessors": 88,
+    "new": 6,
+    "failures": 0,
+    "skips": 0,
+    "receipt": "runs/final-current/receipt.json",
+    "junit": "runs/final-current/junit.xml"
+  },
+  "coverage": {
+    "module": "scripts/eval/benchmark_canonical.py",
+    "summary": {
+      "covered_lines": 323,
+      "num_statements": 356,
+      "percent_covered": 87.24279835390946,
+      "percent_covered_display": "87",
+      "missing_lines": 33,
+      "excluded_lines": 0,
+      "percent_statements_covered": 90.73033707865169,
+      "percent_statements_covered_display": "91",
+      "num_branches": 130,
+      "num_partial_branches": 29,
+      "covered_branches": 101,
+      "missing_branches": 29,
+      "percent_branches_covered": 77.6923076923077,
+      "percent_branches_covered_display": "78"
+    },
+    "data": "runs/final-current/.coverage",
+    "json": "coverage.json",
+    "zero_excluded": true,
+    "same_current_frozen_bytes": true,
+    "old_trace_union": false,
+    "whole_module": true
+  },
+  "unchanged_episode_coverage": {
+    "percent": 81.316348,
+    "qualification": "predecessor only; no new childcoverage rerun"
+  },
+  "native_birth_cleanup_count": 94,
+  "technical_acceptance": false,
+  "task_global_quality_acceptance": false,
+  "actual_model": null,
+  "actual_tokens": null,
+  "actual_EUR": null,
+  "actual_AIhours": null,
+  "estimates": null,
+  "finalization_incident": "finalization-incident.json; report path separator assertion corrected without test/source/data changes",
+  "limitations": [
+    "early RED global fixture helper bytes UNKNOWN, final exact same-current after owner terminal",
+    "no runtime/coordinator/rowreader/FINAL packs integration",
+    "no GPU/cadence/native sensor calibration claims",
+    "no T09 matrix verification or task acceptance"
+  ],
+  "inventory": "inventory.json"
+}

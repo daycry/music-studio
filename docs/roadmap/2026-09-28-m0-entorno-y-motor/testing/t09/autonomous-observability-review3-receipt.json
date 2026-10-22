@@ -1,0 +1,66 @@
+{
+  "published_utc": "2026-10-07T00:03:37.000815+00:00",
+  "attempt": 3,
+  "lenses": [
+    "A",
+    "B",
+    "D"
+  ],
+  "critical": 0,
+  "important": 1,
+  "minor": 0,
+  "scope_exit": 0,
+  "sources_intact": 64,
+  "docs_intact": 12,
+  "verdicts": [
+    {
+      "id": "R09-O1",
+      "status": "corregido CPU",
+      "evidence": "Relojes de operaciones y FILETIMEs ligados a la adquisiciÃ³n; control y variantes invÃ¡lidas comprobados."
+    },
+    {
+      "id": "R09-O2",
+      "status": "corregido CPU",
+      "evidence": "Originales/contexto previo completos; prueba de prÃ©stamo de sesiÃ³n rechazada."
+    },
+    {
+      "id": "R09-O3",
+      "status": "corregido CPU",
+      "evidence": "Baseline histÃ³rico preservado y nuevo baseline sÃ³lo tras health idle/loadednull."
+    },
+    {
+      "id": "R09-O4",
+      "status": "corregido CPU en escenario previo",
+      "evidence": "Cadena histórica secuencial ya válida; futuro externo introducido se registra separadamente B3-01."
+    },
+    {
+      "id": "R09-O5",
+      "status": "corregido CPU",
+      "evidence": "Muestra1,6s no suma espera fija; operaciÃ³n5s termina con gapmÃ¡x1,602996s."
+    },
+    {
+      "id": "R09-O4a (B2-01)",
+      "status": "corregido CPU en escenario previo",
+      "evidence": "Cadena histórica secuencial ya válida; futuro externo introducido se registra separadamente B3-01."
+    },
+    {
+      "id": "R09-O4b (B3-01)",
+      "status": "pendiente",
+      "evidence": "observation.py:612 admite completion del piloto posterior a now externo cuando hay continuidad; root reprodujo."
+    }
+  ],
+  "root_reproduction": {
+    "synthetic_cpu_only": true,
+    "nominal": "provider_verified",
+    "isolated_rejection": "auto_query_bracket_invalid",
+    "unexpected_chain_acceptance": "provider_verified",
+    "external_now": "2026-10-07T00:02:12.100000+00:00",
+    "last_query": "2026-10-07T00:02:12.260000+00:00",
+    "live_timestamp": "2026-10-07T00:02:12+00:00",
+    "verdict": "Important_reproduced"
+  },
+  "reviewer_artifacts": "Original agent messages; root-derived published synthesis",
+  "orchestrator_decision": "continue bounded correction and exceptional review without resetting count; owner delegated autonomous decisions",
+  "qa_pass": false,
+  "gpu_verified": false
+}

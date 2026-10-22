@@ -1,0 +1,55 @@
+{
+  "status": "NEEDS_ROOT_ADJUDICATION",
+  "accepted": false,
+  "owned": [
+    "scripts/eval/benchmark_canonical_integration.py",
+    "scripts/eval/benchmark_episode.py",
+    "scripts/eval/benchmark_canonical_runtime.py",
+    "scripts/eval/benchmark_coordinator.py",
+    "scripts/eval/benchmark_runtime.py",
+    "scripts/eval/tests/test_benchmark_canonical_integration.py"
+  ],
+  "source_after": {
+    "scripts/eval/benchmark_canonical_integration.py": {
+      "sha256": "8445b94909a6af51fe6afb1f544520f9d83de0890010a552b7295743888389a5",
+      "bytes": 13107
+    },
+    "scripts/eval/benchmark_episode.py": {
+      "sha256": "ce49d7a0b5aede6197798d21db2ff20ebfa0ff03734d046adfe2d24e4b645a13",
+      "bytes": 32650
+    },
+    "scripts/eval/benchmark_canonical_runtime.py": {
+      "sha256": "31d0f9eb8c848a56f12cbe76f13fe4d55c3d8e71460bcf23274fc20e9b8144e9",
+      "bytes": 45153
+    },
+    "scripts/eval/benchmark_coordinator.py": {
+      "sha256": "bbb9e0d5f124bc45053a2bb063a6c0afabfb4eab2facc2ec2de87542eeb8a546",
+      "bytes": 22648
+    },
+    "scripts/eval/benchmark_runtime.py": {
+      "sha256": "9d6f5a751b04d97b1db86732757dda0e7d58e489e523d3df99f089e762ae4f94",
+      "bytes": 55950
+    },
+    "scripts/eval/tests/test_benchmark_canonical_integration.py": {
+      "sha256": "3c2e2aeebea4f5d44efff637c10f41ce92dafb50662e31b5543b459912841ff1",
+      "bytes": 46895
+    }
+  },
+  "protected_unchanged": true,
+  "unowned_snapshot_unchanged": true,
+  "new_tests": 88,
+  "new_tests_failed": 0,
+  "baseline": {
+    "passed": 242,
+    "failed": 1,
+    "deselected": 13,
+    "run": "final-baseline3"
+  },
+  "whole_each_ge80_zeroexcluded": true,
+  "protected_failure": "test_native_receiver_controls_with_concurrent_ingest[error-native_protocol_error]: resources_returned False; UNKNOWN_QUARANTINED preserved. Reproduced unwrapped in diagnostic-original-child.",
+  "root_review_qa_pending": true,
+  "physical_readfile_zero_bytes_blocking": "UNTESTED",
+  "cli_activated": false,
+  "material_tickets": false,
+  "full_t09_acceptance": false
+}

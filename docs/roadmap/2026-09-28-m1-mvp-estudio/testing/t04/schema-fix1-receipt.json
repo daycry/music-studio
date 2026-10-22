@@ -1,0 +1,284 @@
+{
+  "sources": {
+    "apps/server/app/models/song-v1.schema.json": {
+      "sha256": "556a5e576d0d0f1a72fa986f5c2a4cdbc97888b426669feac0f44bad249bc3a8",
+      "bytes": 81508
+    },
+    "apps/server/app/backup.py": {
+      "sha256": "8a677bd8a25c05be484db10464a0010e0462be127e4f96881a90faa0896bcf1d",
+      "bytes": 7774
+    },
+    "apps/server/tests/test_logging_token.py": {
+      "sha256": "687113e57f81658ea83a594631daf747d5a4fe4e3087c333f9b1bc7ee2453ffe",
+      "bytes": 3575
+    },
+    "apps/server/app/__init__.py": {
+      "sha256": "83ef8888a045013e926e182657f5939833140e73544ce4857cbc93c7846c44b7",
+      "bytes": 387
+    },
+    "apps/server/tests/conftest.py": {
+      "sha256": "e075e22f133e03564595b25e05010a7082874a46e54a4b47939be5e76adf92a5",
+      "bytes": 230
+    },
+    "apps/server/app/migrations/versions/0004_snapshot_promotion.py": {
+      "sha256": "b50439cc88ac5b6e17ac4d8b87d15af5acf9675136f588422061e01a51d335ae",
+      "bytes": 343
+    },
+    "apps/server/app/main.py": {
+      "sha256": "c35df1a5401a56173556c7b8819e411cd5e4a9b15c6310b4203591e47bb13a37",
+      "bytes": 4472
+    },
+    "apps/server/tests/test_review_fix2_t02.py": {
+      "sha256": "c29048ddb7f0aed49f86172e5c118201b88f7f6e93087b8b19b4fcfb01d10a46",
+      "bytes": 31357
+    },
+    "apps/server/app/db.py": {
+      "sha256": "a598f4c1a24f898dd70a8b4f335418789e888cfa1ee329e70e344dfcdb868ce6",
+      "bytes": 3057
+    },
+    "apps/server/app/migrations/versions/0003_snapshot_guards.py": {
+      "sha256": "35648983fd5fee7412678ddba9abdc781e0143cf239a8e30ed82ca535c0b7ecc",
+      "bytes": 334
+    },
+    "apps/server/alembic.ini": {
+      "sha256": "13cdfa146e51b68c87a55e040b22bbbd617264fdb9fa77fa77fb2a134087b58b",
+      "bytes": 100
+    },
+    "apps/server/tests/test_settings.py": {
+      "sha256": "12e9744c7f6e87feadb242f0331865f16af7ed73f52196aafc25f331e703c0d5",
+      "bytes": 3136
+    },
+    "packages/engine-contract/tests/test_contract.py": {
+      "sha256": "d3aead3568ab9c914b94a815c36ea1f97a3e199f82db46b73e3f6d550947d2e3",
+      "bytes": 6012
+    },
+    "apps/server/tests/test_job_attempt_schema.py": {
+      "sha256": "ec37bc374fcc931ca92ff152ec47de378e038b6ce728441cd6d3dd72afcd11b0",
+      "bytes": 33229
+    },
+    "packages/contracts/examples/audio_take.json": {
+      "sha256": "f470e4a15a4f3e41e825eb22b48be23e4e283a3fe65d210babadfede27452c8b",
+      "bytes": 1828
+    },
+    "apps/server/app/api_models.py": {
+      "sha256": "d70abb1c087ba66c3deff63d894d18f3e163fd1ba2c4a4307aabc7467b681d66",
+      "bytes": 515
+    },
+    "apps/server/app/migrations/env.py": {
+      "sha256": "7c3e00a37e441db20fa776907e7059d1b4763fe29f4b89988ca843245e48ddf2",
+      "bytes": 1610
+    },
+    "apps/server/app/lyrics.py": {
+      "sha256": "19c1616c2280850fd94029ac2a4ac7a9a84f62e6da36eedbcb23b6e8b197eb9e",
+      "bytes": 5060
+    },
+    "apps/server/tests/test_persistence_t02.py": {
+      "sha256": "7ca513aa97c67c0ea7bf7544497a84e79c4d160003a7708069fe6e5ec9363abc",
+      "bytes": 35466
+    },
+    "apps/server/app/migrations/fix1_invariants.py": {
+      "sha256": "98d084b9b2072967032a1b5c39014d9a56fb89a0bd85da997430652e8df0b59c",
+      "bytes": 9518
+    },
+    "apps/server/app/migrations/job_attempt_invariants.py": {
+      "sha256": "029c26324e2d97305196e8a21dcebc321523d6900140be24c9885de64d2534df",
+      "bytes": 17311
+    },
+    "packages/contracts/timeline-v1.schema.json": {
+      "sha256": "d85666a0dbb7f9e67a6d7442d2e44d6b971ca9584eb424941b6330e582948660",
+      "bytes": 1772
+    },
+    "apps/server/app/models/__init__.py": {
+      "sha256": "b8ce313a28dd496bfbfd7d3fb4428300e4c2571136d99fc6201daea1e52e8ea4",
+      "bytes": 23874
+    },
+    "apps/server/app/migrations/versions/0001_schema.sql": {
+      "sha256": "9fe867481051286ff592e9b668deae8d65cf88f475d6e7faf9a7cdf8d53a3998",
+      "bytes": 46637
+    },
+    "packages/contracts/examples/fixture.txt": {
+      "sha256": "82818dbc55465979add95623a8a10de52474e5dbfaca531648cd40b5b0dfe620",
+      "bytes": 21
+    },
+    "packages/contracts/examples/image.json": {
+      "sha256": "fbbd1075a1d49ee6fd27941d7a1c07cbb474792e53de4ba5cf2318df22cc6704",
+      "bytes": 1808
+    },
+    "apps/server/Dockerfile": {
+      "sha256": "fac365147127599ccbb24e1a06edf37533d54b48eaf6a4e7a61a67821451c6d3",
+      "bytes": 1722
+    },
+    "apps/server/app/closure_rows.py": {
+      "sha256": "d8e6588850edc024438b242a69a4e9bf2ac2f73da5951bd93e67a6a3856af666",
+      "bytes": 4132
+    },
+    "packages/engine-contract/engine_contract/__init__.py": {
+      "sha256": "bab72f90bc4ab530154eeb4756d3727dd851321f7dc60224a7f0a443e9934756",
+      "bytes": 7624
+    },
+    "apps/server/app/migrations/initial_relations.json": {
+      "sha256": "456c0b2a3f9fba88afb1fb2d40b5ae4df8386516bf5649bd51e2093dc0364910",
+      "bytes": 3679
+    },
+    "apps/server/tests/test_lyrics.py": {
+      "sha256": "f874f68dbadae9fa0d081d6e2300f7800842ccf8f91685dfc3a6750445e9de9f",
+      "bytes": 1591
+    },
+    "packages/contracts/song-v1.schema.json": {
+      "sha256": "556a5e576d0d0f1a72fa986f5c2a4cdbc97888b426669feac0f44bad249bc3a8",
+      "bytes": 81508
+    },
+    "apps/server/app/errors.py": {
+      "sha256": "1b057e6f2976448a5841fba7975976525fc5d6e17ca6ca879c5758a66e87dd89",
+      "bytes": 1258
+    },
+    "apps/server/tests/test_job_attempt_review_fix1.py": {
+      "sha256": "7eb05ab7bf8734c139bd2b336bbc6eeb5e1550e65c7aeb90cb8608eea8b8d60d",
+      "bytes": 7073
+    },
+    "packages/engine-contract/pyproject.toml": {
+      "sha256": "06bf7c10d03b18b069915011a19b9ba3b48b8568df9106d2f1927302a9a5cddb",
+      "bytes": 353
+    },
+    "apps/server/pyproject.toml": {
+      "sha256": "e33b73a4b0bc6bfb3d525c74712783d01e2a90e60cf3c3b4099daeb82d5ae4ab",
+      "bytes": 607
+    },
+    "apps/server/app/migrations/versions/0002_snapshot_metadata.py": {
+      "sha256": "ad9358218a3c863f8b5a1343cda226f530f4467eb446194220f130776b2fbf02",
+      "bytes": 3076
+    },
+    "packages/contracts/openapi.json": {
+      "sha256": "1eb012d200fabd9ab08f3d3f2f4cdc938584b60a22c2af9490fafc014845fe0c",
+      "bytes": 4259
+    },
+    "apps/server/app/migrations/versions/__init__.py": {
+      "sha256": "321bbcdfa7b590f46141a0963ee2e2001ee2f58bcdc51ec587b943c304cc91e1",
+      "bytes": 30
+    },
+    "apps/server/app/settings.py": {
+      "sha256": "600a9bda16bd7ddbe4c2320404773a3aa5f2fbe1c1ca530e0e49c9c7eb786fce",
+      "bytes": 5087
+    },
+    "apps/server/app/security.py": {
+      "sha256": "923eac454b6684e80e7720b1bedeb5b97ad5dd8c1640245abe3b61ffe29f7734",
+      "bytes": 3341
+    },
+    "apps/server/app/snapshots.py": {
+      "sha256": "a5b5015c67dbd7cc59f34e41d9662be37c4d2892c674b89fc3ea9108fa1c97a1",
+      "bytes": 27236
+    },
+    "packages/contracts/manifest-v1.schema.json": {
+      "sha256": "80f43b00300aea255b5515a56f0e5f03bef185ae2ea43f1c408e866a8ee54812",
+      "bytes": 12039
+    },
+    "apps/server/app/migrations/versions/0001_initial.py": {
+      "sha256": "762e019de05c245e08172814fba3138e5fb8311b5c987f6ffc715bef50f5eac5",
+      "bytes": 3450
+    },
+    "apps/server/tests/test_logging_paths.py": {
+      "sha256": "b8be0c6523789fc34bd112eb1eb1b0e2e5b59642c12f5e429a03a6e7389f594e",
+      "bytes": 741
+    },
+    "apps/server/tests/test_review_fix3_t02.py": {
+      "sha256": "f9d5445cbc795cea6582fb41759608cd91a2d2671d8f0af7f587ddb55450a9b1",
+      "bytes": 12896
+    },
+    "apps/server/app/migrations/__init__.py": {
+      "sha256": "26578ae0326059d901d2abf14bb6edf1114dd924cb118e9d76dc547ce5faa52e",
+      "bytes": 53
+    },
+    "apps/server/app/engine_client.py": {
+      "sha256": "2256d5e840189b85e9c4e14a95844dc2cadded319802918f263e555e0367deca",
+      "bytes": 797
+    },
+    "apps/server/tests/test_review_fix1_t02.py": {
+      "sha256": "081aca6f9a6964bd8690d0339bc7aed8eecc79725c5c503f59f2435ccd726537",
+      "bytes": 31432
+    },
+    "packages/contracts/engine-v1.json": {
+      "sha256": "1fb5450648ab6eaf04dc3728a9a76a1df4f91dca17332ec6b7d4fbbec8fc5384",
+      "bytes": 31107
+    },
+    "apps/server/app/migrations/initial_invariants.py": {
+      "sha256": "91c5cd6e6bc05b0e62dcd0403a10a55826bed9a6cb63abf89d2c133aeed4e4c6",
+      "bytes": 9711
+    },
+    "apps/server/app/migrations/fix3_invariants.py": {
+      "sha256": "7e02a483f7f92f1ff85259e9bab2a532343085379d4dc81c310f6c50903e1af0",
+      "bytes": 645
+    },
+    "packages/contracts/examples/cli_run.json": {
+      "sha256": "c18df2ba3953896382141445d0472668e16daba7703b804de092180dabf21c70",
+      "bytes": 1804
+    },
+    "apps/server/README.md": {
+      "sha256": "c135dfcc058f64068007c89ec4f143e152ed5c84311bcca754d3bd48f2a3b7bb",
+      "bytes": 7591
+    },
+    "apps/server/app/migrations/fix2_invariants.py": {
+      "sha256": "af29038e57aaa8f353cbb7a7ea2f988c29025927a688beff48c13e2124c4e84e",
+      "bytes": 7355
+    },
+    "apps/server/Dockerfile.dockerignore": {
+      "sha256": "5bc80f9a51ccb1c21d38baf9d4825158f34c9b3cb26bd40c7a4353a54baf0418",
+      "bytes": 483
+    },
+    "apps/server/app/migrations/versions/0005_job_attempt.py": {
+      "sha256": "18c1c33471f900e5669d5fdfe81990580f83e6ebda10c55f53ea9ad4fc7a611b",
+      "bytes": 2862
+    },
+    "apps/server/tests/test_openapi_t03.py": {
+      "sha256": "9912163e4e1260dca9218d7ae3d239911852ff03997c050c887ace5e403aea92",
+      "bytes": 11067
+    },
+    "apps/server/tests/test_security_errors.py": {
+      "sha256": "bb4345bacfcfddb42c47ec33fa6e32f4bf5e29819d803dce119d392d5b73d6af",
+      "bytes": 10127
+    },
+    "apps/server/app/logging.py": {
+      "sha256": "49dc5cf2a097bc7a018a24a417d077c53c16d030d44b842b3ec42538e5d80e27",
+      "bytes": 2030
+    },
+    "apps/server/tests/test_token_persistence.py": {
+      "sha256": "8fe4716860a521139b49bed20bfac191b9c371c6a82f4044b0dd2ef6e6ebb6ba",
+      "bytes": 898
+    },
+    "apps/server/tests/test_schema_t02.py": {
+      "sha256": "b319b4cb9c877d014e9cd017e60d0296c2a7400cdf42450cec74d14e9c6ea049",
+      "bytes": 2047
+    },
+    "packages/contracts/examples/external.json": {
+      "sha256": "985ae4dea12edfe33fcc865178271724d4ea4a2021b572a5ae1b7dae238f8da2",
+      "bytes": 1932
+    },
+    "apps/server/app/models/timeline-v1.schema.json": {
+      "sha256": "d85666a0dbb7f9e67a6d7442d2e44d6b971ca9584eb424941b6330e582948660",
+      "bytes": 1772
+    },
+    "packages/contracts/lyrics-cases.json": {
+      "sha256": "a1d1a57360e5ceec8c5fe3868509d4ec1dd7dc17dab7bd7981c8aa64c9a22433",
+      "bytes": 42267
+    }
+  },
+  "current_DB": {
+    "tests": 235,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 1,
+    "passed": 234
+  },
+  "helper_whole_coverage": {
+    "covered_lines": 179,
+    "num_statements": 191,
+    "percent_covered": 93.717277486911,
+    "percent_covered_display": "94",
+    "missing_lines": 12,
+    "excluded_lines": 0,
+    "percent_statements_covered": 93.717277486911,
+    "percent_statements_covered_display": "94"
+  },
+  "operational_limitation": "Initial Ruff invocations used default shared .ruff_cache before switching to --no-cache; no baseline/certificate of unchanged shared Ruff cache. Protected source files remain exact.",
+  "review2_QA_pending": true,
+  "technical_acceptance": false
+}

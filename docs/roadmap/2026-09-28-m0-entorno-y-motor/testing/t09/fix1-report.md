@@ -1,0 +1,13 @@
+# Correcciones CPU del benchmark — fix1
+
+Entrega cotejada por el orquestador: ocho archivos modificados, 32 fuentes vigentes verificadas por SHA/tamaño, 32 preimágenes idénticas a la entrega CPU anterior y 24 archivos ajenos intactos. [Recibo](fix1-receipt.json). Implementer fresco terminal DONE_CPU_WITH_CONCERNS; T-09 permanece en-progreso.
+
+Suite final: **243 passed, 5 skipped, 1 deselected, 1 warning** en22,93s. El test GPU no se ejecutó. Cobertura oficial: **86,81% de media aritmética de los mismos15archivos de producción**, mínimoindividual64,11%; no porcentaje de líneas modificadas ni mínimo garantizado por archivo. Ruffexit0/All checks passed! y formato8files alreadyformatted.
+
+Se entregaron regresiones RED/GREEN para duración real, baseline público, copia/amortización/dispersión, bloqueo del stream y respuestas JSON, cleanup/reanudación antes y después de POST, carga cold/warm y CFG/metadatos verificables. Transporte HTTPResponse stdlib probado con bytes/eventos continuos en memoria; no threads. La reanudación registra cleanup y linaje nuevos antes de POST, y exige inspección cuando un trabajo de estado incierto pudo ser enviado. Estas afirmaciones deben revalidarse en revisión2 y QA; aún no cierran los gaps.
+
+El margen de duración es1921/48000s: un frame latente25Hz y un samplePCM, para la matriz de segundos enteros. Se fundamenta en la ruta nativa fijada task_utils/conditioning_target; no se permite un porcentaje amplio que convierta un fragmento corto en la duración solicitada.
+
+Arbitraje R09-07: se acepta el rebate del subcaso SHA DiT64hex falsificado. input_capture guarda el hash de kwargs dinámicos, incluidos códigosLM que no están en el recibo; no es posible reconstruir honestamente su preimagen desde planned. El verificador comprueba formato/procedencia y campos disponibles, y las guardas previas rechazan cambios reales antes de inferir. Se corrigieron CFG y metadataLM; no se afirma autenticación criptográfica independiente de argumentos ausentes ni fallo del motor. Evidencia: adapter.py269–294 y213–222, preflight.py228–255 y fuente nativa inference.py825–889. El rebate completo pasa a las lentes siguientes; los casos verificables deben revalidarse.
+
+Se conservan diffCPU original, delta aislado fix1 y nuevo diffT-09 completo. No se modificaron engines/locks/ledger/docs/Git por el implementer ni se usaron GPU/Docker/modelos/red/instalaciones. Los informes del orquestador son prosa/TDDn/a; los RED nuevos reales se registran en el ledger. Pendientes revisión2, QA, imagen/runtime y matrizGPU completa, calibración/navegador y evaluación musical.

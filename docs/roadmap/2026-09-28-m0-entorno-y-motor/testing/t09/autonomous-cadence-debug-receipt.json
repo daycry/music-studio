@@ -1,0 +1,482 @@
+{
+  "acceptance": {
+    "accepted_utc": "2026-10-07T01:31:25.676037+00:00",
+    "status": "CPU_FIX_ACCEPTED",
+    "product_tests": 229,
+    "private_tests": 32,
+    "coverage": {
+      "covered_lines": 228,
+      "num_statements": 265,
+      "percent_covered": 86.0377358490566,
+      "percent_covered_display": "86",
+      "missing_lines": 37,
+      "excluded_lines": 0,
+      "percent_statements_covered": 86.0377358490566,
+      "percent_statements_covered_display": "86"
+    },
+    "artifacts": 67,
+    "sources": 67,
+    "preimages": 66,
+    "foreign_unchanged": 65,
+    "docs_unchanged": 12,
+    "pilot3_originals": 27,
+    "source_receipt": {
+      "bytes": 16053,
+      "sha256": "c31208db07aebf31ba8878444cd03a8bf1c0093ef0bff46a9e12a201613b145e"
+    },
+    "gap": "R09-O7 corrected CPU",
+    "gpu_verified": false,
+    "review_pending": true,
+    "qa_pending": true
+  },
+  "delivery": {
+    "status": "DONE_CPU_WITH_CONCERNS",
+    "created_utc": "2026-10-07T01:30:26.301152+00:00",
+    "cause": "execute_run performed synchronous /v1/estimate and resume GET without sampling; 15 synthetic seconds between real validated samples reproduces observed observability_lost_auto_replayed_or_paused_sample before POSTjobs",
+    "proof": {
+      "real_original_gap_seconds": 15.6891821,
+      "original": "integration-gap.json",
+      "red": [
+        "red-estimate-metadata.json",
+        "red-resume-metadata.json"
+      ],
+      "green": "green-continuity-metadata.json"
+    },
+    "changed_files": [
+      "scripts/eval/benchmark_runner.py",
+      "scripts/eval/test_benchmark_operation_continuity.py"
+    ],
+    "delta": {
+      "bytes": 13640,
+      "sha256": "85721febf3cf9b694353fb38303b4a5afb3318c7da0821c4701976b102743c1f"
+    },
+    "source_baseline_count": 66,
+    "source_current_count": 67,
+    "coverage": {
+      "scope": "Only whole changed production module benchmark_runner; no exclusions, no dilution and no changed-line filtering",
+      "final": {
+        "covered_lines": 228,
+        "num_statements": 265,
+        "percent_covered": 86.0377358490566,
+        "percent_covered_display": "86",
+        "missing_lines": 37,
+        "excluded_lines": 0,
+        "percent_statements_covered": 86.0377358490566,
+        "percent_statements_covered_display": "86"
+      },
+      "initial": {
+        "covered_lines": 197,
+        "num_statements": 265,
+        "percent_covered": 74.33962264150944,
+        "percent_covered_display": "74",
+        "missing_lines": 68,
+        "excluded_lines": 0,
+        "percent_statements_covered": 74.33962264150944,
+        "percent_statements_covered_display": "74"
+      }
+    },
+    "tests": {
+      "product_initial": {
+        "total": 224,
+        "failures": 0,
+        "skipped": 0
+      },
+      "product_final": {
+        "total": 229,
+        "failures": 0,
+        "skipped": 0
+      },
+      "private": {
+        "total": 32,
+        "failures": 0,
+        "skipped": 0
+      }
+    },
+    "checks": {
+      "compatibility-controls": {
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "--all-packages",
+          "pytest",
+          "--noconftest",
+          "-p",
+          "cpu_plugin",
+          "--no-cov",
+          "-o",
+          "cache_dir=.cache/dev-cycle/t09/autonomous-cadence-debug/pytest-cache",
+          "--basetemp=.cache/dev-cycle/t09/autonomous-cadence-debug/compatibility-tmp",
+          "scripts/eval/test_benchmark_operation_continuity.py",
+          "-q"
+        ],
+        "started_utc": "2026-10-07T01:29:00.377273+00:00",
+        "finished_utc": "2026-10-07T01:29:02.164662+00:00",
+        "exit_code": 1,
+        "log_codec": "native UTF-8 bytes; stdout/stderr separate, no PowerShell text conversion"
+      },
+      "compatibility-corrected": {
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "--all-packages",
+          "pytest",
+          "--noconftest",
+          "-p",
+          "cpu_plugin",
+          "--no-cov",
+          "-o",
+          "cache_dir=.cache/dev-cycle/t09/autonomous-cadence-debug/pytest-cache",
+          "--basetemp=.cache/dev-cycle/t09/autonomous-cadence-debug/compatibility-corrected-tmp",
+          "scripts/eval/test_benchmark_operation_continuity.py",
+          "-q"
+        ],
+        "started_utc": "2026-10-07T01:29:07.209734+00:00",
+        "finished_utc": "2026-10-07T01:29:08.911295+00:00",
+        "exit_code": 0,
+        "log_codec": "native UTF-8 bytes; stdout/stderr separate, no PowerShell text conversion"
+      },
+      "final-suite": {
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "--all-packages",
+          "pytest",
+          "--noconftest",
+          "-p",
+          "cpu_plugin",
+          "-o",
+          "cache_dir=.cache/dev-cycle/t09/autonomous-cadence-debug/pytest-cache",
+          "--basetemp=.cache/dev-cycle/t09/autonomous-cadence-debug/final-tmp",
+          "scripts/eval/tests/test_benchmark_cli.py",
+          "scripts/eval/tests/test_benchmark_clock.py",
+          "scripts/eval/tests/test_benchmark_deadline.py",
+          "scripts/eval/tests/test_benchmark_evidence.py",
+          "scripts/eval/tests/test_benchmark_integration_cpu.py",
+          "scripts/eval/tests/test_benchmark_observation.py",
+          "scripts/eval/tests/test_benchmark_observers.py",
+          "scripts/eval/tests/test_benchmark_plan.py",
+          "scripts/eval/tests/test_benchmark_runner.py",
+          "scripts/eval/tests/test_benchmark_runtime.py",
+          "scripts/eval/tests/test_benchmark_windows_cpu.py",
+          "scripts/eval/test_benchmark_operation_continuity.py",
+          "--cov=benchmark_runner",
+          "--cov-report=json:.cache/dev-cycle/t09/autonomous-cadence-debug/final-coverage.json",
+          "--cov-report=term",
+          "--junitxml=.cache/dev-cycle/t09/autonomous-cadence-debug/final-junit.xml",
+          "-q"
+        ],
+        "started_utc": "2026-10-07T01:29:15.840422+00:00",
+        "finished_utc": "2026-10-07T01:29:31.113114+00:00",
+        "exit_code": 0,
+        "log_codec": "native UTF-8 bytes; stdout/stderr separate, no PowerShell text conversion"
+      },
+      "format-apply": {
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "--all-packages",
+          "ruff",
+          "format",
+          "--no-cache",
+          "scripts/eval/benchmark_runner.py",
+          "scripts/eval/test_benchmark_operation_continuity.py"
+        ],
+        "started_utc": "2026-10-07T01:27:57.070720+00:00",
+        "finished_utc": "2026-10-07T01:27:57.119367+00:00",
+        "exit_code": 0,
+        "log_codec": "native UTF-8 bytes; stdout/stderr separate, no PowerShell text conversion"
+      },
+      "format-controls": {
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "--all-packages",
+          "ruff",
+          "format",
+          "--no-cache",
+          "scripts/eval/test_benchmark_operation_continuity.py"
+        ],
+        "started_utc": "2026-10-07T01:29:00.266618+00:00",
+        "finished_utc": "2026-10-07T01:29:00.305197+00:00",
+        "exit_code": 0,
+        "log_codec": "native UTF-8 bytes; stdout/stderr separate, no PowerShell text conversion"
+      },
+      "format-final": {
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "--all-packages",
+          "ruff",
+          "format",
+          "--check",
+          "--no-cache",
+          "scripts/eval/benchmark_runner.py",
+          "scripts/eval/test_benchmark_operation_continuity.py"
+        ],
+        "started_utc": "2026-10-07T01:29:38.951411+00:00",
+        "finished_utc": "2026-10-07T01:29:38.988852+00:00",
+        "exit_code": 0,
+        "log_codec": "native UTF-8 bytes; stdout/stderr separate, no PowerShell text conversion"
+      },
+      "format": {
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "--all-packages",
+          "ruff",
+          "format",
+          "--check",
+          "--no-cache",
+          "scripts/eval/benchmark_runner.py",
+          "scripts/eval/test_benchmark_operation_continuity.py"
+        ],
+        "started_utc": "2026-10-07T01:28:27.749749+00:00",
+        "finished_utc": "2026-10-07T01:28:27.784374+00:00",
+        "exit_code": 0,
+        "log_codec": "native UTF-8 bytes; stdout/stderr separate, no PowerShell text conversion"
+      },
+      "green-continuity": {
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "--all-packages",
+          "pytest",
+          "--noconftest",
+          "-p",
+          "cpu_plugin",
+          "--no-cov",
+          "-o",
+          "cache_dir=.cache/dev-cycle/t09/autonomous-cadence-debug/pytest-cache",
+          "--basetemp=.cache/dev-cycle/t09/autonomous-cadence-debug/green-tmp",
+          "scripts/eval/test_benchmark_operation_continuity.py",
+          "-q"
+        ],
+        "started_utc": "2026-10-07T01:27:26.125362+00:00",
+        "finished_utc": "2026-10-07T01:27:27.012808+00:00",
+        "exit_code": 0,
+        "log_codec": "native UTF-8 bytes; stdout/stderr separate, no PowerShell text conversion"
+      },
+      "green-controls": {
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "--all-packages",
+          "pytest",
+          "--noconftest",
+          "-p",
+          "cpu_plugin",
+          "--no-cov",
+          "-o",
+          "cache_dir=.cache/dev-cycle/t09/autonomous-cadence-debug/pytest-cache",
+          "--basetemp=.cache/dev-cycle/t09/autonomous-cadence-debug/controls-tmp",
+          "scripts/eval/test_benchmark_operation_continuity.py",
+          "-q"
+        ],
+        "started_utc": "2026-10-07T01:27:57.189300+00:00",
+        "finished_utc": "2026-10-07T01:27:58.853994+00:00",
+        "exit_code": 0,
+        "log_codec": "native UTF-8 bytes; stdout/stderr separate, no PowerShell text conversion"
+      },
+      "private-suite": {
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "--all-packages",
+          "pytest",
+          "--noconftest",
+          "-p",
+          "cpu_plugin",
+          "--no-cov",
+          "-o",
+          "cache_dir=.cache/dev-cycle/t09/autonomous-cadence-debug/pytest-cache",
+          "--basetemp=.cache/dev-cycle/t09/autonomous-cadence-debug/private-tmp",
+          ".cache/dev-cycle/t09/autonomous-pilot-fix2/test_pilot.py",
+          "--junitxml=.cache/dev-cycle/t09/autonomous-cadence-debug/private-junit.xml",
+          "-q"
+        ],
+        "started_utc": "2026-10-07T01:28:26.708443+00:00",
+        "finished_utc": "2026-10-07T01:28:27.547209+00:00",
+        "exit_code": 0,
+        "log_codec": "native UTF-8 bytes; stdout/stderr separate, no PowerShell text conversion"
+      },
+      "product-suite": {
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "--all-packages",
+          "pytest",
+          "--noconftest",
+          "-p",
+          "cpu_plugin",
+          "-o",
+          "cache_dir=.cache/dev-cycle/t09/autonomous-cadence-debug/pytest-cache",
+          "--basetemp=.cache/dev-cycle/t09/autonomous-cadence-debug/product-tmp",
+          "scripts/eval/tests/test_benchmark_cli.py",
+          "scripts/eval/tests/test_benchmark_clock.py",
+          "scripts/eval/tests/test_benchmark_deadline.py",
+          "scripts/eval/tests/test_benchmark_evidence.py",
+          "scripts/eval/tests/test_benchmark_integration_cpu.py",
+          "scripts/eval/tests/test_benchmark_observation.py",
+          "scripts/eval/tests/test_benchmark_observers.py",
+          "scripts/eval/tests/test_benchmark_plan.py",
+          "scripts/eval/tests/test_benchmark_runner.py",
+          "scripts/eval/tests/test_benchmark_runtime.py",
+          "scripts/eval/tests/test_benchmark_windows_cpu.py",
+          "scripts/eval/test_benchmark_operation_continuity.py",
+          "--cov=benchmark_runner",
+          "--cov-report=json:.cache/dev-cycle/t09/autonomous-cadence-debug/product-coverage.json",
+          "--cov-report=term",
+          "--junitxml=.cache/dev-cycle/t09/autonomous-cadence-debug/product-junit.xml",
+          "-q"
+        ],
+        "started_utc": "2026-10-07T01:28:09.818300+00:00",
+        "finished_utc": "2026-10-07T01:28:25.352025+00:00",
+        "exit_code": 0,
+        "log_codec": "native UTF-8 bytes; stdout/stderr separate, no PowerShell text conversion"
+      },
+      "red-estimate": {
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "--all-packages",
+          "pytest",
+          "--noconftest",
+          "-p",
+          "cpu_plugin",
+          "--no-cov",
+          "-o",
+          "cache_dir=.cache/dev-cycle/t09/autonomous-cadence-debug/pytest-cache",
+          "--basetemp=.cache/dev-cycle/t09/autonomous-cadence-debug/red-estimate-tmp",
+          "scripts/eval/test_benchmark_operation_continuity.py::test_slow_estimate_preserves_continuity_before_single_submission",
+          "-q"
+        ],
+        "started_utc": "2026-10-07T01:27:10.003211+00:00",
+        "finished_utc": "2026-10-07T01:27:10.521730+00:00",
+        "exit_code": 1,
+        "log_codec": "native UTF-8 bytes; stdout/stderr separate, no PowerShell text conversion"
+      },
+      "red-resume": {
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "--all-packages",
+          "pytest",
+          "--noconftest",
+          "-p",
+          "cpu_plugin",
+          "--no-cov",
+          "-o",
+          "cache_dir=.cache/dev-cycle/t09/autonomous-cadence-debug/pytest-cache",
+          "--basetemp=.cache/dev-cycle/t09/autonomous-cadence-debug/red-resume-tmp",
+          "scripts/eval/test_benchmark_operation_continuity.py::test_slow_resume_query_preserves_continuity_without_resubmission",
+          "-q"
+        ],
+        "started_utc": "2026-10-07T01:27:14.627195+00:00",
+        "finished_utc": "2026-10-07T01:27:15.072687+00:00",
+        "exit_code": 1,
+        "log_codec": "native UTF-8 bytes; stdout/stderr separate, no PowerShell text conversion"
+      },
+      "ruff-final": {
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "--all-packages",
+          "ruff",
+          "check",
+          "--no-cache",
+          "scripts/eval/benchmark_runner.py",
+          "scripts/eval/test_benchmark_operation_continuity.py"
+        ],
+        "started_utc": "2026-10-07T01:29:38.839646+00:00",
+        "finished_utc": "2026-10-07T01:29:38.879729+00:00",
+        "exit_code": 0,
+        "log_codec": "native UTF-8 bytes; stdout/stderr separate, no PowerShell text conversion"
+      },
+      "ruff": {
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "--all-packages",
+          "ruff",
+          "check",
+          "--no-cache",
+          "scripts/eval/benchmark_runner.py",
+          "scripts/eval/test_benchmark_operation_continuity.py"
+        ],
+        "started_utc": "2026-10-07T01:28:27.625698+00:00",
+        "finished_utc": "2026-10-07T01:28:27.679525+00:00",
+        "exit_code": 0,
+        "log_codec": "native UTF-8 bytes; stdout/stderr separate, no PowerShell text conversion"
+      }
+    },
+    "custody": {
+      "documents": {
+        "baseline_count": 12,
+        "compared_foreign": 12,
+        "owned_delta_excluded": [],
+        "mismatches": [],
+        "unchanged": true
+      },
+      "pilot3": {
+        "baseline_count": 27,
+        "compared_foreign": 27,
+        "owned_delta_excluded": [],
+        "mismatches": [],
+        "unchanged": true
+      },
+      "prior_protected": {
+        "baseline_count": 191,
+        "compared_foreign": 190,
+        "owned_delta_excluded": [
+          "scripts/eval/benchmark_runner.py"
+        ],
+        "mismatches": [],
+        "unchanged": true
+      }
+    },
+    "private_suite_carry_forward": "32 CPU tests passed with production two-call fix; only new compatibility tests added afterwards; same pilot source and private test SHA independently preserved. No redundant rerun.",
+    "non_tdd_test_error": "compatibility-controls: wrong type for now argument in 2 tests; corrected fixture to datetime, no production change. Retained original failure output; not claimed as RED.",
+    "concerns": [
+      "Existing monitored_operation joins owned thread on guard failure, so error/cleanup waits for transport completion or existing transport deadline (default70s). Test covers joined completion/error, not cancellation of an indefinitely hung injected operation.",
+      "Other execute_run local JSON/hash/fsync operations remain synchronous; no CPU evidence of them exceeding cadence. No unproven blanket wrappers or timestamps changed.",
+      "No GPU, Docker, WSL, UI, network, model, install, ledger, document, Git or knowledge writes; CPU does not certify a successful new pilot or matrix160.",
+      "debug-root-cause knowledge handoff belongs to root; explicit ownership forbids this worker from writing knowledge."
+    ],
+    "effort": {
+      "hours": null,
+      "tokens": null,
+      "cost_eur": null,
+      "source": "Root owns measurement; not fabricated"
+    }
+  }
+}

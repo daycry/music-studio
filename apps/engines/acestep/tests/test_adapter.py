@@ -353,6 +353,7 @@ def test_upstream_error_and_swallowed_cancel(tmp_path, monkeypatch):
         GenerationParams=lambda **kw: kw,
         GenerationConfig=lambda **kw: kw,
         generate_music=swallowed,
+        torch=SimpleNamespace(cuda=SimpleNamespace(synchronize=lambda: None)),
     )
     with pytest.raises(Exception, match="CANCELLED"):
         model.generate(request, tmp_path, lambda event: None, token)
@@ -427,7 +428,9 @@ def test_generate_real_callback_and_cancellation(tmp_path, monkeypatch):
         dit=None,
         lm=None,
         torch=SimpleNamespace(
-            cuda=SimpleNamespace(max_memory_allocated=lambda: 1024**2)
+            cuda=SimpleNamespace(
+                max_memory_allocated=lambda: 1024**2, synchronize=lambda: None
+            )
         ),
     )
     req = {

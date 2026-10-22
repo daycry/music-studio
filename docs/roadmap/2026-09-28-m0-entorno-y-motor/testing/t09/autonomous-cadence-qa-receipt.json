@@ -1,0 +1,481 @@
+{
+  "acceptance": {
+    "accepted_utc": "2026-10-07T01:42:35.720785+00:00",
+    "cpu_qa_pass": true,
+    "tests": 261,
+    "product_tests": 229,
+    "private_tests": 32,
+    "coverage": {
+      "covered_lines": 1320,
+      "num_statements": 1526,
+      "percent_covered": 86.50065530799476,
+      "percent_covered_display": "87",
+      "missing_lines": 206,
+      "excluded_lines": 0,
+      "percent_statements_covered": 86.50065530799476,
+      "percent_statements_covered_display": "87"
+    },
+    "protected": 194,
+    "artifacts": 33,
+    "receipt": {
+      "bytes": 14431,
+      "sha256": "00b184089206e518c25b0dc28dbc3beecbd5c8a40a7bb0dbfa2f2939e21ff89a"
+    },
+    "root_additional_originals": {
+      "root-gate-corrections.json": {
+        "bytes": 1373,
+        "sha256": "b3c58433c8ae9a062bdca9e0d6431296b542ead2f65d8413dd0d2a9e764d603f"
+      },
+      "coverage-check-root.stdout.txt": {
+        "bytes": 947,
+        "sha256": "9380b706471c08d7f6156a3d80f01fe4389d6580ba1b1930808b67e7a2950e95"
+      },
+      "coverage-check-root.stderr.txt": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "ledger-lint-root.stdout.txt": {
+        "bytes": 865,
+        "sha256": "7a410191df70f1203dc4098e92ea42a89a231dcd147cd35fef3d8e2180c16492"
+      },
+      "ledger-lint-root.stderr.txt": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "cli-metadata.json": {
+        "bytes": 881,
+        "sha256": "75205c93c1846660ed0ce6544ddb295e13be2bc5d0357ab06b9816552e4fb4b6"
+      },
+      "cli-original.jsonl": {
+        "bytes": 178897,
+        "sha256": "5398bdf127e39cfec5e0151294087af31f0e5f985ef94fb2a59bcbe45036cf31"
+      },
+      "cli-final-original.md": {
+        "bytes": 616,
+        "sha256": "6ebe8bd172902d46d354dcb885dd8570e797a3477ed8cc46c253e095417c9e4e"
+      }
+    },
+    "review": "A+B+D global7 no new gaps, inline review did not execute tests",
+    "no_ui_gate": "Original QA PATH removed Git by overly broad root NoGit scope; root reran only actual diff coverage-check with Git restored, nondegraded n/a, no CPU tests replayed",
+    "ledger": "Root corrected canonical revision header, new lint0/7futurewarnings; original QA0/8preserved",
+    "gpu_verified": false
+  },
+  "delivery": {
+    "status": "QA_CPU_PASS",
+    "observed_at_utc": "2026-10-07T01:40:19.626883+00:00",
+    "checks": [
+      {
+        "label": "ledger-lint",
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "--all-packages",
+          "python",
+          "<custom-agents>/agent-kits/shared/ledger-lint.py",
+          "docs/roadmap/2026-09-28-m0-entorno-y-motor/tasks.md"
+        ],
+        "started_utc": "2026-10-07T01:39:39.894754+00:00",
+        "finished_utc": "2026-10-07T01:39:39.976325+00:00",
+        "exit_code": 0,
+        "stdout": "ledger-lint.stdout.txt",
+        "stderr": "ledger-lint.stderr.txt"
+      },
+      {
+        "label": "coverage-check",
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "--all-packages",
+          "python",
+          "<custom-agents>/agent-kits\\qa\\coverage-check.py",
+          "docs/roadmap/2026-09-28-m0-entorno-y-motor/tasks.md",
+          "docs/roadmap/2026-09-28-m0-entorno-y-motor/test-plan.md",
+          "docs/roadmap/2026-09-28-m0-entorno-y-motor/spec.md"
+        ],
+        "started_utc": "2026-10-07T01:39:39.977329+00:00",
+        "finished_utc": "2026-10-07T01:39:40.085222+00:00",
+        "exit_code": 0,
+        "stdout": "coverage-check.stdout.txt",
+        "stderr": "coverage-check.stderr.txt"
+      },
+      {
+        "label": "product-suite",
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "--all-packages",
+          "pytest",
+          "--noconftest",
+          "-p",
+          "cpu_plugin",
+          "-o",
+          "cache_dir=.cache\\dev-cycle\\t09\\autonomous-cadence-qa\\pytest-cache",
+          "--basetemp",
+          ".cache\\dev-cycle\\t09\\autonomous-cadence-qa\\product-tmp",
+          "scripts/eval/tests/test_benchmark_cli.py",
+          "scripts/eval/tests/test_benchmark_clock.py",
+          "scripts/eval/tests/test_benchmark_deadline.py",
+          "scripts/eval/tests/test_benchmark_evidence.py",
+          "scripts/eval/tests/test_benchmark_integration_cpu.py",
+          "scripts/eval/tests/test_benchmark_observation.py",
+          "scripts/eval/tests/test_benchmark_observers.py",
+          "scripts/eval/tests/test_benchmark_plan.py",
+          "scripts/eval/tests/test_benchmark_runner.py",
+          "scripts/eval/tests/test_benchmark_runtime.py",
+          "scripts/eval/tests/test_benchmark_windows_cpu.py",
+          "scripts/eval/test_benchmark_operation_continuity.py",
+          "--cov=benchmark",
+          "--cov=benchmark_clock",
+          "--cov=benchmark_evidence",
+          "--cov=benchmark_observation",
+          "--cov=benchmark_observers",
+          "--cov=benchmark_plan",
+          "--cov=benchmark_runner",
+          "--cov=benchmark_windows",
+          "--cov-config=.cache\\dev-cycle\\t09\\autonomous-cadence-qa\\coverage.rc",
+          "--cov-report=json:.cache\\dev-cycle\\t09\\autonomous-cadence-qa\\product-coverage.json",
+          "--cov-report=term",
+          "--junitxml=.cache\\dev-cycle\\t09\\autonomous-cadence-qa\\product-junit.xml",
+          "-q"
+        ],
+        "started_utc": "2026-10-07T01:39:40.086223+00:00",
+        "finished_utc": "2026-10-07T01:39:55.964283+00:00",
+        "exit_code": 0,
+        "stdout": "product-suite.stdout.txt",
+        "stderr": "product-suite.stderr.txt"
+      },
+      {
+        "label": "private-suite",
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "--all-packages",
+          "pytest",
+          "--noconftest",
+          "-p",
+          "cpu_plugin",
+          "-o",
+          "cache_dir=.cache\\dev-cycle\\t09\\autonomous-cadence-qa\\pytest-cache",
+          "--basetemp",
+          ".cache\\dev-cycle\\t09\\autonomous-cadence-qa\\private-tmp",
+          ".cache/dev-cycle/t09/autonomous-pilot-fix2/test_pilot.py",
+          "--no-cov",
+          "--junitxml=.cache\\dev-cycle\\t09\\autonomous-cadence-qa\\private-junit.xml",
+          "-q"
+        ],
+        "started_utc": "2026-10-07T01:39:55.964283+00:00",
+        "finished_utc": "2026-10-07T01:39:56.854266+00:00",
+        "exit_code": 0,
+        "stdout": "private-suite.stdout.txt",
+        "stderr": "private-suite.stderr.txt"
+      },
+      {
+        "label": "ruff",
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "--all-packages",
+          "ruff",
+          "check",
+          "scripts/eval/benchmark_runner.py",
+          "scripts/eval/test_benchmark_operation_continuity.py"
+        ],
+        "started_utc": "2026-10-07T01:39:56.854266+00:00",
+        "finished_utc": "2026-10-07T01:39:56.904019+00:00",
+        "exit_code": 0,
+        "stdout": "ruff.stdout.txt",
+        "stderr": "ruff.stderr.txt"
+      },
+      {
+        "label": "format",
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "--all-packages",
+          "ruff",
+          "format",
+          "--check",
+          "scripts/eval/benchmark_runner.py",
+          "scripts/eval/test_benchmark_operation_continuity.py"
+        ],
+        "started_utc": "2026-10-07T01:39:56.905020+00:00",
+        "finished_utc": "2026-10-07T01:39:56.943701+00:00",
+        "exit_code": 0,
+        "stdout": "format.stdout.txt",
+        "stderr": "format.stderr.txt"
+      },
+      {
+        "label": "qa-gate",
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "--all-packages",
+          "python",
+          "<custom-agents>/agent-kits\\qa\\qa-gate.py",
+          ".cache\\dev-cycle\\t09\\autonomous-cadence-qa\\cpu-derived-results.json"
+        ],
+        "started_utc": "2026-10-07T01:39:56.953912+00:00",
+        "finished_utc": "2026-10-07T01:39:57.026526+00:00",
+        "exit_code": 0,
+        "stdout": "qa-gate.stdout.txt",
+        "stderr": "qa-gate.stderr.txt"
+      }
+    ],
+    "tests": {
+      "product": {
+        "total": 229,
+        "failed": 0,
+        "skipped": 0,
+        "errors": 0
+      },
+      "private": {
+        "total": 32,
+        "failed": 0,
+        "skipped": 0,
+        "errors": 0
+      }
+    },
+    "total_cpu_tests": 261,
+    "qa_gate": {
+      "verdict": "VERDE",
+      "counts": {
+        "passed": 261,
+        "failed": 0,
+        "flaky": 0,
+        "skipped": 0,
+        "interrupted": 0
+      },
+      "flaky_sin_justificar": [],
+      "flaky_justificados": {},
+      "threshold": "verde ⟺ 0 failed, 0 flaky sin justificar, 0 interrumpidos y ≥1 test ejecutado"
+    },
+    "qa_gate_source": "Explicit JUnit to stats adapter; CPU only, zero E2E",
+    "coverage": {
+      "tool": "coverage.py via pytest-cov",
+      "scope": "8 complete production modules, no exclusions and no changed-line filtering",
+      "files": {
+        "scripts\\eval\\benchmark.py": {
+          "covered_lines": 275,
+          "num_statements": 375,
+          "percent_covered": 73.33333333333333,
+          "percent_covered_display": "73",
+          "missing_lines": 100,
+          "excluded_lines": 0,
+          "percent_statements_covered": 73.33333333333333,
+          "percent_statements_covered_display": "73"
+        },
+        "scripts\\eval\\benchmark_clock.py": {
+          "covered_lines": 47,
+          "num_statements": 49,
+          "percent_covered": 95.91836734693878,
+          "percent_covered_display": "96",
+          "missing_lines": 2,
+          "excluded_lines": 0,
+          "percent_statements_covered": 95.91836734693878,
+          "percent_statements_covered_display": "96"
+        },
+        "scripts\\eval\\benchmark_evidence.py": {
+          "covered_lines": 120,
+          "num_statements": 120,
+          "percent_covered": 100.0,
+          "percent_covered_display": "100",
+          "missing_lines": 0,
+          "excluded_lines": 0,
+          "percent_statements_covered": 100.0,
+          "percent_statements_covered_display": "100"
+        },
+        "scripts\\eval\\benchmark_observation.py": {
+          "covered_lines": 292,
+          "num_statements": 327,
+          "percent_covered": 89.29663608562691,
+          "percent_covered_display": "89",
+          "missing_lines": 35,
+          "excluded_lines": 0,
+          "percent_statements_covered": 89.29663608562691,
+          "percent_statements_covered_display": "89"
+        },
+        "scripts\\eval\\benchmark_observers.py": {
+          "covered_lines": 67,
+          "num_statements": 71,
+          "percent_covered": 94.36619718309859,
+          "percent_covered_display": "94",
+          "missing_lines": 4,
+          "excluded_lines": 0,
+          "percent_statements_covered": 94.36619718309859,
+          "percent_statements_covered_display": "94"
+        },
+        "scripts\\eval\\benchmark_plan.py": {
+          "covered_lines": 90,
+          "num_statements": 98,
+          "percent_covered": 91.83673469387755,
+          "percent_covered_display": "92",
+          "missing_lines": 8,
+          "excluded_lines": 0,
+          "percent_statements_covered": 91.83673469387755,
+          "percent_statements_covered_display": "92"
+        },
+        "scripts\\eval\\benchmark_runner.py": {
+          "covered_lines": 228,
+          "num_statements": 265,
+          "percent_covered": 86.0377358490566,
+          "percent_covered_display": "86",
+          "missing_lines": 37,
+          "excluded_lines": 0,
+          "percent_statements_covered": 86.0377358490566,
+          "percent_statements_covered_display": "86"
+        },
+        "scripts\\eval\\benchmark_windows.py": {
+          "covered_lines": 201,
+          "num_statements": 221,
+          "percent_covered": 90.9502262443439,
+          "percent_covered_display": "91",
+          "missing_lines": 20,
+          "excluded_lines": 0,
+          "percent_statements_covered": 90.9502262443439,
+          "percent_statements_covered_display": "91"
+        }
+      },
+      "totals": {
+        "covered_lines": 1320,
+        "num_statements": 1526,
+        "percent_covered": 86.50065530799476,
+        "percent_covered_display": "87",
+        "missing_lines": 206,
+        "excluded_lines": 0,
+        "percent_statements_covered": 86.50065530799476,
+        "percent_statements_covered_display": "87"
+      },
+      "minimum_percent": 80,
+      "pass": true
+    },
+    "custody": {
+      "protected-freeze.json": {
+        "count": 194,
+        "unchanged": true,
+        "mismatches": []
+      },
+      "sources-freeze.json": {
+        "count": 67,
+        "unchanged": true,
+        "mismatches": []
+      },
+      "t20-docs-freeze.json": {
+        "count": 12,
+        "unchanged": true,
+        "mismatches": []
+      }
+    },
+    "documents_carry_forward": {
+      "count": 12,
+      "local_links": 156,
+      "source": ".cache/dev-cycle/t09/autonomous-observability-qa/receipt.json",
+      "basis": "12 checksums unchanged, previous independent documentary QA carried forward; link scan not rerun"
+    },
+    "review": ".cache/dev-cycle/t09/autonomous-cadence-review1/root-review-receipt.json",
+    "pilot_source_sha256": "cbe68de959572642e5f311860f8052070b1db343e42e1b1dcabcea39bed3bb2d",
+    "limits": [
+      "No GPU, Docker, WSL, Ollama, sensors, UI, network or installations",
+      "No new classification of original captures or metadata",
+      "CPU approval does not close T09, M0, matrix160 or artistic choice",
+      "Root owns ledger, publication and state changes",
+      "PDF absent: renderer dependencies unavailable; installation prohibited; MD/JSON/JUnit supplied for no-UI scope"
+    ],
+    "usage": {
+      "tokens": null,
+      "ai_effort": null,
+      "cost_eur": null,
+      "reason": "Desconocidos; medidor propiedad de root"
+    },
+    "gpu_status": "GPU_NOT_VERIFIED",
+    "new_runtime_execution": true,
+    "no_ui_gate": {
+      "applies": false,
+      "gwt_sin_id": 0,
+      "test_plan_na": true,
+      "marcador_no_canonico": null,
+      "eximidos": [
+        "T-00",
+        "T-01",
+        "T-02",
+        "T-03",
+        "T-04",
+        "T-05",
+        "T-06",
+        "T-07",
+        "T-08",
+        "T-09",
+        "T-10",
+        "T-11",
+        "T-12",
+        "T-13",
+        "T-14",
+        "T-15",
+        "T-16",
+        "T-17",
+        "T-18",
+        "T-19",
+        "T-20"
+      ],
+      "eximidos_exigidos": false,
+      "rutas_ui": [],
+      "rutas_ui_origen": {},
+      "rutas_ui_degradado": "no hay `git` en el PATH: la puerta no puede leer el diff — instala git (o añádelo al PATH) y repite"
+    },
+    "custody_before": {
+      "protected-freeze.json": {
+        "count": 194,
+        "unchanged": true,
+        "mismatches": []
+      },
+      "sources-freeze.json": {
+        "count": 67,
+        "unchanged": true,
+        "mismatches": []
+      },
+      "t20-docs-freeze.json": {
+        "count": 12,
+        "unchanged": true,
+        "mismatches": []
+      }
+    },
+    "review_limit": "Review global7 carry-forward; review CLI inline no ejecut? tests ni hash live independiente; no se atribuyen aqu?",
+    "root_coverage_sha256": "153490fc264e69bcc7573506ab68a41a109bbdd7bcf6583d0915bdcd84c5d32d",
+    "ledger": {
+      "hard_inconsistencies": 0,
+      "warnings": 8,
+      "detail": "7 Changelog; cabecera de revision linea2043 no canonica; stdout original preservado"
+    },
+    "publication_incident": {
+      "harness_exit": 1,
+      "line": 62,
+      "reason": "JSONDecodeError: texto informativo antes del JSON de coverage-check",
+      "recovery": "Solo publicacion privada a partir de originales; cero reruns de tests/checks"
+    },
+    "runtime_environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONUTF8": "1",
+      "COVERAGE_FILE": ".cache\\dev-cycle\\t09\\autonomous-cadence-qa\\product.coverage",
+      "PYTHONPATH": [
+        ".cache\\dev-cycle\\t09\\autonomous-cadence-qa",
+        "scripts",
+        "scripts\\eval"
+      ],
+      "coverage_check_git": "PATH sin directorios con git; no Git ejecutado",
+      "RUFF_CACHE_DIR": ".cache\\dev-cycle\\t09\\autonomous-cadence-qa\\ruff-cache"
+    }
+  }
+}

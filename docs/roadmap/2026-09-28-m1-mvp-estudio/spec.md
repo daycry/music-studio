@@ -1,12 +1,13 @@
 ---
+storage_durable_design: storage-durable-design.md
 spec: m1-mvp-estudio
 descripcion: MVP del estudio web: crear canciones como proyecto, ver la generación en vivo, escuchar variantes, elegir maestro y descargar
 estado: aprobada          # borrador | aprobada | implementada | obsoleta
 aprobada: 2026-09-28
 creado: 2026-09-28
-actualizado: 2026-09-28
+actualizado: 2026-10-07
 evaluacion: n/a (proyecto personal — ADR-0001; esfuerzo orientativo en tasks.md)
-design: n/a (la arquitectura está en docs/arquitectura/ y docs/decisiones/)
+design: design.md
 plan: improvement-plan.md
 depende-de: m0-entorno-y-motor
 ---
@@ -50,7 +51,7 @@ Ver [funcionalidades.md](../../producto/funcionalidades.md).
 
 | # | Criterio |
 |---|---|
-| CA-01 | **Arranque.** `docker compose --profile engines up -d` + server y web en nativo levantan la app en `http://127.0.0.1:3000`. Con `STUDIO_ENGINES=mock=…` funciona sin GPU. **Precondición:** M0 cerrado, con `music.song` y `music.instrumental` verificadas en el descriptor de ACE-Step. |
+| CA-01 | **Arranque.** Web Next.js, server FastAPI (sin torch, con worker CPU) y engines necesarios arrancan mediante Docker Compose; la app se abre en `http://127.0.0.1:3000`. El server usa nombres de servicio internos y FFmpeg LGPL Linux fijado; SQLite WAL y datos persisten dentro del proyecto. Con `engine-mock` en Docker funciona sin GPU ni Ollama. Los puertos publicados se limitan a `127.0.0.1` y se validan `Host`/`Origin` ([ADR-0035](../../decisiones/ADR-0035-despliegue-docker-y-ollama-wsl.md)). **Apertura técnica:** contratos y engine-mock disponibles, con [ADR-0037](../../decisiones/ADR-0037-avance-tecnico-condicionado.md) revisada y QA documental conforme. **Aceptación final del hito:** M0/T-13 cerrado, con `music.song` y `music.instrumental` verificadas en el descriptor real; el mock no sustituye esta aceptación. |
 | CA-02 | **Crear en modo personalizado.** Letra con etiquetas validadas en vivo (el mismo parser que el server, con `lyrics-cases.json`), estilo, chips, estilos a excluir, **autoría obligatoria**, opciones avanzadas según el `params_schema` de la tarea y de 1 a 4 variantes. Sin autoría, el botón queda deshabilitado con el motivo visible y el server responde `422 LYRICS_DECLARATION_REQUIRED`. |
 | CA-03 | **Generación en vivo.** La tarjeta muestra las etapas reales por SSE, tal como las emite el engine: cola, modelo, generando % y post-proceso. Usa la visualización de [ux.md](../../producto/ux.md) §4.2 y, al terminar, se convierte en la forma de onda real. |
 | CA-04 | **Variantes.** Las variantes de una petición aparecen agrupadas (A/B) y `⏭` en el reproductor salta a la pareja. Generar sin una canción abierta crea una **canción borrador** con título provisional. |
@@ -77,3 +78,15 @@ Ver [funcionalidades.md](../../producto/funcionalidades.md).
 |---|---|---|
 | I-01 | ¿Genera el modelo elegido en M0 N variantes en un solo batch dentro de la VRAM, o hay que hacerlas en serie? | T-04 (según el benchmark de M0) |
 | I-02 | ¿Qué parámetros avanzados expone de verdad el descriptor de la tarea (BPM, tonalidad, idioma, fuerza del estilo, prompt negativo)? | T-09 (a partir del `params_schema`) |
+
+## Gate de almacenamiento persistente (ADR-0069)
+
+[ADR-0069](../../decisiones/ADR-0069-almacenamiento-ext4-del-proyecto-para-publicacion-atomica.md)
+conserva los CA originales de publicación atómica no-clobber y adopta
+ext4 respaldado por un VHDX dentro del proyecto. Provisión y montaje son
+infraestructura; producto en Docker, sin privilegios de montaje. No se
+migra la biblioteca existente automáticamente ni se acepta tmpfs como
+despliegue. T-05 requiere recorrido real sobre el disco persistente,
+rechazo de destinos ajenos incluidos vacíos/carreras, restart/reconcile y
+backup/restauración verificados. Sin mount/UUID/capacidad nativa correctos,
+startup aborta antes de datos/jobs. Gates de E2E y hito completos permanecen.

@@ -1,0 +1,512 @@
+{
+  "status": "QA_CPU_PASS",
+  "qa_attempt": 2,
+  "timestamp_utc": "2026-10-06T18:49:36.630071+00:00",
+  "task_complete": false,
+  "junit_counts": {
+    "tests": 277,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 5,
+    "passed": 272
+  },
+  "skipped_tests": [
+    {
+      "test": "apps.engines.acestep.tests.test_adapter.test_install_patch_on_actual_upstream_without_models",
+      "reason": {
+        "type": "pytest.skip",
+        "message": "La fuente auditada está en la imagen fijada"
+      }
+    },
+    {
+      "test": "apps.engines.acestep.tests.test_environment.test_startup_log",
+      "reason": {
+        "type": "pytest.skip",
+        "message": "El entorno GPU se verifica exclusivamente dentro de engine-acestep."
+      }
+    },
+    {
+      "test": "apps.engines.acestep.tests.test_environment.test_runtime_dependencies",
+      "reason": {
+        "type": "pytest.skip",
+        "message": "El entorno GPU se verifica exclusivamente dentro de engine-acestep."
+      }
+    },
+    {
+      "test": "apps.engines.acestep.tests.test_environment.test_ffmpeg_shared_lgpl",
+      "reason": {
+        "type": "pytest.skip",
+        "message": "El entorno GPU se verifica exclusivamente dentro de engine-acestep."
+      }
+    },
+    {
+      "test": "apps.engines.acestep.tests.test_environment.test_runtime_configuration",
+      "reason": {
+        "type": "pytest.skip",
+        "message": "El entorno GPU se verifica exclusivamente dentro de engine-acestep."
+      }
+    }
+  ],
+  "coverage_percent_by_production_file": {
+    "scripts/eval/benchmark.py": 72.5609756097561,
+    "scripts/eval/benchmark_evidence.py": 100.0,
+    "scripts/eval/benchmark_observers.py": 79.03225806451613,
+    "scripts/eval/benchmark_plan.py": 89.53488372093024,
+    "scripts/eval/benchmark_runner.py": 75.10729613733906,
+    "scripts/eval/benchmark_runtime.py": 73.31189710610933,
+    "scripts/eval/benchmark_storage.py": 67.96116504854369,
+    "scripts/eval/benchmark_windows.py": 88.8157894736842,
+    "apps/engines/acestep/benchmark_profiles.py": 95.65217391304348,
+    "apps/engines/acestep/descriptor.py": 100.0,
+    "apps/engines/acestep/input_profile.py": 100.0,
+    "apps/engines/acestep/adapter.py": 90.0804289544236,
+    "apps/engines/acestep/preflight.py": 90.625,
+    "apps/engines/acestep/engine_acestep.py": 100.0,
+    "apps/engines/common/engine_common/server.py": 90.58441558441558
+  },
+  "coverage_arithmetic_file_mean": 87.5510855741841,
+  "coverage_threshold": 80,
+  "coverage_minimum_file_informative_only": 67.96116504854369,
+  "coverage_method": "Media aritmética oficial de 15 archivos de producción; no líneas cambiadas ni mínimo individual",
+  "coverage_check": {
+    "applies": false,
+    "gwt_sin_id": 0,
+    "test_plan_na": true,
+    "marcador_no_canonico": null,
+    "eximidos": [
+      "T-00",
+      "T-01",
+      "T-02",
+      "T-03",
+      "T-04",
+      "T-05",
+      "T-06",
+      "T-07",
+      "T-08",
+      "T-09",
+      "T-10",
+      "T-11",
+      "T-12",
+      "T-13",
+      "T-14",
+      "T-15",
+      "T-16",
+      "T-17",
+      "T-18",
+      "T-19"
+    ],
+    "eximidos_exigidos": false,
+    "rutas_ui": [],
+    "rutas_ui_origen": {},
+    "rutas_ui_degradado": null
+  },
+  "source_files_before_and_after_match_format_freeze": true,
+  "source_file_count": 33,
+  "ruff_python_files": 32,
+  "json_lock_syntax_valid": true,
+  "qa_gate_playwright": "N/A: exención explícita test-plan: n/a (sin UI), sin resultados E2E fabricados",
+  "gpu_executed": false,
+  "computer_use_restarted": false,
+  "pdf": "N/A en auditoría CPU privada sin UI; no instalación",
+  "scope_limits": [
+    "No matriz 160 jobs",
+    "No RTF",
+    "No XL/INT8/offload/fit real",
+    "No calibración TaskManager",
+    "No voz/naturalidad",
+    "No cierre T09/M0"
+  ],
+  "sources_before": {
+    "scripts/eval/benchmark.py": {
+      "sha256": "f6d23e58327fdb73768ffdb5470952d99ba6cef010c061404a6f413423c1fbcc",
+      "bytes": 25599
+    },
+    "scripts/eval/benchmark_evidence.py": {
+      "sha256": "c81557dce895cd364df862d6d1b05adc26e87acec40f348eaf53b3a0d3b5027a",
+      "bytes": 12501
+    },
+    "scripts/eval/benchmark_observers.py": {
+      "sha256": "b6b9a6e6b73a069b2cefc80da93a08bb80959e7fa2fe7334c30739d34de0171d",
+      "bytes": 4708
+    },
+    "scripts/eval/benchmark_plan.py": {
+      "sha256": "f6f7a17434f60b9c3c6d716e68e1251f8c164713171d959fd4b01989a5bcb89e",
+      "bytes": 8101
+    },
+    "scripts/eval/benchmark_runner.py": {
+      "sha256": "9fd4d129c730bbbc8f0b24de7e912ffee29812b4045ed975d28403f8b83eeb7b",
+      "bytes": 21006
+    },
+    "scripts/eval/benchmark_runtime.py": {
+      "sha256": "f90a8a4379bc1e2994eebf820990d8fed0c84a845937662c01f9f3f12849ca79",
+      "bytes": 20011
+    },
+    "scripts/eval/benchmark_storage.py": {
+      "sha256": "fedd8cd519641918ef903db39905c2975e71faa4c17ca4c952947a3a1219efcc",
+      "bytes": 6854
+    },
+    "scripts/eval/benchmark_windows.py": {
+      "sha256": "afe9250743320b69a992fc822a4f0136a85701d8565ef03b97ad58679130dcce",
+      "bytes": 10772
+    },
+    "apps/engines/acestep/benchmark_profiles.py": {
+      "sha256": "1a2ea2cf4783a10f63705c9d0e026b3618e342f058c44f2e78578f172f53514c",
+      "bytes": 1308
+    },
+    "apps/engines/acestep/descriptor.py": {
+      "sha256": "64fab407f9d48d2fb29d3142149d40bc69ce9db755341d536de643ccba630e2f",
+      "bytes": 5235
+    },
+    "apps/engines/acestep/input_profile.py": {
+      "sha256": "14a5fd28ef81a0094ea17b0d346671186d9511813b9d4ecea0606dbb8abb60af",
+      "bytes": 2671
+    },
+    "apps/engines/acestep/adapter.py": {
+      "sha256": "92ca199ad9d8985a036adde2ff0817285ba5866477fe708626b5f453b7e0f106",
+      "bytes": 33041
+    },
+    "apps/engines/acestep/preflight.py": {
+      "sha256": "1396db79adac7119f0cb2e2029c3701f26665282fd09b288741372e079a4484b",
+      "bytes": 15715
+    },
+    "apps/engines/acestep/engine_acestep.py": {
+      "sha256": "7bb9d82ca5af289dcd2732af71f9a86ff73ba6053746f07256a9296d94bc4183",
+      "bytes": 983
+    },
+    "apps/engines/common/engine_common/server.py": {
+      "sha256": "53fa2a4ccb3a9beb171eb0cae11edc3352dd5c7a21d462152880f44e7fabf096",
+      "bytes": 20019
+    },
+    "scripts/eval/tests/conftest.py": {
+      "sha256": "8ecdbf0e0d8b5c92d222852dccdd2731169197acc73920a43baf9762500cf122",
+      "bytes": 503
+    },
+    "scripts/eval/tests/test_benchmark_cli.py": {
+      "sha256": "a8adeae4bbc4985f3d4365dfcb799fc2079f3003e9d9d1626b38b69dbfe43f12",
+      "bytes": 2761
+    },
+    "scripts/eval/tests/test_benchmark_evidence.py": {
+      "sha256": "ad0e65153701a5c0db37d13443bbcf705bab278831b333f5d386992dc20b7f2c",
+      "bytes": 5869
+    },
+    "scripts/eval/tests/test_benchmark_integration_cpu.py": {
+      "sha256": "7072f0ea3ce819f86110b219840abad803b780a294b8f80ca7dce34221b3f17a",
+      "bytes": 15812
+    },
+    "scripts/eval/tests/test_benchmark_observers.py": {
+      "sha256": "331dd63da1ebb64617453f9528d480a0906e579f9720a03f4418131b36b06cba",
+      "bytes": 2664
+    },
+    "scripts/eval/tests/test_benchmark_plan.py": {
+      "sha256": "9e5cd202226fc58a503a2fd90e0e610492600d24f241fbcf8404df3b52fb2939",
+      "bytes": 2133
+    },
+    "scripts/eval/tests/test_benchmark_runner.py": {
+      "sha256": "4c364371733ae2a1fcf2262cf19721d369570f3b1bea20d7a6f688e57686b11b",
+      "bytes": 19716
+    },
+    "scripts/eval/tests/test_benchmark_runtime.py": {
+      "sha256": "755e99fc32b7b80a210fa92ff6422a97ab10c79a498d6669b795446a319bffc3",
+      "bytes": 11404
+    },
+    "scripts/eval/tests/test_benchmark_windows_cpu.py": {
+      "sha256": "b0ff148f680bc89776b76b1cd5992744dbe45167d2223df8e0a3b3fd74aa76d0",
+      "bytes": 8395
+    },
+    "apps/engines/acestep/tests/test_benchmark_profiles.py": {
+      "sha256": "2463acd8e9749a6fb8fa22a2ba16f3da4e02225bf2da6ea40987b4129a1f81f2",
+      "bytes": 6857
+    },
+    "apps/engines/acestep/tests/test_adapter.py": {
+      "sha256": "fffac7513b81dce6c3b5a1b7caba317bfb0ded91231dff16eca3bafe84c8d519",
+      "bytes": 20982
+    },
+    "apps/engines/acestep/tests/test_dit_resolution.py": {
+      "sha256": "b9638942d152fa178a80326466db9d14ed98ee6a4b5980d1b7823d141700f4fd",
+      "bytes": 7289
+    },
+    "apps/engines/acestep/tests/test_review_fixes.py": {
+      "sha256": "285197ef18947874e5ce54b11c59df10d1e12dcf11a1028e0d56ac9a74a6affb",
+      "bytes": 9831
+    },
+    "apps/engines/acestep/tests/test_shift.py": {
+      "sha256": "f3233949419a34fe47ba18224440af053f862057d1d5cc7f437ba88426558261",
+      "bytes": 4130
+    },
+    "apps/engines/acestep/tests/test_preflight_vram.py": {
+      "sha256": "095d1310bc7f06b3bb00edbceefb92b5a08ef8a1271470b9a84b54332772921e",
+      "bytes": 5014
+    },
+    "apps/engines/common/tests/test_benchmark_telemetry.py": {
+      "sha256": "d7bb65085d3a21a7725d0be7f971883de3a1d4d98ff851128ab4d97fad771e7b",
+      "bytes": 975
+    },
+    "models/models.lock.json": {
+      "sha256": "9ca1c9549ab88e8f7c985a634203aacfad03ee334e9b4506e4d466817d9177d9",
+      "bytes": 26164
+    },
+    "scripts/eval/tests/test_benchmark_deadline.py": {
+      "sha256": "0259216ce44902fa8d98f3838f969b28a844e107944f60ad4c02749255743a41",
+      "bytes": 14683
+    }
+  },
+  "sources_after": {
+    "scripts/eval/benchmark.py": {
+      "sha256": "f6d23e58327fdb73768ffdb5470952d99ba6cef010c061404a6f413423c1fbcc",
+      "bytes": 25599
+    },
+    "scripts/eval/benchmark_evidence.py": {
+      "sha256": "c81557dce895cd364df862d6d1b05adc26e87acec40f348eaf53b3a0d3b5027a",
+      "bytes": 12501
+    },
+    "scripts/eval/benchmark_observers.py": {
+      "sha256": "b6b9a6e6b73a069b2cefc80da93a08bb80959e7fa2fe7334c30739d34de0171d",
+      "bytes": 4708
+    },
+    "scripts/eval/benchmark_plan.py": {
+      "sha256": "f6f7a17434f60b9c3c6d716e68e1251f8c164713171d959fd4b01989a5bcb89e",
+      "bytes": 8101
+    },
+    "scripts/eval/benchmark_runner.py": {
+      "sha256": "9fd4d129c730bbbc8f0b24de7e912ffee29812b4045ed975d28403f8b83eeb7b",
+      "bytes": 21006
+    },
+    "scripts/eval/benchmark_runtime.py": {
+      "sha256": "f90a8a4379bc1e2994eebf820990d8fed0c84a845937662c01f9f3f12849ca79",
+      "bytes": 20011
+    },
+    "scripts/eval/benchmark_storage.py": {
+      "sha256": "fedd8cd519641918ef903db39905c2975e71faa4c17ca4c952947a3a1219efcc",
+      "bytes": 6854
+    },
+    "scripts/eval/benchmark_windows.py": {
+      "sha256": "afe9250743320b69a992fc822a4f0136a85701d8565ef03b97ad58679130dcce",
+      "bytes": 10772
+    },
+    "apps/engines/acestep/benchmark_profiles.py": {
+      "sha256": "1a2ea2cf4783a10f63705c9d0e026b3618e342f058c44f2e78578f172f53514c",
+      "bytes": 1308
+    },
+    "apps/engines/acestep/descriptor.py": {
+      "sha256": "64fab407f9d48d2fb29d3142149d40bc69ce9db755341d536de643ccba630e2f",
+      "bytes": 5235
+    },
+    "apps/engines/acestep/input_profile.py": {
+      "sha256": "14a5fd28ef81a0094ea17b0d346671186d9511813b9d4ecea0606dbb8abb60af",
+      "bytes": 2671
+    },
+    "apps/engines/acestep/adapter.py": {
+      "sha256": "92ca199ad9d8985a036adde2ff0817285ba5866477fe708626b5f453b7e0f106",
+      "bytes": 33041
+    },
+    "apps/engines/acestep/preflight.py": {
+      "sha256": "1396db79adac7119f0cb2e2029c3701f26665282fd09b288741372e079a4484b",
+      "bytes": 15715
+    },
+    "apps/engines/acestep/engine_acestep.py": {
+      "sha256": "7bb9d82ca5af289dcd2732af71f9a86ff73ba6053746f07256a9296d94bc4183",
+      "bytes": 983
+    },
+    "apps/engines/common/engine_common/server.py": {
+      "sha256": "53fa2a4ccb3a9beb171eb0cae11edc3352dd5c7a21d462152880f44e7fabf096",
+      "bytes": 20019
+    },
+    "scripts/eval/tests/conftest.py": {
+      "sha256": "8ecdbf0e0d8b5c92d222852dccdd2731169197acc73920a43baf9762500cf122",
+      "bytes": 503
+    },
+    "scripts/eval/tests/test_benchmark_cli.py": {
+      "sha256": "a8adeae4bbc4985f3d4365dfcb799fc2079f3003e9d9d1626b38b69dbfe43f12",
+      "bytes": 2761
+    },
+    "scripts/eval/tests/test_benchmark_evidence.py": {
+      "sha256": "ad0e65153701a5c0db37d13443bbcf705bab278831b333f5d386992dc20b7f2c",
+      "bytes": 5869
+    },
+    "scripts/eval/tests/test_benchmark_integration_cpu.py": {
+      "sha256": "7072f0ea3ce819f86110b219840abad803b780a294b8f80ca7dce34221b3f17a",
+      "bytes": 15812
+    },
+    "scripts/eval/tests/test_benchmark_observers.py": {
+      "sha256": "331dd63da1ebb64617453f9528d480a0906e579f9720a03f4418131b36b06cba",
+      "bytes": 2664
+    },
+    "scripts/eval/tests/test_benchmark_plan.py": {
+      "sha256": "9e5cd202226fc58a503a2fd90e0e610492600d24f241fbcf8404df3b52fb2939",
+      "bytes": 2133
+    },
+    "scripts/eval/tests/test_benchmark_runner.py": {
+      "sha256": "4c364371733ae2a1fcf2262cf19721d369570f3b1bea20d7a6f688e57686b11b",
+      "bytes": 19716
+    },
+    "scripts/eval/tests/test_benchmark_runtime.py": {
+      "sha256": "755e99fc32b7b80a210fa92ff6422a97ab10c79a498d6669b795446a319bffc3",
+      "bytes": 11404
+    },
+    "scripts/eval/tests/test_benchmark_windows_cpu.py": {
+      "sha256": "b0ff148f680bc89776b76b1cd5992744dbe45167d2223df8e0a3b3fd74aa76d0",
+      "bytes": 8395
+    },
+    "apps/engines/acestep/tests/test_benchmark_profiles.py": {
+      "sha256": "2463acd8e9749a6fb8fa22a2ba16f3da4e02225bf2da6ea40987b4129a1f81f2",
+      "bytes": 6857
+    },
+    "apps/engines/acestep/tests/test_adapter.py": {
+      "sha256": "fffac7513b81dce6c3b5a1b7caba317bfb0ded91231dff16eca3bafe84c8d519",
+      "bytes": 20982
+    },
+    "apps/engines/acestep/tests/test_dit_resolution.py": {
+      "sha256": "b9638942d152fa178a80326466db9d14ed98ee6a4b5980d1b7823d141700f4fd",
+      "bytes": 7289
+    },
+    "apps/engines/acestep/tests/test_review_fixes.py": {
+      "sha256": "285197ef18947874e5ce54b11c59df10d1e12dcf11a1028e0d56ac9a74a6affb",
+      "bytes": 9831
+    },
+    "apps/engines/acestep/tests/test_shift.py": {
+      "sha256": "f3233949419a34fe47ba18224440af053f862057d1d5cc7f437ba88426558261",
+      "bytes": 4130
+    },
+    "apps/engines/acestep/tests/test_preflight_vram.py": {
+      "sha256": "095d1310bc7f06b3bb00edbceefb92b5a08ef8a1271470b9a84b54332772921e",
+      "bytes": 5014
+    },
+    "apps/engines/common/tests/test_benchmark_telemetry.py": {
+      "sha256": "d7bb65085d3a21a7725d0be7f971883de3a1d4d98ff851128ab4d97fad771e7b",
+      "bytes": 975
+    },
+    "models/models.lock.json": {
+      "sha256": "9ca1c9549ab88e8f7c985a634203aacfad03ee334e9b4506e4d466817d9177d9",
+      "bytes": 26164
+    },
+    "scripts/eval/tests/test_benchmark_deadline.py": {
+      "sha256": "0259216ce44902fa8d98f3838f969b28a844e107944f60ad4c02749255743a41",
+      "bytes": 14683
+    }
+  },
+  "artifacts": {
+    ".coverage": {
+      "sha256": "8cf690d7a205b4a6f09ae5bb167ba659f03b38a8d76c1fef9ac77b234ee636e7",
+      "bytes": 53248
+    },
+    "audit.py": {
+      "sha256": "dd1f7901b3c83f3c33ebf275a2345a1909508f0640c48fdd66b6aabf8d27a7a1",
+      "bytes": 8186
+    },
+    "commands.json": {
+      "sha256": "b7f41bd95be6607e075966069f7ac35e6019b507eb9ed9c140e801ffebcb9777",
+      "bytes": 6891
+    },
+    "coverage-check.txt": {
+      "sha256": "d431a7d0edb737b0dead53fd5fa7e40f56e3d9c894ff23fe6b3d8843a1d60497",
+      "bytes": 933
+    },
+    "coverage.json": {
+      "sha256": "da7a6b8866e1a1571754780c0869c2b8a41b32d75b8dee081e8163d644ba207b",
+      "bytes": 320305
+    },
+    "finalize.py": {
+      "sha256": "38390d25d519b2b7f4343c17be160134d29e5c4c9cba1fec4caf3c7c10616ab8",
+      "bytes": 2050
+    },
+    "freeze33-after.json": {
+      "sha256": "30a5ddcf57bbc0628fe3e1d5de455f23e25f2281f2f4734b2697b826eee88080",
+      "bytes": 5180
+    },
+    "freeze33-before.json": {
+      "sha256": "30a5ddcf57bbc0628fe3e1d5de455f23e25f2281f2f4734b2697b826eee88080",
+      "bytes": 5180
+    },
+    "ledger-lint.txt": {
+      "sha256": "1d7687d953992065b6a482e91460f2ecd48be7493ef3ef3eb5302bc447f5c210",
+      "bytes": 749
+    },
+    "pytest.txt": {
+      "sha256": "2a9b67feba4f9f544e255e2e89b2be8572c4d053feb35b20125e33a1f50fd25e",
+      "bytes": 3158
+    },
+    "report.md": {
+      "sha256": "9e658525341641ddbb84791ca0063b9e4bea331746c47acefb0ca3247c7569ac",
+      "bytes": 2951
+    },
+    "results.xml": {
+      "sha256": "7a30ac5c7e2ae95edc44dcfc892106b28ddb9cabf68d103e72973bff4bab18c3",
+      "bytes": 40776
+    },
+    "ruff-check32.txt": {
+      "sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0",
+      "bytes": 20
+    },
+    "ruff-format-check32.txt": {
+      "sha256": "d08632797dac49641bf616c3675c6b00409f418239fd6e5e7c0194773580ff58",
+      "bytes": 28
+    }
+  },
+  "pytest_summary": "272 passed, 5 skipped, 1 deselected, 1 warning in 23.17s",
+  "suite_executions": 1,
+  "warning": "PytestConfigWarning Unknown config option: cache_dir; cacheprovider desactivado deliberadamente",
+  "cpu_gates": {
+    "pytest_junit": true,
+    "ruff_check32": true,
+    "ruff_format32": true,
+    "json_syntax": true,
+    "freeze33_before_after": true,
+    "coverage_15_file_mean_gte_80": true,
+    "ledger_lint_no_hard_inconsistency": true
+  },
+  "driver_stdout_error": "Primer arranque detenido por UnicodeEncodeError cp1252 tras ledger-lint, antes de pytest; corregido PYTHONIOENCODING=utf-8. No duplicó suite.",
+  "checks": {
+    "ledger-lint": {
+      "exit_code": 0,
+      "started_utc": "2026-10-06T18:49:12.574248+00:00",
+      "finished_utc": "2026-10-06T18:49:12.647461+00:00",
+      "output": ".cache/dev-cycle/t09/qa-cpu2/ledger-lint.txt",
+      "sha256": "1d7687d953992065b6a482e91460f2ecd48be7493ef3ef3eb5302bc447f5c210",
+      "bytes": 749
+    },
+    "coverage-check": {
+      "exit_code": 0,
+      "started_utc": "2026-10-06T18:49:12.648461+00:00",
+      "finished_utc": "2026-10-06T18:49:12.881963+00:00",
+      "output": ".cache/dev-cycle/t09/qa-cpu2/coverage-check.txt",
+      "sha256": "d431a7d0edb737b0dead53fd5fa7e40f56e3d9c894ff23fe6b3d8843a1d60497",
+      "bytes": 933
+    },
+    "pytest": {
+      "exit_code": 0,
+      "started_utc": "2026-10-06T18:49:12.886471+00:00",
+      "finished_utc": "2026-10-06T18:49:36.513508+00:00",
+      "output": ".cache/dev-cycle/t09/qa-cpu2/pytest.txt",
+      "sha256": "2a9b67feba4f9f544e255e2e89b2be8572c4d053feb35b20125e33a1f50fd25e",
+      "bytes": 3158
+    },
+    "ruff-check32": {
+      "exit_code": 0,
+      "started_utc": "2026-10-06T18:49:36.518510+00:00",
+      "finished_utc": "2026-10-06T18:49:36.562778+00:00",
+      "output": ".cache/dev-cycle/t09/qa-cpu2/ruff-check32.txt",
+      "sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0",
+      "bytes": 20
+    },
+    "ruff-format-check32": {
+      "exit_code": 0,
+      "started_utc": "2026-10-06T18:49:36.566288+00:00",
+      "finished_utc": "2026-10-06T18:49:36.605047+00:00",
+      "output": ".cache/dev-cycle/t09/qa-cpu2/ruff-format-check32.txt",
+      "sha256": "d08632797dac49641bf616c3675c6b00409f418239fd6e5e7c0194773580ff58",
+      "bytes": 28
+    }
+  },
+  "private_receipt_sha256": "7740df41778168273adc3d976d5bc1bc0201c9281c39920a7cef21b283ffa9ef",
+  "private_receipt_bytes": 25579,
+  "root_verified_artifacts": 14,
+  "root_verified_sources": 33,
+  "root_verified_junit": {
+    "tests": 277,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 5
+  },
+  "root_verified_official_coverage_mean": 87.5510855741841,
+  "next": "build isolated pinned engine image; GPU requires manual/browser prerequisites and fresh preflight"
+}

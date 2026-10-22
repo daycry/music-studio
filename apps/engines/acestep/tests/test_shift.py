@@ -110,9 +110,20 @@ def test_shift_reaches_generation_params(tmp_path, monkeypatch):
         GenerationParams=lambda **kwargs: SimpleNamespace(**kwargs),
         GenerationConfig=lambda **kwargs: SimpleNamespace(**kwargs),
         generate_music=generate_music,
-        torch=SimpleNamespace(cuda=SimpleNamespace(max_memory_allocated=lambda: 0)),
+        torch=SimpleNamespace(
+            cuda=SimpleNamespace(
+                max_memory_allocated=lambda: 0, synchronize=lambda: None
+            )
+        ),
     )
-    monkeypatch.setattr(adapter, "write_wav", lambda *args: None)
+    import numpy as np
+    import soundfile as sf
+
+    monkeypatch.setattr(
+        adapter,
+        "write_wav",
+        lambda path, *args: sf.write(path, np.zeros((8, 2)), 48000, subtype="FLOAT"),
+    )
     model.generate(request(3), tmp_path, lambda event: None, CancelToken())
     assert captured == [3]
     assert len(native_calls) == 1

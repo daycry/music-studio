@@ -1,0 +1,85 @@
+{
+  "utc": "2026-10-08T23:05:54.101605+00:00",
+  "technical_component_accepted": true,
+  "scope": "Windows native own kernel group and bounded transport, fixed benign worker only",
+  "current_sources": {
+    "apps/server/app/worker/custody.py": {
+      "sha256": "687922623531426940dd3f9f5059a9a435d233aa5eb318406a13724d66c3baba",
+      "bytes": 12318
+    },
+    "apps/server/app/worker/custody_windows.py": {
+      "sha256": "0ce95826b90c15e490fbf2cf2fd1c0d832bf99d4d88203810f1be9ee9c7ed884",
+      "bytes": 23695
+    },
+    "apps/server/tests/test_worker_native_custody.py": {
+      "sha256": "deb16df7e7829137c5544b956415bd4569788929718ef306d394d7e9a57a7fc2",
+      "bytes": 28268
+    },
+    "apps/server/tests/fixtures/worker_custody_child.py": {
+      "sha256": "74025c3dc5c68986f5b56e6d9ed3bf05d3beb7ea07e0d34c8c18be57f96913ff",
+      "bytes": 3907
+    }
+  },
+  "independent_current_QA": {
+    "cases": 36,
+    "passed": 36,
+    "failed": 0,
+    "skipped": 0,
+    "exit_code": 0,
+    "run_uuid": "f679a219-bda1-4599-bbe4-667097585f60"
+  },
+  "whole_current_each": {
+    "apps/server/app/worker/custody.py": {
+      "covered_lines": 191,
+      "num_statements": 212,
+      "percent_covered": 90.09433962264151,
+      "percent_covered_display": "90",
+      "missing_lines": 21,
+      "excluded_lines": 0,
+      "percent_statements_covered": 90.09433962264151,
+      "percent_statements_covered_display": "90"
+    },
+    "apps/server/app/worker/custody_windows.py": {
+      "covered_lines": 354,
+      "num_statements": 384,
+      "percent_covered": 92.1875,
+      "percent_covered_display": "92",
+      "missing_lines": 30,
+      "excluded_lines": 0,
+      "percent_statements_covered": 92.1875,
+      "percent_statements_covered_display": "92"
+    }
+  },
+  "verified_original_inventory_files": 1642,
+  "verified_current_native_receipts": 36,
+  "verified_current_raw_traces": 2,
+  "direct_Popen_pid": 25720,
+  "native_pytest_runner_pid": 7548,
+  "native_parent_checkpoint_pid": 25380,
+  "checkpoint_after_death_instructions": "NOT_CLAIMED",
+  "native_parent_expected_termination_exit": 1,
+  "pytest_success_exit": 0,
+  "review_attempt": 2,
+  "review_lanes": [
+    "A",
+    "B",
+    "C",
+    "D"
+  ],
+  "review_gaps": [],
+  "previous_B01_B02_B03": "corrected, current regressions and fresh QA verified",
+  "original31_assertion_semantics": "preserved subsequence AST",
+  "error_injections": "supplementary; not spontaneous native API failures",
+  "unknown_resources": "strongly retained; no full-cleanup or realCPU2 release claim",
+  "required_lint_four_sources": "project check/format and isolateddefault check actual exit0",
+  "global_project_lint_claim": false,
+  "private_reader_incidents": "preserved, no baseline/combine/lint reruns",
+  "pending": [
+    "Linux supervisor/backend",
+    "real worker/audio/FFmpeg",
+    "CPU2 integration",
+    "SQLite/publication/filesystem",
+    "fullT05/M1/E2E/rights/music quality"
+  ],
+  "full_T05_M1_accepted": false
+}

@@ -298,14 +298,15 @@ def test_verified_tokenizers_are_local_and_fail_closed(tmp_path, monkeypatch):
         native.verified_tokenizers(tmp_path, "lm")
 
 
-def test_worker_success_checks_receipt_and_policy(monkeypatch):
+@pytest.mark.parametrize("version", [1, 2])
+def test_worker_success_checks_receipt_and_policy(monkeypatch, version):
     import json
     from types import SimpleNamespace
 
     native = importlib.import_module("preflight")
     request = {"seed": 1}
     result = {
-        "receipt_version": 1,
+        "receipt_version": version,
         "kind": "planned",
         "checkpoint": {"id": "acestep-v15-turbo"},
         "profile_sha256": native.digest(native.SOURCE_HASHES),
@@ -320,11 +321,25 @@ def test_worker_success_checks_receipt_and_policy(monkeypatch):
         },
         "dit": {"text": {"count": 256}, "lyrics": {"count": 2048}},
     }
+    if version == 2:
+        result["dit"].update(
+            receipt_version=2,
+            candidates={
+                name: {"text": {"count": 256}, "lyrics": {"count": 2048}}
+                for name in ("text2music", "cover")
+            },
+        )
     monkeypatch.setattr(
         native.subprocess,
         "run",
         lambda *a, **k: SimpleNamespace(returncode=0, stdout=json.dumps(result)),
     )
+    if version == 1:
+        from engine_common import EngineError
+
+        with pytest.raises(EngineError, match="INTERNAL"):
+            native.preflight(request)
+        return
     assert native.preflight(request) == result
     monkeypatch.setattr(
         native, "verified_tokenizers", lambda *a: (["lm", "dit"], [{"hash": "fixture"}])
@@ -439,7 +454,7 @@ def _capture_fixture():
     }
     planned = native.native_plan(request, tokenizer, tokenizer, source)
     values, _ = adapter.generation_options(request, 0)
-    lm, _ = native.native_templates(source)
+    lm, conditioning = native.native_templates(source)
     lm.llm_tokenizer = tokenizer
     lm.generate_from_formatted_prompt = lambda **kwargs: "backend_reached"
     lm._build_unconditional_prompt = lambda **kwargs: (
@@ -470,16 +485,23 @@ def _capture_fixture():
         )
 
     lm.generate_with_stop_condition = generate_lm
-    dit = SimpleNamespace()
+    dit = conditioning
     mask = [SimpleNamespace(bool=lambda: np.ones(10, dtype=bool))]
-    dit._prepare_text_conditioning_inputs = lambda: (
+    dit._prepare_text_conditioning_inputs = lambda *a, **k: (
         None,
         np.array([list(range(10))]),
         mask,
         np.array([list(range(10))]),
         mask,
     )
-    dit.generate_music = lambda **kwargs: dit._prepare_text_conditioning_inputs()
+
+    def generate_dit(**kwargs):
+        _, instruction = dit._resolve_generate_music_task(
+            "text2music", "", dit.default_instruction
+        )
+        return dit._prepare_text_conditioning_inputs(1, [instruction])
+
+    dit.generate_music = generate_dit
     dit_kwargs = {
         "captions": values["caption"],
         "lyrics": values["lyrics"],
@@ -522,11 +544,12 @@ def test_capture_reaches_four_real_callback_boundaries_and_restores_methods():
         "lm_arguments",
         "lm_formatted_prompt",
         "dit_arguments",
+        "dit_resolution",
         "dit_tokens",
     ]
     assert runtime.lm.generate_with_stop_condition is original
     assert (
-        captured["boundaries"][3]["text"]["tokens_sha256"]
+        captured["boundaries"][4]["text"]["tokens_sha256"]
         == planned["dit"]["text"]["tokens_sha256"]
     )
 
@@ -545,7 +568,7 @@ def test_capture_rejects_post_preflight_mutation(mutation):
     elif mutation == "dit_arguments":
         dit_kwargs["lyrics"] = "changed"
     else:
-        planned["dit"]["text"]["tokens_sha256"] = "0" * 64
+        planned["dit"]["candidates"]["text2music"]["text"]["tokens_sha256"] = "0" * 64
     with (
         adapter.input_capture(runtime, planned, values, 0),
         pytest.raises(EngineError, match="INVALID_PARAMS"),

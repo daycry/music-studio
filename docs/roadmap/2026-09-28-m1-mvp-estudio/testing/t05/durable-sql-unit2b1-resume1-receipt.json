@@ -1,0 +1,230 @@
+{
+  "status": "NEEDS_ROOT_DIAGNOSIS",
+  "utc": "2026-10-08T23:28:34.948772+00:00",
+  "redispatch": 1,
+  "ownership": [
+    "apps/server/app/models/__init__.py",
+    "apps/server/app/snapshots.py",
+    "apps/server/app/migrations/cpu_publication_invariants.py",
+    "apps/server/app/migrations/versions/0006_cpu_publication.py",
+    "packages/contracts/song-v1.schema.json",
+    "apps/server/app/models/song-v1.schema.json",
+    "apps/server/tests/test_worker_publication_invariants.py",
+    "apps/server/tests/test_worker_snapshots.py",
+    "apps/server/tests/test_job_attempt_schema.py",
+    "apps/server/tests/test_dispatcher_admission.py",
+    "apps/server/tests/test_queue_manual_retry.py",
+    "apps/server/tests/test_dispatcher_retry.py"
+  ],
+  "baseline": {
+    "argv": [
+      "/.venv\\Scripts\\python.exe",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "-p",
+      "pytest_cov",
+      "-p",
+      "private_fixture",
+      "-o",
+      "cache_dir=/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\pytest-cache",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_dispatcher_admission.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_dispatcher_cancellation.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_dispatcher_events.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_dispatcher_lifespan.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_dispatcher_recovery.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_dispatcher_retry.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_dispatcher_scanning.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_job_attempt_review_fix1.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_job_attempt_review_fix2.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_job_attempt_schema.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_logging_paths.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_logging_token.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_lyrics.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_openapi_t03.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_persistence_t02.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_queue_backend.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_queue_chains.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_queue_inputs.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_queue_manual_retry.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_queue_references.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_queue_resolver.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_review_fix1_t02.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_review_fix2_t02.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_review_fix3_t02.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_schema_t02.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_security_errors.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_settings.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_sse_bus.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_sse_frames.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_token_persistence.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_worker_publication_invariants.py",
+      "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\inputs\\apps\\server\\tests\\test_worker_snapshots.py",
+      "-q",
+      "--cov",
+      "--cov-config=/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1/coverage.ini",
+      "--cov-report=json:/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1/final-current/coverage-original.json",
+      "--cov-report=term-missing",
+      "--junitxml=/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1\\final-current\\junit-original.xml"
+    ],
+    "utc_start": "2026-10-08T23:20:27.878780+00:00",
+    "cwd": "",
+    "exit_code": 1,
+    "runner_pid": 2144,
+    "environment": {
+      "TEMP": "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1/tmp",
+      "TMP": "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1/tmp",
+      "STUDIO_TEST_ROOT": "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1/fixtures",
+      "STUDIO_QUEUE_TEST_ROOT": "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1/fixtures/queue",
+      "UV_CACHE_DIR": "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1/uv",
+      "UV_PYTHON_INSTALL_DIR": "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1/uv/python",
+      "PYTHONPYCACHEPREFIX": "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1/pycache",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "COVERAGE_FILE": "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1/final-current/coverage-original",
+      "PYTHONPATH": "/.cache\\dev-cycle\\m1\\t05-durable-sql-unit2b1-resume1;/apps/server;/apps/server/tests;/packages/engine-contract",
+      "UV_OFFLINE": "1"
+    },
+    "child_pid": 9204,
+    "utc_end": "2026-10-08T23:27:47.197384+00:00"
+  },
+  "baseline_counts": {
+    "cases": 1029,
+    "passed": 1025,
+    "failed": 1,
+    "errors": 0,
+    "skipped": 3
+  },
+  "same_original32_and1029_case_identities": true,
+  "coverage_whole_each_current_single_trace": {
+    "apps/server/app/migrations/cpu_publication_invariants.py": {
+      "covered_lines": 279,
+      "num_statements": 303,
+      "percent_covered": 92.07920792079207,
+      "percent_covered_display": "92",
+      "missing_lines": 24,
+      "excluded_lines": 0,
+      "percent_statements_covered": 92.07920792079207,
+      "percent_statements_covered_display": "92"
+    },
+    "apps/server/app/migrations/versions/0006_cpu_publication.py": {
+      "covered_lines": 27,
+      "num_statements": 27,
+      "percent_covered": 100.0,
+      "percent_covered_display": "100",
+      "missing_lines": 0,
+      "excluded_lines": 0,
+      "percent_statements_covered": 100.0,
+      "percent_statements_covered_display": "100"
+    },
+    "apps/server/app/models/__init__.py": {
+      "covered_lines": 418,
+      "num_statements": 420,
+      "percent_covered": 99.52380952380952,
+      "percent_covered_display": "99",
+      "missing_lines": 2,
+      "excluded_lines": 0,
+      "percent_statements_covered": 99.52380952380952,
+      "percent_statements_covered_display": "99"
+    },
+    "apps/server/app/snapshots.py": {
+      "covered_lines": 379,
+      "num_statements": 405,
+      "percent_covered": 93.58024691358025,
+      "percent_covered_display": "94",
+      "missing_lines": 26,
+      "excluded_lines": 0,
+      "percent_statements_covered": 93.58024691358025,
+      "percent_statements_covered_display": "94"
+    }
+  },
+  "coverage_each_ge80_zero_excluded": true,
+  "official_coverage_json": "final-current/coverage-original.json",
+  "raw_trace": "final-current/coverage-original",
+  "historical_trace_union": false,
+  "sourcecurrent12": {
+    "apps/server/app/models/__init__.py": {
+      "bytes": 28959,
+      "sha256": "9c86ef171968e799908068c1f98ce47186b9e2ed3337c019a7e9696d38dac0df"
+    },
+    "apps/server/app/snapshots.py": {
+      "bytes": 29535,
+      "sha256": "3e106f2e8933bd4626000c35da2c724dc6dd403745a845b9804e314e2baee49e"
+    },
+    "apps/server/app/migrations/cpu_publication_invariants.py": {
+      "bytes": 39792,
+      "sha256": "90f0b230ce82388160d254ce4574e4cfb9f81c67e0ca8ac78193feb24b1d0c97"
+    },
+    "apps/server/app/migrations/versions/0006_cpu_publication.py": {
+      "bytes": 11258,
+      "sha256": "e67fa61a46619fb075a8667fbde05f8461b4078b414fa5412d8f4cbeb3017c4e"
+    },
+    "packages/contracts/song-v1.schema.json": {
+      "bytes": 150805,
+      "sha256": "353b9fca8f0693c7985c1cbaa66d5635a8483daa9893cb1a9318d041ca865f18"
+    },
+    "apps/server/app/models/song-v1.schema.json": {
+      "bytes": 150805,
+      "sha256": "353b9fca8f0693c7985c1cbaa66d5635a8483daa9893cb1a9318d041ca865f18"
+    },
+    "apps/server/tests/test_worker_publication_invariants.py": {
+      "bytes": 26454,
+      "sha256": "55e14795a86410a5d7cd36a826fe10c92f26b4b958f5560bd255c27a09ac3d0a"
+    },
+    "apps/server/tests/test_worker_snapshots.py": {
+      "bytes": 7285,
+      "sha256": "4bfbc11e4e3625076c4281e9bcff6c36ba2462fb24547e4dbcdf01a32b623ff8"
+    },
+    "apps/server/tests/test_job_attempt_schema.py": {
+      "bytes": 33299,
+      "sha256": "c46439d380f627b4a6a4aa9d36b3f5bad896901ee27c07f11a2a39ddead13394"
+    },
+    "apps/server/tests/test_dispatcher_admission.py": {
+      "bytes": 27648,
+      "sha256": "67e604319720b18380958a51d6255f991cc2e5e7a77e44464030613da0db772f"
+    },
+    "apps/server/tests/test_queue_manual_retry.py": {
+      "bytes": 20940,
+      "sha256": "5f152fe567b0776e1de8c4c0a820c994c7202025190d70cb1135be89155c7dda"
+    },
+    "apps/server/tests/test_dispatcher_retry.py": {
+      "bytes": 70185,
+      "sha256": "8a47d239be08948db3fdf498d3e6846e8d0a9a37dec22edc96d5b53e67cd44fc"
+    }
+  },
+  "copies_exact": true,
+  "input_delta": [
+    "apps/server/app/worker/custody_linux.py",
+    "apps/server/app/worker/custody_linux_supervisor.py",
+    "apps/server/tests/fixtures/worker_custody_linux_child.py",
+    "apps/server/tests/test_worker_native_linux_custody.py"
+  ],
+  "protected_delta": [],
+  "guard_delta": [],
+  "original_migrations_0001_to_0005_byte_exact": true,
+  "exact_four_HEAD_literals": true,
+  "prior_three_job_attempt_changes_preserved": true,
+  "prior_nine_source_unchanged": true,
+  "timeout801_current": [
+    {
+      "name": "test_global_busy_gpu_negative_once_and_available_cpu_native[801]",
+      "JUnit_testcase_wall_seconds": "12.665",
+      "passed": false
+    }
+  ],
+  "timeout801_historical_cause": "UNKNOWN",
+  "no_flaky_or_load_cause_claim": true,
+  "production_behavior_change_in_resume": false,
+  "TDD": "n/a: exact intentional current HEAD expectations and private harness/config; historical genuine RED receipts preserved",
+  "init_env_copied_before_first_test": true,
+  "real_SQLite_ORM_backup_provenance_schema": true,
+  "synthetic_fixture_descriptor_and_engine_states": true,
+  "native_cleanup": "UNKNOWN",
+  "root_review_ABCD_and_independent_QA_required": true,
+  "unit_acceptance": false,
+  "T05_M1_acceptance": false,
+  "model": null,
+  "tokens": null,
+  "eur": null,
+  "ia_hours": null
+}

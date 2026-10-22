@@ -4,11 +4,24 @@
 |---|---|
 | **Estado** | borrador |
 | **Plan** | [`improvement-plan.md`](improvement-plan.md) |
-| **URL local** | http://127.0.0.1:3000 (API en http://127.0.0.1:8000, `STUDIO_ENGINES=mock=http://127.0.0.1:8199`) |
+| **URL local** | http://127.0.0.1:3000 (API en http://127.0.0.1:8000; server en Compose con `STUDIO_ENGINES=mock=http://engine-mock:8199`) |
 
 Regla general: se validan contratos observables (estados, duración, formatos, manifiesto, linaje). La calidad musical queda fuera de estas pruebas ([calidad/pruebas.md](../../calidad/pruebas.md)).
 
 ## Automáticos (E2E — los ejecuta `qa` con Playwright)
+
+### Despliegue — CA-01
+
+Entorno objetivo: web, server y `engine-mock` en Docker Compose, sin GPU ni Ollama. El nombre interno `engine-mock` debe coincidir con el servicio real al implementar. Comandos de arranque y pruebas todavía pendientes ([ADR-0035](../../decisiones/ADR-0035-despliegue-docker-y-ollama-wsl.md)).
+
+- [ ] Arrancar web/server/mock con Compose y ejecutar migraciones dentro del server; abrir web/API por puertos del host en `127.0.0.1`.
+- [ ] Confirmar resolución server→mock por nombre de servicio, sin usar localhost entre contenedores.
+- [ ] Crear canción/job, recrear el contenedor server y comprobar persistencia de SQLite WAL y assets, sin borrar los datos.
+- [ ] Verificar FFmpeg LGPL Linux fijado y procesar audio sintético real hasta assets/manifiesto válidos.
+- [ ] Verificar Host/Origin permitidos y rechazos ajenos; puertos sin exposición LAN.
+- [ ] Verificar SSE y reproducción Range entre navegador y API publicada.
+
+Este bloque valida el despliegue de M1 sin inferencia GPU. La conexión a Ollama y su descarga/restauración se validan en M2; ComfyUI CUDA, en sus hitos.
 
 ### E2E-01 — Crear canción con dos variantes y escucharla
 - **Objetivo**: comprobar el flujo principal completo, desde crear hasta descargar.
@@ -209,3 +222,30 @@ Regla general: se validan contratos observables (estados, duración, formatos, m
 | T-14 | E2E-08, E2E-10 |
 | T-15 | todos los E2E-xx |
 | T-16 | M-01, M-03 |
+
+
+## Ámbitos de evidencia — ADR-0037
+
+[ADR-0037](../../decisiones/ADR-0037-avance-tecnico-condicionado.md) permite apertura técnica contra mock tras revisión/QA documental. Unitarios CPU, E2E mock, Docker real sin GPU, integración GPU y escucha son evidencias separadas. M-01 se conserva para aceptación final en T-16 con cobertura compartida de T-04/T-05; no se sustituye por un mock. M-02/M-03 y la resolución I-01 de T-04 permanecen obligatorias. M0/T-13 y descriptores reales verificados siguen siendo precondiciones de aceptación final.
+
+### DOC-00 — Coherencia de secuenciación
+
+- **Cubre tareas**: T-00.
+- **Verificación**: enlaces locales de los documentos afectados y ledgers sin incoherencias; revisión A/B del diff documental. Prosa, sin UI: no se presenta como E2E.
+- **Resultado requerido**: opción elegida por el orquestador bajo delegación, aperturas y aceptación explícitas, fuentes selladas intactas y ningún cierre de tarea por anticipado.
+
+### Contrato negativo — capacidades sin verificar
+
+Al implementar T-06/T-07/T-09, probar un descriptor con tarea y feature `verified:false`: el resolver rechaza su uso y la UI las deshabilita con motivo. El mock sintético con capacidades verificadas no transfiere esa verificación al engine real ni elude autoría/derechos. No usar excepciones de laboratorio como gate de producto.
+
+## Gate de almacenamiento persistente (ADR-0069)
+
+[ADR-0069](../../decisiones/ADR-0069-almacenamiento-ext4-del-proyecto-para-publicacion-atomica.md)
+conserva los CA originales de publicación atómica no-clobber y adopta
+ext4 respaldado por un VHDX dentro del proyecto. Provisión y montaje son
+infraestructura; producto en Docker, sin privilegios de montaje. No se
+migra la biblioteca existente automáticamente ni se acepta tmpfs como
+despliegue. T-05 requiere recorrido real sobre el disco persistente,
+rechazo de destinos ajenos incluidos vacíos/carreras, restart/reconcile y
+backup/restauración verificados. Sin mount/UUID/capacidad nativa correctos,
+startup aborta antes de datos/jobs. Gates de E2E y hito completos permanecen.

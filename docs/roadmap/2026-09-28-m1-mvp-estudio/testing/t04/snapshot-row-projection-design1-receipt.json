@@ -1,0 +1,58 @@
+{
+  "utc": "2026-10-09T02:18:23.5138227Z",
+  "owned_production": [],
+  "status": "STATIC_COMPLETE_EQUIVALENCE_NOT_UNCONDITIONALLY_PROVEN",
+  "protected": [
+    {
+      "path": "apps/server/app/queue/admission.py",
+      "expected": "a24d7346730e813ce8d384c6efa8e9b5ce43014235d73766266a1d4f541322c1",
+      "actual": "a24d7346730e813ce8d384c6efa8e9b5ce43014235d73766266a1d4f541322c1",
+      "unchanged": true
+    },
+    {
+      "path": "apps/server/app/queue/resolver.py",
+      "expected": "80cbfa88d69ee8ce9518b822eca968ec8860d867c954e836f7cf06c378aced65",
+      "actual": "80cbfa88d69ee8ce9518b822eca968ec8860d867c954e836f7cf06c378aced65",
+      "unchanged": true
+    },
+    {
+      "path": "apps/server/app/queue/retry.py",
+      "expected": "d76a4ef93a2b310d60b9f711e253298df21b25b5c5165be7dabedebc1badbdb3",
+      "actual": "d76a4ef93a2b310d60b9f711e253298df21b25b5c5165be7dabedebc1badbdb3",
+      "unchanged": true
+    },
+    {
+      "path": "apps/server/app/queue/runtime.py",
+      "expected": "8983200d86bb47e5362c92c14448d6bd09a01573c5c7c5cf08f6ad40593e9017",
+      "actual": "8983200d86bb47e5362c92c14448d6bd09a01573c5c7c5cf08f6ad40593e9017",
+      "unchanged": true
+    },
+    {
+      "path": "apps/server/app/models/__init__.py",
+      "expected": "9c86ef171968e799908068c1f98ce47186b9e2ed3337c019a7e9696d38dac0df",
+      "actual": "9c86ef171968e799908068c1f98ce47186b9e2ed3337c019a7e9696d38dac0df",
+      "unchanged": true
+    },
+    {
+      "path": "apps/server/tests/test_dispatcher_scanning.py",
+      "expected": "d84ee4207ebb803d8148e95bbcdc8aa3a08950bfd6c79555de78ca47d29a6384",
+      "actual": "d84ee4207ebb803d8148e95bbcdc8aa3a08950bfd6c79555de78ca47d29a6384",
+      "unchanged": true
+    },
+    {
+      "path": "apps/server/tests/test_dispatcher_retry.py",
+      "expected": "8a47d239be08948db3fdf498d3e6846e8d0a9a37dec22edc96d5b53e67cd44fc",
+      "actual": "8a47d239be08948db3fdf498d3e6846e8d0a9a37dec22edc96d5b53e67cd44fc",
+      "unchanged": true
+    }
+  ],
+  "tests_run": 0,
+  "python_calls": 0,
+  "native_runs": 0,
+  "actual_model": null,
+  "actual_tokens": null,
+  "EUR": null,
+  "IA_hours": null,
+  "custody_limit": "some static reads preceded physical captures; see report",
+  "acceptance": false
+}

@@ -150,6 +150,97 @@ def _rehash_native_receipt(receipt):
     captured["boundaries"][2]["arguments_sha256"] = sha(planned["effective"])
 
 
+def _native_v2_receipt_fixture(task):
+    import copy
+    import hashlib
+    import json
+    import runpy
+    from pathlib import Path
+
+    receipt, request = _native_receipt_fixture()
+    planned, captured = receipt["planned"], receipt["captured"]
+    planned["receipt_version"] = captured["receipt_version"] = 2
+    profile = runpy.run_path(
+        str(
+            Path(__file__).resolve().parents[1]
+            / "apps/engines/acestep/input_profile.py"
+        )
+    )
+    planned["source_hashes"] = profile["SOURCE_HASHES"]
+    planned["profile_revision"] = profile["UPSTREAM_REVISION"]
+
+    planned["profile_sha256"] = hashlib.sha256(
+        json.dumps(
+            planned["source_hashes"],
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        ).encode()
+    ).hexdigest()
+    # Real instruction hashes copied from the SHA-fixed pure resolver, never text.
+    instructions = {
+        "text2music": "727c9421e8c388fbd4d2479be4ff421205b56a6292e986198ac86e769ed13a6f",
+        "cover": "f295493a5987057e7eda95c4f8e5c268d35e6df991591905247bda2d04db4bac",
+    }
+    planned["dit"]["candidates"] = {
+        name: {
+            "initial_task": "text2music",
+            "has_audio_codes": name == "cover",
+            "resolved_task": name,
+            "instruction_sha256": instructions[name],
+            **copy.deepcopy(planned["dit"]),
+        }
+        for name in instructions
+    }
+    captured["boundaries"].insert(
+        3,
+        {
+            "stage": "dit_resolution",
+            **{
+                k: planned["dit"]["candidates"][task][k]
+                for k in (
+                    "initial_task",
+                    "has_audio_codes",
+                    "resolved_task",
+                    "instruction_sha256",
+                )
+            },
+        },
+    )
+    planned["dit"]["receipt_version"] = 2
+    _rehash_native_receipt(receipt)
+    return receipt, request
+
+
+@pytest.mark.parametrize("task", ["text2music", "cover"])
+def test_native_v2_receipt_resolution_and_publication(tmp_path, task):
+    import hashlib
+    import json
+
+    from audio_post.manifest import validate_input_receipt
+
+    receipt, request = _native_v2_receipt_fixture(task)
+    captured = receipt["captured"]
+    assert validate_input_receipt(json.dumps(receipt), request, 0) == receipt
+    job_id = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+    source = tmp_path / f"tmp/{job_id}"
+    source.mkdir(parents=True)
+    payload = json.dumps(receipt).encode()
+    value = hashlib.sha256(payload).hexdigest()
+    (source / "input-receipt-0.json").write_bytes(payload)
+    result = {
+        "input_receipts": [
+            {"filename": "input-receipt-0.json", "sha256": value, "output_index": 0}
+        ]
+    }
+    assert module().publish_input_receipts(result, tmp_path, job_id, request, 1) == [
+        {"sha256": value, "output_index": 0}
+    ]
+    captured["boundaries"][3]["has_audio_codes"] = task != "cover"
+    with pytest.raises(ValueError, match="INPUT_RECEIPT_INVALID"):
+        validate_input_receipt(json.dumps(receipt), request, 0)
+
+
 @pytest.mark.parametrize(
     "checkpoint,params,steps,cfg",
     [

@@ -60,6 +60,30 @@ def test_endpoints():
         assert client.post("/v1/unload").status_code == 200
 
 
+def test_storage_gate_runs_before_engine_lifespan(tmp_path, monkeypatch):
+    """Una raíz no autorizada debe impedir que arranque el proceso del engine."""
+    from engine_mock import create_mock_app
+    from fastapi.testclient import TestClient
+    from studio_storage_guard import preflight
+
+    calls = []
+
+    def reject(library_root, raw_root, expected_uuid):
+        calls.append((library_root, raw_root, expected_uuid))
+        raise preflight.StorageGuardError()
+
+    monkeypatch.setenv("STUDIO_STORAGE_UUID", "12345678-1234-4234-8234-123456789abc")
+    monkeypatch.setattr(preflight, "verify_engine_roots", reject)
+    app = create_mock_app(token="secret", data_dir=tmp_path)
+
+    with pytest.raises(preflight.StorageGuardError), TestClient(app):
+        pass
+
+    assert calls == [
+        (tmp_path, tmp_path / "tmp", "12345678-1234-4234-8234-123456789abc")
+    ]
+
+
 def test_child_process():
     assert hasattr(common, "ProcessSupervisor"), (
         "Supervisor hijo todavía no implementado"

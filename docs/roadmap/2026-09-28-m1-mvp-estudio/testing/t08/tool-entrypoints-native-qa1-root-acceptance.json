@@ -1,0 +1,48 @@
+{
+  "utc": "2026-10-08T03:50:52.607444+00:00",
+  "technical_component_accepted": true,
+  "scope": "Portable web tool entrypoints and concurrent nested manager launch ONLY",
+  "tests": {
+    "tests": 65,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "whole_current_coverage": {
+    "scripts\\pnpm.py": {
+      "covered_lines": 159,
+      "num_statements": 165,
+      "percent_covered": 96.36363636363636,
+      "percent_covered_display": "96",
+      "missing_lines": 6,
+      "excluded_lines": 0,
+      "percent_statements_covered": 96.36363636363636,
+      "percent_statements_covered_display": "96"
+    }
+  },
+  "protected_sources": 27,
+  "official_tool_payloads": 2935,
+  "inventory_verified_files": 428,
+  "current_sources": {
+    "scripts/pnpm.py": {
+      "sha256": "750bd7daba5502125228952d4a2c95d63b951e48c5940056b163bb0e4e710205",
+      "bytes": 12516
+    },
+    "tests/test_web_tool_entrypoints.py": {
+      "sha256": "06836c2d6f6c1b36d1f0ecf39e9a8823b554fe7abedf08bdbc798e97ee7c7e55",
+      "bytes": 35946
+    }
+  },
+  "actual_canonical_gen_byteexact": true,
+  "review_counter": 3,
+  "native_metadata_limit": "argv/UTC/exit/raw child bytes observed; FILETIME/Job and unobserved fields UNKNOWN",
+  "plan_coverage_warning": "T00 still lacks test mapping; UI global gate not accepted",
+  "not_accepted": [
+    "T08 frontend/UI/build/Docker/LinuxNode/Playwright/E2E",
+    "clean offline bootstrap with newly empty mutable store",
+    "full M1 or subjective quality",
+    "perfect historical metadata"
+  ],
+  "next": "Approved T08 web application base using existing exact licensed pins",
+  "actual_model_tokens_EUR_AIhours": null
+}

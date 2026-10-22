@@ -38,3 +38,7 @@ Se distinguen recibos **planned**, calculados antes de generar, y **captured**, 
 El usuario recibe un rechazo verificable cuando una instrucción se perdería. Puede adaptar su prompt de forma explícita, conservando el original y el diff de T-18, sin que el sistema traduzca, resuma o trunque por su cuenta. Una entrada aceptada significa que cabe y que se transporta íntegra; no significa que el modelo siga cada instrucción musical.
 
 La integración debe comprobar el código incorporado a la imagen del engine, además de los tests CPU del host. Se permite reconstruir esa imagen con código local y dependencias fijadas, sin nuevos pesos, herramientas ni cambios de locks. T-19 conserva la GPU sin cargar y deja la evaluación artística a T-08/T-12/T-13. El futuro cambio de modelo o backend requiere un perfil y pruebas propios; no hereda los presupuestos de ACE-Step por suposición.
+
+## Complemento de integración — 2026-10-06
+
+[ADR-0032](ADR-0032-condicionamiento-dit-segun-rama-nativa.md) precisa la medición de las ramas nativas de instrucciones DiT y la captura de su resolución cuando el LM aporta códigos. Conserva los presupuestos, la entrada original y las guardas exactas de este ADR. La corrección de producto y su validación se siguen en T-16.

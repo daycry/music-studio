@@ -1,0 +1,127 @@
+{
+  "status": "INDEPENDENT_QA_FAILURE_FOR_ROOT_DIAGNOSIS",
+  "utc": "2026-10-09T01:16:50.495345+00:00",
+  "ownership": [],
+  "current_sources_observational": true,
+  "uuid": "d2577bc5-404e-47d3-84c9-5b718b16014d",
+  "linux": {
+    "cases": 32,
+    "failures": 1,
+    "errors": 0,
+    "skips": 0
+  },
+  "windows": {
+    "cases": 36,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0
+  },
+  "whole_lines_and_branches": {
+    "apps/server/app/worker/custody.py": {
+      "covered_lines": 200,
+      "num_statements": 221,
+      "percent_covered": 88.05460750853243,
+      "percent_covered_display": "88",
+      "missing_lines": 21,
+      "excluded_lines": 0,
+      "percent_statements_covered": 90.49773755656109,
+      "percent_statements_covered_display": "90",
+      "num_branches": 72,
+      "num_partial_branches": 12,
+      "covered_branches": 58,
+      "missing_branches": 14,
+      "percent_branches_covered": 80.55555555555556,
+      "percent_branches_covered_display": "81"
+    },
+    "apps/server/app/worker/custody_linux.py": {
+      "covered_lines": 229,
+      "num_statements": 257,
+      "percent_covered": 85.58558558558559,
+      "percent_covered_display": "86",
+      "missing_lines": 28,
+      "excluded_lines": 0,
+      "percent_statements_covered": 89.10505836575875,
+      "percent_statements_covered_display": "89",
+      "num_branches": 76,
+      "num_partial_branches": 20,
+      "covered_branches": 56,
+      "missing_branches": 20,
+      "percent_branches_covered": 73.6842105263158,
+      "percent_branches_covered_display": "74"
+    },
+    "apps/server/app/worker/custody_linux_supervisor.py": {
+      "covered_lines": 203,
+      "num_statements": 247,
+      "percent_covered": 80.1223241590214,
+      "percent_covered_display": "80",
+      "missing_lines": 44,
+      "excluded_lines": 0,
+      "percent_statements_covered": 82.18623481781377,
+      "percent_statements_covered_display": "82",
+      "num_branches": 80,
+      "num_partial_branches": 15,
+      "covered_branches": 59,
+      "missing_branches": 21,
+      "percent_branches_covered": 73.75,
+      "percent_branches_covered_display": "74"
+    }
+  },
+  "gates": {
+    "source_same": true,
+    "physical_input_same": true,
+    "raw_copy_same": true,
+    "case_parity": true,
+    "linux": false,
+    "windows": true,
+    "whole_each80_zeroexclusions": true,
+    "official_and_lint_exits0": false,
+    "container_removed": true
+  },
+  "raw_databases": 67,
+  "cleanup": {
+    "cid": "0ea7e9f2a5fc47a209bba733c1b6f0e363d1588d75417008fb9808c57437686b",
+    "registered_before_start": true,
+    "inspect_id_matches": true,
+    "actual_exit": 1,
+    "remove_exit": 0,
+    "gone_exit": 1,
+    "gone_text": "error: no such object: 0ea7e9f2a5fc47a209bba733c1b6f0e363d1588d75417008fb9808c57437686b\n",
+    "security": {
+      "image": "sha256:fa0b727b54163f6cd26ab0e9fc4cec2da868ae9bdcac87b5e4cd242ecb019e9e",
+      "user": "65532:65532",
+      "network": "none",
+      "read_only": true,
+      "pids": 128,
+      "memory": 1073741824,
+      "cpus": 2000000000,
+      "capdrop": [
+        "ALL"
+      ],
+      "security_options": [
+        "no-new-privileges"
+      ],
+      "devices": null,
+      "tmpfs": {
+        "/tmp": "rw,nosuid,size=128m,mode=1777"
+      }
+    }
+  },
+  "history": "history-bootstrap1 retained; final current UUID only; no historical summing",
+  "model": null,
+  "tokens": null,
+  "EUR": null,
+  "AIhours": null,
+  "technical_acceptance": false,
+  "full_T05_acceptance": false,
+  "early_metadata_limitations": "missing native pre-event fields UNKNOWN; no retrospective proof",
+  "resource_returned": "per-case UNKNOWN where missing FD/thread/strong-ref proof",
+  "tdd": "n/a QA-only; no new RED or product modification",
+  "diagnosis": "root-diagnosis.json",
+  "format_failure": "Protected unchanged contracts.py; not custody core formatting failure; exact full scope exit1 retained",
+  "all_current_tests": {
+    "passed": 67,
+    "failed": 1,
+    "errors": 0,
+    "skips": 0
+  }
+}

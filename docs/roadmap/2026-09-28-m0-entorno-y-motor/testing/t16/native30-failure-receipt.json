@@ -1,0 +1,112 @@
+{
+  "task": "T-16",
+  "date": "2026-10-06",
+  "exec_session": 53788,
+  "exec_terminal_exit_code": 1,
+  "session": "01M47GK7JJV456GFP80XQC91HJ",
+  "job_id": "01M47GK7JJ4R75GV377Z7MYRAK",
+  "group": {
+    "job_id": "01M47GK7JJ4R75GV377Z7MYRAK",
+    "exit_code": 1,
+    "wall_s": 179.34300000000803,
+    "stop_reason": null,
+    "unload_confirmed": true,
+    "quality_approved": false
+  },
+  "preflight_gpu_used_mib": 1315,
+  "post_gpu_used_mib": 1315,
+  "ollama_empty": true,
+  "private_runtime_files": [
+    {
+      "path": ".cache/dev-cycle/t16/retry2-diagnosis/proposed-runtime/01M47GK7JJV456GFP80XQC91HJ/cli-private.log",
+      "sha256": "8c7469b957b96b347a91d64dfcc76b9933b7301af21da938baaf44130eb5cb44"
+    },
+    {
+      "path": ".cache/dev-cycle/t16/retry2-diagnosis/proposed-runtime/01M47GK7JJV456GFP80XQC91HJ/group.json",
+      "sha256": "e91e82f1ad357f9bab7674a11ffadcb8046e7d19bcda52dbd69309d517e33494"
+    },
+    {
+      "path": ".cache/dev-cycle/t16/retry2-diagnosis/proposed-runtime/01M47GK7JJV456GFP80XQC91HJ/job-01M47GK7JJ4R75GV377Z7MYRAK-monitor.json",
+      "sha256": "bb3be1dbd20cc155b8fd7d036b8da0f14f3ce1056ef38e7303e210e4e75f4bc6"
+    },
+    {
+      "path": ".cache/dev-cycle/t16/retry2-diagnosis/proposed-runtime/01M47GK7JJV456GFP80XQC91HJ/job-01M47GK7JJ4R75GV377Z7MYRAK-reservation.json",
+      "sha256": "6e2d57af0c7fe3b7a2cd1d3c598423d13f3af727721e1c6e5121f48c6404c4f8"
+    },
+    {
+      "path": ".cache/dev-cycle/t16/retry2-diagnosis/proposed-runtime/01M47GK7JJV456GFP80XQC91HJ/memory-samples.json",
+      "sha256": "3c11dd30ed26c4bab488ed6ae6c282fbe73d55ad0b52a163a6e3a766277795b9"
+    },
+    {
+      "path": ".cache/dev-cycle/t16/retry2-diagnosis/proposed-runtime/01M47GK7JJV456GFP80XQC91HJ/music-studio-t16-diagnosis30-01m47gk7jjv456gfp80xqc91hj-cleanup.json",
+      "sha256": "141d39efa845c5f1d90483e83c96b83f9c14a8fe8a9d12a7523ec4cb470342ab"
+    },
+    {
+      "path": ".cache/dev-cycle/t16/retry2-diagnosis/proposed-runtime/01M47GK7JJV456GFP80XQC91HJ/music-studio-t16-diagnosis30-01m47gk7jjv456gfp80xqc91hj-container.log",
+      "sha256": "1853f9061e4ab2cb016b13eae8d869be243ca2a5f3ecf2ead94fb63b3230c466"
+    },
+    {
+      "path": ".cache/dev-cycle/t16/retry2-diagnosis/proposed-runtime/01M47GK7JJV456GFP80XQC91HJ/native-private/01M47GK7JJ4R75GV377Z7MYRAK-2a45eb1f30c04e97bc4714f572f6efbe.json",
+      "sha256": "fc6933c07ae8efc9df0129bc7c3966422617e97978cf4fbfcc26c1faafd81fd9"
+    },
+    {
+      "path": ".cache/dev-cycle/t16/retry2-diagnosis/proposed-runtime/01M47GK7JJV456GFP80XQC91HJ/native-private/01M47GK7JJ4R75GV377Z7MYRAK-2c03e7fd3f874dc4a3a3a83fb1a1ebb9.json",
+      "sha256": "f14244196473c548a336eb31de2e2d72ae02f58b0c871511f9972a2f7ed5331b"
+    },
+    {
+      "path": ".cache/dev-cycle/t16/retry2-diagnosis/proposed-runtime/01M47GK7JJV456GFP80XQC91HJ/native-private/01M47GK7JJ4R75GV377Z7MYRAK-3b1a29d45b4f4fceb62ff68d57df60f7.json",
+      "sha256": "e1d2b686d7b8b0f87d4a635aaa313d1914ec6210f816f93304a340580a4cab58"
+    },
+    {
+      "path": ".cache/dev-cycle/t16/retry2-diagnosis/proposed-runtime/01M47GK7JJV456GFP80XQC91HJ/native-private/01M47GK7JJ4R75GV377Z7MYRAK-3c41351fba4b45da8340a25c240e6f71.json",
+      "sha256": "93de5edc2a91196188170fcbe468b525998644d8ccd1a1217a868f68c7efac65"
+    },
+    {
+      "path": ".cache/dev-cycle/t16/retry2-diagnosis/proposed-runtime/01M47GK7JJV456GFP80XQC91HJ/native-private/01M47GK7JJ4R75GV377Z7MYRAK-5e76f72765bd4680bb8134239be499e8.json",
+      "sha256": "722886ef9400d59fcc12116cdb6f7005e2b525cccf5dff81f16c4b2c54783931"
+    },
+    {
+      "path": ".cache/dev-cycle/t16/retry2-diagnosis/proposed-runtime/01M47GK7JJV456GFP80XQC91HJ/native-private/01M47GK7JJ4R75GV377Z7MYRAK-79b7d5a7f1ad4085b0f3fe8fc9e3a6eb.json",
+      "sha256": "b308fbca1959e9302c39de2368aa988d24cf3077db790cfcf7ffd1625d5b9295"
+    },
+    {
+      "path": ".cache/dev-cycle/t16/retry2-diagnosis/proposed-runtime/01M47GK7JJV456GFP80XQC91HJ/native-private/01M47GK7JJ4R75GV377Z7MYRAK-88f5b374e2444a618394e728a6481e2f.json",
+      "sha256": "13cd7aa815905fd8dd6fc058b3dcd089279dbffc960680ed8c80ff7fcef16882"
+    },
+    {
+      "path": ".cache/dev-cycle/t16/retry2-diagnosis/proposed-runtime/01M47GK7JJV456GFP80XQC91HJ/native-private/01M47GK7JJ4R75GV377Z7MYRAK-943d8af9cd834d2092df65bb4733b866.json",
+      "sha256": "2b9907f6426cb99cbc08998b49cb8cd6f59ff0b7ed38169f3644ce4d08f31dfe"
+    },
+    {
+      "path": ".cache/dev-cycle/t16/retry2-diagnosis/proposed-runtime/01M47GK7JJV456GFP80XQC91HJ/native-private/01M47GK7JJ4R75GV377Z7MYRAK-c07943e73c9d414b8e4266256cb7c5d3.json",
+      "sha256": "644706b856120362ab6aaefe2f45a49bb2cf8621f2ec2498d05e1342501c76a7"
+    },
+    {
+      "path": ".cache/dev-cycle/t16/retry2-diagnosis/proposed-runtime/01M47GK7JJV456GFP80XQC91HJ/native-private/01M47GK7JJ4R75GV377Z7MYRAK-fe0b2c2f4ee64080b4926c1498abaa17.json",
+      "sha256": "3568b6712e747d9e74bacc3c1883f03b78280ad997699179c65ca635a9e355de"
+    },
+    {
+      "path": ".cache/dev-cycle/t16/retry2-diagnosis/proposed-runtime/01M47GK7JJV456GFP80XQC91HJ/native-private/runtime-0869b9974866426e8755415e6c10d680.json",
+      "sha256": "9ba76c03a5c4d09f671e80aa5eade97f95f63ad09e4a18e1b1b95592d6fdb143"
+    },
+    {
+      "path": ".cache/dev-cycle/t16/retry2-diagnosis/proposed-runtime/01M47GK7JJV456GFP80XQC91HJ/native-private/runtime-0e51579d1aa042f8bdfe7911c328dc76.json",
+      "sha256": "b918163df8984af566d26d29dfde0a8b0273017998486294fd69fac4f800b1d3"
+    },
+    {
+      "path": ".cache/dev-cycle/t16/retry2-diagnosis/proposed-runtime/01M47GK7JJV456GFP80XQC91HJ/native-private/runtime-139d22e2d9c8498e9eb1b4c6e25ed24e.json",
+      "sha256": "45c7b8be9c808633ce1b5848e57928103b8509b4186034a4aec3194a0bdf3e98"
+    },
+    {
+      "path": ".cache/dev-cycle/t16/retry2-diagnosis/proposed-runtime/01M47GK7JJV456GFP80XQC91HJ/native-private/runtime-2d971001eee84bc2add5781220e93840.json",
+      "sha256": "32ec99c7956771ef3b465ef026c459ef824cbcc3170006f4b1c0f7d43af7e64d"
+    },
+    {
+      "path": ".cache/dev-cycle/t16/retry2-diagnosis/proposed-runtime/01M47GK7JJV456GFP80XQC91HJ/preflight.json",
+      "sha256": "6878d87143c2e049709669ac5eefd55e24a5645901bc3269f9be8064fbc4d835"
+    }
+  ],
+  "root_cause_proven": false,
+  "full_comparison_complete": false,
+  "quality_approved": false
+}

@@ -1,0 +1,11 @@
+{
+  "utc": "2026-10-08T01:01:45.854807+00:00",
+  "counter": 5,
+  "Critical": 0,
+  "Important": 0,
+  "Minor": 0,
+  "root_confirmed": "Read A/B/D terminal reports; source-open disappearance corrected, controls propagate correctly; no new findings.",
+  "technical_acceptance": false,
+  "next": "Independent U1 QA1, then U2 if accepted",
+  "actual_model_tokens_EUR_AIhours": null
+}

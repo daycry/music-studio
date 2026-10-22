@@ -1,0 +1,89 @@
+{
+  "timestamp": "2026-10-06T04:55:09.830244+00:00",
+  "session": "01M47Q4EJZK09RBPA0ECWC57D4",
+  "generation_exit": 0,
+  "packing_exit": 0,
+  "image_digest": "sha256:18d94fd4b377016a895e5cd89ee446b64c872421b0d401987f58b0583b16da2d",
+  "takes": 6,
+  "pairs": 3,
+  "native_inputs_matched": true,
+  "master_audio": {
+    "format": "FLAC",
+    "subtype": "PCM_24",
+    "sample_rate": 48000,
+    "channels": 2,
+    "duration_s": 90,
+    "finite_non_silent_all": true
+  },
+  "configurations": [
+    {
+      "id": "turbo",
+      "job_id": "01M47Q4HNW4F6191D0EZ3V927D",
+      "wall_s": 258.07799999999406,
+      "baseline_used_mib": 1314.0,
+      "ollama_empty": true,
+      "unload_confirmed": true,
+      "owned_container_removed": true
+    },
+    {
+      "id": "sft",
+      "job_id": "01M47QCHMHGV9YR2K5PVR2K55J",
+      "wall_s": 270.07799999999406,
+      "baseline_used_mib": 1314.0,
+      "ollama_empty": true,
+      "unload_confirmed": true,
+      "owned_container_removed": true
+    }
+  ],
+  "controls": {
+    "seeds": [
+      1,
+      2,
+      3
+    ],
+    "bpm": 94,
+    "language": "es",
+    "shift": 1,
+    "lm": "0.6B",
+    "mode": "bf16",
+    "backend": "pt",
+    "turbo_steps": 8,
+    "sft_steps": 50,
+    "sft_guidance_scale": 7
+  },
+  "vram_peak_mib_max": 7893.35302734375,
+  "vram_cap_mib_min": 10114.6953125,
+  "spilled_reported_any": false,
+  "windows_shared_gpu_measured": false,
+  "inference_rtf_measured": false,
+  "normalization": {
+    "target_lufs": -17.042502361895934,
+    "lufs_min": -17.041877352089593,
+    "lufs_max": -17.040013181906136,
+    "true_peak_dbtp_max": -1.9,
+    "gain_only": true,
+    "limiter": false,
+    "reference_original_unchanged": true,
+    "reference_playback_volume": 0.6417013759709992
+  },
+  "http": {
+    "url": "http://127.0.0.1:8768/listen.html",
+    "passed": 22,
+    "actual_files": 8,
+    "private_routes_rejected": true
+  },
+  "browser_render_verified": false,
+  "browser_limit": "La política del navegador rechazó abrir este origen localhost; no se intentó una ruta alternativa.",
+  "private_evidence_sha256": {
+    "generation-complete.json": "cc992e667c793b2ccf03bc4d7ee1eb2f41e4ae32f801fe83bc2375c4b1f3bf82",
+    "root-audio-verification.json": "ac76bcb02aa5842cab28f9b38d7a536ebea0d3573cadce93a44833a8dc1ca34d",
+    "packing-complete.json": "6c220141adbb9135ef6fa5219681d71708ce2af448fd78bba686d7f27bb836d3",
+    "packing-checkpoint.json": "c7739d55b5b9abbc51e0bdb7846c0b62b96b26befcc1de6c9a3937cdd7c609f0",
+    "normalization-private.json": "09ecb6c9210d6ef928c3ff28439818a2426d6bd454331a1f92253a68d8b7cd71",
+    "root-http-verification.json": "1256beae953690437de2a7ffaa5dbab5ea9acf9955d499dce24e4cdaea70f9f5",
+    "owned-outputs.json": "14b84ef05d952f87aade614b45b8c04a1e071241390b703234f4f48be7aedc87"
+  },
+  "musical_quality_approved": false,
+  "winner": null,
+  "m0_closed": false
+}

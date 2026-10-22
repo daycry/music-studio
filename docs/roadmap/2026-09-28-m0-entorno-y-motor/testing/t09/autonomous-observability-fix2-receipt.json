@@ -1,0 +1,440 @@
+{
+  "delivery_portable": {
+    "status": "DONE_CPU_WITH_CONCERNS",
+    "finished_utc": "2026-10-06T23:55:49.732570+00:00",
+    "gap": "R09-O4a/B2-01",
+    "changes": [
+      "scripts/eval/benchmark_observation.py",
+      "scripts/eval/tests/test_benchmark_observation.py"
+    ],
+    "red_evidence": "RED: scripts/eval/tests/test_benchmark_observation.py::test_sequential_queries_preserve_accredited_history falló con auto_query_bracket_invalid · 2026-10-06T23:53:27.415788+00:00",
+    "commands": {
+      "coverage-json": {
+        "argv": [
+          ".venv\\Scripts\\python.exe",
+          "-m",
+          "coverage",
+          "json",
+          "-o",
+          ".cache/dev-cycle/t09/autonomous-observability-fix2/coverage.json"
+        ],
+        "launcher": "uv run --frozen --no-sync --all-packages python .cache\\dev-cycle\\t09\\autonomous-observability-fix2\\run_check.py",
+        "started_utc": "2026-10-06T23:54:22.511658+00:00",
+        "finished_utc": "2026-10-06T23:54:22.654776+00:00",
+        "exit": 0
+      },
+      "coverage-report": {
+        "argv": [
+          ".venv\\Scripts\\python.exe",
+          "-m",
+          "coverage",
+          "report",
+          "--fail-under=80"
+        ],
+        "launcher": "uv run --frozen --no-sync --all-packages python .cache\\dev-cycle\\t09\\autonomous-observability-fix2\\run_check.py",
+        "started_utc": "2026-10-06T23:54:22.728144+00:00",
+        "finished_utc": "2026-10-06T23:54:22.859150+00:00",
+        "exit": 0
+      },
+      "format": {
+        "argv": [
+          ".venv\\Scripts\\python.exe",
+          "-m",
+          "ruff",
+          "format",
+          "scripts/eval/benchmark_observation.py",
+          "scripts/eval/tests/test_benchmark_observation.py"
+        ],
+        "launcher": "uv run --frozen --no-sync --all-packages python .cache\\dev-cycle\\t09\\autonomous-observability-fix2\\run_check.py",
+        "started_utc": "2026-10-06T23:53:58.762939+00:00",
+        "finished_utc": "2026-10-06T23:53:58.841935+00:00",
+        "exit": 0
+      },
+      "green-o4a": {
+        "argv": [
+          ".venv\\Scripts\\python.exe",
+          "-m",
+          "pytest",
+          "--noconftest",
+          "-p",
+          "cpu_plugin",
+          "-o",
+          "cache_dir=.cache\\dev-cycle\\t09\\autonomous-observability-fix2\\cache-green-o4a",
+          "--basetemp=.cache\\dev-cycle\\t09\\autonomous-observability-fix2\\tmp-green-o4a",
+          "-q",
+          "--junitxml=.cache\\dev-cycle\\t09\\autonomous-observability-fix2\\green-o4a.xml",
+          "scripts/eval/tests/test_benchmark_observation.py::test_sequential_queries_preserve_accredited_history",
+          "scripts/eval/tests/test_benchmark_observation.py::test_sequential_chain_keeps_temporal_and_original_guards"
+        ],
+        "launcher": "uv run --frozen --no-sync --all-packages python .cache\\dev-cycle\\t09\\autonomous-observability-fix2\\run_check.py",
+        "started_utc": "2026-10-06T23:53:40.208609+00:00",
+        "finished_utc": "2026-10-06T23:53:41.234767+00:00",
+        "exit": 0
+      },
+      "red-o4a": {
+        "argv": [
+          ".venv\\Scripts\\python.exe",
+          "-m",
+          "pytest",
+          "--noconftest",
+          "-p",
+          "cpu_plugin",
+          "-o",
+          "cache_dir=.cache\\dev-cycle\\t09\\autonomous-observability-fix2\\cache-red-o4a",
+          "--basetemp=.cache\\dev-cycle\\t09\\autonomous-observability-fix2\\tmp-red-o4a",
+          "-q",
+          "--junitxml=.cache\\dev-cycle\\t09\\autonomous-observability-fix2\\red-o4a.xml",
+          "scripts/eval/tests/test_benchmark_observation.py::test_sequential_queries_preserve_accredited_history"
+        ],
+        "launcher": "uv run --frozen --no-sync --all-packages python .cache\\dev-cycle\\t09\\autonomous-observability-fix2\\run_check.py",
+        "started_utc": "2026-10-06T23:53:14.594441+00:00",
+        "finished_utc": "2026-10-06T23:53:15.115121+00:00",
+        "exit": 1
+      },
+      "red-o4a-fixture": {
+        "argv": [
+          ".venv\\Scripts\\python.exe",
+          "-m",
+          "pytest",
+          "--noconftest",
+          "-p",
+          "cpu_plugin",
+          "-o",
+          "cache_dir=.cache\\dev-cycle\\t09\\autonomous-observability-fix2\\cache-red-o4a-fixture",
+          "--basetemp=.cache\\dev-cycle\\t09\\autonomous-observability-fix2\\tmp-red-o4a-fixture",
+          "-q",
+          "--junitxml=.cache\\dev-cycle\\t09\\autonomous-observability-fix2\\red-o4a-fixture.xml",
+          "scripts/eval/tests/test_benchmark_observation.py::test_sequential_queries_preserve_accredited_history"
+        ],
+        "launcher": "uv run --frozen --no-sync --all-packages python .cache\\dev-cycle\\t09\\autonomous-observability-fix2\\run_check.py",
+        "started_utc": "2026-10-06T23:53:27.415788+00:00",
+        "finished_utc": "2026-10-06T23:53:27.931364+00:00",
+        "exit": 1
+      },
+      "ruff-check": {
+        "argv": [
+          ".venv\\Scripts\\python.exe",
+          "-m",
+          "ruff",
+          "check",
+          "scripts/eval/benchmark_observation.py",
+          "scripts/eval/tests/test_benchmark_observation.py"
+        ],
+        "launcher": "uv run --frozen --no-sync --all-packages python .cache\\dev-cycle\\t09\\autonomous-observability-fix2\\run_check.py",
+        "started_utc": "2026-10-06T23:54:22.964778+00:00",
+        "finished_utc": "2026-10-06T23:54:23.038057+00:00",
+        "exit": 0
+      },
+      "ruff-format-check": {
+        "argv": [
+          ".venv\\Scripts\\python.exe",
+          "-m",
+          "ruff",
+          "format",
+          "--check",
+          "scripts/eval/benchmark_observation.py",
+          "scripts/eval/tests/test_benchmark_observation.py"
+        ],
+        "launcher": "uv run --frozen --no-sync --all-packages python .cache\\dev-cycle\\t09\\autonomous-observability-fix2\\run_check.py",
+        "started_utc": "2026-10-06T23:54:23.111225+00:00",
+        "finished_utc": "2026-10-06T23:54:23.175177+00:00",
+        "exit": 0
+      },
+      "suite": {
+        "argv": [
+          ".venv\\Scripts\\python.exe",
+          "-m",
+          "coverage",
+          "run",
+          "--source=benchmark_observation",
+          "-m",
+          "pytest",
+          "--noconftest",
+          "-p",
+          "cpu_plugin",
+          "-o",
+          "cache_dir=.cache\\dev-cycle\\t09\\autonomous-observability-fix2\\cache-suite",
+          "--basetemp=.cache\\dev-cycle\\t09\\autonomous-observability-fix2\\tmp-suite",
+          "-q",
+          "--junitxml=.cache\\dev-cycle\\t09\\autonomous-observability-fix2\\suite.xml",
+          "scripts/eval/tests/test_benchmark_observation.py",
+          "scripts/eval/tests/test_benchmark_cli.py",
+          "scripts/eval/tests/test_benchmark_integration_cpu.py",
+          "scripts/eval/tests/test_benchmark_observers.py"
+        ],
+        "launcher": "uv run --frozen --no-sync --all-packages python .cache\\dev-cycle\\t09\\autonomous-observability-fix2\\run_check.py",
+        "started_utc": "2026-10-06T23:53:58.915860+00:00",
+        "finished_utc": "2026-10-06T23:54:08.986521+00:00",
+        "exit": 0
+      }
+    },
+    "integrity": {
+      "checked_utc": "2026-10-06T23:55:20.475502+00:00",
+      "source_count": 64,
+      "preimages_verified": 64,
+      "foreign_sources_intact": 62,
+      "protected_documents_intact": 12,
+      "changed_files": [
+        "scripts/eval/benchmark_observation.py",
+        "scripts/eval/tests/test_benchmark_observation.py"
+      ],
+      "prior_deliveries_verified_readonly": {
+        "autonomous-observability-implementation": {
+          "artifact_entries_verified": 83,
+          "artifact_manifest": {
+            "bytes": 15738,
+            "sha256": "5705ec521382bbc86da293a132e193907fc9d6a2523a768cffb3d052e966f3a6"
+          },
+          "receipt": {
+            "bytes": 46748,
+            "sha256": "90e66936e205188551572820413ad90730725069c11d9912be6649185d0c2f49"
+          },
+          "root_acceptance": {
+            "bytes": 824,
+            "sha256": "a88f8c60063e4129581fde3725ebfcc98e885f092440a1472b1bd06539f6849a"
+          }
+        },
+        "autonomous-observability-fix1": {
+          "artifact_entries_verified": 84,
+          "artifact_manifest": {
+            "bytes": 11315,
+            "sha256": "fb43577975511c9542ca6a5ace1a978642ae5755cdbe03539fd14ded9363fb8f"
+          },
+          "receipt": {
+            "bytes": 19609,
+            "sha256": "2f8359e58fbd70822d78dc3164783fc9716c3d5e149c31ff62da19723dccf8cd"
+          },
+          "root_acceptance": {
+            "bytes": 1434,
+            "sha256": "380ddfd13581af36144b5c344235541c201dcb5fc04210808c5de8bb632abd35"
+          }
+        }
+      }
+    },
+    "test_results": {
+      "directed_green": 9,
+      "suite": 95,
+      "suite_files": 4,
+      "gpu_verified": false,
+      "qa_pass": false
+    },
+    "coverage": {
+      "scope": "one complete changed production module",
+      "files": [
+        "scripts\\eval\\benchmark_observation.py"
+      ],
+      "covered_lines": 258,
+      "num_statements": 301,
+      "percent_covered": 85.71428571428571,
+      "percent_covered_display": "86",
+      "missing_lines": 43,
+      "excluded_lines": 0,
+      "percent_statements_covered": 85.71428571428571,
+      "percent_statements_covered_display": "86"
+    },
+    "delivery_artifacts": {
+      ".coverage": {
+        "bytes": 53248,
+        "sha256": "d1d191fe77454e22a8d9d6a8e4ae09819e250c3c86ea0df5d48b75899f11114f"
+      },
+      "coverage-json-command.json": {
+        "bytes": 528,
+        "sha256": "21f889cb5b8d38f74dbb694c93212c2a2b7c4b7a7594f638fe6d9f885ffb7492"
+      },
+      "coverage-json.log": {
+        "bytes": 87,
+        "sha256": "c9db6cb8b5d1ea482c782692d0e68fdd6d4bc26616ded5193c45b5d6c96134b2"
+      },
+      "coverage-report-command.json": {
+        "bytes": 470,
+        "sha256": "dd4c6fb23d74d055605d03867ad7926f9db6c4e701b3d0df29f57242befda786"
+      },
+      "coverage-report.log": {
+        "bytes": 305,
+        "sha256": "33217268e1f6ef0ea288252941b2ffc6099191b1dc20910a5c7f130d2ae8b30d"
+      },
+      "coverage.json": {
+        "bytes": 12405,
+        "sha256": "f78c22a78e781c951da96d6bf59b11a16e278569f6c04dfad49d59291e573278"
+      },
+      "cpu_plugin.py": {
+        "bytes": 366,
+        "sha256": "745edd984b8d2ec3b422b3234cb10fc5ab52d923e220ad61a6daa6bb7ed7de66"
+      },
+      "finalize.py": {
+        "bytes": 8289,
+        "sha256": "ba324b5f1fdf0023ac126c772641ff35b943a897194f49c8e3a751869f4cecab"
+      },
+      "format-command.json": {
+        "bytes": 545,
+        "sha256": "f02cec188c060217671aec717ce2f5f3b48c6ca2042815221d259c0b3bb3e93c"
+      },
+      "format.log": {
+        "bytes": 21,
+        "sha256": "aa1d1e99257f1375564760254c0c0b8eae0c7cc96ff1eb94a2064d5ff7601cea"
+      },
+      "green-o4a-command.json": {
+        "bytes": 1127,
+        "sha256": "82aad65142a6ac43ea5a0b1a504b3a489e21379501ba57e06cb5a07016455642"
+      },
+      "green-o4a.log": {
+        "bytes": 100,
+        "sha256": "ae4ee57afdffc7a76216fbfee2132a884da6bb023c093c0077982a4e34bd9d49"
+      },
+      "green-o4a.xml": {
+        "bytes": 1641,
+        "sha256": "a59936f06189d74295e8f5879d6a320de876d40de20c763882f7f549485e9c4e"
+      },
+      "integrity.json": {
+        "bytes": 1422,
+        "sha256": "b39e5ac86a0b65d33c599958314b6d65bbbafdb350a581ccb55bd57ad9492249"
+      },
+      "isolated.diff": {
+        "bytes": 9271,
+        "sha256": "febc3923aaedd5249bd81623554b8ab1aa90c8e77de76d6a39fb66ca58a44b79"
+      },
+      "protected-documents.json": {
+        "bytes": 1876,
+        "sha256": "3af79a7514f7005fedfa30e8b3bf173775e661ea541124130aa2e03797754bca"
+      },
+      "red-o4a-command.json": {
+        "bytes": 1006,
+        "sha256": "a8791a242f12e154b4ce6d7db788cac05149469da0664c1fe64a2ef3f94a2c96"
+      },
+      "red-o4a-fixture-command.json": {
+        "bytes": 1030,
+        "sha256": "b31c6946a18df5ca3b814f55d12a61a3c6f945c44aa9db797b4561b6f5b6b5ec"
+      },
+      "red-o4a-fixture.log": {
+        "bytes": 2915,
+        "sha256": "96ecccf3659c74b640e5772d77315f01caa4b30c9d3ee2904d0cd03f25d52cc5"
+      },
+      "red-o4a-fixture.xml": {
+        "bytes": 2960,
+        "sha256": "510184507582576c65b406765861356c5db3d067415926fcbb6c907998ff2416"
+      },
+      "red-o4a.log": {
+        "bytes": 13074,
+        "sha256": "eb6d0d095a2f0158c2b5853671ad40bf6f2c8a78349511260de2627737fcc52b"
+      },
+      "red-o4a.xml": {
+        "bytes": 11693,
+        "sha256": "0072bfdfef55b15bfb1cbc17fc24d26ecd4e27ab13b4e7fc57f69920dba84b80"
+      },
+      "report.md": {
+        "bytes": 4359,
+        "sha256": "7a98239a5a142de90294cc629147c5359d58142aae90e941f565a08d07843209"
+      },
+      "ruff-check-command.json": {
+        "bytes": 544,
+        "sha256": "30d5a169d6787a0c5df52e0930c1531f745292116cbf026b98f4c9809ad77051"
+      },
+      "ruff-check.log": {
+        "bytes": 20,
+        "sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+      },
+      "ruff-format-check-command.json": {
+        "bytes": 561,
+        "sha256": "91faf15f91d4ee188b3db322507bd9fc6ef1b79b0a49a2d881ea59d1ecae0c17"
+      },
+      "ruff-format-check.log": {
+        "bytes": 27,
+        "sha256": "97d85b4b6c185a05396e2d09a3c304ff0f7cc77f8b7b7bb7989ec6cd875b3898"
+      },
+      "run_check.py": {
+        "bytes": 1508,
+        "sha256": "bce721f501923fb4c21fb3ced64434ede4fb5fa30b07f9bf37b0a87632ab99d4"
+      },
+      "seal_delivery.py": {
+        "bytes": 2025,
+        "sha256": "2c1faad7cbacd5301d8573d80e9197c0b93d1c46baf8efe373d5492aff5dc19c"
+      },
+      "sources-after.json": {
+        "bytes": 10033,
+        "sha256": "83695cb48c81eccc83174a48a4c40c78826cd81e676953f069d39f32c68ae931"
+      },
+      "sources-before.json": {
+        "bytes": 10031,
+        "sha256": "ea0d016fcedffd274f02d0d1907e281b37753ef4b1e5daf7ce51f75bf7b51a3c"
+      },
+      "suite-command.json": {
+        "bytes": 1191,
+        "sha256": "580354737bad92ef9b6e0cf0480b2b7ae0bd96cc2280e29451f6745b144c102f"
+      },
+      "suite.log": {
+        "bytes": 182,
+        "sha256": "a1b3d9d668abadb0ef057404bb897edcc783cc54bde98e429c8a56ddd4581eb8"
+      },
+      "suite.xml": {
+        "bytes": 14734,
+        "sha256": "7678b72d0f71e6ff0a97fdd5547d5a67a5138bb720b0264eacb7fa1cc5143198"
+      },
+      "task-brief-stderr.txt": {
+        "bytes": 279,
+        "sha256": "85f95c53feabc2a1104007649d23fed30149cea4cc1f1765f4b3bba319a6b436"
+      },
+      "task-brief.md": {
+        "bytes": 14081,
+        "sha256": "903f6c8347d00609e7ab6a3185e0a020b77c34012e306c293f6f8e547ea9f06e"
+      },
+      "usage-start-root.json": {
+        "bytes": 143,
+        "sha256": "55a9b9b9be1fcd6d4370ab0646644c7ed776240b3e97e59f4572bb62e8517ec6"
+      }
+    },
+    "artifact_manifest": {
+      "bytes": 4948,
+      "sha256": "2028bf69f8b27f5730029607ffc5b66b699e643b01770fe316eaedc681f21953"
+    },
+    "pending": [
+      "review3of3",
+      "independentQA",
+      "realpilot",
+      "matrix160canonical"
+    ],
+    "interfaces_changed": false,
+    "limitations": [
+      "First fixture failure is not counted as TDD RED; preserved with original logs",
+      "No CPU results prove GPU/canonical verification or requalify history"
+    ],
+    "custody_notes": [
+      "La primera finalización falló por interpretar como locales rutas repo-relative del manifiesto83. Se corrigió sólo el helper privado; fuentes/protecciones y manifiestos históricos no cambiaron. sources-after y diff ya generados se reutilizaron con igualdad exacta, sin repetir tests. El arranque incluye un formato inicial del test antes del RED mediante uv+ruff, sin metadatos de proceso privados; los checks finales sí entregan argv/UTC/exits originales completos. No se afirma custodia temporal retrospectiva de esa llamada inicial."
+    ]
+  },
+  "root_acceptance": {
+    "accepted_at_utc": "2026-10-06T23:59:53.768825+00:00",
+    "implementation_receipt": {
+      "bytes": 16717,
+      "sha256": "977bd9f2808c5805aeb4434b7d1fadda9f450816feb09f89271478a1081201dd"
+    },
+    "artifacts_verified": 37,
+    "source_count": 64,
+    "preimages_verified": 64,
+    "unchanged_sources": 62,
+    "documents_verified": 12,
+    "changed_files": [
+      "scripts/eval/benchmark_observation.py",
+      "scripts/eval/tests/test_benchmark_observation.py"
+    ],
+    "suite_passed": 95,
+    "directed_passed": 9,
+    "directed_case_names_changed": true,
+    "directed_not_added_to_final_suite": true,
+    "covered_lines": 258,
+    "statements": 301,
+    "coverage_percent": 85.71428571428571,
+    "coverage_scope": "one complete changed production module",
+    "diff": {
+      "bytes": 9028,
+      "sha256": "5d486eb254f1871bb93bf84a6ce33826edfb4262c0a5080372b1b3e480547a17"
+    },
+    "red_logs_verified": 1,
+    "root_coverage_unchanged": true,
+    "prior_deliveries_verified": true,
+    "review_pending": true,
+    "qa_pass": false,
+    "gpu_verified": false,
+    "root_acceptance_incident": "First assertion assumed exact node overlap; delivered report discloses later parameterization, verified same test families without summing historical directed cases. No writes or tests before correction."
+  },
+  "path_normalization": "Derived public metadata removes project absolute prefixes; sealed private originals preserved"
+}

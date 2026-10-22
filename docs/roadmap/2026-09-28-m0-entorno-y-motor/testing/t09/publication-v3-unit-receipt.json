@@ -1,0 +1,116 @@
+{
+  "utc": "2026-10-07T05:05:23.972948+00:00",
+  "status": "UNIT_CUSTODY_VERIFIED_PENDING_CONTINUOUS_INTEGRATION_REVIEW_QA",
+  "owned_sources": {
+    "scripts/eval/benchmark_provider.py": {
+      "sha256": "0bf9bfb3fe4eeab9924365cbe62ac9544657f9662978097bd5aea0eec7ac9e26",
+      "bytes": 4335,
+      "copy": "owned-after/scripts/eval/benchmark_provider.py"
+    },
+    "scripts/eval/benchmark_observation.py": {
+      "sha256": "bc1f6b7e5a9026bb41298fb6229cee34a1b4572ffba5facb78bee86e3f24aed7",
+      "bytes": 50987,
+      "copy": "owned-after/scripts/eval/benchmark_observation.py"
+    },
+    "scripts/eval/benchmark_episode.py": {
+      "sha256": "cae68d1b9d496553e84fd487067cd1dee64c110a14b78eff22ac3e8adf1ead1f",
+      "bytes": 36952,
+      "copy": "owned-after/scripts/eval/benchmark_episode.py"
+    },
+    "scripts/eval/tests/test_benchmark_episode_v3.py": {
+      "sha256": "5f7b6c5e5cac532981348a245b0bb98596875c77a5a627a2a11cc35f851bfcbf",
+      "bytes": 30671,
+      "copy": "owned-after/scripts/eval/tests/test_benchmark_episode_v3.py"
+    }
+  },
+  "originals_verified": 169,
+  "protected_verified": 81,
+  "terminal_streams": {
+    "cli-metadata.json": {
+      "sha256": "f140a61950f9fef5602b744cce7f86c87198dafd7fe8edf136efba05202ee672",
+      "bytes": 732
+    },
+    "cli-original.jsonl": {
+      "sha256": "2c725c835d77cc8dfc1826e889fb27b357ade8e93922662e2ee2670d583b64d6",
+      "bytes": 488912
+    },
+    "cli-stderr-original.txt": {
+      "sha256": "792cc8156a10609dc25dd608eb45df9e41711be71e35ee18276cf34787138cb0",
+      "bytes": 1022
+    }
+  },
+  "tests": {
+    "passed": 384,
+    "failures": 0,
+    "errors": 0,
+    "deselected_known_v2": 5,
+    "groups": {
+      "historical_neighbors": 302,
+      "isolated_process_provider": 33,
+      "new_v3": 49
+    },
+    "junit": "coverage-final.xml",
+    "native_command": "coverage-final.command.json",
+    "prior49_neighbors": "neighbors-final.command.json"
+  },
+  "coverage": {
+    "scripts\\eval\\benchmark_episode.py": {
+      "covered_lines": 355,
+      "num_statements": 401,
+      "percent_covered": 88.5286783042394,
+      "percent_covered_display": "89",
+      "missing_lines": 46,
+      "excluded_lines": 0,
+      "percent_statements_covered": 88.5286783042394,
+      "percent_statements_covered_display": "89"
+    },
+    "scripts\\eval\\benchmark_observation.py": {
+      "covered_lines": 487,
+      "num_statements": 539,
+      "percent_covered": 90.35250463821892,
+      "percent_covered_display": "90",
+      "missing_lines": 52,
+      "excluded_lines": 0,
+      "percent_statements_covered": 90.35250463821892,
+      "percent_statements_covered_display": "90"
+    },
+    "scripts\\eval\\benchmark_provider.py": {
+      "covered_lines": 57,
+      "num_statements": 57,
+      "percent_covered": 100.0,
+      "percent_covered_display": "100",
+      "missing_lines": 0,
+      "excluded_lines": 0,
+      "percent_statements_covered": 100.0,
+      "percent_statements_covered_display": "100"
+    }
+  },
+  "native_cleanup": {
+    "ownership": {
+      "pid": 2536,
+      "creation_time": 134358221880755252,
+      "job_member": true
+    },
+    "started_monotonic_ns": 42514115982000,
+    "finished_monotonic_ns": 42514118692100,
+    "finished_utc": "2026-10-07T04:49:48.3378888+00:00",
+    "job_empty": true,
+    "verified_member_count": 2,
+    "reader_joined": true,
+    "process_exit_code": 1,
+    "handler_close_observed": true,
+    "errors": []
+  },
+  "provider_TDD": {
+    "original_preimage": "benchmark_provider.py.preimage",
+    "removed_before_red": true,
+    "red": "provider-red.command.json",
+    "green": "provider-green.command.json",
+    "fresh_rewrite": "provider-rewrite.py",
+    "process_original_six_red_separate_not_rerun": true
+  },
+  "known_v2_RED_excluded": 5,
+  "no_GPU_calibration_or_quality": true,
+  "no_complete_R09_T01_T02_closure": true,
+  "prior_premature_log_seal_failure_preserved": true
+}

@@ -1,0 +1,70 @@
+{
+  "status": "SCOPED_CANONICAL_NATIVE_QA_PASS",
+  "utc": "2026-10-08T00:36:57.723714+00:00",
+  "scope": "canonical semantic shared-state component ONLY",
+  "root_acceptance": false,
+  "current": {
+    "junit": {
+      "total": 94,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "canonical_cases": 69,
+      "neighbor_cases": 25
+    },
+    "whole_current_official_coverage": {
+      "covered_lines": 323,
+      "num_statements": 356,
+      "percent_covered": 87.24279835390946,
+      "percent_covered_display": "87",
+      "missing_lines": 33,
+      "excluded_lines": 0,
+      "percent_statements_covered": 90.73033707865169,
+      "percent_statements_covered_display": "91",
+      "num_branches": 130,
+      "num_partial_branches": 29,
+      "covered_branches": 101,
+      "missing_branches": 29,
+      "percent_branches_covered": 77.6923076923077,
+      "percent_branches_covered_display": "78"
+    },
+    "sources_exact": 75,
+    "native_births_and_cleanups": 94,
+    "episode_coverage": "81.31634819532908 predecessor ONLY unchanged bytes; no new child coverage"
+  },
+  "protected_sources_exact": 64,
+  "baseline_command": "commands/baseline/receipt.json",
+  "coverage_originals": [
+    "baseline/.coverage",
+    "baseline/coverage.json"
+  ],
+  "AST_proofs": [
+    "AST-proof.json",
+    "executed-fixture-AST-proof.json"
+  ],
+  "native_proofs": [
+    "native-ownership-cleanup-proof.json",
+    "native-capsule-originals-proof.json",
+    "prefix-native-IO-proof.json"
+  ],
+  "historical_readonly_proof": "historical-proof.json",
+  "estimate_weight_before_execution": 1.5,
+  "actual_model": null,
+  "actual_tokens": null,
+  "actual_eur": null,
+  "actual_ai_hours": null,
+  "limits": [
+    "QA de componente exclusivamente; pendiente aceptación de root. No cierre T09/T13/M0 ni calidad.",
+    "Sin runtime/coordinador/rowreader/packs/FINAL completo; T13 histórico70/140reads y runtime19% no resueltos aquí. Formal integrada4 siguiente por separado.",
+    "Sensores sintéticos CPU, procesos/relojes/Job/PID/creation FILETIME reales. stdout hijo RPC; stderr original DEVNULL, contenido UNKNOWN, sin afirmar vacío.",
+    "Frescura901s es sonda de política con reloj externo controlado, no901s de pared; sin160 episodios/cadencia2.5/13h/GPU/calibración/PDH/UI.",
+    "Episodio81.316348% es exclusivamente predecesor, misma fuente completa/Provider/Acquirer; 89 trazas/copies byteexact y1298 aristas verificadas sólo lectura; no union histórica en cobertura actual.",
+    "Histórico find_spec/ausencia de atributos no es RED funcional; lagunas antiguas de private source/child receipts preservadas. Helper global del RED temprano UNKNOWN; source/test/runner reales existentes. No certificado retrospectivo perfecto.",
+    "Pins de acreditación lineales de longitud cero; O(delta) corresponde a payload y semántica de transición, no a todos los checks de identidad.",
+    "unknown_quarantined conserva referencias; no certifica recursos devueltos por integración de terminación de worker pendiente.",
+    "Relojes de parent en anclas/attempts reales. La identidad Job/PID/FILETIME archivada corresponde a workers nativos; no se fabricó recibo de nacimiento separado de pytest padre.",
+    "Playwright n/a: componente CLI sin UI; no se ejecuta benchmark --matrix default porque está fuera del alcance explícito.",
+    "Ledger sólo lectura:0 incoherencias/7 avisos Changelog. No docs/Git/acceptance/meters/goals/subagentes/network/install/Docker/WSL/Ollama/hostPython/knowledge.",
+    "Incidente privado: lector histórico usó cleanups; campo real cleanup. Primer intento exit1 conservado, preimagen del lector archivada después de ese intento; segundo lector exit0. No RED funcional ni rerun de tests."
+  ]
+}

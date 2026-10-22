@@ -9,7 +9,7 @@ Personal, solo project (possible future commercialization): self-hosted Suno-lik
 
 Decisions of 2026-09-28:
 - **Development restarts from zero**; old code (repo `suno-sondo-clone`, `apps/runner/`) is not reused.
-- **Everything lives inside `C:\Users\daycr\Development\music-studio`** — no other drives (old docs' `D:\srv\ace-step\...` no longer applies).
+- **Everything lives inside `<repo>`** — no other drives (old docs' `D:\srv\ace-step\...` no longer applies).
 - **GPU: RTX 5070, 12 GB, Blackwell sm_120** (driver 616.92, Docker 29.8 on WSL2). Old Pascal/GTX 1070 decisions are obsolete.
 - **Docs reorganized** (hybrid layout, user's choice): permanent docs in `docs/producto|arquitectura|decisiones|calidad|legal`, one plugin-compatible initiative per milestone in `docs/roadmap/` (M0 entorno-y-motor, M1 mvp-estudio; both specs `borrador`), old docs archived in `docs/archive/roadmap-2026-07-27/`. No € budgets or corporate gates.
 - **Models (ADR-0011, to be confirmed by M0 listening test):** ACE-Step 1.5 (MIT weights) 2B turbo + LM 0.6B primary (5070 = ACE-Step tier 4); HeartMuLa-oss-3B 4-bit alternative; non-commercial models only as "lab". Lyrics assistant: Gemma 4 12B local default, Claude API optional (ADR-0012). **Song = project** (ADR-0013). **Sondo.ai-style music video** added (ADR-0015 tiers N0–N3, ADR-0016 ComfyUI headless engine; Wan 2.2, InfiniteTalk, Qwen-Image-Edit/FLUX.2 klein 4B; protagonist from uploaded photos with consent declaration). Roadmap: M3 cover art + lyric video, M4 music video, M5 LoRAs. Machine has 32 GB RAM (tight for 14B video offload).

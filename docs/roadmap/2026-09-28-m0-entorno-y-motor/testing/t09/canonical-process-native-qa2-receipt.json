@@ -1,0 +1,329 @@
+{
+  "utc": "2026-10-08T03:32:55.764963+00:00",
+  "status": "SCOPED_CURRENT_NATIVE_QA_PASS",
+  "scope": "ADR0050 isolated process/runtime dependency only",
+  "JUnit": {
+    "name": "pytest",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "0",
+    "tests": "76",
+    "time": "73.459",
+    "timestamp": "2026-10-08T05:30:35.279455+02:00",
+    "hostname": "local-ai"
+  },
+  "passed": 76,
+  "explicit_PDH_deselected": 1,
+  "baseline_executions": 1,
+  "smoke_executions": 0,
+  "sources_before": {
+    "scripts/eval/benchmark_canonical_runtime.py": {
+      "sha256": "b84ce942c1e8ac9726acea55ceeb22b8ee0666b1e8a94aa9aea8cbdc4de247a7",
+      "bytes": 42917
+    },
+    "scripts/eval/benchmark_process.py": {
+      "sha256": "d1d0556925d0f294e06ca79c6a3a8f220091c9dd8602981dcfc2e18df42e8631",
+      "bytes": 30738
+    },
+    "scripts/eval/tests/test_benchmark_canonical_runtime.py": {
+      "sha256": "ec70abecbd64a7d50dc303a74f9c6a359cca97bb74ac47c31b393bf5961032c1",
+      "bytes": 39620
+    }
+  },
+  "sources_after": {
+    "scripts/eval/benchmark_canonical_runtime.py": {
+      "sha256": "b84ce942c1e8ac9726acea55ceeb22b8ee0666b1e8a94aa9aea8cbdc4de247a7",
+      "bytes": 42917
+    },
+    "scripts/eval/benchmark_process.py": {
+      "sha256": "d1d0556925d0f294e06ca79c6a3a8f220091c9dd8602981dcfc2e18df42e8631",
+      "bytes": 30738
+    },
+    "scripts/eval/tests/test_benchmark_canonical_runtime.py": {
+      "sha256": "ec70abecbd64a7d50dc303a74f9c6a359cca97bb74ac47c31b393bf5961032c1",
+      "bytes": 39620
+    }
+  },
+  "protected_count": 69,
+  "protected_drift": {},
+  "helper_drift": {},
+  "AST": {
+    "copies": {
+      "test_benchmark_process.py": {
+        "source": {
+          "sha256": "e9f08e1513cb33333d803dac0258ae3465c52cc3a28bd6d12ddb4a541f3da994",
+          "bytes": 14802
+        },
+        "copy": {
+          "sha256": "e9f08e1513cb33333d803dac0258ae3465c52cc3a28bd6d12ddb4a541f3da994",
+          "bytes": 14802
+        },
+        "whole_AST_exact": true,
+        "decorators_assertions_parameters_functions_exact": true
+      },
+      "test_benchmark_canonical_runtime.py": {
+        "source": {
+          "sha256": "ec70abecbd64a7d50dc303a74f9c6a359cca97bb74ac47c31b393bf5961032c1",
+          "bytes": 39620
+        },
+        "copy": {
+          "sha256": "ec70abecbd64a7d50dc303a74f9c6a359cca97bb74ac47c31b393bf5961032c1",
+          "bytes": 39620
+        },
+        "whole_AST_exact": true,
+        "decorators_assertions_parameters_functions_exact": true
+      }
+    },
+    "original_process_functions": 21,
+    "original_runtime_functions": 16,
+    "all_legacy_AST_exact": true,
+    "runtime_copy_unmodified": true,
+    "process_copy_unmodified": true
+  },
+  "whole_fresh_coverage": {
+    "scripts\\eval\\benchmark_canonical_runtime.py": {
+      "covered_lines": 614,
+      "num_statements": 684,
+      "percent_covered": 85.33916849015317,
+      "percent_covered_display": "85",
+      "missing_lines": 70,
+      "excluded_lines": 0,
+      "percent_statements_covered": 89.76608187134502,
+      "percent_statements_covered_display": "90",
+      "num_branches": 230,
+      "num_partial_branches": 64,
+      "covered_branches": 166,
+      "missing_branches": 64,
+      "percent_branches_covered": 72.17391304347827,
+      "percent_branches_covered_display": "72"
+    },
+    "scripts\\eval\\benchmark_process.py": {
+      "covered_lines": 383,
+      "num_statements": 443,
+      "percent_covered": 81.58319870759289,
+      "percent_covered_display": "82",
+      "missing_lines": 60,
+      "excluded_lines": 0,
+      "percent_statements_covered": 86.45598194130926,
+      "percent_statements_covered_display": "86",
+      "num_branches": 176,
+      "num_partial_branches": 50,
+      "covered_branches": 122,
+      "missing_branches": 54,
+      "percent_branches_covered": 69.31818181818181,
+      "percent_branches_covered_display": "69"
+    }
+  },
+  "native": {
+    "native_launches": 108,
+    "popen_files": 108,
+    "assigned_births": 107,
+    "cleanup_files": 108,
+    "dispositions": {
+      "CLOSED_CONFIRMED": 91,
+      "UNKNOWN_QUARANTINED": 17
+    },
+    "missing_cleanup_UNKNOWN": [],
+    "live_owned_resources": [],
+    "confirmed_evidence_failures": [],
+    "actual_cleanup_errors": [
+      {
+        "uuid": "031a2966c8174f21ba3ad27491f3f9a1",
+        "test": ".cache/dev-cycle/t09/canonical-process-native-qa2/tests/test_benchmark_process.py::test_kill_on_job_close_fallback_wakes_owned_reader",
+        "errors": [
+          "simulated TerminateJobObject failure"
+        ],
+        "disposition": "UNKNOWN_QUARANTINED"
+      },
+      {
+        "uuid": "a3e75c9196dd4e4fb38c85e72757d919",
+        "test": ".cache/dev-cycle/t09/canonical-process-native-qa2/tests/test_benchmark_canonical_runtime.py::test_cleanup_error_keeps_unknown_quarantine_and_shared_receipt",
+        "errors": [
+          "[WinError 87] The parameter is incorrect."
+        ],
+        "disposition": "UNKNOWN_QUARANTINED"
+      },
+      {
+        "uuid": "e824006967844efa9e125c0e24b18e48",
+        "test": ".cache/dev-cycle/t09/canonical-process-native-qa2/tests/test_benchmark_canonical_runtime.py::test_bootstrap_attack_precedes_factory_filesystem_effects[challenge]",
+        "errors": [
+          "cleanup_original_ownership_changed"
+        ],
+        "disposition": "UNKNOWN_QUARANTINED"
+      },
+      {
+        "uuid": "fa940b3ed3c5483bafa8c5bc3e6211af",
+        "test": ".cache/dev-cycle/t09/canonical-process-native-qa2/tests/test_benchmark_process.py::test_enumeration_failure_still_terminates_and_joins",
+        "errors": [
+          "simulated member enumeration failure"
+        ],
+        "disposition": "UNKNOWN_QUARANTINED"
+      }
+    ],
+    "repeat_cleanup_calls": [],
+    "no_jobempty_to_closed_inference": true
+  },
+  "native_source_copies_verified": 17013,
+  "previous_inventory": {
+    "utc": "2026-10-08T03:32:55.758459+00:00",
+    "count": 11320,
+    "mismatches": [],
+    "exclusions": [
+      "cli-metadata.json",
+      "cli-original.jsonl",
+      "cli-stderr-original.txt",
+      "final-original.md",
+      "non-cli-inventory.json"
+    ],
+    "old_runners_executed": false
+  },
+  "verification_commands": [
+    {
+      "label": "ruff-check",
+      "argv": [
+        ".venv\\Scripts\\ruff.exe",
+        "check",
+        "scripts/eval/benchmark_process.py",
+        "scripts/eval/benchmark_canonical_runtime.py",
+        "scripts/eval/tests/test_benchmark_process.py",
+        "scripts/eval/tests/test_benchmark_canonical_runtime.py",
+        "--cache-dir",
+        ".cache\\dev-cycle\\t09\\canonical-process-native-qa2\\private-env\\RUFF_CACHE_DIR"
+      ],
+      "started_utc": "2026-10-08T03:32:17.468233+00:00",
+      "finished_utc": "2026-10-08T03:32:17.491791+00:00",
+      "exit": 0,
+      "stdout": "ruff-check-stdout.txt",
+      "stderr": "ruff-check-stderr.txt"
+    },
+    {
+      "label": "ruff-format",
+      "argv": [
+        ".venv\\Scripts\\ruff.exe",
+        "format",
+        "--check",
+        "scripts/eval/benchmark_process.py",
+        "scripts/eval/benchmark_canonical_runtime.py",
+        "scripts/eval/tests/test_benchmark_process.py",
+        "scripts/eval/tests/test_benchmark_canonical_runtime.py",
+        "--cache-dir",
+        ".cache\\dev-cycle\\t09\\canonical-process-native-qa2\\private-env\\RUFF_CACHE_DIR"
+      ],
+      "started_utc": "2026-10-08T03:32:17.491791+00:00",
+      "finished_utc": "2026-10-08T03:32:17.512591+00:00",
+      "exit": 0,
+      "stdout": "ruff-format-stdout.txt",
+      "stderr": "ruff-format-stderr.txt"
+    },
+    {
+      "label": "ledger-lint",
+      "argv": [
+        ".venv\\Scripts\\python.exe",
+        "-B",
+        ".cache\\dev-cycle\\t09\\canonical-process-native-qa2\\kit\\agent-kits\\shared\\ledger-lint.py",
+        "docs\\roadmap\\2026-09-28-m0-entorno-y-motor\\tasks.md"
+      ],
+      "started_utc": "2026-10-08T03:32:17.512591+00:00",
+      "finished_utc": "2026-10-08T03:32:17.627179+00:00",
+      "exit": 0,
+      "stdout": "ledger-lint-stdout.txt",
+      "stderr": "ledger-lint-stderr.txt"
+    },
+    {
+      "label": "coverage-check",
+      "argv": [
+        ".venv\\Scripts\\python.exe",
+        "-B",
+        ".cache\\dev-cycle\\t09\\canonical-process-native-qa2\\kit\\agent-kits\\qa\\coverage-check.py",
+        "docs\\roadmap\\2026-09-28-m0-entorno-y-motor\\tasks.md",
+        "docs\\roadmap\\2026-09-28-m0-entorno-y-motor\\test-plan.md",
+        "docs\\roadmap\\2026-09-28-m0-entorno-y-motor\\spec.md"
+      ],
+      "started_utc": "2026-10-08T03:32:17.627179+00:00",
+      "finished_utc": "2026-10-08T03:32:17.937430+00:00",
+      "exit": 0,
+      "stdout": "coverage-check-stdout.txt",
+      "stderr": "coverage-check-stderr.txt"
+    }
+  ],
+  "ReadFile_physical": "UNTESTED",
+  "actual_model_tokens_EUR_AIhours": null,
+  "task_acceptance": false,
+  "global_acceptance": false,
+  "instrumentation_parity": {
+    "qa_instrument.py": {
+      "only_owned_path_rebinding": true,
+      "original": {
+        "sha256": "a33be01619207f210906ddfe9b9ffc986a4ae3b709cd30b14933e49201053366",
+        "bytes": 5689
+      },
+      "copy": {
+        "sha256": "a33be01619207f210906ddfe9b9ffc986a4ae3b709cd30b14933e49201053366",
+        "bytes": 5689
+      },
+      "whole_AST_exact": true
+    },
+    "native_passthrough.py": {
+      "only_owned_path_rebinding": true,
+      "original": {
+        "sha256": "6125000adcf60c5d145f860159e28e71049c2080ebbbf0d4fce778dbf26f7f49",
+        "bytes": 1315
+      },
+      "copy": {
+        "sha256": "6125000adcf60c5d145f860159e28e71049c2080ebbbf0d4fce778dbf26f7f49",
+        "bytes": 1315
+      },
+      "whole_AST_exact": true
+    },
+    "run-qa.ps1": {
+      "only_owned_path_rebinding": true,
+      "original": {
+        "sha256": "6033f79dff32321afc5a49ad0fe1434adbc0f17b128013b79b0361d243a4eb2f",
+        "bytes": 3520
+      },
+      "copy": {
+        "sha256": "6033f79dff32321afc5a49ad0fe1434adbc0f17b128013b79b0361d243a4eb2f",
+        "bytes": 3520
+      }
+    },
+    "coverage.ini": {
+      "only_owned_path_rebinding": true,
+      "original": {
+        "sha256": "80fd7eba943c555742584cf31f6b38c9f305cee330706dc7147f40c8283836c6",
+        "bytes": 60
+      },
+      "copy": {
+        "sha256": "80fd7eba943c555742584cf31f6b38c9f305cee330706dc7147f40c8283836c6",
+        "bytes": 60
+      }
+    },
+    "prepare.py": {
+      "only_bootstrap_import_path_fix_and_owned_paths": true
+    },
+    "original_observation_helper": {
+      "path": "scripts\\eval\\tests\\test_benchmark_observation.py",
+      "sha256": "2ec57c4ba351c1a8115c050547b2a8f909aa44aba60caf0b9e6b21b2384aa9cc",
+      "bytes": 67790,
+      "archived_exact_before_imports": true
+    }
+  },
+  "QA1_readonly_inventory": {
+    "utc": "2026-10-08T03:33:37.155910+00:00",
+    "entries": 5282,
+    "mismatches": [],
+    "original_runner_executed": false,
+    "extra_root_custody_file_outside_prior_inventory_qualified": true
+  },
+  "finish_postprocess_completion": {
+    "exit": 0,
+    "started_utc": "2026-10-08T03:32:17.1025067Z",
+    "finished_utc": "2026-10-08T03:32:55.7905193Z"
+  },
+  "ledger_lint_actual": {
+    "incoherencias": 0,
+    "avisos": 8,
+    "historical_Changelog": 7,
+    "additional_review_header_warning": 1,
+    "readonly": true
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "utc": "2026-10-07T07:06:12.409146+00:00",
+  "status": "PARTIAL_CPU_CANDIDATE_CUSTODIED_REVIEW2_QA_PENDING",
+  "source_count": 33,
+  "closed_originals_verified": 101,
+  "retired_closed_verified": 200,
+  "new_native_anchor_count": 1,
+  "new_native_files_verified": 610,
+  "official_coverage": {
+    "scripts/eval/benchmark.py": {
+      "covered_lines": 492,
+      "num_statements": 562,
+      "percent_covered": 87.54448398576513,
+      "percent_covered_display": "88",
+      "missing_lines": 70,
+      "excluded_lines": 0,
+      "percent_statements_covered": 87.54448398576513,
+      "percent_statements_covered_display": "88"
+    },
+    "scripts/eval/benchmark_coordinator.py": {
+      "covered_lines": 238,
+      "num_statements": 266,
+      "percent_covered": 89.47368421052632,
+      "percent_covered_display": "89",
+      "missing_lines": 28,
+      "excluded_lines": 0,
+      "percent_statements_covered": 89.47368421052632,
+      "percent_statements_covered_display": "89"
+    },
+    "scripts/eval/benchmark_evidence.py": {
+      "covered_lines": 120,
+      "num_statements": 120,
+      "percent_covered": 100.0,
+      "percent_covered_display": "100",
+      "missing_lines": 0,
+      "excluded_lines": 0,
+      "percent_statements_covered": 100.0,
+      "percent_statements_covered_display": "100"
+    },
+    "scripts/eval/benchmark_plan.py": {
+      "covered_lines": 98,
+      "num_statements": 108,
+      "percent_covered": 90.74074074074075,
+      "percent_covered_display": "91",
+      "missing_lines": 10,
+      "excluded_lines": 0,
+      "percent_statements_covered": 90.74074074074075,
+      "percent_statements_covered_display": "91"
+    },
+    "scripts/eval/benchmark_runner.py": {
+      "covered_lines": 297,
+      "num_statements": 345,
+      "percent_covered": 86.08695652173913,
+      "percent_covered_display": "86",
+      "missing_lines": 48,
+      "excluded_lines": 0,
+      "percent_statements_covered": 86.08695652173913,
+      "percent_statements_covered_display": "86"
+    },
+    "scripts/eval/benchmark_runtime.py": {
+      "covered_lines": 496,
+      "num_statements": 599,
+      "percent_covered": 82.80467445742904,
+      "percent_covered_display": "83",
+      "missing_lines": 103,
+      "excluded_lines": 0,
+      "percent_statements_covered": 82.80467445742904,
+      "percent_statements_covered_display": "83"
+    },
+    "scripts/eval/benchmark_storage.py": {
+      "covered_lines": 85,
+      "num_statements": 103,
+      "percent_covered": 82.52427184466019,
+      "percent_covered_display": "83",
+      "missing_lines": 18,
+      "excluded_lines": 0,
+      "percent_statements_covered": 82.52427184466019,
+      "percent_statements_covered_display": "83"
+    }
+  },
+  "official_lines": [
+    1826,
+    2103
+  ],
+  "official_combine_native_children": 11,
+  "cases": 416,
+  "historical_deselected": 5,
+  "historical_cleanup": {
+    "status": "HISTORICAL_CLEANUP_UNPROVEN_RETIRED_CPU_SESSION",
+    "current_exact_phase_process_matches": 0,
+    "no_kills": true,
+    "historical_reader_joined_job_empty": null,
+    "new_native_cleanup_only": true,
+    "effect": "Do not attribute new cleanup to interrupted original. CPU candidate may enter fresh staticreview/QA; before GPU require fresh ownership/preflight and independent final cleanup.",
+    "source_fence_failures_retained": true,
+    "old_start_utc": null,
+    "wrapper_timeout_exit": 1
+  },
+  "no_GPU_calibration_spill_quality_T09_R09_M0_acceptance": true,
+  "review_next": 2
+}

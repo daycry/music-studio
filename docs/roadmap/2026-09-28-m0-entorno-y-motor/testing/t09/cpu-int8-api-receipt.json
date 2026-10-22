@@ -1,0 +1,42 @@
+{
+  "observed_at": "2026-10-06T17:39:07.521368+00:00",
+  "image_id": "sha256:18d94fd4b377016a895e5cd89ee446b64c872421b0d401987f58b0583b16da2d",
+  "adapter_sha256": "92ca199ad9d8985a036adde2ff0817285ba5866477fe708626b5f453b7e0f106",
+  "exit_code": 0,
+  "container_removed": true,
+  "container_runtime": "runc",
+  "network": "none",
+  "models_mounted": false,
+  "gpu_requested": false,
+  "scope": "CPU-only toy tensor API probe; not real ACE-Step/INT8/offload/fit/inference",
+  "observed": {
+    "status": "observed_cpu_api",
+    "torch": "2.10.0+cu128",
+    "torchao": "0.16.0",
+    "config_version": 1,
+    "cpu_only": true,
+    "cuda_initialized": false,
+    "proof": {
+      "quantization": "int8_weight_only",
+      "torchao_version": "0.16.0",
+      "torch_version": "2.10.0+cu128",
+      "eligible_linear_count": 1,
+      "quantized_linear_count": 1,
+      "layers": [
+        {
+          "name": "decoder.linear",
+          "class": "AffineQuantizedTensor",
+          "layout": "PlainAQTTensorImpl"
+        }
+      ]
+    },
+    "scope": "One randomly initialized CPU Linear; not real DiT, offload, GPU compatibility or VRAM fit"
+  },
+  "warning": "Int8WeightOnlyConfig version1 deprecated in torchao0.16.0; pinned version still supported. No migration attempted.",
+  "artifacts": {
+    "receipt.json": "012d1b2f7e67306d3c7e329e39854689728a4b7ae451010dbd2a9465e0f639b4",
+    "raw.json": "14d276110dbb5e62cdf02d37db3f713d4d107220ab657327a98ab199486835ec",
+    "probe.py": "2c2320c4a0c4f41577f395079b8b3bd3974b7a4a2d15920d9e6b571307f7e998",
+    "run.py": "b2e25eb02e6ffef0f1fd393060a60ea0616b6ec975c83b8d6c3b828de5454606"
+  }
+}

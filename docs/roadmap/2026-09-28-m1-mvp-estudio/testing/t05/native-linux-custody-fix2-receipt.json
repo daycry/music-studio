@@ -1,0 +1,561 @@
+{
+  "status": "DELIVERED_FOR_ROOT_REVIEW3_AND_QA_NOT_ACCEPTED",
+  "utc": "2026-10-09T00:55:08.211673+00:00",
+  "review_from": 2,
+  "review_next": 3,
+  "no_counter_reset": true,
+  "owned": [
+    "apps/server/app/worker/custody_linux_supervisor.py",
+    "apps/server/tests/test_worker_native_linux_custody.py",
+    "apps/server/tests/fixtures/worker_custody_linux_child.py"
+  ],
+  "changed": [
+    "apps/server/app/worker/custody_linux_supervisor.py",
+    "apps/server/tests/test_worker_native_linux_custody.py"
+  ],
+  "fixture_byte_exact": true,
+  "current_sources": "current_sources.json",
+  "protected": "protected-context.json",
+  "uuid": "a186ab8b-5f11-4525-8886-5704d9395260",
+  "linux": {
+    "cases": 32,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0
+  },
+  "windows": {
+    "cases": 36,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0
+  },
+  "whole_lines_and_branches": {
+    "apps/server/app/worker/custody.py": {
+      "covered_lines": 200,
+      "num_statements": 221,
+      "percent_covered": 88.05460750853243,
+      "percent_covered_display": "88",
+      "missing_lines": 21,
+      "excluded_lines": 0,
+      "percent_statements_covered": 90.49773755656109,
+      "percent_statements_covered_display": "90",
+      "num_branches": 72,
+      "num_partial_branches": 12,
+      "covered_branches": 58,
+      "missing_branches": 14,
+      "percent_branches_covered": 80.55555555555556,
+      "percent_branches_covered_display": "81"
+    },
+    "apps/server/app/worker/custody_linux.py": {
+      "covered_lines": 224,
+      "num_statements": 257,
+      "percent_covered": 83.78378378378379,
+      "percent_covered_display": "84",
+      "missing_lines": 33,
+      "excluded_lines": 0,
+      "percent_statements_covered": 87.15953307392996,
+      "percent_statements_covered_display": "87",
+      "num_branches": 76,
+      "num_partial_branches": 19,
+      "covered_branches": 55,
+      "missing_branches": 21,
+      "percent_branches_covered": 72.36842105263158,
+      "percent_branches_covered_display": "72"
+    },
+    "apps/server/app/worker/custody_linux_supervisor.py": {
+      "covered_lines": 204,
+      "num_statements": 247,
+      "percent_covered": 80.73394495412845,
+      "percent_covered_display": "81",
+      "missing_lines": 43,
+      "excluded_lines": 0,
+      "percent_statements_covered": 82.5910931174089,
+      "percent_statements_covered_display": "83",
+      "num_branches": 80,
+      "num_partial_branches": 14,
+      "covered_branches": 60,
+      "missing_branches": 20,
+      "percent_branches_covered": 75.0,
+      "percent_branches_covered_display": "75"
+    }
+  },
+  "raw_traces": 67,
+  "cleanup": [
+    {
+      "run": "final-linux01",
+      "cid": "d6291c385ee92597910189f5911de00a7bf064e39c741780f6abcb46def829e2",
+      "gone": true,
+      "actual_container_exit": 0,
+      "junit": {
+        "cases": 30,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0
+      },
+      "cases": [
+        "test_term_ignored_tree_waited_before_release",
+        "test_owner_deadline_and_normal[normal]",
+        "test_owner_deadline_and_normal[silent]",
+        "test_owner_deadline_and_normal[no_output]",
+        "test_owner_deadline_and_normal[fullpipe]",
+        "test_owner_deadline_and_normal[blocked]",
+        "test_invalid_transport_retains_owner[truncated]",
+        "test_invalid_transport_retains_owner[invalid]",
+        "test_invalid_transport_retains_owner[eof]",
+        "test_invalid_transport_retains_owner[flood]",
+        "test_invalid_transport_retains_owner[nonfinite]",
+        "test_invalid_transport_retains_owner[seq]",
+        "test_invalid_transport_retains_owner[backpressure]",
+        "test_full_write_cancel_concurrent_join",
+        "test_coroutine_cancel_retains_finalizer",
+        "test_reused_pipe_fd_does_not_close_foreign",
+        "test_parent_death_liveness_and_foreign_witness",
+        "test_scope_query_failure_finite_unknown",
+        "test_controlled_close_failure_retained",
+        "test_supervisor_real_death_quarantines",
+        "test_reject_unknown_member_and_invalid_mode",
+        "test_reused_original_stdio_does_not_close_foreign",
+        "test_foreign_birth_reference_never_signal_authority",
+        "test_construction_emfile_after_native_popen_contains_tree",
+        "test_journal_fault_after_native_registration_still_reaps[ENOSPC]",
+        "test_journal_fault_after_native_registration_still_reaps[EIO]",
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[create]",
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[register]",
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[select]",
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[close]"
+      ]
+    },
+    {
+      "run": "final-linux02",
+      "cid": "72973b2d92acf166718c076b5e9a0fd78934606a65c54dd19aa9d45572cdb70f",
+      "gone": true,
+      "actual_container_exit": 0,
+      "junit": {
+        "cases": 30,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0
+      },
+      "cases": [
+        "test_term_ignored_tree_waited_before_release",
+        "test_owner_deadline_and_normal[normal]",
+        "test_owner_deadline_and_normal[silent]",
+        "test_owner_deadline_and_normal[no_output]",
+        "test_owner_deadline_and_normal[fullpipe]",
+        "test_owner_deadline_and_normal[blocked]",
+        "test_invalid_transport_retains_owner[truncated]",
+        "test_invalid_transport_retains_owner[invalid]",
+        "test_invalid_transport_retains_owner[eof]",
+        "test_invalid_transport_retains_owner[flood]",
+        "test_invalid_transport_retains_owner[nonfinite]",
+        "test_invalid_transport_retains_owner[seq]",
+        "test_invalid_transport_retains_owner[backpressure]",
+        "test_full_write_cancel_concurrent_join",
+        "test_coroutine_cancel_retains_finalizer",
+        "test_reused_pipe_fd_does_not_close_foreign",
+        "test_parent_death_liveness_and_foreign_witness",
+        "test_scope_query_failure_finite_unknown",
+        "test_controlled_close_failure_retained",
+        "test_supervisor_real_death_quarantines",
+        "test_reject_unknown_member_and_invalid_mode",
+        "test_reused_original_stdio_does_not_close_foreign",
+        "test_foreign_birth_reference_never_signal_authority",
+        "test_construction_emfile_after_native_popen_contains_tree",
+        "test_journal_fault_after_native_registration_still_reaps[ENOSPC]",
+        "test_journal_fault_after_native_registration_still_reaps[EIO]",
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[create]",
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[register]",
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[select]",
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[close]"
+      ]
+    },
+    {
+      "run": "final-linux03",
+      "cid": "134187f375e7e5ea9e79370c1bd199342a16e3d9093d8e6b6f75f4a6fb9125b0",
+      "gone": true,
+      "actual_container_exit": 0,
+      "junit": {
+        "cases": 31,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0
+      },
+      "cases": [
+        "test_term_ignored_tree_waited_before_release",
+        "test_owner_deadline_and_normal[normal]",
+        "test_owner_deadline_and_normal[silent]",
+        "test_owner_deadline_and_normal[no_output]",
+        "test_owner_deadline_and_normal[fullpipe]",
+        "test_owner_deadline_and_normal[blocked]",
+        "test_invalid_transport_retains_owner[truncated]",
+        "test_invalid_transport_retains_owner[invalid]",
+        "test_invalid_transport_retains_owner[eof]",
+        "test_invalid_transport_retains_owner[flood]",
+        "test_invalid_transport_retains_owner[nonfinite]",
+        "test_invalid_transport_retains_owner[seq]",
+        "test_invalid_transport_retains_owner[backpressure]",
+        "test_full_write_cancel_concurrent_join",
+        "test_coroutine_cancel_retains_finalizer",
+        "test_reused_pipe_fd_does_not_close_foreign",
+        "test_parent_death_liveness_and_foreign_witness",
+        "test_scope_query_failure_finite_unknown",
+        "test_controlled_close_failure_retained",
+        "test_supervisor_real_death_quarantines",
+        "test_reject_unknown_member_and_invalid_mode",
+        "test_reused_original_stdio_does_not_close_foreign",
+        "test_foreign_birth_reference_never_signal_authority",
+        "test_construction_emfile_after_native_popen_contains_tree",
+        "test_journal_fault_after_native_registration_still_reaps[ENOSPC]",
+        "test_journal_fault_after_native_registration_still_reaps[EIO]",
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[create]",
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[register]",
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[select]",
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[close]",
+        "test_secondary_final_notify_error_retains_unknown_after_native_waits"
+      ]
+    },
+    {
+      "run": "final-linux04",
+      "cid": "767d0082077da637754f4e73fd4b2855ed8fa6cc4b89d196cf979c0c2fd071a0",
+      "gone": true,
+      "actual_container_exit": 0,
+      "junit": {
+        "cases": 32,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0
+      },
+      "cases": [
+        "test_term_ignored_tree_waited_before_release",
+        "test_owner_deadline_and_normal[normal]",
+        "test_owner_deadline_and_normal[silent]",
+        "test_owner_deadline_and_normal[no_output]",
+        "test_owner_deadline_and_normal[fullpipe]",
+        "test_owner_deadline_and_normal[blocked]",
+        "test_invalid_transport_retains_owner[truncated]",
+        "test_invalid_transport_retains_owner[invalid]",
+        "test_invalid_transport_retains_owner[eof]",
+        "test_invalid_transport_retains_owner[flood]",
+        "test_invalid_transport_retains_owner[nonfinite]",
+        "test_invalid_transport_retains_owner[seq]",
+        "test_invalid_transport_retains_owner[backpressure]",
+        "test_full_write_cancel_concurrent_join",
+        "test_coroutine_cancel_retains_finalizer",
+        "test_reused_pipe_fd_does_not_close_foreign",
+        "test_parent_death_liveness_and_foreign_witness",
+        "test_scope_query_failure_finite_unknown",
+        "test_controlled_close_failure_retained",
+        "test_supervisor_real_death_quarantines",
+        "test_reject_unknown_member_and_invalid_mode",
+        "test_reused_original_stdio_does_not_close_foreign",
+        "test_foreign_birth_reference_never_signal_authority",
+        "test_construction_emfile_after_native_popen_contains_tree",
+        "test_journal_fault_after_native_registration_still_reaps[ENOSPC]",
+        "test_journal_fault_after_native_registration_still_reaps[EIO]",
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[create]",
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[register]",
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[select]",
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[close]",
+        "test_secondary_final_notify_error_retains_unknown_after_native_waits",
+        "test_final_group_query_error_uses_owned_pidfds_and_retains_unknown"
+      ]
+    },
+    {
+      "run": "final-linux05",
+      "cid": "c2587ff0038bad8f8257ad9e0cb5a6df8e30aa9dfe2a2cd21b78627e45fe417b",
+      "gone": true,
+      "actual_container_exit": 0,
+      "junit": {
+        "cases": 32,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0
+      },
+      "cases": [
+        "test_term_ignored_tree_waited_before_release",
+        "test_owner_deadline_and_normal[normal]",
+        "test_owner_deadline_and_normal[silent]",
+        "test_owner_deadline_and_normal[no_output]",
+        "test_owner_deadline_and_normal[fullpipe]",
+        "test_owner_deadline_and_normal[blocked]",
+        "test_invalid_transport_retains_owner[truncated]",
+        "test_invalid_transport_retains_owner[invalid]",
+        "test_invalid_transport_retains_owner[eof]",
+        "test_invalid_transport_retains_owner[flood]",
+        "test_invalid_transport_retains_owner[nonfinite]",
+        "test_invalid_transport_retains_owner[seq]",
+        "test_invalid_transport_retains_owner[backpressure]",
+        "test_full_write_cancel_concurrent_join",
+        "test_coroutine_cancel_retains_finalizer",
+        "test_reused_pipe_fd_does_not_close_foreign",
+        "test_parent_death_liveness_and_foreign_witness",
+        "test_scope_query_failure_finite_unknown",
+        "test_controlled_close_failure_retained",
+        "test_supervisor_real_death_quarantines",
+        "test_reject_unknown_member_and_invalid_mode",
+        "test_reused_original_stdio_does_not_close_foreign",
+        "test_foreign_birth_reference_never_signal_authority",
+        "test_construction_emfile_after_native_popen_contains_tree",
+        "test_journal_fault_after_native_registration_still_reaps[ENOSPC]",
+        "test_journal_fault_after_native_registration_still_reaps[EIO]",
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[create]",
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[register]",
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[select]",
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[close]",
+        "test_secondary_final_notify_error_retains_unknown_after_native_waits",
+        "test_final_group_query_error_uses_owned_pidfds_and_retains_unknown"
+      ]
+    },
+    {
+      "run": "green-b03",
+      "cid": "0d734a420aadca2a1de1ab4ab429b6f38b69d92e579c5d9f860982ab8133c6a1",
+      "gone": true,
+      "actual_container_exit": 1,
+      "junit": {
+        "cases": 4,
+        "failures": 4,
+        "errors": 0,
+        "skips": 0
+      },
+      "cases": [
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[create]",
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[register]",
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[select]",
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[close]"
+      ]
+    },
+    {
+      "run": "green-b03-frame-repair",
+      "cid": "cfb27fcaf205794ae40a17c4c18196c8cece9685d3bd3a5450978f9b4f35b68d",
+      "gone": true,
+      "actual_container_exit": 0,
+      "junit": {
+        "cases": 4,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0
+      },
+      "cases": [
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[create]",
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[register]",
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[select]",
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[close]"
+      ]
+    },
+    {
+      "run": "green-final-group-query",
+      "cid": "002ae19a34a4fee031ac7d598e8cd985d39aa3928393432877d6d6657730abb1",
+      "gone": true,
+      "actual_container_exit": 0,
+      "junit": {
+        "cases": 1,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0
+      },
+      "cases": [
+        "test_final_group_query_error_uses_owned_pidfds_and_retains_unknown"
+      ]
+    },
+    {
+      "run": "green-secondary-notify",
+      "cid": "f14d11c5c56bae2234f8b4cc4ef9b0ca63ec11a0269461707f08c715dda9f5c8",
+      "gone": true,
+      "actual_container_exit": 0,
+      "junit": {
+        "cases": 1,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0
+      },
+      "cases": [
+        "test_secondary_final_notify_error_retains_unknown_after_native_waits"
+      ]
+    },
+    {
+      "run": "red-b03-create",
+      "cid": "008d0e078f4008b4067aa41f217a39e29ac5d684b5317674d71d30748a542c23",
+      "gone": true,
+      "actual_container_exit": 1,
+      "junit": {
+        "cases": 1,
+        "failures": 1,
+        "errors": 0,
+        "skips": 0
+      },
+      "cases": [
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[create]"
+      ]
+    },
+    {
+      "run": "red-b03-other",
+      "cid": "4cc338acfb0080e085a05f55307c558d4f8b357919a6cc5503cc8dddb768fb5b",
+      "gone": true,
+      "actual_container_exit": 1,
+      "junit": {
+        "cases": 3,
+        "failures": 3,
+        "errors": 0,
+        "skips": 0
+      },
+      "cases": [
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[register]",
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[select]",
+        "test_grace_selector_enfile_after_actual_term_contains_owned_tree[close]"
+      ]
+    },
+    {
+      "run": "red-final-group-query",
+      "cid": "4753d538f1265242ea4cbf18c5d5790cd6b571290c8ae23f02622adffbd137f8",
+      "gone": true,
+      "actual_container_exit": 1,
+      "junit": {
+        "cases": 1,
+        "failures": 1,
+        "errors": 0,
+        "skips": 0
+      },
+      "cases": [
+        "test_final_group_query_error_uses_owned_pidfds_and_retains_unknown"
+      ]
+    },
+    {
+      "run": "red-final-group-query-point-repair",
+      "cid": "18ecf6239ecd588ab330a93c5d6b621d02640fa08fb7d555a63cb53a3371d6ac",
+      "gone": true,
+      "actual_container_exit": 1,
+      "junit": {
+        "cases": 1,
+        "failures": 1,
+        "errors": 0,
+        "skips": 0
+      },
+      "cases": [
+        "test_final_group_query_error_uses_owned_pidfds_and_retains_unknown"
+      ]
+    },
+    {
+      "run": "red-final-group-query-unknown",
+      "cid": "0dc30eea410151e779e18370bdf96c86800526e019b36bfc92fce73e639f5d6a",
+      "gone": true,
+      "actual_container_exit": 1,
+      "junit": {
+        "cases": 1,
+        "failures": 1,
+        "errors": 0,
+        "skips": 0
+      },
+      "cases": [
+        "test_final_group_query_error_uses_owned_pidfds_and_retains_unknown"
+      ]
+    },
+    {
+      "run": "red-secondary-notify",
+      "cid": "490d5c9d6b107aa3aacccab0ff7be00fdf59adc4432bc33ab30e0e07e157493c",
+      "gone": true,
+      "actual_container_exit": 1,
+      "junit": {
+        "cases": 1,
+        "failures": 1,
+        "errors": 0,
+        "skips": 0
+      },
+      "cases": [
+        "test_secondary_final_notify_error_retains_unknown_after_native_waits"
+      ]
+    },
+    {
+      "run": "red-secondary-notify-wire-repair",
+      "cid": "6d6a3b8e9349d88de384462954ab7981ca1bb3398a749ad415a370c7ae58fcad",
+      "gone": true,
+      "actual_container_exit": 1,
+      "junit": {
+        "cases": 1,
+        "failures": 1,
+        "errors": 0,
+        "skips": 0
+      },
+      "cases": [
+        "test_secondary_final_notify_error_retains_unknown_after_native_waits"
+      ]
+    }
+  ],
+  "history": "Review1 B01/B02 and FINAL02 unchanged; review2 B03 fix only",
+  "producer_green_not_independent_qa": true,
+  "actual_model_tokens": null,
+  "actual_eur": null,
+  "actual_ia_hours": null,
+  "limits": [
+    "No full T05/audio/FS/SQL/CPU2/FFmpeg/E2E/GPU acceptance",
+    "Controlled ENFILE; no spontaneous kernel exhaustion claim",
+    "UNCERTAIN FD/thread/process never becomes confirmed merely because group is empty",
+    "Historical metadata gaps unchanged; missing metadata UNKNOWN",
+    "Native kernel blocking proofs only original before-death test scope; no finally-after-death proof",
+    "Grace GREEN first attempt failed due private frame lookup; retained, not causal RED",
+    "Prepare helper OWNED4 textual replacement failed; repaired before combine; no suite rerun for helper",
+    "FINAL01 66PASS supervisor77.7778 and FINAL02 66PASS supervisor79.7546 both coverage gate FAIL. FINAL03 adds genuine native secondary-notify regression with original notify handler causal RED followed GREEN; no historical RAW union",
+    "First secondary RED attempt was noncausal private wire-seam failure; retained, repaired before genuine behavioral RED",
+    "No ledger/docs/ADR/Git/acceptance/meter/knowledge touched",
+    "FINAL03 67PASS supervisor79.7546 coverage gate FAIL, retained unchanged. FINAL04 adds causal final group-query cleanup/UNKNOWN regression and minimal uncertain flag with new current source freeze.",
+    "First query test assertion read a metadata field before its actual assignment; noncausal attempt retained. Fixed seam records actual retained variable at query point, no forced checkpoint.",
+    "First deliver helper old JUnit path was incorrectly changed to nonexistent final03 by broad private text replacement; retained and repaired; no suite repeated for helper.",
+    "FINAL04 native/coverage PASS but required format FAIL; source normalized by Ruff, AST identical. Fresh FINAL05 same68 cases with new SHA/UUID and no RAW reuse. First private deliver did not assert formatter exit; final deliver now checks every official command exit0."
+  ],
+  "causal_reds": [
+    {
+      "run": "red-b03-create",
+      "criterion": "Actual TERM then controlled ENFILE selector creation; own leader/grandchild alive BEFORE rescue",
+      "original_full_supervisor": true
+    },
+    {
+      "run": "red-b03-other",
+      "criterion": "Actual TERM then selector register/select/close controlled ENFILE; own descendants alive BEFORE rescue",
+      "original_full_supervisor": true
+    },
+    {
+      "run": "red-secondary-notify-wire-repair",
+      "criterion": "Original notify handler error escapes finalization AFTER actual native waits; exit120",
+      "original_full_supervisor": false
+    },
+    {
+      "run": "red-final-group-query-point-repair",
+      "criterion": "Original group query exception handler leaves own descendants alive",
+      "original_full_supervisor": false
+    },
+    {
+      "run": "red-final-group-query-unknown",
+      "criterion": "Broad query catch contains and waits but wrongly confirms incomplete proof",
+      "original_full_supervisor": false
+    }
+  ],
+  "baseline_history": [
+    {
+      "final": "FINAL01",
+      "result": "66PASS; supervisor coverage77.7778 FAIL",
+      "uuid": "d18dc9f0-e6ab-492e-b05e-5bd15eef3b39"
+    },
+    {
+      "final": "FINAL02",
+      "result": "66PASS; supervisor coverage79.7546 FAIL",
+      "uuid": "b83ac2b2-bde0-4655-b7a7-472b409a7237"
+    },
+    {
+      "final": "FINAL03",
+      "result": "67PASS; supervisor coverage79.7546 FAIL",
+      "uuid": "1eb9b860-1587-4be7-83f2-bd52aa62f2d1"
+    },
+    {
+      "final": "FINAL04",
+      "result": "68PASS all3 WHOLE>=80, required Ruff format exit1 FAIL (mixed line endings)",
+      "uuid": "fbb90476-e6a8-4cd3-a0b7-85106cecfb07"
+    },
+    {
+      "final": "FINAL05",
+      "result": "68PASS all3 WHOLE>=80 zero exclusions, lint and format checks0",
+      "uuid": "a186ab8b-5f11-4525-8886-5704d9395260"
+    }
+  ],
+  "raw_sources_before_combine": "official-final05/raw-traces-before-combine.json",
+  "native_internal_stream_limit": "Supervisor closes inherited stdio after born by original design; later internal exception text may be unavailable. Preserve exact captured runner stdout/stderr and native process exit; never reconstruct missing internal stream.",
+  "supervisor_format_ast_exact": true
+}

@@ -1,0 +1,54 @@
+{
+  "status": "QA_CPU_PASS",
+  "official_changed_file_coverage": {
+    "covered_lines": 98,
+    "num_statements": 119,
+    "percent_covered": 82.3529411764706,
+    "percent_covered_display": "82",
+    "missing_lines": 21,
+    "excluded_lines": 0,
+    "percent_statements_covered": 82.3529411764706,
+    "percent_statements_covered_display": "82"
+  },
+  "runtime": {
+    "status": "CPU_RUNTIME_PREFLIGHT_PASS",
+    "sources_verified": 6,
+    "image_sources_verified": 14,
+    "upstream_files_checked": 436,
+    "upstream_mismatches": [],
+    "factory_instantiated": true,
+    "supervisor_instantiated_without_load": true,
+    "original_fixture_matches": true,
+    "torch_imported": false,
+    "gpu_workload_executed": false,
+    "model_loaded": false,
+    "checkpoint_root": "/studio/models/ace-step-1.5/checkpoints"
+  },
+  "container_removed": true,
+  "sources59_preserved": true,
+  "protected_preserved": true,
+  "new_session": "t10-qa2-runtime-874c6798c0534841811e45cf8d5d16bb",
+  "new_plan": {
+    "bytes": 717703,
+    "sha256": "65569d8f2680bab5033d07e1cc2445f124788ad0611223e1bef8d1c605572e1d"
+  },
+  "completed_utc": "2026-10-06T20:34:14.449366+00:00",
+  "limitations": [
+    "sin UI por diseño; qa-gate Playwright n/a",
+    "No GPU, inferencia, audio, modelos cargados ni cierre T10",
+    "Suite88 y cobertura oficial verificadas por fuentes congeladas; no repetidas"
+  ],
+  "fix2_and_review3_freeze_match59": true,
+  "driver_initial_error": "KeyError from Windows backslash keys in official coverage JSON before any tests; parser normalized keys and rerun once, no duplicated test/runtime commands",
+  "qa_gate_playwright": null,
+  "private_receipt_sha256": "23323870a694d73777b5ac6daf6d5dcb0881487f2810b9fd01ff7b005accd942",
+  "artifact_count_root_verified": 31,
+  "root_verified_junit": {
+    "tests": 11,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "accepted_suite88_reused": true,
+  "task_complete": false
+}

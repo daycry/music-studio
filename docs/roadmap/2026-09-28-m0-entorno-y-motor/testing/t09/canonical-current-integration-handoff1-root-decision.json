@@ -1,0 +1,19 @@
+{
+  "utc": "2026-10-08T04:08:55.001047+00:00",
+  "implementation_authorized": true,
+  "choice": "Recommended five production modules plus newtest; ADR0050 O2/A unchanged",
+  "scope": "Optin realEpisode ingestion independentstatus/base guardsunmigrated; no liveCLIactivation",
+  "whole_each_required": 80,
+  "excluded_lines": 0,
+  "fullT09accepted": false,
+  "physicalReadFileZeroBytes": "UNTESTED",
+  "counters": {
+    "formal_next": 4,
+    "component": 6
+  },
+  "actual_model_tokens_EUR_IAhours": null,
+  "architect_before_after_exact": 66,
+  "inventory_verified": 11,
+  "current_protected_verified": 62,
+  "current_owned_transferred_to_integration": true
+}

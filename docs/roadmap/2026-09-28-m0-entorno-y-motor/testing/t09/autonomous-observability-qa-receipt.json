@@ -1,0 +1,351 @@
+{
+  "acceptance": {
+    "accepted_utc": "2026-10-07T00:36:16.686681+00:00",
+    "cpu_qa_pass": true,
+    "gpu_verified": false,
+    "artifacts_verified": 2949,
+    "protected_verified": 160,
+    "product_tests": 173,
+    "private_tests": 32,
+    "covered_lines": 1188,
+    "statements": 1439,
+    "coverage_percent": 82.55733148019458,
+    "documents": {
+      "count": 12,
+      "local_links": 156,
+      "errors": [],
+      "coherence_pass": true
+    },
+    "receipt_seal": {
+      "bytes": 12516,
+      "sha256": "9208a8063ebc901d70eac3044f22ca3f6eb32c48287fb10b0b2e971c20320597"
+    },
+    "scope": "CPU and documentary only; real pilot enabled",
+    "pdf": "not produced; optional renderer dependencies absent; no E2E/UI required for M0"
+  },
+  "delivery": {
+    "status": "QA_CPU_DOCUMENTAL_PASS",
+    "scope": "Independent CPU regression and documentary QA; M0 no UI by design",
+    "observed_at_utc": "2026-10-07T00:35:00.843558+00:00",
+    "checks": [
+      {
+        "label": "ledger-lint",
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "--all-packages",
+          "python",
+          "<custom-agents>/agent-kits\\shared\\ledger-lint.py",
+          "docs\\roadmap\\2026-09-28-m0-entorno-y-motor\\tasks.md"
+        ],
+        "started_utc": "2026-10-07T00:32:54.117615+00:00",
+        "finished_utc": "2026-10-07T00:32:54.195293+00:00",
+        "exit": 0,
+        "stdout": "ledger-lint.stdout.txt",
+        "stderr": "ledger-lint.stderr.txt",
+        "exit_code": 0,
+        "stdout_path": ".cache/dev-cycle/t09/autonomous-observability-qa/ledger-lint.stdout.txt",
+        "stderr_path": ".cache/dev-cycle/t09/autonomous-observability-qa/ledger-lint.stderr.txt"
+      },
+      {
+        "label": "coverage-check",
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "--all-packages",
+          "python",
+          "<custom-agents>/agent-kits\\qa\\coverage-check.py",
+          "docs\\roadmap\\2026-09-28-m0-entorno-y-motor\\tasks.md",
+          "docs\\roadmap\\2026-09-28-m0-entorno-y-motor\\test-plan.md",
+          "docs\\roadmap\\2026-09-28-m0-entorno-y-motor\\spec.md"
+        ],
+        "started_utc": "2026-10-07T00:32:54.195293+00:00",
+        "finished_utc": "2026-10-07T00:32:54.426331+00:00",
+        "exit": 0,
+        "stdout": "coverage-check.stdout.txt",
+        "stderr": "coverage-check.stderr.txt",
+        "exit_code": 0,
+        "stdout_path": ".cache/dev-cycle/t09/autonomous-observability-qa/coverage-check.stdout.txt",
+        "stderr_path": ".cache/dev-cycle/t09/autonomous-observability-qa/coverage-check.stderr.txt"
+      },
+      {
+        "label": "product-suite",
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "--all-packages",
+          "pytest",
+          "--noconftest",
+          "-p",
+          "cpu_plugin",
+          "-o",
+          "cache_dir=.cache\\dev-cycle\\t09\\autonomous-observability-qa\\pytest-cache",
+          "--basetemp",
+          ".cache\\dev-cycle\\t09\\autonomous-observability-qa\\product-tmp",
+          "scripts/eval/tests/test_benchmark_cli.py",
+          "scripts/eval/tests/test_benchmark_deadline.py",
+          "scripts/eval/tests/test_benchmark_evidence.py",
+          "scripts/eval/tests/test_benchmark_integration_cpu.py",
+          "scripts/eval/tests/test_benchmark_observation.py",
+          "scripts/eval/tests/test_benchmark_observers.py",
+          "scripts/eval/tests/test_benchmark_plan.py",
+          "scripts/eval/tests/test_benchmark_runner.py",
+          "scripts/eval/tests/test_benchmark_runtime.py",
+          "scripts/eval/tests/test_benchmark_windows_cpu.py",
+          "--cov=benchmark",
+          "--cov=benchmark_observation",
+          "--cov=benchmark_windows",
+          "--cov=benchmark_observers",
+          "--cov=benchmark_runner",
+          "--cov=benchmark_plan",
+          "--cov=benchmark_evidence",
+          "--cov-config=.cache\\dev-cycle\\t09\\autonomous-observability-qa\\coverage.rc",
+          "--cov-report=json:.cache\\dev-cycle\\t09\\autonomous-observability-qa\\product-coverage.json",
+          "--cov-report=term",
+          "--junitxml=.cache\\dev-cycle\\t09\\autonomous-observability-qa\\product-junit.xml",
+          "-q"
+        ],
+        "started_utc": "2026-10-07T00:32:54.427332+00:00",
+        "finished_utc": "2026-10-07T00:33:07.501105+00:00",
+        "exit": 0,
+        "stdout": "product-suite.stdout.txt",
+        "stderr": "product-suite.stderr.txt",
+        "exit_code": 0,
+        "stdout_path": ".cache/dev-cycle/t09/autonomous-observability-qa/product-suite.stdout.txt",
+        "stderr_path": ".cache/dev-cycle/t09/autonomous-observability-qa/product-suite.stderr.txt"
+      },
+      {
+        "label": "private-suite",
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "--all-packages",
+          "pytest",
+          "--noconftest",
+          "-p",
+          "cpu_plugin",
+          "-o",
+          "cache_dir=.cache\\dev-cycle\\t09\\autonomous-observability-qa\\pytest-cache",
+          "--basetemp",
+          ".cache\\dev-cycle\\t09\\autonomous-observability-qa\\private-tmp",
+          ".cache/dev-cycle/t09/autonomous-pilot-fix2/test_pilot.py",
+          "--no-cov",
+          "--junitxml=.cache\\dev-cycle\\t09\\autonomous-observability-qa\\private-junit.xml",
+          "-q"
+        ],
+        "started_utc": "2026-10-07T00:33:07.501105+00:00",
+        "finished_utc": "2026-10-07T00:33:08.332339+00:00",
+        "exit": 0,
+        "stdout": "private-suite.stdout.txt",
+        "stderr": "private-suite.stderr.txt",
+        "exit_code": 0,
+        "stdout_path": ".cache/dev-cycle/t09/autonomous-observability-qa/private-suite.stdout.txt",
+        "stderr_path": ".cache/dev-cycle/t09/autonomous-observability-qa/private-suite.stderr.txt"
+      },
+      {
+        "label": "qa-gate-cpu-derived",
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "--all-packages",
+          "python",
+          "<custom-agents>/agent-kits\\qa\\qa-gate.py",
+          ".cache\\dev-cycle\\t09\\autonomous-observability-qa\\cpu-derived-results.json"
+        ],
+        "started_utc": "2026-10-07T00:33:08.344895+00:00",
+        "finished_utc": "2026-10-07T00:33:08.427320+00:00",
+        "exit": 0,
+        "stdout": "qa-gate-cpu-derived.stdout.txt",
+        "stderr": "qa-gate-cpu-derived.stderr.txt",
+        "exit_code": 0,
+        "stdout_path": ".cache/dev-cycle/t09/autonomous-observability-qa/qa-gate-cpu-derived.stdout.txt",
+        "stderr_path": ".cache/dev-cycle/t09/autonomous-observability-qa/qa-gate-cpu-derived.stderr.txt"
+      },
+      {
+        "label": "document-check",
+        "argv": [
+          "uv",
+          "run",
+          "--frozen",
+          "--no-sync",
+          "--all-packages",
+          "python",
+          ".cache\\dev-cycle\\t09\\autonomous-observability-qa\\check_documents.py"
+        ],
+        "started_utc": "2026-10-07T00:35:00.728759+00:00",
+        "finished_utc": "2026-10-07T00:35:00.818914+00:00",
+        "exit": 0,
+        "stdout": "document-check.stdout.txt",
+        "stderr": "document-check.stderr.txt",
+        "exit_code": 0,
+        "stdout_path": ".cache/dev-cycle/t09/autonomous-observability-qa/document-check.stdout.txt",
+        "stderr_path": ".cache/dev-cycle/t09/autonomous-observability-qa/document-check.stderr.txt"
+      }
+    ],
+    "product_suite_tests": 173,
+    "private_suite_tests": 32,
+    "total_cpu_tests": 205,
+    "qa_gate": {
+      "verdict": "VERDE",
+      "counts": {
+        "passed": 205,
+        "failed": 0,
+        "flaky": 0,
+        "skipped": 0,
+        "interrupted": 0
+      },
+      "flaky_sin_justificar": [],
+      "flaky_justificados": {},
+      "threshold": "verde ⟺ 0 failed, 0 flaky sin justificar, 0 interrumpidos y ≥1 test ejecutado"
+    },
+    "qa_gate_source": "Explicit conversion of two original non-overlapping CPU pytest JUnit reports to supported stats; zero Playwright/E2E runs",
+    "coverage": {
+      "tool": "coverage.py via pytest-cov",
+      "scope": "Seven complete production modules, no changed-line filtering, exclude_lines empty",
+      "files": {
+        "scripts\\eval\\benchmark.py": {
+          "covered_lines": 275,
+          "num_statements": 375,
+          "percent_covered": 73.33333333333333,
+          "percent_covered_display": "73",
+          "missing_lines": 100,
+          "excluded_lines": 0,
+          "percent_statements_covered": 73.33333333333333,
+          "percent_statements_covered_display": "73"
+        },
+        "scripts\\eval\\benchmark_evidence.py": {
+          "covered_lines": 120,
+          "num_statements": 120,
+          "percent_covered": 100.0,
+          "percent_covered_display": "100",
+          "missing_lines": 0,
+          "excluded_lines": 0,
+          "percent_statements_covered": 100.0,
+          "percent_statements_covered_display": "100"
+        },
+        "scripts\\eval\\benchmark_observation.py": {
+          "covered_lines": 261,
+          "num_statements": 304,
+          "percent_covered": 85.85526315789474,
+          "percent_covered_display": "86",
+          "missing_lines": 43,
+          "excluded_lines": 0,
+          "percent_statements_covered": 85.85526315789474,
+          "percent_statements_covered_display": "86"
+        },
+        "scripts\\eval\\benchmark_observers.py": {
+          "covered_lines": 67,
+          "num_statements": 71,
+          "percent_covered": 94.36619718309859,
+          "percent_covered_display": "94",
+          "missing_lines": 4,
+          "excluded_lines": 0,
+          "percent_statements_covered": 94.36619718309859,
+          "percent_statements_covered_display": "94"
+        },
+        "scripts\\eval\\benchmark_plan.py": {
+          "covered_lines": 88,
+          "num_statements": 98,
+          "percent_covered": 89.79591836734694,
+          "percent_covered_display": "90",
+          "missing_lines": 10,
+          "excluded_lines": 0,
+          "percent_statements_covered": 89.79591836734694,
+          "percent_statements_covered_display": "90"
+        },
+        "scripts\\eval\\benchmark_runner.py": {
+          "covered_lines": 190,
+          "num_statements": 265,
+          "percent_covered": 71.69811320754717,
+          "percent_covered_display": "72",
+          "missing_lines": 75,
+          "excluded_lines": 0,
+          "percent_statements_covered": 71.69811320754717,
+          "percent_statements_covered_display": "72"
+        },
+        "scripts\\eval\\benchmark_windows.py": {
+          "covered_lines": 187,
+          "num_statements": 206,
+          "percent_covered": 90.77669902912622,
+          "percent_covered_display": "91",
+          "missing_lines": 19,
+          "excluded_lines": 0,
+          "percent_statements_covered": 90.77669902912622,
+          "percent_statements_covered_display": "91"
+        }
+      },
+      "covered_lines": 1188,
+      "statements": 1439,
+      "weighted_percent": 82.55733148019458,
+      "minimum_percent": 80,
+      "pass": true
+    },
+    "no_ui_gate": {
+      "applies": false,
+      "gwt_sin_id": 0,
+      "test_plan_na": true,
+      "marcador_no_canonico": null,
+      "eximidos": [
+        "T-00",
+        "T-01",
+        "T-02",
+        "T-03",
+        "T-04",
+        "T-05",
+        "T-06",
+        "T-07",
+        "T-08",
+        "T-09",
+        "T-10",
+        "T-11",
+        "T-12",
+        "T-13",
+        "T-14",
+        "T-15",
+        "T-16",
+        "T-17",
+        "T-18",
+        "T-19",
+        "T-20"
+      ],
+      "eximidos_exigidos": false,
+      "rutas_ui": [],
+      "rutas_ui_origen": {},
+      "rutas_ui_degradado": null
+    },
+    "documents": {
+      "count": 12,
+      "local_links": 156,
+      "errors": [],
+      "coherence_pass": true
+    },
+    "custody": {
+      "protected_count": 160,
+      "unchanged": true,
+      "mismatches": [],
+      "sources_freeze_count": 64,
+      "documents_freeze_count": 12,
+      "private_freeze_count": 2
+    },
+    "root_coverage_sha256": "153490fc264e69bcc7573506ab68a41a109bbdd7bcf6583d0915bdcd84c5d32d",
+    "pilot_source_sha256": "cbe68de959572642e5f311860f8052070b1db343e42e1b1dcabcea39bed3bb2d",
+    "limits": [
+      "No GPU/Docker/WSL/UI/network/model installation or real prepare/run executed",
+      "No musical listening or human ratings credited",
+      "CPU green permits the next real pilot; does not close T-09, M0 or matrix160",
+      "PDF not generated: to-pdf dependencies absent, installation explicitly prohibited in this assignment",
+      "Ledger and public reports/states owned by root; no state closing by this QA"
+    ],
+    "output": ".cache\\dev-cycle\\t09\\autonomous-observability-qa"
+  }
+}

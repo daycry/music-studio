@@ -1,0 +1,70 @@
+{
+  "utc": "2026-10-07T20:54:32.459550+00:00",
+  "attempt": 2,
+  "lanes": [
+    "A",
+    "B",
+    "C",
+    "D"
+  ],
+  "sources": {
+    "apps/server/app/models/__init__.py": {
+      "sha256": "b8ce313a28dd496bfbfd7d3fb4428300e4c2571136d99fc6201daea1e52e8ea4",
+      "bytes": 23874
+    },
+    "apps/server/app/snapshots.py": {
+      "sha256": "a5b5015c67dbd7cc59f34e41d9662be37c4d2892c674b89fc3ea9108fa1c97a1",
+      "bytes": 27236
+    },
+    "packages/contracts/song-v1.schema.json": {
+      "sha256": "556a5e576d0d0f1a72fa986f5c2a4cdbc97888b426669feac0f44bad249bc3a8",
+      "bytes": 81508
+    },
+    "apps/server/app/models/song-v1.schema.json": {
+      "sha256": "556a5e576d0d0f1a72fa986f5c2a4cdbc97888b426669feac0f44bad249bc3a8",
+      "bytes": 81508
+    },
+    "apps/server/app/migrations/versions/0005_job_attempt.py": {
+      "sha256": "18c1c33471f900e5669d5fdfe81990580f83e6ebda10c55f53ea9ad4fc7a611b",
+      "bytes": 2862
+    },
+    "apps/server/app/migrations/job_attempt_invariants.py": {
+      "sha256": "029c26324e2d97305196e8a21dcebc321523d6900140be24c9885de64d2534df",
+      "bytes": 17311
+    },
+    "apps/server/tests/test_job_attempt_schema.py": {
+      "sha256": "ec37bc374fcc931ca92ff152ec47de378e038b6ce728441cd6d3dd72afcd11b0",
+      "bytes": 33229
+    },
+    "apps/server/tests/test_job_attempt_review_fix1.py": {
+      "sha256": "7eb05ab7bf8734c139bd2b336bbc6eeb5e1550e65c7aeb90cb8608eea8b8d60d",
+      "bytes": 7073
+    },
+    "apps/server/tests/test_review_fix3_t02.py": {
+      "sha256": "f9d5445cbc795cea6582fb41759608cd91a2d2671d8f0af7f587ddb55450a9b1",
+      "bytes": 12896
+    }
+  },
+  "Critical": 0,
+  "Important": 1,
+  "Minor": 0,
+  "R04_S01": "corrected",
+  "R04_B02": "pending: impossible calendar timestamp admitted by SQLite then rejected by typed reader",
+  "bounded_ledger_context_drift": [
+    {
+      "lane": "a",
+      "path": "docs/roadmap/2026-09-28-m1-mvp-estudio/tasks.md",
+      "provided_T04_excerpt_unchanged": true,
+      "frozen_full_context_verified": true,
+      "cause": "root appended global continuity note after A/B terminal; C/D read current context"
+    },
+    {
+      "lane": "b",
+      "path": "docs/roadmap/2026-09-28-m1-mvp-estudio/tasks.md",
+      "provided_T04_excerpt_unchanged": true,
+      "frozen_full_context_verified": true,
+      "cause": "root appended global continuity note after A/B terminal; C/D read current context"
+    }
+  ],
+  "task_QA_Git_complete": false
+}

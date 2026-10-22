@@ -1,0 +1,427 @@
+{
+  "utc": "2026-10-07T06:07:43.267427+00:00",
+  "attempt": 2,
+  "maximum_attempts": 3,
+  "lenses": {
+    "a": {
+      "metadata": {
+        "argv": [
+          "<local-path>/codex.exe",
+          "exec",
+          "--ephemeral",
+          "--ignore-user-config",
+          "--sandbox",
+          "read-only",
+          "--json",
+          "--color",
+          "never",
+          "-c",
+          "approval_policy=\"never\"",
+          "-C",
+          "",
+          "--output-last-message",
+          ".cache\\dev-cycle\\m1\\t02-review2\\a-inline4\\final-original.md",
+          "-"
+        ],
+        "started_utc": "2026-10-07T06:03:36.407579+00:00",
+        "finished_utc": "2026-10-07T06:04:31.340384+00:00",
+        "exit_code": 0,
+        "lane": "A",
+        "attempt": 2,
+        "limits": "exact INLINE static no own tests/live hashes"
+      },
+      "original": ".cache/dev-cycle/m1/t02-review2/a-inline4/final-original.md",
+      "seal": {
+        "sha256": "fd2ba725ed5f810f9c247267eac7b7ec7be3b6cf62d329f951b8756d8b09cd12",
+        "bytes": 6758
+      },
+      "static_only": true
+    },
+    "b": {
+      "metadata": {
+        "argv": [
+          "<local-path>/codex.exe",
+          "exec",
+          "--ephemeral",
+          "--ignore-user-config",
+          "--sandbox",
+          "read-only",
+          "--json",
+          "--color",
+          "never",
+          "-c",
+          "approval_policy=\"never\"",
+          "-C",
+          "",
+          "--output-last-message",
+          ".cache\\dev-cycle\\m1\\t02-review2\\b-inline4\\final-original.md",
+          "-"
+        ],
+        "started_utc": "2026-10-07T06:03:36.411088+00:00",
+        "finished_utc": "2026-10-07T06:04:37.540200+00:00",
+        "exit_code": 0,
+        "lane": "B",
+        "attempt": 2,
+        "limits": "exact INLINE static no own tests/live hashes"
+      },
+      "original": ".cache/dev-cycle/m1/t02-review2/b-inline4/final-original.md",
+      "seal": {
+        "sha256": "25f264e84e69583429f1ce3ab943151dae7d4f4be67596aac299aac06d751b8e",
+        "bytes": 6439
+      },
+      "static_only": true
+    },
+    "c": {
+      "metadata": {
+        "argv": [
+          "<local-path>/codex.exe",
+          "exec",
+          "--ephemeral",
+          "--ignore-user-config",
+          "--sandbox",
+          "read-only",
+          "--json",
+          "--color",
+          "never",
+          "-c",
+          "approval_policy=\"never\"",
+          "-C",
+          "",
+          "--output-last-message",
+          ".cache\\dev-cycle\\m1\\t02-review2\\c-inline1\\final-original.md",
+          "-"
+        ],
+        "started_utc": "2026-10-07T06:04:55.299588+00:00",
+        "finished_utc": "2026-10-07T06:05:27.838592+00:00",
+        "exit_code": 0,
+        "lane": "C",
+        "attempt": 2,
+        "limits": "exact INLINE static no own tests/live hashes"
+      },
+      "original": ".cache/dev-cycle/m1/t02-review2/c-inline1/final-original.md",
+      "seal": {
+        "sha256": "91bfbe960b8ce81977b819740dd098ac058a258e885a94a68d1e3b8757f229bd",
+        "bytes": 4071
+      },
+      "static_only": true
+    },
+    "d": {
+      "metadata": {
+        "argv": [
+          "<local-path>/codex.exe",
+          "exec",
+          "--ephemeral",
+          "--ignore-user-config",
+          "--sandbox",
+          "read-only",
+          "--json",
+          "--color",
+          "never",
+          "-c",
+          "approval_policy=\"never\"",
+          "-C",
+          "",
+          "--output-last-message",
+          ".cache\\dev-cycle\\m1\\t02-review2\\d-inline1\\final-original.md",
+          "-"
+        ],
+        "started_utc": "2026-10-07T06:04:55.295080+00:00",
+        "finished_utc": "2026-10-07T06:06:02.754619+00:00",
+        "exit_code": 0,
+        "lane": "D",
+        "attempt": 2,
+        "limits": "exact INLINE static no own tests/live hashes"
+      },
+      "original": ".cache/dev-cycle/m1/t02-review2/d-inline1/final-original.md",
+      "seal": {
+        "sha256": "4649a8fb4430cebfe828935a378440f625a057a4ce3c4ebe561d144621d6e328",
+        "bytes": 5702
+      },
+      "static_only": true
+    }
+  },
+  "sources": {
+    "apps/server/README.md": {
+      "bytes": 6306,
+      "sha256": "f91224b3f4a7e344d95a8ec5681c32566e99a17647e56aaf837a597c3912734f"
+    },
+    "apps/server/alembic.ini": {
+      "bytes": 100,
+      "sha256": "13cdfa146e51b68c87a55e040b22bbbd617264fdb9fa77fa77fb2a134087b58b"
+    },
+    "apps/server/app/backup.py": {
+      "bytes": 7139,
+      "sha256": "bb8e5d648858de52b2417fe17a0a51e8714b40d9e30b5984b6940110967649d5"
+    },
+    "apps/server/app/db.py": {
+      "bytes": 3057,
+      "sha256": "a598f4c1a24f898dd70a8b4f335418789e888cfa1ee329e70e344dfcdb868ce6"
+    },
+    "apps/server/app/main.py": {
+      "bytes": 2772,
+      "sha256": "6baf9a0c4a2832910c6912949169732560a1f63d65f5ad2488f70c5694b4f4df"
+    },
+    "apps/server/app/migrations/__init__.py": {
+      "bytes": 53,
+      "sha256": "26578ae0326059d901d2abf14bb6edf1114dd924cb118e9d76dc547ce5faa52e"
+    },
+    "apps/server/app/migrations/env.py": {
+      "bytes": 1610,
+      "sha256": "7c3e00a37e441db20fa776907e7059d1b4763fe29f4b89988ca843245e48ddf2"
+    },
+    "apps/server/app/migrations/fix1_invariants.py": {
+      "bytes": 9518,
+      "sha256": "98d084b9b2072967032a1b5c39014d9a56fb89a0bd85da997430652e8df0b59c"
+    },
+    "apps/server/app/migrations/initial_invariants.py": {
+      "bytes": 9711,
+      "sha256": "91c5cd6e6bc05b0e62dcd0403a10a55826bed9a6cb63abf89d2c133aeed4e4c6"
+    },
+    "apps/server/app/migrations/initial_relations.json": {
+      "bytes": 3679,
+      "sha256": "456c0b2a3f9fba88afb1fb2d40b5ae4df8386516bf5649bd51e2093dc0364910"
+    },
+    "apps/server/app/migrations/versions/0001_initial.py": {
+      "bytes": 3450,
+      "sha256": "762e019de05c245e08172814fba3138e5fb8311b5c987f6ffc715bef50f5eac5"
+    },
+    "apps/server/app/migrations/versions/0001_schema.sql": {
+      "bytes": 46637,
+      "sha256": "9fe867481051286ff592e9b668deae8d65cf88f475d6e7faf9a7cdf8d53a3998"
+    },
+    "apps/server/app/migrations/versions/0002_snapshot_metadata.py": {
+      "bytes": 3076,
+      "sha256": "ad9358218a3c863f8b5a1343cda226f530f4467eb446194220f130776b2fbf02"
+    },
+    "apps/server/app/migrations/versions/__init__.py": {
+      "bytes": 30,
+      "sha256": "321bbcdfa7b590f46141a0963ee2e2001ee2f58bcdc51ec587b943c304cc91e1"
+    },
+    "apps/server/app/models/__init__.py": {
+      "bytes": 20222,
+      "sha256": "8eb427c94c35f3b92785701126953595ca0e70be82813f772a35f3cdfe7b5e2a"
+    },
+    "apps/server/app/models/song-v1.schema.json": {
+      "bytes": 63010,
+      "sha256": "3624202fe67f4a195a0bce117f97432e2964732b7937aa48180247872eab16f1"
+    },
+    "apps/server/app/models/timeline-v1.schema.json": {
+      "bytes": 1772,
+      "sha256": "d85666a0dbb7f9e67a6d7442d2e44d6b971ca9584eb424941b6330e582948660"
+    },
+    "apps/server/app/snapshots.py": {
+      "bytes": 24024,
+      "sha256": "7ac3b29ca703df2d4c01514e0d7768b5531d69c10a3baf6b1391ab64bb8f1885"
+    },
+    "apps/server/pyproject.toml": {
+      "bytes": 607,
+      "sha256": "e33b73a4b0bc6bfb3d525c74712783d01e2a90e60cf3c3b4099daeb82d5ae4ab"
+    },
+    "apps/server/tests/test_persistence_t02.py": {
+      "bytes": 35466,
+      "sha256": "7ca513aa97c67c0ea7bf7544497a84e79c4d160003a7708069fe6e5ec9363abc"
+    },
+    "apps/server/tests/test_review_fix1_t02.py": {
+      "bytes": 31432,
+      "sha256": "ffa701ec874c5b6b6c21560fb3d0ccb99241c55ee597a52a824977229c30e7e0"
+    },
+    "apps/server/tests/test_schema_t02.py": {
+      "bytes": 2047,
+      "sha256": "b319b4cb9c877d014e9cd017e60d0296c2a7400cdf42450cec74d14e9c6ea049"
+    },
+    "packages/contracts/song-v1.schema.json": {
+      "bytes": 63010,
+      "sha256": "3624202fe67f4a195a0bce117f97432e2964732b7937aa48180247872eab16f1"
+    },
+    "packages/contracts/timeline-v1.schema.json": {
+      "bytes": 1772,
+      "sha256": "d85666a0dbb7f9e67a6d7442d2e44d6b971ca9584eb424941b6330e582948660"
+    },
+    "uv.lock": {
+      "bytes": 107385,
+      "sha256": "aa222669e00ce27ccdfe5f739858ec78f95cbfabc25de7c7c1fbd5784f4f0582"
+    }
+  },
+  "originals": {
+    ".cache/dev-cycle/m1/t02-review2/a-inline4/cli-metadata.json": {
+      "sha256": "8d14752973e01a34d46f306ce03dd1bfef552eb563b8d88f38c7db8f78df20b9",
+      "bytes": 725
+    },
+    ".cache/dev-cycle/m1/t02-review2/a-inline4/cli-original.jsonl": {
+      "sha256": "ee1965f5a045468e3cd64ff34b7e4b15a8aeca4254892133a306a0ceb088fcac",
+      "bytes": 7147
+    },
+    ".cache/dev-cycle/m1/t02-review2/a-inline4/cli-stderr-original.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    ".cache/dev-cycle/m1/t02-review2/a-inline4/final-original.md": {
+      "sha256": "fd2ba725ed5f810f9c247267eac7b7ec7be3b6cf62d329f951b8756d8b09cd12",
+      "bytes": 6758
+    },
+    ".cache/dev-cycle/m1/t02-review2/a-inline4/packet-seals.json": {
+      "sha256": "8d9b7f7240ef53f9b26a7d6565b6a500c70ef376a6e13293a65f3b36e27badaf",
+      "bytes": 10552
+    },
+    ".cache/dev-cycle/m1/t02-review2/a-inline4/prompt-original.txt": {
+      "sha256": "3b075da76468e5f00bb550f2d72e81b214d050675e02142392cd66ac2ff68f1a",
+      "bytes": 874430
+    },
+    ".cache/dev-cycle/m1/t02-review2/b-inline4/cli-metadata.json": {
+      "sha256": "5ec6e2dbe882c518ba18224e7f941cee0de463d344a6958208335a924af5f08e",
+      "bytes": 725
+    },
+    ".cache/dev-cycle/m1/t02-review2/b-inline4/cli-original.jsonl": {
+      "sha256": "79df8fc141d16ffbcd80a6cc44fba6726cdfbf63851a0e29513902178980dcfc",
+      "bytes": 6823
+    },
+    ".cache/dev-cycle/m1/t02-review2/b-inline4/cli-stderr-original.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    ".cache/dev-cycle/m1/t02-review2/b-inline4/final-original.md": {
+      "sha256": "25f264e84e69583429f1ce3ab943151dae7d4f4be67596aac299aac06d751b8e",
+      "bytes": 6439
+    },
+    ".cache/dev-cycle/m1/t02-review2/b-inline4/packet-seals.json": {
+      "sha256": "8d9b7f7240ef53f9b26a7d6565b6a500c70ef376a6e13293a65f3b36e27badaf",
+      "bytes": 10552
+    },
+    ".cache/dev-cycle/m1/t02-review2/b-inline4/prompt-original.txt": {
+      "sha256": "70386c1abd1aca901279cb3983b977ae5464881f8127d2ad1feaede2dd665fa5",
+      "bytes": 871790
+    },
+    ".cache/dev-cycle/m1/t02-review2/c-inline1/cli-metadata.json": {
+      "sha256": "42e3ae993fb860515ef3d34eb66ede52cf9111a294d0a8801c689b271d66f0e0",
+      "bytes": 725
+    },
+    ".cache/dev-cycle/m1/t02-review2/c-inline1/cli-original.jsonl": {
+      "sha256": "22d0b6ffc537c2e141a84e37680f6fa5583405836c41c82c2fddf71f41b86926",
+      "bytes": 4449
+    },
+    ".cache/dev-cycle/m1/t02-review2/c-inline1/cli-stderr-original.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    ".cache/dev-cycle/m1/t02-review2/c-inline1/final-original.md": {
+      "sha256": "91bfbe960b8ce81977b819740dd098ac058a258e885a94a68d1e3b8757f229bd",
+      "bytes": 4071
+    },
+    ".cache/dev-cycle/m1/t02-review2/c-inline1/packet-seals.json": {
+      "sha256": "8d9b7f7240ef53f9b26a7d6565b6a500c70ef376a6e13293a65f3b36e27badaf",
+      "bytes": 10552
+    },
+    ".cache/dev-cycle/m1/t02-review2/c-inline1/prompt-original.txt": {
+      "sha256": "6d6d98b81dbc3c6e49f866ce6162106dd65039060eea92acf319dffdb301a623",
+      "bytes": 872289
+    },
+    ".cache/dev-cycle/m1/t02-review2/d-inline1/cli-metadata.json": {
+      "sha256": "f933a35459a2fe5da27af400f51aaf9b4495f0136cc7e517f17e19ccf7c3a9d8",
+      "bytes": 725
+    },
+    ".cache/dev-cycle/m1/t02-review2/d-inline1/cli-original.jsonl": {
+      "sha256": "070300a27b425a2e9036fd48d97dec64fd5460c16828e8c6a0ead55f7fca85a5",
+      "bytes": 6360
+    },
+    ".cache/dev-cycle/m1/t02-review2/d-inline1/cli-stderr-original.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    ".cache/dev-cycle/m1/t02-review2/d-inline1/final-original.md": {
+      "sha256": "4649a8fb4430cebfe828935a378440f625a057a4ce3c4ebe561d144621d6e328",
+      "bytes": 5702
+    },
+    ".cache/dev-cycle/m1/t02-review2/d-inline1/packet-seals.json": {
+      "sha256": "8d9b7f7240ef53f9b26a7d6565b6a500c70ef376a6e13293a65f3b36e27badaf",
+      "bytes": 10552
+    },
+    ".cache/dev-cycle/m1/t02-review2/d-inline1/prompt-original.txt": {
+      "sha256": "c90c92d8b6215a9b4c67a86c10157c48fda2503ee79614183bf56303060c4e0c",
+      "bytes": 872130
+    }
+  },
+  "findings": [
+    {
+      "id": "R02-10",
+      "lens_ids": "B2-01",
+      "severity": "Important",
+      "title": "Pertenencia ordinaria transitiva",
+      "location": "fix1_invariants.py:116",
+      "scenario": "Mover shot/video_project puede dejar job_id de una versión en otra canción.",
+      "status": "pending_reproduction"
+    },
+    {
+      "id": "R02-11",
+      "lens_ids": "A-G3/B2-02",
+      "severity": "Important",
+      "title": "Selección de versión de otro plano",
+      "location": "snapshots.py:304",
+      "scenario": "current_version_id debe pertenecer a ese shot, además de la canción.",
+      "status": "pending_reproduction"
+    },
+    {
+      "id": "R02-12",
+      "lens_ids": "A-G2/B2-03",
+      "severity": "Important",
+      "title": "Contenido de soporte editable",
+      "location": "fix1_invariants.py:31",
+      "scenario": "La guarda song no cubre rating/text/prompt ni otros hijos del soporte.",
+      "status": "pending_reproduction"
+    },
+    {
+      "id": "R02-13",
+      "lens_ids": "A-G1/B2-04",
+      "severity": "Important",
+      "title": "Dependencia nueva no invalida consumidor",
+      "location": "snapshots.py:415",
+      "scenario": "Cambio entre lectura del cierre nuevo y registro de membresía puede limpiar JSON obsoleto.",
+      "status": "pending_reproduction"
+    },
+    {
+      "id": "R02-14",
+      "lens_ids": "B2-05/D2-03 parcialmente",
+      "severity": "Important",
+      "title": "Cancelación omitida al comprobar backups",
+      "location": "backup.py:91",
+      "scenario": "origin.backup de candidatos no recibe progress; close espera mientras existe bloqueo.",
+      "status": "pending_reproduction"
+    },
+    {
+      "id": "R02-15",
+      "lens_ids": "D2-01",
+      "severity": "Important",
+      "title": "Consultas por cada fila del cierre",
+      "location": "snapshots.py:80,100,364,373",
+      "scenario": "200 takes requieren al menos800SELECT en esa parte; es conteo estático, no latencia.",
+      "status": "pending_reproduction"
+    },
+    {
+      "id": "R02-16",
+      "lens_ids": "D2-02",
+      "severity": "Important",
+      "title": "Validación cuadrática en memoria",
+      "location": "snapshots.py:319,326,333",
+      "scenario": "lookup escanea assets/aristas por cada identidad y selección primaria escanea cada tabla.",
+      "status": "pending_reproduction"
+    },
+    {
+      "id": "R02-17",
+      "lens_ids": "D2-03",
+      "severity": "Important",
+      "title": "Comprobación de toda la retención",
+      "location": "backup.py:81,85,91,92",
+      "scenario": "Cada hora copia/valida todos los candidatos incluso si el más reciente es válido.",
+      "status": "pending_reproduction"
+    }
+  ],
+  "counts": {
+    "Critical": 0,
+    "Important": 8,
+    "Minor": 0
+  },
+  "previous_nine_ids_preserved": true,
+  "previous_R02_07_partially_open": true,
+  "transport_failures_not_verdicts": true,
+  "no_runtime_reproduction_by_reviewers": true,
+  "no_qa_or_task_acceptance": true
+}

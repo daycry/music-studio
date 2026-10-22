@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:music-studio:timeline:v1",
+  "title": "Montaje de vídeo v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "fps", "duration_s", "shots", "subtitles", "titles"],
+  "properties": {
+    "version": {"const": 1},
+    "fps": {"type": "string", "pattern": "^[1-9][0-9]*/[1-9][0-9]*$"},
+    "duration_s": {"type": "number", "minimum": 0},
+    "shots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["key", "t0", "t1", "section", "lyrics", "transition_in", "characters"],
+        "properties": {
+          "key": {"type": "string", "minLength": 1},
+          "t0": {"type": "number", "minimum": 0},
+          "t1": {"type": "number", "exclusiveMinimum": 0},
+          "section": {"type": "string"},
+          "lyrics": {"type": "string"},
+          "transition_in": {"type": "object", "required": ["type"], "properties": {"type": {"type": "string", "minLength": 1}, "duration_s": {"type": "number", "minimum": 0}}, "additionalProperties": false},
+          "characters": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"}}
+        }
+      }
+    },
+    "subtitles": {"type": "object", "additionalProperties": false, "required": ["style", "position", "font"], "properties": {"style": {"type": "string"}, "position": {"type": "string"}, "font": {"type": "string"}}},
+    "titles": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["text", "t0", "t1"], "properties": {"text": {"type": "string"}, "t0": {"type": "number", "minimum": 0}, "t1": {"type": "number", "exclusiveMinimum": 0}}}}
+  }
+}

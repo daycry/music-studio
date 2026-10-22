@@ -16,17 +16,8 @@ Write-Host "== uv sync --frozen =="
 uv sync --frozen
 if ($LASTEXITCODE -ne 0) { throw "uv sync --frozen falló (exit $LASTEXITCODE)" }
 
-$pnpm = Get-Command pnpm -ErrorAction SilentlyContinue
-if ($pnpm) {
-    if (Test-Path (Join-Path $root "pnpm-lock.yaml")) {
-        Write-Host "== pnpm install --frozen-lockfile =="
-        pnpm install --frozen-lockfile
-        if ($LASTEXITCODE -ne 0) { throw "pnpm install --frozen-lockfile falló (exit $LASTEXITCODE)" }
-    } else {
-        Write-Warning "No existe pnpm-lock.yaml todavía: omito 'pnpm install'. Genera el lockfile una vez con 'pnpm install' cuando pnpm esté disponible."
-    }
-} else {
-    Write-Warning "pnpm no está instalado en esta máquina: omito la instalación de apps/web. Instala pnpm (por ejemplo 'corepack enable') para completar el bootstrap del front."
-}
-
+if (-not (Test-Path -LiteralPath (Join-Path $root 'pnpm-lock.yaml'))) { throw 'Bootstrap incompleto: falta pnpm-lock.yaml revisado.' }
+Write-Host '== pnpm install --frozen-lockfile --ignore-scripts =='
+& (Join-Path $PSScriptRoot 'pnpm.ps1') install --frozen-lockfile --ignore-scripts
+if ($LASTEXITCODE -ne 0) { throw "Bootstrap incompleto: pnpm falló (exit $LASTEXITCODE)." }
 Write-Host "music-studio: bootstrap completo."

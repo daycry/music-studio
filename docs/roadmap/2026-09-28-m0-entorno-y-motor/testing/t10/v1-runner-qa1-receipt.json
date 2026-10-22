@@ -1,0 +1,73 @@
+{
+  "status": "QA_PRIVATE_RUNNER_CPU_BLOCKED",
+  "completed_utc": "2026-10-06T22:02:37.937468+00:00",
+  "test_summary": {
+    "tests": 26,
+    "failures": 1,
+    "errors": 0,
+    "freeze_before_matches": true,
+    "freeze_after_matches": true,
+    "torch_imported": false,
+    "main_executed": false
+  },
+  "findings": [
+    {
+      "id": "R10-V1QA-01",
+      "severity": "Important",
+      "path": ".cache/dev-cycle/t10/v1-song60-next/run.py",
+      "line": 158,
+      "repro": "Probes.test_missing_actual_boundary_hashes_must_reject",
+      "actual": "accepts and copies receipt missing three captured boundary hashes",
+      "expected": "reject missing or malformed mandatory captured hashes",
+      "product_generation_failure_demonstrated": false
+    },
+    {
+      "id": "R10-V1QA-02",
+      "severity": "Important",
+      "path": ".cache/dev-cycle/t10/v1-song60-next/run.py",
+      "line": 342,
+      "repro": "repro_cleanup.py; cleanup-repro.json",
+      "actual": "second TimeoutExpired escapes finally before Ollama restore, lease release and receipt save",
+      "expected": "log shutdown failure must not interrupt mandatory resource cleanup"
+    }
+  ],
+  "commands": [
+    {
+      "command": ". .\\scripts\\env.ps1; .\\.venv\\Scripts\\python.exe -B .cache/dev-cycle/t10/v1-song60-runner-qa/check_runner.py",
+      "returncode": 1,
+      "tests": 26,
+      "failures": 1,
+      "errors": 0
+    },
+    {
+      "command": ".\\.venv\\Scripts\\python.exe -B <plugin>/agent-kits/shared/ledger-lint.py docs/roadmap/2026-09-28-m0-entorno-y-motor/tasks.md",
+      "returncode": 0,
+      "incoherences": 0,
+      "warnings": 6
+    },
+    {
+      "command": ".\\.venv\\Scripts\\python.exe -B .cache/dev-cycle/t10/v1-song60-runner-qa/repro_cleanup.py",
+      "returncode": 0,
+      "probes": 2,
+      "passed": 2,
+      "main_executed": false,
+      "external_calls": false
+    }
+  ],
+  "freeze_counts": {
+    "sources": 59,
+    "protected": 32,
+    "delivery_seals": 15
+  },
+  "gpu_executed": false,
+  "main_executed": false,
+  "torch_imported": false,
+  "e2e_gate": "not_applicable_private_CPU_scope",
+  "pdf": "not_in_scope",
+  "usage_ledger_git_written": false,
+  "report": "report.md",
+  "behavioral_checks_total": 28,
+  "confirmed_important_findings": 2,
+  "root_verified_qa_artifacts": 74,
+  "public_command_paths": "Plugin path redacted; exact original command retained in sealed private QA receipt."
+}

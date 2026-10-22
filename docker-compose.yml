@@ -1,4 +1,81 @@
 services:
+  web:
+    image: music-studio/web:m1-t08
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    profiles: [studio]
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      NEXT_PUBLIC_API_ORIGIN: http://127.0.0.1:8000
+    depends_on:
+      server:
+        condition: service_started
+  server:
+    image: music-studio/server:m1-t01
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+      target: server
+    profiles: [studio]
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      STUDIO_ENGINE_TOKEN: ${STUDIO_ENGINE_TOKEN:?Ejecuta scripts/init_env.py para crear el token}
+      STUDIO_DATA_DIR: /data
+      STUDIO_MODELS_DIR: /models
+      STUDIO_ENGINES: mock=http://engine-mock:8199
+      STUDIO_WEB_ORIGIN: http://127.0.0.1:3000
+      STUDIO_ALLOWED_HOSTS: 127.0.0.1:8000,localhost:8000,server:8000,server
+    volumes:
+      - ${STUDIO_DATA_ROOT:-./data}:/data:rw
+      - ./models:/models:ro
+    depends_on:
+      engine-mock:
+        condition: service_started
+  engine-mock:
+    image: music-studio/engine-mock:m1-t01
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+      target: mock
+    profiles: [studio]
+    environment:
+      STUDIO_ENGINE_TOKEN: ${STUDIO_ENGINE_TOKEN:?Ejecuta scripts/init_env.py para crear el token}
+      MOCK_STAGE_DELAY_MS: ${MOCK_STAGE_DELAY_MS:-10}
+      STUDIO_DATA_DIR: /data
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+    volumes:
+      - ${STUDIO_DATA_ROOT:-./data}:/data:ro
+      - ${STUDIO_DATA_ROOT:-./data}/tmp:/data/tmp:rw
+  engine-analysis:
+    image: music-studio/engine-analysis:m0-t08-asr-cache
+    build:
+      context: .
+      dockerfile: apps/engines/analysis/Dockerfile
+    profiles: [engines]
+    ports:
+      - "127.0.0.1:8130:8130"
+    environment:
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+      PYTORCH_CUDA_ALLOC_CONF: expandable_segments:True
+      STUDIO_ENGINE_TOKEN: ${STUDIO_ENGINE_TOKEN:?Ejecuta scripts/init_env.py para crear el token}
+      STUDIO_DATA_DIR: /data
+      STUDIO_ANALYSIS_TEST_AUDIO: ${STUDIO_ANALYSIS_TEST_AUDIO:-tmp/t08-fixture.wav}
+    volumes:
+      - ./models:/models:ro
+      - ${STUDIO_DATA_ROOT:-./data}:/data:ro
+      - ${STUDIO_DATA_ROOT:-./data}/tmp:/data/tmp:rw
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
   engine-acestep:
     image: music-studio/engine-acestep:m0-t05
     build:
@@ -17,8 +94,8 @@ services:
       STUDIO_DATA_DIR: /data
     volumes:
       - ./models:/models:ro
-      - ./data:/data:ro
-      - ./data/tmp:/data/tmp:rw
+      - ${STUDIO_DATA_ROOT:-./data}:/data:ro
+      - ${STUDIO_DATA_ROOT:-./data}/tmp:/data/tmp:rw
     deploy:
       resources:
         reservations:

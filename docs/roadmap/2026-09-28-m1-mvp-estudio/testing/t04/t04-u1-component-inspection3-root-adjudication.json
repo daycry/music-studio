@@ -1,0 +1,22 @@
+{
+  "utc": "2026-10-08T00:15:45.834846+00:00",
+  "Critical": 0,
+  "Important": 2,
+  "Minor": 0,
+  "findings": [
+    {
+      "id": "B3-01",
+      "severity": "Important",
+      "scenario": "ResolutionError durante reserve escapa y evita visitar siguiente job válido."
+    },
+    {
+      "id": "D3-01",
+      "severity": "Important",
+      "scenario": "400 candidatos GPU con ocupación durable actual consultan 400 veces gpu_active; sonda SQLite real in-memory, bloqueo síncrono 65ms."
+    }
+  ],
+  "decision": "Como orquestador elijo continuar después de inspección3 bajo delegación expresa autónoma del propietario. No aceptar deuda ni resetear contador: siguiente inspección4. Corregir únicamente rechazo preclaim y screening de ocupación repetida; revalidación final vigente.",
+  "technical_acceptance": false,
+  "next_component_inspection": 4,
+  "actual_model_tokens_EUR_AIhours": null
+}

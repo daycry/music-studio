@@ -1,0 +1,74 @@
+{
+  "status": "FAILED",
+  "classification": "POST_COLLECTION_PRIVATE_HARNESS_FAILURE; not product causal RED",
+  "ownership": [],
+  "counts": {
+    "passed": 1051,
+    "skipped": 3,
+    "failed": 1,
+    "cases": 1055
+  },
+  "actual_wait_exit": 1,
+  "actual_child_pid": 13292,
+  "utc_start": "2026-10-09T03:38:20.867250+00:00",
+  "utc_end": "2026-10-09T03:45:57.301078+00:00",
+  "full_baseline_runs": 1,
+  "repeated": false,
+  "original801": [
+    {
+      "classname": "apps.server.tests.test_dispatcher_retry",
+      "name": "test_global_busy_gpu_negative_once_and_available_cpu_native[801]",
+      "seconds": 8.574,
+      "status": "passed",
+      "message": null,
+      "detail": null
+    }
+  ],
+  "current_whole_six_ge80_zero_excl": true,
+  "old1029_missing": [],
+  "new_case_count": 26,
+  "physical_precopy_count": 8397,
+  "copies_mismatch": [],
+  "source_delta": [],
+  "old_SQL_failure_cause": "UNKNOWN",
+  "current_correctness_gate": "FAILED: incomplete migration test due missing private configuration",
+  "CPU2_GPU1_FIFO_priority_negativecache_WAL_writerCAS": "Production and test sources unchanged by QA; passing individual tests are limited evidence, no full acceptance",
+  "three_windows_symlink_skips": [
+    {
+      "classname": "apps.server.tests.test_logging_paths",
+      "name": "test_logging_confines_symlink_sink[directory]",
+      "seconds": 0.001,
+      "status": "skipped",
+      "message": "Windows exige privilegio symlink; probado en Docker Linux",
+      "detail": "/.cache\\dev-cycle\\m1\\t04-current-sql-projection-integration-qa1\\baseline\\inputs\\apps\\server\\tests\\test_logging_paths.py:8: Windows exige privilegio symlink; probado en Docker Linux"
+    },
+    {
+      "classname": "apps.server.tests.test_logging_paths",
+      "name": "test_logging_confines_symlink_sink[file]",
+      "seconds": 0.0,
+      "status": "skipped",
+      "message": "Windows exige privilegio symlink; probado en Docker Linux",
+      "detail": "/.cache\\dev-cycle\\m1\\t04-current-sql-projection-integration-qa1\\baseline\\inputs\\apps\\server\\tests\\test_logging_paths.py:8: Windows exige privilegio symlink; probado en Docker Linux"
+    },
+    {
+      "classname": "apps.server.tests.test_persistence_t02",
+      "name": "test_snapshot_symlink_directory_rejected",
+      "seconds": 0.187,
+      "status": "skipped",
+      "message": "Este host no permite crear symlinks; prueba Linux en Docker",
+      "detail": "/.cache\\dev-cycle\\m1\\t04-current-sql-projection-integration-qa1\\baseline\\inputs\\apps\\server\\tests\\test_persistence_t02.py:829: Este host no permite crear symlinks; prueba Linux en Docker"
+    }
+  ],
+  "no_Linux_GPU_music_E2E_quality_acceptance": true,
+  "native_OS_pending_descendants": "UNKNOWN; no global kills",
+  "transient_unloaded_closure": "UNKNOWN",
+  "TCB_and_precapture_limits": "See end-loaded-custody.json; omitted resource makes exhaustive current preclosure false",
+  "TDD": "n/a independent readonly verification, private structural config only",
+  "actual_model": null,
+  "actual_tokens": null,
+  "actual_EUR": null,
+  "actual_AI_hours": null,
+  "ledger_docs_ADR_Git_acceptance_modified": false,
+  "end_loaded_physical_gaps": 0,
+  "managed_interpreter_aliases_SHA_verified": 257
+}

@@ -1,0 +1,99 @@
+{
+  "status": "QA_PRIVATE_RUNNER_CPU_PASS",
+  "completed_utc": "2026-10-06T22:12:26.510229+00:00",
+  "source": ".cache/dev-cycle/t10/v1-song60-runner-fix1/run.py",
+  "source_seal": {
+    "bytes": 22849,
+    "sha256": "b0402e4f552e1f44a054ea6f8cce408d116174cb37d7173873d66d1de2426310"
+  },
+  "test_summary": {
+    "tests": 17,
+    "failures": 0,
+    "errors": 0,
+    "freeze_matches": true,
+    "torch_imported": false,
+    "main_executed": false
+  },
+  "hash_validation_subcases": 27,
+  "commands": [
+    {
+      "command": ". .\\scripts\\env.ps1; .\\.venv\\Scripts\\python.exe -B .cache/dev-cycle/t10/v1-song60-runner-qa2/check.py",
+      "attempt": 1,
+      "exit": 0,
+      "tests": 16,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "command": ". .\\scripts\\env.ps1; .\\.venv\\Scripts\\python.exe -B .cache/dev-cycle/t10/v1-song60-runner-qa2/check.py",
+      "attempt": 2,
+      "exit": 0,
+      "tests": 17,
+      "failures": 0,
+      "errors": 0
+    }
+  ],
+  "custody": {
+    "original15": {
+      "count": 15,
+      "matches": true
+    },
+    "sources59": {
+      "count": 59,
+      "matches": true
+    },
+    "protected32": {
+      "count": 32,
+      "matches": true
+    },
+    "qa74": {
+      "count": 74,
+      "matches": true
+    },
+    "fix355": {
+      "count": 355,
+      "matches": true
+    }
+  },
+  "coverage_unchanged": true,
+  "coverage_seal": {
+    "bytes": 53248,
+    "sha256": "153490fc264e69bcc7573506ab68a41a109bbdd7bcf6583d0915bdcd84c5d32d"
+  },
+  "findings_closed_in_private_CPU_scope": [
+    "R10-V1QA-01",
+    "R10-V1QA-02"
+  ],
+  "important_findings": [],
+  "critical_findings": [],
+  "main_executed": false,
+  "gpu_executed": false,
+  "torch_imported": false,
+  "external_calls": false,
+  "actual_import_executed": true,
+  "actual_import_out": ".cache/dev-cycle/t10/v1-song60-next",
+  "cleanup_method": "exact main finally and return AST only, independent CPU doubles, main excluded",
+  "e2e_gate": "not_executed_private_CPU_scope_no_UI",
+  "product_verified": false,
+  "task_complete": false,
+  "limitations": [
+    "No GPU, Docker, model load, socket preflight, audio or real resource cleanup executed.",
+    "No Playwright, UI, screenshots, PDF, coverage gate or qa-gate; private CPU pass is not product/E2E green.",
+    "T-10 and M0 remain open; descriptor verification and musical acceptance unchanged."
+  ],
+  "read_only_outside_ownership": true,
+  "usage_ledger_git_written": false,
+  "artifacts": [
+    "report.md",
+    "junit.xml",
+    "tests.txt",
+    "tests-attempt1.txt",
+    "test-summary.json",
+    "cleanup-traces.json",
+    "freeze-before.json",
+    "freeze-after.json",
+    "fixture_support.py",
+    "check.py"
+  ],
+  "root_verified_artifacts": 72
+}

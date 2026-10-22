@@ -1,0 +1,25 @@
+{
+  "utc": "2026-10-07T04:10:42.453454+00:00",
+  "status": "PARTIAL_CORE_GAPS_OPEN",
+  "protected": 71,
+  "owned": 23,
+  "preimages": 22,
+  "evidence_files_verified": 21387,
+  "terminal_streams": {
+    "cli-metadata.json": {
+      "sha256": "93a8ad7836cada75d6857a71e2158331a10f7de5aa47653995a8d2a808b2ce94",
+      "bytes": 712
+    },
+    "cli-original.jsonl": {
+      "sha256": "b2c6d1fca731bc7df5a1272797c68cf67cc129298bd7306cd991c297c4d52092",
+      "bytes": 439514
+    },
+    "cli-stderr-original.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  },
+  "main_red_cases": 5,
+  "review2_permitted": false,
+  "gpu_permitted": false
+}

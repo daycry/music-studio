@@ -1,0 +1,11 @@
+{
+  "verified_sources": 90,
+  "verified_artifacts": 14,
+  "tests": 9,
+  "private_report_sha256": "f282da9feaf0195f4931a814ee6e371f756c3dc7c52944393680b5accc49f289",
+  "private_receipt_sha256": "484b86cc6c64e635a2634ef7f4edff58d6ca9e697e37f29179d8ca5c3c68441e",
+  "public_receipt_sha256": "b89c239e4df9cf2975009365eafd1be184249c506517643f09070ce4d8cf475a",
+  "report_projection": "Enlaces relativos ajustados para resolver evidencia privada desde docs",
+  "receipt_projection": "JSON reserializado; valores intactos",
+  "real_audio_verified": false
+}

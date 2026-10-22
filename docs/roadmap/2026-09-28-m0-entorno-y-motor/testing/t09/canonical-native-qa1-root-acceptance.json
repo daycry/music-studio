@@ -1,0 +1,60 @@
+{
+  "utc": "2026-10-08T00:41:36.900719+00:00",
+  "technical_component_accepted": true,
+  "scope": "Canonical transition/state plus independent empty originals fold only; unchanged episode semantic dependency qualified",
+  "sources": {
+    "scripts/eval/benchmark_canonical.py": {
+      "sha256": "02de0aa40e2948c13a69c4b057543492079e9b942bbd9928c3b2b98bad3ecd45",
+      "bytes": 24087
+    },
+    "scripts/eval/tests/test_benchmark_canonical.py": {
+      "sha256": "38ba18fa8cd9e3b9745d8980c6e884c66cbed4ac0ee50f9975e93ccf27bee760",
+      "bytes": 61295
+    },
+    "scripts/eval/benchmark_episode.py": {
+      "sha256": "d30156baf73520b35e7b2bd0b31db9900e31e1f90da906d0f90779d7a492e211",
+      "bytes": 30199
+    },
+    "scripts/test_workspace.py": {
+      "sha256": "da1fb4f6b0fdd6cad46f801e495bd86c4fb6d8d140971ed4bb4b936b9eaa525a",
+      "bytes": 6964
+    }
+  },
+  "original_inventory_verified_files": 2493,
+  "current_tests": {
+    "total": 94,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "canonical_cases": 69,
+    "neighbor_cases": 25
+  },
+  "current_whole_canonical_coverage": {
+    "covered_lines": 323,
+    "num_statements": 356,
+    "percent_covered": 87.24279835390946,
+    "percent_covered_display": "87",
+    "missing_lines": 33,
+    "excluded_lines": 0,
+    "percent_statements_covered": 90.73033707865169,
+    "percent_statements_covered_display": "91",
+    "num_branches": 130,
+    "num_partial_branches": 29,
+    "covered_branches": 101,
+    "missing_branches": 29,
+    "percent_branches_covered": 77.6923076923077,
+    "percent_branches_covered_display": "78"
+  },
+  "native_birth_cleanup_pairs": 94,
+  "not_accepted": [
+    "runtime/coordinator/rowreader integration",
+    "packs/FINAL full reconstruction",
+    "T13 old prefix IO regression",
+    "GPU/cadence/13h/160 outcomes or calibration",
+    "T09/M0/quality closure",
+    "perfect historical earlyRED helper source custody"
+  ],
+  "linear_identity_witness_qualification": "O(delta) is material payload and semantic transition, not all native zero-byte prefix identity checks",
+  "next": "Fresh architecture handoff for integration under ADR0046; root chooses alternatives autonomously",
+  "actual_model_tokens_EUR_AIhours": null
+}

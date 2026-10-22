@@ -1,0 +1,267 @@
+{
+  "utc": "2026-10-08T23:39:06.149393+00:00",
+  "component_delivered": true,
+  "technical_component_accepted": false,
+  "run_uuid": "d38d21ab-c89e-4cdb-86fb-d902e3032069",
+  "scope": "fixed benign Linux native custody and private transport; current Windows regression",
+  "owned": [
+    "apps/server/app/worker/custody.py",
+    "apps/server/app/worker/custody_linux.py",
+    "apps/server/app/worker/custody_linux_supervisor.py",
+    "apps/server/tests/test_worker_native_linux_custody.py",
+    "apps/server/tests/fixtures/worker_custody_linux_child.py"
+  ],
+  "current_sources": {
+    "apps/server/app/worker/custody.py": {
+      "sha256": "59ff07afa6f3b534d53662e37b5a1bfd87a9d9b1e06b3085fa9f0631f2db9875",
+      "bytes": 12930
+    },
+    "apps/server/app/worker/custody_linux.py": {
+      "sha256": "4611a207b3cd25520e4aebf67879d2db940ae5fa5b9a12a75179541d7c42391d",
+      "bytes": 11377
+    },
+    "apps/server/app/worker/custody_linux_supervisor.py": {
+      "sha256": "c297ad521a2b4fefa00c4bf602c1d298065d9a52c5edb176b07a6e9649c9c707",
+      "bytes": 9591
+    },
+    "apps/server/tests/test_worker_native_linux_custody.py": {
+      "sha256": "d36a1a00dd971ec24fb4195584e7b78540cc5d91fab3229c88413f9f0efb806b",
+      "bytes": 13061
+    },
+    "apps/server/tests/fixtures/worker_custody_linux_child.py": {
+      "sha256": "c0ae7020129a5f31c3649bba462d16ba5e7989bae16789518dc0e909e1622383",
+      "bytes": 3870
+    },
+    "apps/server/app/worker/contracts.py": {
+      "sha256": "4f098507d03cce1c3e527dff9f0bfeaa2a46451e1ad94559055cb266a22a6282",
+      "bytes": 16547
+    },
+    "apps/server/app/worker/custody_windows.py": {
+      "sha256": "0ce95826b90c15e490fbf2cf2fd1c0d832bf99d4d88203810f1be9ee9c7ed884",
+      "bytes": 23695
+    },
+    "apps/server/app/worker/pipe_protocol.py": {
+      "sha256": "0674b9c6d3821548a5fc4922113644ef2b6eabee3d5153f23852948b88bd0214",
+      "bytes": 13567
+    },
+    "apps/server/app/worker/__init__.py": {
+      "sha256": "854e7118927bb8457577c916fece5b8aa7ece495257079d7472ec867b9c2fcb5",
+      "bytes": 71
+    },
+    "apps/server/tests/test_worker_native_custody.py": {
+      "sha256": "deb16df7e7829137c5544b956415bd4569788929718ef306d394d7e9a57a7fc2",
+      "bytes": 28268
+    },
+    "apps/server/tests/fixtures/worker_custody_child.py": {
+      "sha256": "74025c3dc5c68986f5b56e6d9ed3bf05d3beb7ea07e0d34c8c18be57f96913ff",
+      "bytes": 3907
+    },
+    "apps/server/tests/test_worker_contracts.py": {
+      "sha256": "fc33331ff162f451a0993ca3f2efae267fa8f3949213dade03bae94caf2d93ec",
+      "bytes": 15423
+    },
+    "apps/server/tests/test_worker_pipe_protocol.py": {
+      "sha256": "989fce045a363a5c10f6eee7445499aa0068cdd2ba58499bd1bb668abcb34a62",
+      "bytes": 16938
+    }
+  },
+  "native_linux": {
+    "cases": 23,
+    "passed": 23,
+    "failed": 0,
+    "skipped": 0,
+    "exit_code": 0
+  },
+  "native_windows": {
+    "cases": 36,
+    "passed": 36,
+    "failed": 0,
+    "skipped": 0,
+    "exit_code": 0
+  },
+  "whole_current_each": {
+    "apps/server/app/worker/custody.py": {
+      "covered_lines": 200,
+      "num_statements": 221,
+      "percent_covered": 90.49773755656109,
+      "percent_covered_display": "90",
+      "missing_lines": 21,
+      "excluded_lines": 0,
+      "percent_statements_covered": 90.49773755656109,
+      "percent_statements_covered_display": "90"
+    },
+    "apps/server/app/worker/custody_linux.py": {
+      "covered_lines": 211,
+      "num_statements": 234,
+      "percent_covered": 90.17094017094017,
+      "percent_covered_display": "90",
+      "missing_lines": 23,
+      "excluded_lines": 0,
+      "percent_statements_covered": 90.17094017094017,
+      "percent_statements_covered_display": "90"
+    },
+    "apps/server/app/worker/custody_linux_supervisor.py": {
+      "covered_lines": 173,
+      "num_statements": 202,
+      "percent_covered": 85.64356435643565,
+      "percent_covered_display": "86",
+      "missing_lines": 29,
+      "excluded_lines": 0,
+      "percent_statements_covered": 85.64356435643565,
+      "percent_statements_covered_display": "86"
+    }
+  },
+  "official_coverage": "official-final06/coverage.json",
+  "raw_traces_manifest": "official-final06/raw-traces-before-combine.json",
+  "no_historical_trace_union": true,
+  "original_windows_sources_byte_exact": true,
+  "original_windows_ast_exact": true,
+  "tools_byte_exact_files": 564,
+  "cleanup": [
+    {
+      "run": "final-linux01",
+      "cid": "7f8501e05f783ef236b35dbf7b526b39c3f0b26d9516ded82415fbec1951bc4c",
+      "removed": true,
+      "inspect_no_such_object": true
+    },
+    {
+      "run": "final-linux02",
+      "cid": "96aa8b08080801ec7081a94579fdf645460fc873c95a6c5334912dd7062840ef",
+      "removed": true,
+      "inspect_no_such_object": true
+    },
+    {
+      "run": "final-linux03",
+      "cid": "b84ba98b6ac5e480ebedffc06561d3915f2ec3bbce3177614c8486d75e6a9713",
+      "removed": true,
+      "inspect_no_such_object": true
+    },
+    {
+      "run": "final-linux04",
+      "cid": "b40d562a42cd77cb517373b312ffe79c4ae21801bb8839b271217ccbbd374b8b",
+      "removed": true,
+      "inspect_no_such_object": true
+    },
+    {
+      "run": "final-linux05",
+      "cid": "43dcf7f9b7cb926302f5c95cf82549eb5b7c7bf546b26301ac12c5fe35b5508d",
+      "removed": true,
+      "inspect_no_such_object": true
+    },
+    {
+      "run": "final-linux06",
+      "cid": "6a864c0582da5d7d93d16d1a42ad10e8927ac30a2f1c3661ef83051b44c4c69a",
+      "removed": true,
+      "inspect_no_such_object": true
+    },
+    {
+      "run": "green01",
+      "cid": "a8e693f5c6ffd750048de6e82b8ec9f0b7c3b983ed7b6d15ca1cc1ac9abd8027",
+      "removed": true,
+      "inspect_no_such_object": true
+    },
+    {
+      "run": "green02",
+      "cid": "bc574934f201ddf01d1c98efb193d77cd3f8b1b76c0bc74852ffd549f6364e8a",
+      "removed": true,
+      "inspect_no_such_object": true
+    },
+    {
+      "run": "green03",
+      "cid": "eea0399f6b1357422265698bd15d30adc81b26b83ccd8bfffb5c70dc90141768",
+      "removed": true,
+      "inspect_no_such_object": true
+    },
+    {
+      "run": "green04",
+      "cid": "3ad4b692583411a0e4dc1036981077e49257ee4a89aeef0edf1fbdb2e37b45f4",
+      "removed": true,
+      "inspect_no_such_object": true
+    },
+    {
+      "run": "green05",
+      "cid": "f3c1ccdd204f42ffd04f656785ef5d631cc7eb09402be290ba98240061e06b30",
+      "removed": true,
+      "inspect_no_such_object": true
+    },
+    {
+      "run": "green06",
+      "cid": "c78dbd35dcc918f1ce1970d84de400aca2a51d0dcac874f3f798befb7a085763",
+      "removed": true,
+      "inspect_no_such_object": true
+    },
+    {
+      "run": "green07",
+      "cid": "6f0822fab851a2f3902ab7285bf5940bbb7b072dc3e5979e3890b1a49ff394ba",
+      "removed": true,
+      "inspect_no_such_object": true
+    },
+    {
+      "run": "green08",
+      "cid": "99c70a635731ed448e8d4457093ebea90435c3e537d210f3ee984c59850a1308",
+      "removed": true,
+      "inspect_no_such_object": true
+    },
+    {
+      "run": "green09",
+      "cid": "6d913e8a2c9acc1690a9c6de5e7b21f39c5bd30680083f5df62e10b9e8bea32c",
+      "removed": true,
+      "inspect_no_such_object": true
+    },
+    {
+      "run": "green10",
+      "cid": "0eac1319cd6d92688e1f8bc81302bda5803e3dec825c5a2ad382c3fb796f7fe7",
+      "removed": true,
+      "inspect_no_such_object": true
+    },
+    {
+      "run": "green11",
+      "cid": "52151e6d8bd6b99dc4367424fb12fc6603ac6b34a2525e9d210ee002d271b070",
+      "removed": true,
+      "inspect_no_such_object": true
+    },
+    {
+      "run": "red-foreign10",
+      "cid": "b1fb1803c74c4db12a834c8ed819f0bff1a564cda2637d03bbe0905c1a909f16",
+      "removed": true,
+      "inspect_no_such_object": true
+    },
+    {
+      "run": "red-scope02",
+      "cid": "31e5a6047e396c4fc7bc4dbff8f1706c31ee4fe68f8fa5bcc6734d57f6afbec7",
+      "removed": true,
+      "inspect_no_such_object": true
+    },
+    {
+      "run": "red-stdio09",
+      "cid": "9d593d033c5a8ce77a48b80bf58fdb924758702003617cfef2207ae2487e5891",
+      "removed": true,
+      "inspect_no_such_object": true
+    },
+    {
+      "run": "red01",
+      "cid": "19ef377033effe329421ce3056775207251fb1c1ac40ec7b36da3af826dc1dbd",
+      "removed": true,
+      "inspect_no_such_object": true
+    }
+  ],
+  "actual_model_tokens": null,
+  "eur": null,
+  "ia_hours": null,
+  "pending": [
+    "fresh root A/B/C/D review",
+    "independent native QA",
+    "CPU2/staging integration",
+    "SQL/publication/audio/FFmpeg",
+    "full T05/M1/E2E/quality/rights"
+  ],
+  "limitations": [
+    "Initial RED archived test/fixture/baseline/argv/output/JUnit; no structured birth receipt before initial fixture receipt existed",
+    "Not every new criterion has independent causal RED; four causal regressions captured, other cases are native verification",
+    "Controlled fd/scope/close faults are complementary injections, not spontaneous kernel fault proof",
+    "Forked child trace saved at birth barrier; no coverage claim for later exec or instructions after SIGKILL",
+    "Linux runner per-test PID/UTC and native argv not individually journalled; host Docker command PIDs/UTC and native group birth/FD/PGID/waits retained",
+    "UNKNOWN references intentionally retained in producer process; no actual CPU reservation/reconciliation implemented"
+  ],
+  "full_T05_M1_accepted": false
+}

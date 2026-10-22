@@ -1,0 +1,12 @@
+{
+  "utc": "2026-10-08T00:31:04.629487+00:00",
+  "Critical": 0,
+  "Important": 0,
+  "Minor": 0,
+  "root_confirmed": "Read both terminal A/B reports, B01 fixed without new defects.",
+  "counter": 3,
+  "next_formal_integrated_review": 4,
+  "technical_acceptance": false,
+  "next": "Independent current canonical native QA1, then runtime integration if accepted",
+  "actual_model_tokens_EUR_AIhours": null
+}

@@ -1,0 +1,30 @@
+{
+  "utc": "2026-10-07T21:00:53.191407+00:00",
+  "actual_terminal_exit": 0,
+  "production_changed": false,
+  "R09_T10": "descartado (rebatido): observation/frame/prerequisites hold sealed reference, not history arrays",
+  "static_evidence": "benchmark_runtime.py:1099-1111; exact current branch + old reviewed branch same reference semantics",
+  "native_growth": {
+    "history_bytes": 323202,
+    "sizes": [
+      {
+        "frame_bytes": 21138,
+        "prerequisites_bytes": 21694
+      },
+      {
+        "frame_bytes": 21138,
+        "prerequisites_bytes": 21694
+      }
+    ],
+    "canonical_episodes": 130
+  },
+  "R09_T13": "pending confirmed canonical prefix rereads70/140 at10/20",
+  "internal_binding_probe": "valid RED at internal validate_delta boundary, not a demonstrated public RPC bypass",
+  "context_revision": "Retain bounded interfaces as invariant/positive regression; do not require fake overflow RED. Implement O2 on genuine T13 RED; direct internal binding defence requires proper own-bound-state check.",
+  "foreign_control": "not executed",
+  "coverage_gate": false,
+  "next_review": 4,
+  "counter_reset": false,
+  "technical_acceptance": false,
+  "actual_usage": null
+}

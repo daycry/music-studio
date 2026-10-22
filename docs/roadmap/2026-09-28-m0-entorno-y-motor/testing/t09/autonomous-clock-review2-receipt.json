@@ -1,0 +1,28 @@
+{
+  "published_utc": "2026-10-07T01:14:47.407167+00:00",
+  "global_observability_attempt": 6,
+  "clock_delta_attempt": 2,
+  "lenses": [
+    "A",
+    "B"
+  ],
+  "C": false,
+  "D": false,
+  "D_previous_approval": "preserved; new O(1) conditional delta does not trigger selector",
+  "critical": 0,
+  "important": 0,
+  "minor": 0,
+  "B-clock-01": "corrected CPU",
+  "sources_unchanged": 66,
+  "docs_unchanged": 12,
+  "tests": "8 per lens, overlapping; do not add as16 unique",
+  "additional_B_controls": {
+    "combinations": 324,
+    "invalid_inputs": 9
+  },
+  "source": "Original structured reviewer messages; root-derived publication",
+  "gpu_verified": false,
+  "qa_pending": true,
+  "dispatch": "fresh sequential due capacity; no context reuse",
+  "history": "previous approvals preserved; no attempt reset"
+}

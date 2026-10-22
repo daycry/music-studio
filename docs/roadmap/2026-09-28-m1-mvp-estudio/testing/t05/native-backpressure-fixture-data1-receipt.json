@@ -1,0 +1,701 @@
+{
+  "status": "BASELINE_PASS",
+  "utc": "2026-10-09T04:03:59.395737+00:00",
+  "current_sources_owned1": {
+    "apps/server/tests/fixtures/worker_custody_linux_child.py": {
+      "sha256": "6635cff64f5c78b2b485f9f7e022f9218b98b54af49ec5a963b0c7c5b568380c",
+      "bytes": 4739
+    }
+  },
+  "protected_sources": {
+    "apps/server/app/event_dtos.py": {
+      "before": {
+        "sha256": "73d776692665061a1aa7ebda1a86bcfc90422557a64e9dcbdcea42a7cde13c20",
+        "bytes": 4322
+      },
+      "after": {
+        "sha256": "73d776692665061a1aa7ebda1a86bcfc90422557a64e9dcbdcea42a7cde13c20",
+        "bytes": 4322
+      },
+      "exact": true
+    },
+    "apps/server/app/local_sessions.py": {
+      "before": {
+        "sha256": "bfe4c960bfef34d245948d16e35d88972a200b5c4d8f27e76eebc4e6955730e0",
+        "bytes": 9006
+      },
+      "after": {
+        "sha256": "bfe4c960bfef34d245948d16e35d88972a200b5c4d8f27e76eebc4e6955730e0",
+        "bytes": 9006
+      },
+      "exact": true
+    },
+    "apps/server/app/queue/events.py": {
+      "before": {
+        "sha256": "67d81cdcd0abb5bba2ea391630e3b0efc7a053f25c04051bbd65e85cf4fc3733",
+        "bytes": 10911
+      },
+      "after": {
+        "sha256": "67d81cdcd0abb5bba2ea391630e3b0efc7a053f25c04051bbd65e85cf4fc3733",
+        "bytes": 10911
+      },
+      "exact": true
+    },
+    "apps/server/app/sse.py": {
+      "before": {
+        "sha256": "56c2724064b6220019601a84b85375123848d6aa1da24b465bb986c95bc8fc8e",
+        "bytes": 11689
+      },
+      "after": {
+        "sha256": "56c2724064b6220019601a84b85375123848d6aa1da24b465bb986c95bc8fc8e",
+        "bytes": 11689
+      },
+      "exact": true
+    },
+    "apps/server/app/worker/__init__.py": {
+      "before": {
+        "sha256": "854e7118927bb8457577c916fece5b8aa7ece495257079d7472ec867b9c2fcb5",
+        "bytes": 71
+      },
+      "after": {
+        "sha256": "854e7118927bb8457577c916fece5b8aa7ece495257079d7472ec867b9c2fcb5",
+        "bytes": 71
+      },
+      "exact": true
+    },
+    "apps/server/app/worker/contracts.py": {
+      "before": {
+        "sha256": "4f098507d03cce1c3e527dff9f0bfeaa2a46451e1ad94559055cb266a22a6282",
+        "bytes": 16547
+      },
+      "after": {
+        "sha256": "4f098507d03cce1c3e527dff9f0bfeaa2a46451e1ad94559055cb266a22a6282",
+        "bytes": 16547
+      },
+      "exact": true
+    },
+    "apps/server/app/worker/custody.py": {
+      "before": {
+        "sha256": "43b322e0941a7a4478bb2d81e37cf5478b2b7d1d1542b67d383e557cc58691e0",
+        "bytes": 13155
+      },
+      "after": {
+        "sha256": "43b322e0941a7a4478bb2d81e37cf5478b2b7d1d1542b67d383e557cc58691e0",
+        "bytes": 13155
+      },
+      "exact": true
+    },
+    "apps/server/app/worker/custody_linux.py": {
+      "before": {
+        "sha256": "04d99a7bd0c7e6c55ce0dffd43282bffcba322b783da09c07fcd513add024034",
+        "bytes": 12879
+      },
+      "after": {
+        "sha256": "04d99a7bd0c7e6c55ce0dffd43282bffcba322b783da09c07fcd513add024034",
+        "bytes": 12879
+      },
+      "exact": true
+    },
+    "apps/server/app/worker/custody_linux_supervisor.py": {
+      "before": {
+        "sha256": "dfed377ad9a2343e84e19631c484b9e51e04266e3a892709de53d5722d9068e0",
+        "bytes": 12582
+      },
+      "after": {
+        "sha256": "dfed377ad9a2343e84e19631c484b9e51e04266e3a892709de53d5722d9068e0",
+        "bytes": 12582
+      },
+      "exact": true
+    },
+    "apps/server/app/worker/custody_windows.py": {
+      "before": {
+        "sha256": "0ce95826b90c15e490fbf2cf2fd1c0d832bf99d4d88203810f1be9ee9c7ed884",
+        "bytes": 23695
+      },
+      "after": {
+        "sha256": "0ce95826b90c15e490fbf2cf2fd1c0d832bf99d4d88203810f1be9ee9c7ed884",
+        "bytes": 23695
+      },
+      "exact": true
+    },
+    "apps/server/app/worker/pipe_protocol.py": {
+      "before": {
+        "sha256": "0674b9c6d3821548a5fc4922113644ef2b6eabee3d5153f23852948b88bd0214",
+        "bytes": 13567
+      },
+      "after": {
+        "sha256": "0674b9c6d3821548a5fc4922113644ef2b6eabee3d5153f23852948b88bd0214",
+        "bytes": 13567
+      },
+      "exact": true
+    },
+    "apps/server/pyproject.toml": {
+      "before": {
+        "sha256": "e33b73a4b0bc6bfb3d525c74712783d01e2a90e60cf3c3b4099daeb82d5ae4ab",
+        "bytes": 607
+      },
+      "after": {
+        "sha256": "e33b73a4b0bc6bfb3d525c74712783d01e2a90e60cf3c3b4099daeb82d5ae4ab",
+        "bytes": 607
+      },
+      "exact": true
+    },
+    "apps/server/tests/fixtures/worker_custody_child.py": {
+      "before": {
+        "sha256": "74025c3dc5c68986f5b56e6d9ed3bf05d3beb7ea07e0d34c8c18be57f96913ff",
+        "bytes": 3907
+      },
+      "after": {
+        "sha256": "74025c3dc5c68986f5b56e6d9ed3bf05d3beb7ea07e0d34c8c18be57f96913ff",
+        "bytes": 3907
+      },
+      "exact": true
+    },
+    "apps/server/tests/test_worker_contracts.py": {
+      "before": {
+        "sha256": "fc33331ff162f451a0993ca3f2efae267fa8f3949213dade03bae94caf2d93ec",
+        "bytes": 15423
+      },
+      "after": {
+        "sha256": "fc33331ff162f451a0993ca3f2efae267fa8f3949213dade03bae94caf2d93ec",
+        "bytes": 15423
+      },
+      "exact": true
+    },
+    "apps/server/tests/test_worker_native_custody.py": {
+      "before": {
+        "sha256": "a176d465d92f3af8510425afbdd38edb8bb192dbe4e55701b11214aef67ec39d",
+        "bytes": 37578
+      },
+      "after": {
+        "sha256": "a176d465d92f3af8510425afbdd38edb8bb192dbe4e55701b11214aef67ec39d",
+        "bytes": 37578
+      },
+      "exact": true
+    },
+    "apps/server/tests/test_worker_native_linux_custody.py": {
+      "before": {
+        "sha256": "022c343b497d98948faa661a6ec13981b43174380a34ed321bc4955259bec8b7",
+        "bytes": 43966
+      },
+      "after": {
+        "sha256": "022c343b497d98948faa661a6ec13981b43174380a34ed321bc4955259bec8b7",
+        "bytes": 43966
+      },
+      "exact": true
+    },
+    "apps/server/tests/test_worker_pipe_protocol.py": {
+      "before": {
+        "sha256": "989fce045a363a5c10f6eee7445499aa0068cdd2ba58499bd1bb668abcb34a62",
+        "bytes": 16938
+      },
+      "after": {
+        "sha256": "989fce045a363a5c10f6eee7445499aa0068cdd2ba58499bd1bb668abcb34a62",
+        "bytes": 16938
+      },
+      "exact": true
+    },
+    "pyproject.toml": {
+      "before": {
+        "sha256": "e485953b23b05279a1d84b1e9fcdb09949f440a5364f5a66018c545a362460bc",
+        "bytes": 772
+      },
+      "after": {
+        "sha256": "e485953b23b05279a1d84b1e9fcdb09949f440a5364f5a66018c545a362460bc",
+        "bytes": 772
+      },
+      "exact": true
+    },
+    "scripts/env.ps1": {
+      "before": {
+        "sha256": "32b02ae27056706573c790e5a8f6091bf0a2df938fd9fe092e920c64859a5812",
+        "bytes": 1322
+      },
+      "after": {
+        "sha256": "32b02ae27056706573c790e5a8f6091bf0a2df938fd9fe092e920c64859a5812",
+        "bytes": 1322
+      },
+      "exact": true
+    },
+    "uv.lock": {
+      "before": {
+        "sha256": "aa222669e00ce27ccdfe5f739858ec78f95cbfabc25de7c7c1fbd5784f4f0582",
+        "bytes": 107385
+      },
+      "after": {
+        "sha256": "aa222669e00ce27ccdfe5f739858ec78f95cbfabc25de7c7c1fbd5784f4f0582",
+        "bytes": 107385
+      },
+      "exact": true
+    }
+  },
+  "source_before": "final/inputs-before.json",
+  "source_after": {
+    "apps/server/app/event_dtos.py": true,
+    "apps/server/app/local_sessions.py": true,
+    "apps/server/app/queue/events.py": true,
+    "apps/server/app/sse.py": true,
+    "apps/server/app/worker/__init__.py": true,
+    "apps/server/app/worker/contracts.py": true,
+    "apps/server/app/worker/custody.py": true,
+    "apps/server/app/worker/custody_linux.py": true,
+    "apps/server/app/worker/custody_linux_supervisor.py": true,
+    "apps/server/app/worker/custody_windows.py": true,
+    "apps/server/app/worker/pipe_protocol.py": true,
+    "apps/server/pyproject.toml": true,
+    "apps/server/tests/fixtures/worker_custody_child.py": true,
+    "apps/server/tests/test_worker_contracts.py": true,
+    "apps/server/tests/test_worker_native_custody.py": true,
+    "apps/server/tests/test_worker_native_linux_custody.py": true,
+    "apps/server/tests/test_worker_pipe_protocol.py": true,
+    "pyproject.toml": true,
+    "scripts/env.ps1": true,
+    "uv.lock": true,
+    "apps/server/tests/fixtures/worker_custody_linux_child.py": true
+  },
+  "full_regression": {
+    "linux": {
+      "tests": 42,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "windows": {
+      "tests": 46,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "actual_total": 88,
+  "actual_full": 4,
+  "full_witness": {
+    "utc": "2026-10-09T04:03:26.456514+00:00",
+    "observer_pid": 1,
+    "attempts": [
+      {
+        "monotonic_ns": 29034393188718,
+        "kind": "progress",
+        "actual_full": false
+      },
+      {
+        "monotonic_ns": 29034393442397,
+        "kind": "progress",
+        "actual_full": false
+      },
+      {
+        "monotonic_ns": 29034393682750,
+        "kind": "progress",
+        "actual_full": false
+      },
+      {
+        "monotonic_ns": 29034393916780,
+        "kind": "progress",
+        "actual_full": false
+      },
+      {
+        "monotonic_ns": 29034394150479,
+        "kind": "progress",
+        "actual_full": true
+      },
+      {
+        "monotonic_ns": 29034404270223,
+        "kind": "progress",
+        "actual_full": true
+      },
+      {
+        "monotonic_ns": 29034414445298,
+        "kind": "progress",
+        "actual_full": true
+      },
+      {
+        "monotonic_ns": 29034424580632,
+        "kind": "progress",
+        "actual_full": true
+      }
+    ],
+    "queue_size": 4,
+    "queue_capacity": 4,
+    "receipt": {
+      "state": "UNKNOWN_QUARANTINED",
+      "reason": "transport_error",
+      "release_gate": false
+    },
+    "owner_retained": true,
+    "disposition": {
+      "scope": "linux_subreaper_kernel_and_private_transport",
+      "descendants_waited": true,
+      "kind": "final",
+      "leader": 176,
+      "pgid": 176,
+      "supervisor": 175,
+      "supervisor_pgid": 1,
+      "subreaper": true,
+      "registered": [
+        {
+          "pid": 179,
+          "birth": 2903438
+        }
+      ],
+      "waited": [
+        {
+          "pid": 176,
+          "status": 9
+        },
+        {
+          "pid": 179,
+          "status": 9
+        }
+      ],
+      "liveness_writer_inherited": false,
+      "confirmed": true,
+      "birth": 2903394,
+      "native_kernel": "6.18.33.2-microsoft-standard-WSL2",
+      "python": "3.12.14",
+      "leader_pidfd_identity": [
+        5,
+        91052
+      ],
+      "liveness_read_identity": [
+        15,
+        1531763
+      ],
+      "workload_inheritance": [
+        0,
+        1,
+        2,
+        "birth_registry_only"
+      ],
+      "reason": "stop",
+      "births_sealed": true,
+      "leader_retained_before_signals": true,
+      "term_sent": true,
+      "kill_sent": true,
+      "echild": true,
+      "supervisor_exit": 0,
+      "supervisor_waited": true,
+      "native_process_refs_waited": true,
+      "writer_waited": true
+    },
+    "fds_after_legitimate_close_before_assertions": [
+      {
+        "value": 682,
+        "anchor": 683,
+        "identity": [
+          15,
+          1531763,
+          4480
+        ],
+        "closed": true,
+        "valid": false
+      },
+      {
+        "value": 685,
+        "anchor": 684,
+        "identity": [
+          15,
+          1531764,
+          4480
+        ],
+        "closed": false,
+        "valid": true
+      },
+      {
+        "value": 686,
+        "anchor": 687,
+        "identity": [
+          15,
+          1531765,
+          4480
+        ],
+        "closed": false,
+        "valid": true
+      },
+      {
+        "value": 688,
+        "anchor": 689,
+        "identity": [
+          15,
+          1531766,
+          4480
+        ],
+        "closed": false,
+        "valid": true
+      },
+      {
+        "value": 690,
+        "anchor": 691,
+        "identity": [
+          5,
+          91039,
+          448
+        ],
+        "closed": false,
+        "valid": true
+      },
+      {
+        "value": 664,
+        "anchor": 665,
+        "identity": [
+          9,
+          1531761,
+          49663
+        ],
+        "closed": false,
+        "valid": true
+      },
+      {
+        "value": 681,
+        "anchor": 692,
+        "identity": [
+          15,
+          1531764,
+          4480
+        ],
+        "closed": false,
+        "valid": true
+      },
+      {
+        "value": 693,
+        "anchor": 694,
+        "identity": [
+          15,
+          1531765,
+          4480
+        ],
+        "closed": false,
+        "valid": true
+      },
+      {
+        "value": 695,
+        "anchor": 696,
+        "identity": [
+          15,
+          1531766,
+          4480
+        ],
+        "closed": false,
+        "valid": true
+      },
+      {
+        "value": 697,
+        "anchor": 698,
+        "identity": [
+          5,
+          91052,
+          448
+        ],
+        "closed": false,
+        "valid": true
+      },
+      {
+        "value": 699,
+        "anchor": 701,
+        "identity": [
+          15,
+          1539575,
+          4480
+        ],
+        "closed": false,
+        "valid": true
+      },
+      {
+        "value": 700,
+        "anchor": 702,
+        "identity": [
+          15,
+          1539575,
+          4480
+        ],
+        "closed": false,
+        "valid": true
+      },
+      {
+        "value": 703,
+        "anchor": 704,
+        "identity": [
+          5,
+          91055,
+          448
+        ],
+        "closed": false,
+        "valid": true
+      }
+    ],
+    "native_records": {
+      "native-leader.json": {
+        "pid": 176,
+        "ppid": 175,
+        "pgid": 176,
+        "birth": 2903394,
+        "argv": [
+          "/repo/apps/server/tests/fixtures/worker_custody_linux_child.py",
+          "backpressure",
+          "/tmp/tests/test_backpressure_fixture_real0",
+          "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+          "epoch",
+          "4"
+        ],
+        "utc": "2026-10-09T04:03:26.140644+00:00"
+      },
+      "native-grandchild.json": {
+        "pid": 179,
+        "ppid": 176,
+        "pgid": 176,
+        "birth": 2903438,
+        "argv": [
+          "/repo/apps/server/tests/fixtures/worker_custody_linux_child.py",
+          "backpressure",
+          "/tmp/tests/test_backpressure_fixture_real0",
+          "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+          "epoch",
+          "4"
+        ],
+        "origin": "fork",
+        "utc": "2026-10-09T04:03:26.141526+00:00"
+      },
+      "tree.json": {
+        "leader": 176,
+        "pid": 179,
+        "birth": 2903438
+      },
+      "supervisor-journal.json": {
+        "leader": 176,
+        "pgid": 176,
+        "supervisor": 175,
+        "supervisor_pgid": 1,
+        "subreaper": true,
+        "registered": [
+          {
+            "pid": 179,
+            "birth": 2903438
+          }
+        ],
+        "waited": [
+          {
+            "pid": 176,
+            "status": 9
+          },
+          {
+            "pid": 179,
+            "status": 9
+          }
+        ],
+        "liveness_writer_inherited": false,
+        "confirmed": true,
+        "birth": 2903394,
+        "native_kernel": "6.18.33.2-microsoft-standard-WSL2",
+        "python": "3.12.14",
+        "leader_pidfd_identity": [
+          5,
+          91052
+        ],
+        "liveness_read_identity": [
+          15,
+          1531763
+        ],
+        "workload_inheritance": [
+          0,
+          1,
+          2,
+          "birth_registry_only"
+        ],
+        "reason": "stop",
+        "births_sealed": true,
+        "leader_retained_before_signals": true,
+        "term_sent": true,
+        "kill_sent": true,
+        "echild": true,
+        "descendants_waited": true
+      }
+    }
+  },
+  "whole_official_current": {
+    "apps\\server\\app\\worker\\custody.py": {
+      "covered_lines": 201,
+      "num_statements": 222,
+      "percent_covered": 87.83783783783784,
+      "percent_covered_display": "88",
+      "missing_lines": 21,
+      "excluded_lines": 0,
+      "percent_statements_covered": 90.54054054054055,
+      "percent_statements_covered_display": "91",
+      "num_branches": 74,
+      "num_partial_branches": 13,
+      "covered_branches": 59,
+      "missing_branches": 15,
+      "percent_branches_covered": 79.72972972972973,
+      "percent_branches_covered_display": "80"
+    },
+    "apps\\server\\app\\worker\\custody_linux.py": {
+      "covered_lines": 229,
+      "num_statements": 257,
+      "percent_covered": 85.88588588588588,
+      "percent_covered_display": "86",
+      "missing_lines": 28,
+      "excluded_lines": 0,
+      "percent_statements_covered": 89.10505836575875,
+      "percent_statements_covered_display": "89",
+      "num_branches": 76,
+      "num_partial_branches": 19,
+      "covered_branches": 57,
+      "missing_branches": 19,
+      "percent_branches_covered": 75.0,
+      "percent_branches_covered_display": "75"
+    },
+    "apps\\server\\app\\worker\\custody_linux_supervisor.py": {
+      "covered_lines": 206,
+      "num_statements": 247,
+      "percent_covered": 81.65137614678899,
+      "percent_covered_display": "82",
+      "missing_lines": 41,
+      "excluded_lines": 0,
+      "percent_statements_covered": 83.40080971659918,
+      "percent_statements_covered_display": "83",
+      "num_branches": 80,
+      "num_partial_branches": 13,
+      "covered_branches": 61,
+      "missing_branches": 19,
+      "percent_branches_covered": 76.25,
+      "percent_branches_covered_display": "76"
+    },
+    "apps\\server\\app\\worker\\custody_windows.py": {
+      "covered_lines": 354,
+      "num_statements": 384,
+      "percent_covered": 88.18897637795276,
+      "percent_covered_display": "88",
+      "missing_lines": 30,
+      "excluded_lines": 0,
+      "percent_statements_covered": 92.1875,
+      "percent_statements_covered_display": "92",
+      "num_branches": 124,
+      "num_partial_branches": 30,
+      "covered_branches": 94,
+      "missing_branches": 30,
+      "percent_branches_covered": 75.80645161290323,
+      "percent_branches_covered_display": "76"
+    }
+  },
+  "uuid": "266e08e1-cbfa-4cd2-9ee5-d195d3c0cf41",
+  "TDD": "n/a: fixture-data/config change",
+  "causal_RED": false,
+  "new_product_behavior_fix": false,
+  "runtime_changed": [],
+  "changed_runtime_module_coverage_gate": "n/a: fixture-data only",
+  "raw_before_combine": "final/raw-traces-before-combine.json",
+  "sealed_history": "sealed-history-receipts",
+  "acceptance": false,
+  "model": null,
+  "tokens": null,
+  "EUR": null,
+  "IA_hours": null,
+  "limits": [
+    "No arbitrary-host scheduler or hard real-time guarantee",
+    "Old failed86/1 remains FAILED; no waiver",
+    "Current Linux native interpreter, stdlib, libc, kernel and pinned image are explicit TCB; Windows managed interpreter/stdlib/kernel are TCB",
+    "Private Linux provider tools physically copied before Popen; host interpreter/site-packages current physical byte copy before this run NOT captured: UNKNOWN; historical archive does not prove current tool equivalence",
+    "Transient/unloaded import closure UNKNOWN",
+    "Scoped strong-reference observation does not establish absence of late unknown refs or foreign holders",
+    "No task, component, quality, E2E or GPU acceptance; Root fresh review and dual-OS QA remain required"
+  ]
+}

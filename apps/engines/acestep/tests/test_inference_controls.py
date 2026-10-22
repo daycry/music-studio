@@ -140,6 +140,7 @@ def test_generation_effective_steps_and_cancellation(tmp_path, monkeypatch):
         GenerationParams=lambda **kw: SimpleNamespace(**kw),
         GenerationConfig=lambda **kw: kw,
         generate_music=run,
+        torch=SimpleNamespace(cuda=SimpleNamespace(synchronize=lambda: None)),
     )
     with pytest.raises(EngineError, match="CANCELLED"):
         model.generate(

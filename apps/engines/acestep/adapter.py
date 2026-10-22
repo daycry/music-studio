@@ -1,5 +1,6 @@
 """ACE-Step Python; se importa en el hijo, nunca CUDA en la factoría HTTP."""
 
+import inspect
 import io
 import json
 import math
@@ -7,10 +8,13 @@ import os
 import re
 import secrets
 import sys
+import time
 from contextlib import contextmanager, redirect_stderr, redirect_stdout
-from functools import wraps
+from functools import partial, wraps
+from pathlib import Path
 from types import SimpleNamespace
 
+from benchmark_profiles import checkpoint_profile, identity_profile
 from descriptor import (
     CHECKPOINT,
     LM,
@@ -26,6 +30,91 @@ from patches import enforce_safe_pretrained, install_safe_loader, verify_compone
 from preflight import digest, preflight, token_record
 
 MAX_SEED = 2**64 - 1
+
+
+def timed_generation(runtime, operation, *, clock=time.perf_counter_ns):
+    """Reloj directo sincronizado antes y después de la generación."""
+    upstream_call("sincronización CUDA", runtime.torch.cuda.synchronize)
+    start = clock()
+    result = operation()
+    upstream_call("sincronización CUDA", runtime.torch.cuda.synchronize)
+    end = clock()
+    if end < start:
+        raise EngineError("INTERNAL", "Reloj de inferencia inválido")
+    return result, {
+        "version": 1,
+        "clock": "perf_counter_ns_cuda_synchronized",
+        "infer_start_ns": start,
+        "infer_end_ns": end,
+        "inference_s": (end - start) / 1e9,
+        "scope": "upstream_generate_music",
+        "cuda_sync": True,
+    }
+
+
+def verify_int8_sources(source):
+    """Las rutas nuevas de cuantización/offload también deben estar fijadas."""
+    expected = {
+        "init_service_loader.py": "22b41692bcb73fead4c831d16eaef3dda56cc995577f2353d763445dae7362e1",
+        "init_service_setup.py": "24d98ab1407e742de095d2fe9caf55180e74714f83cdd9670a9bf8d2fa1529b3",
+        "init_service_orchestrator.py": "df1e3ac43db9018793adae343760b43c56e7e81648cfcd057730162352c49d72",
+        "init_service_memory_transfer.py": "9291b08d9ea3622e7c8be5d64b567c976221696fe2e8e4980b10b15ad86ab37a",
+    }
+    import hashlib
+
+    for name, sha in expected.items():
+        path = Path(source) / "core/generation/handler" / name
+        if hashlib.sha256(path.read_bytes()).hexdigest() != sha:
+            raise EngineError("WEIGHTS_MISMATCH", "Fuente INT8/offload no coincide")
+
+
+def verify_int8_runtime(runtime):
+    if getattr(runtime.dit, "quantization", None) != "int8_weight_only":
+        raise EngineError("INTERNAL", "Cuantización INT8 solicitada desactivada")
+    import torchao
+    from torchao.dtypes import AffineQuantizedTensor
+
+    if (
+        torchao.__version__.split("+")[0] != "0.16.0"
+        or runtime.torch.__version__ != "2.10.0+cu128"
+    ):
+        raise EngineError("INTERNAL", "Versión torchao no fijada")
+    layers = []
+    eligible_count = 0
+    for name, layer in runtime.dit.model.named_modules():
+        if (
+            not name.startswith("decoder.")
+            or any(part in {"tokenizer", "detokenizer"} for part in name.split("."))
+            or not isinstance(layer, runtime.torch.nn.Linear)
+        ):
+            continue
+        weight = layer.weight
+        eligible_count += 1
+        if isinstance(weight, AffineQuantizedTensor):
+            integer, _, _ = weight.tensor_impl.get_plain()
+            if integer.dtype == runtime.torch.int8:
+                layers.append(
+                    {
+                        "name": name,
+                        "class": type(weight).__name__,
+                        "layout": type(weight.tensor_impl).__name__,
+                    }
+                )
+    if (
+        not layers
+        or len(layers) != eligible_count
+        or not getattr(runtime.dit, "offload_to_cpu", False)
+        or not getattr(runtime.dit, "offload_dit_to_cpu", False)
+    ):
+        raise EngineError("INTERNAL", "INT8/offload efectivo no acreditado")
+    return {
+        "quantization": "int8_weight_only",
+        "torchao_version": torchao.__version__,
+        "torch_version": runtime.torch.__version__,
+        "eligible_linear_count": eligible_count,
+        "quantized_linear_count": len(layers),
+        "layers": layers,
+    }
 
 
 def exact_prepare_seeds(actual_batch_size, seed, use_random_seed):
@@ -104,13 +193,14 @@ def configure_handler(dit):
 def input_capture(runtime, planned, values, index):
     """Envolturas temporales: solo se acredita una frontera cuando se ejecuta."""
     captured = {
-        "receipt_version": 1,
+        "receipt_version": planned.get("receipt_version", 1),
         "kind": "captured",
         "output_index": index,
         "boundaries": [],
         "planned_sha256": digest(planned),
     }
     originals = []
+    resolved = None
 
     def wrap(obj, name, callback):
         original = getattr(obj, name, None)
@@ -207,8 +297,59 @@ def input_capture(runtime, planned, values, index):
 
         return call
 
+    def dit_resolution(original):
+        def call(*args, **kwargs):
+            nonlocal resolved
+            bound = inspect.signature(original).bind(*args, **kwargs)
+            bound.apply_defaults()
+            initial = bound.arguments["task_type"]
+            codes = bound.arguments["audio_code_string"]
+            if (
+                initial != "text2music"
+                or digest(bound.arguments["instruction"])
+                != planned["dit"]["candidates"]["text2music"]["instruction_sha256"]
+            ):
+                raise EngineError(
+                    "INVALID_PARAMS", "Instrucción inicial DiT cambió tras el preflight"
+                )
+            task, instruction = original(*args, **kwargs)
+            has_codes = runtime.dit._has_non_empty_audio_codes(codes)
+            candidate = planned["dit"]["candidates"].get(task)
+            resolved = {
+                "initial_task": initial,
+                "has_audio_codes": has_codes,
+                "resolved_task": task,
+                "instruction_sha256": digest(instruction),
+            }
+            if candidate is None or any(resolved[k] != candidate[k] for k in resolved):
+                raise EngineError(
+                    "INVALID_PARAMS", "Resolución DiT cambió tras el preflight"
+                )
+            captured["boundaries"].append({"stage": "dit_resolution", **resolved})
+            return task, instruction
+
+        return call
+
     def dit_tokens(original):
         def call(*args, **kwargs):
+            expected_branch = planned["dit"]
+            if planned.get("receipt_version") == 2:
+                instructions = kwargs.get(
+                    "instructions", args[1] if len(args) > 1 else None
+                )
+                if (
+                    resolved is None
+                    or not isinstance(instructions, list)
+                    or len(instructions) != 1
+                    or not isinstance(instructions[0], str)
+                    or digest(instructions[0]) != resolved["instruction_sha256"]
+                ):
+                    raise EngineError(
+                        "INVALID_PARAMS", "Instrucción DiT cambió tras el preflight"
+                    )
+                expected_branch = planned["dit"]["candidates"][
+                    resolved["resolved_task"]
+                ]
             result = original(*args, **kwargs)
             records = {}
             for name, ids, mask in (
@@ -216,7 +357,7 @@ def input_capture(runtime, planned, values, index):
                 ("lyrics", result[3], result[4]),
             ):
                 tokens = ids[0][mask[0].bool()].tolist()
-                expected = planned["dit"][name]
+                expected = expected_branch[name]
                 if (
                     len(tokens) != expected["count"]
                     or digest(tokens) != expected["tokens_sha256"]
@@ -234,6 +375,8 @@ def input_capture(runtime, planned, values, index):
         wrap(runtime.lm, "generate_with_stop_condition", arguments)
         wrap(runtime.lm, "generate_from_formatted_prompt", formatted)
         wrap(runtime.dit, "generate_music", dit_arguments)
+        if planned.get("receipt_version") == 2:
+            wrap(runtime.dit, "_resolve_generate_music_task", dit_resolution)
         wrap(runtime.dit, "_prepare_text_conditioning_inputs", dit_tokens)
         yield captured
     finally:
@@ -288,16 +431,16 @@ def step_hooks(runtime, token, progress, total):
 
 
 def load_options(mode, checkpoint):
-    if mode not in {"bf16", "offload"}:
+    if mode not in checkpoint_profile(checkpoint).modes:
         raise EngineError("INVALID_PARAMS", "Modo ACE-Step no admitido")
     return {
         "config_path": checkpoint,
         "device": "cuda",
         "use_flash_attention": False,
         "compile_model": False,
-        "offload_to_cpu": mode == "offload",
-        "offload_dit_to_cpu": mode == "offload",
-        "quantization": None,
+        "offload_to_cpu": mode in {"offload", "offload-int8"},
+        "offload_dit_to_cpu": mode in {"offload", "offload-int8"},
+        "quantization": "int8_weight_only" if mode == "offload-int8" else None,
         "use_mlx_dit": False,
         "vae_checkpoint": "official",
     }
@@ -310,13 +453,10 @@ def generation_options(request, index, checkpoint=None):
         if checkpoint
         else request.get("model_id", checkpoint_model_id(CHECKPOINT))
     )
-    if request.get("model_id", identity) != identity or identity not in {
-        "ace-step-1.5-turbo",
-        "ace-step-1.5-sft",
-    }:
+    if request.get("model_id", identity) != identity:
         raise EngineError("MODEL_NOT_FOUND")
     try:
-        controls = inference_controls(values, sft=identity == "ace-step-1.5-sft")
+        controls = inference_controls(values, profile=identity_profile(identity))
     except ValueError:
         raise EngineError(
             "INVALID_PARAMS", "Controles de inferencia no admitidos"
@@ -438,10 +578,10 @@ def prepare_runtime(checkpoints, checkpoint, lm):
 
 
 class AceStepAdapter:
-    def __init__(self, checkpoint=CHECKPOINT, lm=LM):
+    def __init__(self, checkpoint=CHECKPOINT, lm=LM, resource_root=None):
         self.checkpoint = checkpoint
         self.lm = lm
-        self.checkpoints = model_root() / "ace-step-1.5/checkpoints"
+        self.checkpoints = model_root(resource_root) / "ace-step-1.5/checkpoints"
         self.runtime = None
 
     def load(self, model_id, mode, cap_mb, total_mb):
@@ -450,6 +590,13 @@ class AceStepAdapter:
         options = load_options(mode, self.checkpoint)
         if total_mb <= 0 or not 0 < cap_mb <= total_mb:
             raise EngineError("VRAM_EXCEEDED", "Presupuesto VRAM insuficiente")
+        if mode == "offload-int8":
+            from importlib.util import find_spec
+
+            source = find_spec("acestep")
+            if source is None or source.origin is None:
+                raise EngineError("INTERNAL", "Fuente INT8 no disponible")
+            verify_int8_sources(Path(source.origin).parent)
         with redirect_stdout(sys.stderr):
             runtime = upstream_call(
                 "preparación del modelo",
@@ -475,6 +622,18 @@ class AceStepAdapter:
                 raise EngineError(
                     "INTERNAL", "No se pudo cargar DiT/VAE/text encoder en BF16 CUDA"
                 )
+            self.effective = {
+                "checkpoint": self.checkpoint,
+                "lm": self.lm,
+                "mode": mode,
+                "load_options": options,
+                "resource_root": str(self.checkpoints.parents[1]),
+                "lm_backend": "pt",
+                "dtype": "bf16",
+                "child_pid": os.getpid(),
+            }
+            if mode == "offload-int8":
+                self.effective["int8"] = verify_int8_runtime(runtime)
             status, success = upstream_call(
                 "carga de LM",
                 runtime.lm.initialize,
@@ -482,30 +641,55 @@ class AceStepAdapter:
                 lm_model_path=self.lm,
                 backend="pt",
                 device="cuda",
-                offload_to_cpu=mode == "offload",
+                offload_to_cpu=mode in {"offload", "offload-int8"},
                 dtype=torch.bfloat16,
             )
             if not success:
                 raise upstream_error("carga de LM", status)
         self.runtime = runtime
+        self._include_load_peak = True
 
     def generate(self, request, output_dir, emit, token):
         if self.runtime is None:
             raise EngineError("INTERNAL", "Modelo no cargado")
         token.check()
+        first_values, first_config = generation_options(request, 0, self.checkpoint)
+        first_planned = preflight(
+            {**request, "seed": first_values["seed"], "n_outputs": 1},
+            checkpoints=self.checkpoints,
+            lm=self.lm,
+            checkpoint=self.checkpoint,
+        )
         runtime = self.runtime
+        load_peak = (
+            runtime.torch.cuda.max_memory_allocated() / 1024**2
+            if getattr(self, "_include_load_peak", False)
+            else 0
+        )
+        self._include_load_peak = False
+        if callable(getattr(runtime.torch.cuda, "reset_peak_memory_stats", None)):
+            runtime.torch.cuda.reset_peak_memory_stats()
         ipc_stdout = sys.stdout
         artifacts = []
         receipts = []
+        timings = []
         for index in range(request["n_outputs"]):
             token.check()
-            values, config = generation_options(request, index, self.checkpoint)
+            values, config = (
+                (first_values, first_config)
+                if index == 0
+                else generation_options(request, index, self.checkpoint)
+            )
             variant_request = {**request, "seed": values["seed"], "n_outputs": 1}
-            planned = preflight(
-                variant_request,
-                checkpoints=self.checkpoints,
-                lm=self.lm,
-                checkpoint=self.checkpoint,
+            planned = (
+                first_planned
+                if index == 0
+                else preflight(
+                    variant_request,
+                    checkpoints=self.checkpoints,
+                    lm=self.lm,
+                    checkpoint=self.checkpoint,
+                )
             )
 
             def progress(value, desc=None, _index=index, **kwargs):
@@ -558,15 +742,19 @@ class AceStepAdapter:
                     )
                     if k in actual_params
                 }
-                result = upstream_call(
-                    "generación",
-                    runtime.generate_music,
-                    runtime.dit,
-                    runtime.lm,
-                    params,
-                    generation_config,
-                    save_dir=None,
-                    progress=progress,
+                result, timing = timed_generation(
+                    runtime,
+                    partial(
+                        upstream_call,
+                        "generación",
+                        runtime.generate_music,
+                        runtime.dit,
+                        runtime.lm,
+                        params,
+                        generation_config,
+                        save_dir=None,
+                        progress=progress,
+                    ),
                 )
             # Upstream captura excepciones de callback: restituye CANCELLED antes
             # de traducir su GenerationResult fallido a error interno.
@@ -592,6 +780,13 @@ class AceStepAdapter:
             filename = f"output-{index}.wav"
             audio = result.audios[0]
             write_wav(output_dir / filename, audio["tensor"], audio["sample_rate"])
+            import soundfile as sf
+
+            info = sf.info(output_dir / filename)
+            timing["audio_duration_s"] = info.frames / info.samplerate
+            timing["rtf"] = timing["inference_s"] / timing["audio_duration_s"]
+            timing["output_index"] = index
+            timings.append(timing)
             token.check()
             artifacts.append(
                 {
@@ -607,6 +802,14 @@ class AceStepAdapter:
             )
         return {
             "artifacts": artifacts,
-            "result": {"input_receipts": receipts},
-            "vram_peak_mb": runtime.torch.cuda.max_memory_allocated() / 1024**2,
+            "result": {
+                "input_receipts": receipts,
+                "inference_timings": timings,
+                "runtime_effective": getattr(self, "effective", None),
+            },
+            "rtf": sum(t["inference_s"] for t in timings)
+            / sum(t["audio_duration_s"] for t in timings),
+            "vram_peak_mb": max(
+                load_peak, runtime.torch.cuda.max_memory_allocated() / 1024**2
+            ),
         }

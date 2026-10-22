@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 
+from benchmark_profiles import checkpoint_profile
 from engine_contract import ModelDescriptor
 
 MODEL_ID = "ace-step-1.5-turbo"
@@ -17,10 +18,12 @@ TRAINING_DATA = (
 
 
 def model_id(checkpoint):
-    return "ace-step-1.5-sft" if checkpoint == "acestep-v15-sft" else MODEL_ID
+    return checkpoint_profile(checkpoint).model_id
 
 
-def model_root():
+def model_root(resource_root=None):
+    if resource_root is not None:
+        return Path(resource_root)
     return (
         Path("/models")
         if Path("/.dockerenv").is_file()
@@ -34,10 +37,11 @@ def locked_model(lock_path=None):
     ]["ace-step-1.5"]
 
 
-def descriptor(lock_path=None, checkpoint=None, lm=None):
+def descriptor(lock_path=None, checkpoint=None, lm=None, resource_root=None):
     checkpoint = checkpoint or os.getenv("STUDIO_ACESTEP_CHECKPOINT", CHECKPOINT)
     lm = lm or os.getenv("STUDIO_ACESTEP_LM", LM)
-    lock = locked_model(lock_path)
+    profile = checkpoint_profile(checkpoint)
+    lock = locked_model(lock_path or model_root(resource_root) / "models.lock.json")
     components = {c["id"]: c for c in lock["components"]}
     selected = [
         components[name] for name in (checkpoint, lm, "vae", "Qwen3-Embedding-0.6B")
@@ -81,10 +85,10 @@ def descriptor(lock_path=None, checkpoint=None, lm=None):
         "inference_steps": {
             "type": "integer",
             "minimum": 1,
-            "maximum": 200 if checkpoint == "acestep-v15-sft" else 8,
+            "maximum": profile.max_steps,
         },
     }
-    if checkpoint == "acestep-v15-sft":
+    if profile.cfg_supported:
         properties["guidance_scale"] = {"type": "number", "minimum": 1, "maximum": 20}
     return ModelDescriptor(
         id=model_id(checkpoint),
@@ -100,9 +104,16 @@ def descriptor(lock_path=None, checkpoint=None, lm=None):
         modes=[
             {
                 "id": mode,
-                "notes": "BF16, PT/SDPA, sin INT8 ni compile; VRAM pendiente de medición",
+                "notes": (
+                    "BF16, PT/SDPA, sin compile; VRAM pendiente de medición; "
+                    + (
+                        "INT8 oficial decoder DiT, offload CPU"
+                        if mode == "offload-int8"
+                        else "sin INT8"
+                    )
+                ),
             }
-            for mode in ("bf16", "offload")
+            for mode in profile.modes
         ],
         tasks={
             task: {

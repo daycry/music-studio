@@ -1,0 +1,17 @@
+{
+  "utc": "2026-10-08T00:34:34.049753+00:00",
+  "Critical": 0,
+  "Important": 1,
+  "Minor": 0,
+  "findings": [
+    {
+      "id": "B4-01",
+      "severity": "Important",
+      "scenario": "Fuente desaparece entre confined_path y source.open: FileNotFoundError no normalizado como input ResolutionError corta scan antes del tail válido. Sonda AST/FS simulada, no nativa aún."
+    }
+  ],
+  "decision": "Orquestador continúa corrección mínima bajo delegación autónoma, componente5 siguiente sin reset/deuda. Normalizar sólo fallo de lectura/origen preclaim, no fallos de escritura/commit ni destino.",
+  "technical_acceptance": false,
+  "next_component_inspection": 5,
+  "actual_model_tokens_EUR_AIhours": null
+}

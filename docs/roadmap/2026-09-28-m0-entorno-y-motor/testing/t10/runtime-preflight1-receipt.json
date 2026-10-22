@@ -1,0 +1,30 @@
+{
+  "started_utc": "2026-10-06T20:21:33.204267+00:00",
+  "completed_utc": "2026-10-06T20:21:33.757740+00:00",
+  "image_id": "sha256:00c32a76c951a4494a23282edf4e53d946f43f244e0790cbd59e806030bd7f43",
+  "exit_code": 1,
+  "result": null,
+  "container_removed": true,
+  "sources59_preserved": true,
+  "root_coverage_preserved": true,
+  "models_lock_preserved": true,
+  "gpu_workload_executed": false,
+  "model_loaded": false,
+  "original_plan": {
+    "bytes": 715105,
+    "sha256": "a04150c2416113093818ebde6fcc721f24d11fc7e22d30ba3a381f71f51e52a3"
+  },
+  "probe": {
+    "bytes": 2194,
+    "sha256": "9e78bb45cdacd6aceeb68bbe42412f1e498d5e8e2f2acc90a301318dff0ff915"
+  },
+  "status": "CPU_RUNTIME_PREFLIGHT_FAILED",
+  "gap_id": "R10-07",
+  "cause": "source_seal uses host-native Windows separators; Linux treats backslashes as filename characters",
+  "production_locations": [
+    "scripts/eval/capabilities.py:96",
+    "scripts/eval/capabilities_native.py:494"
+  ],
+  "previous_cpu_qa_preserved": true,
+  "task_complete": false
+}

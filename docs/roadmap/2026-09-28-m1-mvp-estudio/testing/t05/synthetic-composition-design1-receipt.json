@@ -1,0 +1,39 @@
+{
+  "status": "STATIC_DESIGN_REVIEWABLE_NOT_IMPLEMENTED",
+  "ownership": [],
+  "private_output": ".cache/dev-cycle/m1/t05-synthetic-composition-design1",
+  "adr": "ADR-0062 adopted",
+  "tdd": "n/a prose/static design",
+  "source_count": 27,
+  "source_drift": 0,
+  "before_first_read_custody": false,
+  "disjoint_excluded": [
+    "publication.py",
+    "events.py"
+  ],
+  "tests_run": 0,
+  "red_executed": 0,
+  "acceptance": false,
+  "generation_claim": false,
+  "model": null,
+  "provider": null,
+  "actual_tokens": null,
+  "actual_eur": null,
+  "actual_ai_hours": null,
+  "proposed_runtime_files": [
+    "apps/server/app/queue/synthetic_registry.py NEW",
+    "apps/server/app/worker/contracts.py",
+    "apps/server/app/queue/provenance.py",
+    "apps/server/app/queue/resolver.py",
+    "apps/server/app/queue/admission.py",
+    "apps/server/app/queue/runtime.py"
+  ],
+  "cleanup": "No own native child; foreign process state UNKNOWN",
+  "inventory_excluded_exact": [
+    "cli-metadata.json",
+    "cli-original.jsonl",
+    "cli-stderr-original.txt",
+    "final-original.md",
+    "noncli-inventory.json"
+  ]
+}

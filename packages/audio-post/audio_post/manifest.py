@@ -7,13 +7,12 @@ import hashlib
 import json
 import math
 import re
+from importlib.resources import files
 from pathlib import Path, PureWindowsPath
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-SCHEMA = (
-    Path(__file__).resolve().parents[3] / "packages/contracts/manifest-v1.schema.json"
-)
+SCHEMA = files("audio_post").joinpath("manifest-v1.schema.json")
 
 
 def safe_path(root, relative):
@@ -80,13 +79,24 @@ def _validate(manifest):
         )
     )
     if errors:
+        if isinstance(manifest, dict) and "private_context" in manifest:
+            raise ValueError("MANIFEST_SCHEMA")
         raise ValueError("MANIFEST_SCHEMA: " + errors[0].message)
 
 
-def verify_manifest(manifest, base_dir):
+def verify_manifest(manifest, base_dir, *, private_context_root=None):
     if isinstance(manifest, (str, Path)):
         manifest = json.loads(Path(manifest).read_text(encoding="utf-8"))
     _validate(manifest)
+    if "private_context" in manifest:
+        from .private_context import context_root, verify_private_context
+
+        verify_private_context(
+            manifest,
+            private_context_root
+            if private_context_root is not None
+            else context_root(manifest, base_dir),
+        )
     native_payloads = []
     effective = None
     if "input_receipts" in manifest:
@@ -213,6 +223,68 @@ def validate_input_receipt(payload, request, index, *, private_params=False):
         native_request = planned["request"]
         values = planned["effective"]["params"]
         boundaries = {b["stage"]: b for b in captured["boundaries"]}
+        version = planned["receipt_version"]
+        stages = {"lm_arguments", "lm_formatted_prompt", "dit_arguments", "dit_tokens"}
+        selected_dit = planned["dit"]
+        if version == 2:
+            # Perfil completo fijado, incluido el resolver; v1 mantiene su política histórica.
+            if (
+                planned["profile_revision"]
+                != "dce621408bee8c31b4fcf4811682eb9359e1bc94"
+                or planned["profile_sha256"]
+                != "157c33bd4ea04cd9e9a5b42094ce8a3ee1d772cf002797a398b44f56c724f4f9"
+                or planned["profile_sha256"] != sha(planned["source_hashes"])
+            ):
+                raise ValueError()
+            stages.add("dit_resolution")
+            instruction_hashes = {
+                "text2music": "727c9421e8c388fbd4d2479be4ff421205b56a6292e986198ac86e769ed13a6f",
+                "cover": "f295493a5987057e7eda95c4f8e5c268d35e6df991591905247bda2d04db4bac",
+            }
+            candidates = planned["dit"]["candidates"]
+            if set(candidates) != set(instruction_hashes):
+                raise ValueError()
+            for task, candidate in candidates.items():
+                if (
+                    candidate["initial_task"] != "text2music"
+                    or candidate["resolved_task"] != task
+                    or type(candidate["has_audio_codes"]) is not bool
+                    or candidate["has_audio_codes"] != (task == "cover")
+                    or candidate["instruction_sha256"] != instruction_hashes[task]
+                ):
+                    raise ValueError()
+                for name, limit in (("text", 256), ("lyrics", 2048)):
+                    record = candidate[name]
+                    if (
+                        type(record["count"]) is not int
+                        or not 0 <= record["count"] <= limit
+                    ):
+                        raise ValueError()
+                    if any(
+                        not isinstance(record[k], str)
+                        or not re.fullmatch(r"[0-9a-f]{64}", record[k])
+                        for k in ("input_sha256", "tokens_sha256")
+                    ):
+                        raise ValueError()
+            if (
+                {k: planned["dit"][k] for k in ("text", "lyrics")}
+                != {k: candidates["text2music"][k] for k in ("text", "lyrics")}
+                or planned["dit"]["receipt_version"] != 2
+                or candidates["text2music"]["lyrics"] != candidates["cover"]["lyrics"]
+            ):
+                raise ValueError()
+            resolution = boundaries["dit_resolution"]
+            selected_dit = candidates[resolution["resolved_task"]]
+            if type(resolution["has_audio_codes"]) is not bool or any(
+                resolution[k] != selected_dit[k]
+                for k in (
+                    "initial_task",
+                    "has_audio_codes",
+                    "resolved_task",
+                    "instruction_sha256",
+                )
+            ):
+                raise ValueError()
         # La integridad interna no acredita correspondencia con la solicitud.
         # Este perfil PT fijo se comprueba sin importar el runtime del engine.
         requested = native_request["params"]
@@ -319,9 +391,9 @@ def validate_input_receipt(payload, request, index, *, private_params=False):
             }
         )
         if (
-            planned["receipt_version"] != 1
+            version not in {1, 2}
             or planned["kind"] != "planned"
-            or captured["receipt_version"] != 1
+            or captured["receipt_version"] != version
             or captured["kind"] != "captured"
             or captured["output_index"] != index
             or type(index) is not int
@@ -358,9 +430,8 @@ def validate_input_receipt(payload, request, index, *, private_params=False):
                 for k, v in request["params"].items()
                 if k not in {"style", "lyrics"}
             }
-            or set(boundaries)
-            != {"lm_arguments", "lm_formatted_prompt", "dit_arguments", "dit_tokens"}
-            or len(captured["boundaries"]) != 4
+            or set(boundaries) != stages
+            or len(captured["boundaries"]) != len(stages)
             or boundaries["lm_arguments"]["metadata"]["language"]
             != values["vocal_language"]
             or boundaries["lm_formatted_prompt"]["reserve_tokens"]
@@ -381,7 +452,7 @@ def validate_input_receipt(payload, request, index, *, private_params=False):
             ):
                 raise ValueError()
         for name, limit in (("text", 256), ("lyrics", 2048)):
-            expected = planned["dit"][name]
+            expected = selected_dit[name]
             if (
                 boundaries["dit_tokens"][name]
                 != {k: expected[k] for k in ("count", "tokens_sha256")}

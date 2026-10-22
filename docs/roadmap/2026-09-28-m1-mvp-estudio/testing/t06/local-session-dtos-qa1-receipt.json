@@ -1,0 +1,91 @@
+{
+  "status": "QA_GREEN",
+  "ownership": [],
+  "current_sources4": {
+    "apps/server/app/local_sessions.py": {
+      "sha256": "bfe4c960bfef34d245948d16e35d88972a200b5c4d8f27e76eebc4e6955730e0",
+      "bytes": 9006
+    },
+    "apps/server/app/event_dtos.py": {
+      "sha256": "73d776692665061a1aa7ebda1a86bcfc90422557a64e9dcbdcea42a7cde13c20",
+      "bytes": 4322
+    },
+    "apps/server/tests/test_local_sessions.py": {
+      "sha256": "58a12e2a7b40260b5997352f7de3a3758e18807e173c8c6ad37d8de4167c8d83",
+      "bytes": 9173
+    },
+    "apps/server/tests/test_event_dtos.py": {
+      "sha256": "b98c1db241411117324e63665fc5e1cd09345de816a8330c6cf327a40bfbc730",
+      "bytes": 7865
+    }
+  },
+  "tests": {
+    "tests": 125,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0
+  },
+  "whole_module_coverage": {
+    "apps\\server\\app\\event_dtos.py": {
+      "covered_lines": 78,
+      "num_statements": 79,
+      "percent_covered": 98.73417721518987,
+      "percent_covered_display": "99",
+      "missing_lines": 1,
+      "excluded_lines": 0,
+      "percent_statements_covered": 98.73417721518987,
+      "percent_statements_covered_display": "99"
+    },
+    "apps\\server\\app\\local_sessions.py": {
+      "covered_lines": 163,
+      "num_statements": 164,
+      "percent_covered": 99.39024390243902,
+      "percent_covered_display": "99",
+      "missing_lines": 1,
+      "excluded_lines": 0,
+      "percent_statements_covered": 99.39024390243902,
+      "percent_statements_covered_display": "99"
+    }
+  },
+  "single_fresh_trace": {
+    "sha256": "982231fb09be5b5d49e87245cc9685dbe09ad5768aa4b1d2ad1de6ccd047979e",
+    "bytes": 53248
+  },
+  "combine": false,
+  "ruff_check_exit": 0,
+  "ruff_format_check_exit": 0,
+  "source_stable": true,
+  "protected_stable": true,
+  "threads": {
+    "pid": 21692,
+    "before": [
+      [
+        24728,
+        "MainThread",
+        false
+      ]
+    ],
+    "after": [
+      [
+        24728,
+        "MainThread",
+        false
+      ]
+    ],
+    "new_live_threads": [],
+    "descendants_OS": "UNKNOWN",
+    "forbidden_imports": []
+  },
+  "frame": {
+    "sha256": "6d54c2e8d9b955c7dc1019fd9564b9a6818d43643bd87c9965fa60f83a4165bd",
+    "bytes": 21597
+  },
+  "producer_causal_red_groups": 22,
+  "actual_tokens": null,
+  "actual_eur": null,
+  "actual_ia_hours": null,
+  "parent_finalizer_exit": null,
+  "descendants_OS": "UNKNOWN",
+  "accepted": false,
+  "full_T06_M1_E2E": false
+}

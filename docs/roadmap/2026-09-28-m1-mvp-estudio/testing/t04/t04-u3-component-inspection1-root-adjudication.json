@@ -1,0 +1,29 @@
+{
+  "utc": "2026-10-08T05:05:44.476926+00:00",
+  "Critical": 0,
+  "Important": 2,
+  "Minor": 0,
+  "findings": [
+    {
+      "id": "U3-A1-01",
+      "severity": "Important",
+      "lanes": [
+        "a",
+        "b"
+      ],
+      "description": "Manual retry rejects succeeded generation whose own post.audio failed and bound takes failed."
+    },
+    {
+      "id": "U3-D-01",
+      "severity": "Important",
+      "lanes": [
+        "d"
+      ],
+      "description": "Window reference validation performs N+1 SELECTs under SQLite writer; repeated winning-attempt/edge queries for shared 64 outputs."
+    }
+  ],
+  "decision": "Authorize bounded causal fixes, preserve U1 five/U2 four counters; U3 inspection1 distinct, next inspection2. No global T04 acceptance. Review static witnesses require new genuine native SQLite causal regressions before product edits.",
+  "technical_acceptance": false,
+  "next_component_inspection": "U3 component-inspection2",
+  "actual_model_tokens_EUR_AIhours": null
+}

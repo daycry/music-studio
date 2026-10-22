@@ -3,6 +3,7 @@
 import asyncio
 import hashlib
 import hmac
+import math
 import os
 import shutil
 import threading
@@ -28,6 +29,45 @@ from .runtime import EngineError, NvmlGpu, ProcessSupervisor, VramGuard
 TERMINALS = {"done", "error", "cancelled"}
 PROJECT_ROOT = Path(__file__).resolve().parents[4]
 CONTAINER_DATA_ROOT = Path("/data")
+
+
+def measured_telemetry(result):
+    """Acepta sólo reloj directo coherente; ausencia no se rellena con run_s."""
+    if not result or "inference_timings" not in result:
+        return None, {}
+    timings = result["inference_timings"]
+    try:
+        if not isinstance(timings, list) or not timings:
+            raise ValueError
+        for item in timings:
+            if (
+                item["version"] != 1
+                or item["clock"] != "perf_counter_ns_cuda_synchronized"
+                or item["cuda_sync"] is not True
+                or type(item["infer_start_ns"]) is not int
+                or type(item["infer_end_ns"]) is not int
+                or item["infer_end_ns"] < item["infer_start_ns"]
+                or not all(
+                    type(item[key]) in {int, float} and math.isfinite(item[key])
+                    for key in ("inference_s", "audio_duration_s", "rtf")
+                )
+                or item["audio_duration_s"] <= 0
+                or item["inference_s"] < 0
+                or not math.isclose(
+                    item["inference_s"],
+                    (item["infer_end_ns"] - item["infer_start_ns"]) / 1e9,
+                )
+                or not math.isclose(
+                    item["rtf"], item["inference_s"] / item["audio_duration_s"]
+                )
+            ):
+                raise ValueError
+        rtf = sum(t["inference_s"] for t in timings) / sum(
+            t["audio_duration_s"] for t in timings
+        )
+        return rtf, {"inference_timings": timings}
+    except (KeyError, TypeError, ValueError, ZeroDivisionError):
+        raise EngineError("INTERNAL", "Telemetría directa inválida") from None
 
 
 def in_container():
@@ -82,17 +122,32 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(app):
-        yield
-        with lock:
-            if active:
-                jobs[active]["cancelled"] = True
-                try:
-                    supervisor.send({"command": "cancel"})
-                except EngineError:
-                    pass
-        for thread in threads:
-            await asyncio.to_thread(thread.join, 2)
-        supervisor.unload()
+        storage_lease = None
+        storage_uuid = os.environ.get("STUDIO_STORAGE_UUID")
+        if storage_uuid:
+            # El engine conserva los descriptores durante toda su vida. La
+            # verificación ocurre antes de ceder el control a FastAPI para que
+            # ningún modelo ni proceso hijo arranque sobre una raíz incorrecta.
+            from studio_storage_guard.preflight import verify_engine_roots
+
+            storage_lease = verify_engine_roots(root, root / "tmp", storage_uuid)
+        try:
+            yield
+        finally:
+            try:
+                with lock:
+                    if active:
+                        jobs[active]["cancelled"] = True
+                        try:
+                            supervisor.send({"command": "cancel"})
+                        except EngineError:
+                            pass
+                for thread in threads:
+                    await asyncio.to_thread(thread.join, 2)
+                supervisor.unload()
+            finally:
+                if storage_lease is not None:
+                    storage_lease.close()
 
     async def authenticate(x_studio_engine_token: str | None = Header(default=None)):
         if not x_studio_engine_token or not hmac.compare_digest(
@@ -228,6 +283,7 @@ def create_app(
         started = time.monotonic()
         job_guard = None
         load_s = 0
+        measured_rtf, measured_extra = None, {}
 
         def telemetry():
             return Telemetry(
@@ -238,6 +294,8 @@ def create_app(
                 spilled=job_guard.spilled if job_guard else False,
                 mode=job["mode"],
                 model_revision=models[request.model_id].revision,
+                rtf=measured_rtf,
+                extra=measured_extra,
             ).model_dump(mode="json")
 
         try:
@@ -275,6 +333,9 @@ def create_app(
                         message.get("retryable", False),
                     )
                 elif message["kind"] == "result":
+                    measured_rtf, measured_extra = measured_telemetry(
+                        message.get("result")
+                    )
                     if job["cancelled"]:
                         raise EngineError("CANCELLED")
                     job_guard.observe(

@@ -1,0 +1,14 @@
+{
+  "accepted_utc": "2026-10-07T02:29:59.212348+00:00",
+  "status": "DOCUMENTARY_QA_ACCEPTED",
+  "documents": 9,
+  "links": 482,
+  "errors": 0,
+  "receipt": {
+    "bytes": 998,
+    "sha256": "c73d00ea3e578adf8bda5bfa68d26b7de8450b0a668e8d94aa33ad922a6a4992"
+  },
+  "review": "A+B static zero gaps; C/D false",
+  "limits": "Documentation only; no runtime, capabilities, musical quality or closure of implementation tasks",
+  "git_pending": true
+}

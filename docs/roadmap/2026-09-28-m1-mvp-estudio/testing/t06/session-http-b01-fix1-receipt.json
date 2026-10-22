@@ -1,0 +1,22 @@
+{
+  "utc": "2026-10-09T04:01:39.308341+00:00",
+  "unit": "B-01",
+  "status": "reviewable component, Root review2 and QA pending",
+  "cases": 315,
+  "passed": 315,
+  "protected_equal": 23,
+  "owned": {
+    "apps/server/app/event_routes.py": "2ac2510d858f644b4897eb6d4e85899bde7884f7b333187359dc151bb63663f1",
+    "apps/server/tests/test_session_http.py": "461dc2655b9f40e5e97c74f6e55b194a3058894a2b27c1adc66833729f971a34"
+  },
+  "causal_RED": "runs/red2: 500 != 503 for wrong/missing and wrong/none; 2 fail 6 pass",
+  "GREEN": "runs/green: 8 pass",
+  "current_final": "runs/final2: 315 pass",
+  "historical_failed_baseline": "runs/final: 305 pass 10 fixture env fail",
+  "unknowns": [
+    "transient import closure before RED not proven",
+    "descendant OS census UNKNOWN",
+    "provider usage NULL"
+  ],
+  "ownership_deviation": "First noncausal red used old UNIT fixture constant: 8 new UUID directories in old producer fixtures; no old existing files overwritten; left preserved. Source constant corrected before causal red."
+}

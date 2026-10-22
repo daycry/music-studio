@@ -57,6 +57,10 @@ def native_templates(source):
         max_duration_with_lm=MAX_DURATION
     )
     selected = {
+        "core/generation/handler/generate_music_request.py": (
+            "GenerateMusicRequestMixin",
+            {"_has_non_empty_audio_codes", "_resolve_generate_music_task"},
+        ),
         "llm_inference.py": (
             "LLMHandler",
             {
@@ -106,8 +110,15 @@ def native_templates(source):
     lm.max_model_len = LM_CONTEXT
     lm.use_legacy_cfg_prompt = False
     conditioning = type(
-        "Conditioning", (namespace["PromptMixin"], namespace["MetadataMixin"]), {}
+        "Conditioning",
+        (
+            namespace["PromptMixin"],
+            namespace["MetadataMixin"],
+            namespace["GenerateMusicRequestMixin"],
+        ),
+        {},
     )()
+    conditioning.default_instruction = constants["DEFAULT_DIT_INSTRUCTION"]
     return lm, conditioning
 
 
@@ -188,6 +199,31 @@ def native_plan(request, lm_tokenizer, dit_tokenizer, source, checkpoint=None):
         "lyrics": token_record(dit_tokenizer, lyrics),
     }
     enforce_budget(lm_branches, dit_branches, reserve)
+    candidates = {}
+    for has_codes in (False, True):
+        task, instruction = dit._resolve_generate_music_task(
+            "text2music", "synthetic" if has_codes else "", dit.default_instruction
+        )
+        branch_text, branch_lyrics = dit.build_dit_inputs(
+            task,
+            instruction,
+            values["caption"],
+            values["lyrics"],
+            metas,
+            values["vocal_language"],
+        )
+        records = {
+            "text": token_record(dit_tokenizer, branch_text),
+            "lyrics": token_record(dit_tokenizer, branch_lyrics),
+        }
+        enforce_budget(lm_branches, records, reserve)
+        candidates[task] = {
+            "initial_task": "text2music",
+            "has_audio_codes": has_codes,
+            "resolved_task": task,
+            "instruction_sha256": digest(instruction),
+            **records,
+        }
     effective = {
         "params": values,
         "config": config,
@@ -204,7 +240,7 @@ def native_plan(request, lm_tokenizer, dit_tokenizer, source, checkpoint=None):
         effective["params"]["seed"] = None
         effective["config"]["seeds"] = None
     return {
-        "receipt_version": 1,
+        "receipt_version": 2,
         "kind": "planned",
         "profile_revision": UPSTREAM_REVISION,
         "profile_sha256": digest(SOURCE_HASHES),
@@ -214,7 +250,8 @@ def native_plan(request, lm_tokenizer, dit_tokenizer, source, checkpoint=None):
         "effective_sha256": digest(effective),
         "effective": effective,
         "lm": {**lm_branches, "reserve_tokens": reserve, "context_policy": LM_CONTEXT},
-        "dit": dit_branches,
+        # El resumen HTTP existente transporta dit; conserva ambas alternativas.
+        "dit": {**dit_branches, "receipt_version": 2, "candidates": candidates},
     }
 
 
@@ -318,10 +355,18 @@ def worker(
     return result
 
 
-def preflight(request, *, checkpoints=None, lm=None, checkpoint=None, timeout=60):
+def preflight(
+    request,
+    *,
+    checkpoints=None,
+    lm=None,
+    checkpoint=None,
+    timeout=60,
+    resource_root=None,
+):
     from descriptor import CHECKPOINT, LM, model_root
 
-    checkpoints = checkpoints or model_root() / "ace-step-1.5/checkpoints"
+    checkpoints = checkpoints or model_root(resource_root) / "ace-step-1.5/checkpoints"
     environment = dict(
         os.environ,
         CUDA_VISIBLE_DEVICES="",
@@ -360,7 +405,7 @@ def preflight(request, *, checkpoints=None, lm=None, checkpoint=None, timeout=60
             raise EngineError(code, "Preflight nativo rechazado")
         if (
             payload.get("kind") != "planned"
-            or payload.get("receipt_version") != 1
+            or payload.get("receipt_version") != 2
             or payload.get("profile_sha256") != digest(SOURCE_HASHES)
             or payload.get("request_sha256") != digest(request)
             or payload.get("effective_sha256") != digest(payload.get("effective"))
@@ -373,6 +418,17 @@ def preflight(request, *, checkpoints=None, lm=None, checkpoint=None, timeout=60
             payload["dit"],
             payload["lm"]["reserve_tokens"],
         )
+        if payload["receipt_version"] == 2:
+            if payload["dit"].get("receipt_version") != 2 or set(
+                payload["dit"]["candidates"]
+            ) != {"text2music", "cover"}:
+                raise EngineError("INTERNAL", "Respuesta de preflight no válida")
+            for candidate in payload["dit"]["candidates"].values():
+                enforce_budget(
+                    {k: payload["lm"][k] for k in ("conditional", "unconditional")},
+                    candidate,
+                    payload["lm"]["reserve_tokens"],
+                )
         return payload
     except subprocess.TimeoutExpired:
         raise EngineError("TIMEOUT", "Preflight nativo agotó el plazo") from None

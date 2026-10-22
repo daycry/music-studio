@@ -1,0 +1,109 @@
+{
+  "status": "SCOPEDPASS",
+  "scope": "T05 U1 packages/audio-post portable unit; independent readonly QA",
+  "utc": "2026-10-08T19:01:16.788668+00:00",
+  "suite": {
+    "passed": 228,
+    "skipped": [
+      {
+        "name": "test_real_link_rejected[symlink-root]",
+        "reason": {
+          "type": "pytest.skip",
+          "message": "native symlink privilege unavailable: [WinError 1314] A required privilege is not held by the client: '/.cache\\\\dev-cycle\\\\m1\\\\t05-portable-audio-post-qa1\\\\test-workspaces\\\\55906ce897514da49ac52370ef9c0744\\\\real' -> '/.cache\\\\dev-cycle\\\\m1\\\\t05-portable-audio-post-qa1\\\\test-workspaces\\\\55906ce897514da49ac52370ef9c0744\\\\link'"
+        }
+      },
+      {
+        "name": "test_real_link_rejected[symlink-ancestor]",
+        "reason": {
+          "type": "pytest.skip",
+          "message": "native symlink privilege unavailable: [WinError 1314] A required privilege is not held by the client: '/.cache\\\\dev-cycle\\\\m1\\\\t05-portable-audio-post-qa1\\\\test-workspaces\\\\cb4c9673058a47619c8a5df6f87112d9\\\\real' -> '/.cache\\\\dev-cycle\\\\m1\\\\t05-portable-audio-post-qa1\\\\test-workspaces\\\\cb4c9673058a47619c8a5df6f87112d9\\\\link'"
+        }
+      },
+      {
+        "name": "test_real_link_rejected[symlink-source]",
+        "reason": {
+          "type": "pytest.skip",
+          "message": "native symlink privilege unavailable: [WinError 1314] A required privilege is not held by the client: '/.cache\\\\dev-cycle\\\\m1\\\\t05-portable-audio-post-qa1\\\\test-workspaces\\\\8b80c704eca24d7698b447f96edb186b\\\\real' -> '/.cache\\\\dev-cycle\\\\m1\\\\t05-portable-audio-post-qa1\\\\test-workspaces\\\\8b80c704eca24d7698b447f96edb186b\\\\link'"
+        }
+      },
+      {
+        "name": "test_real_link_rejected[symlink-destination]",
+        "reason": {
+          "type": "pytest.skip",
+          "message": "native symlink privilege unavailable: [WinError 1314] A required privilege is not held by the client: '/.cache\\\\dev-cycle\\\\m1\\\\t05-portable-audio-post-qa1\\\\test-workspaces\\\\d31580b170704ce8beeb689d798979db\\\\real' -> '/.cache\\\\dev-cycle\\\\m1\\\\t05-portable-audio-post-qa1\\\\test-workspaces\\\\d31580b170704ce8beeb689d798979db\\\\link'"
+        }
+      }
+    ],
+    "warnings": 5,
+    "junit": "current-final.xml",
+    "coverage_original": "current.coverage",
+    "coverage_json": "current-coverage.json",
+    "repeat": false
+  },
+  "whole_each": {
+    "packages\\audio-post\\audio_post\\manifest.py": {
+      "covered_lines": 231,
+      "num_statements": 250,
+      "percent_covered": 92.4,
+      "percent_covered_display": "92",
+      "missing_lines": 19,
+      "excluded_lines": 0,
+      "percent_statements_covered": 92.4,
+      "percent_statements_covered_display": "92"
+    },
+    "packages\\audio-post\\audio_post\\pipeline.py": {
+      "covered_lines": 128,
+      "num_statements": 133,
+      "percent_covered": 96.2406015037594,
+      "percent_covered_display": "96",
+      "missing_lines": 5,
+      "excluded_lines": 0,
+      "percent_statements_covered": 96.2406015037594,
+      "percent_statements_covered_display": "96"
+    }
+  },
+  "junction_native_passes": [
+    "test_real_link_rejected[junction-root]",
+    "test_real_link_rejected[junction-ancestor]",
+    "test_real_link_rejected[junction-source]",
+    "test_real_link_rejected[junction-destination]"
+  ],
+  "source_count": 56,
+  "drift": {},
+  "owned_sources_match": {
+    "packages/audio-post/audio_post/pipeline.py": true,
+    "packages/audio-post/audio_post/manifest.py": true,
+    "packages/audio-post/audio_post/manifest-v1.schema.json": true,
+    "packages/audio-post/tests/test_portable_audio_post.py": true,
+    "packages/audio-post/tests/test_wheel_resources.py": true
+  },
+  "old_tests": [
+    {
+      "path": "packages/audio-post/tests/test_audio_post.py",
+      "byte_identical": true,
+      "ast_identical": true
+    },
+    {
+      "path": "packages/audio-post/tests/test_manifest_errors.py",
+      "byte_identical": true,
+      "ast_identical": true
+    }
+  ],
+  "current_artifacts_retained": 19,
+  "tdd": "n/a independent readonly QA; historical causal RED reviewed, no new code or tests",
+  "nested_process_ids": "UNKNOWN",
+  "direct_children": "actual argv UTC PID exit and communicate/wait recorded; no Jobs/tree proof",
+  "limits": [
+    "four native Windows symlinks skipped; no Linux inference",
+    "replacement tests use controlled callbacks with real rename, no arbitrary concurrency evidence; TOCTOU remains",
+    "nested FFmpeg/build/install/probe argv/stdout/stderr/PIDs not independently intercepted; original permanent tests retained; direct runner logs only",
+    "installed probe child not instrumented for coverage; WHOLE figures use only current pytest trace; no union",
+    "cached build dependencies read only; their contents not independently copied before suite; fixture source/config copied",
+    "no full T05/M1 acceptance, worker integration, Docker/Linux, UI/E2E, GPU, music quality"
+  ],
+  "model": null,
+  "tokens": null,
+  "EUR": null,
+  "IAhours": null,
+  "root_reserved_actor_writes": false
+}

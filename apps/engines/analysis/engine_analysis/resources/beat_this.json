@@ -1,0 +1,17 @@
+{
+  "checkpoint_sha256": "8c328b45f59d8dd3dff219253ff6a8d6482be57d0133a29140e2febbf8eb8331",
+  "hyper_parameters": {
+    "spect_dim": 128,
+    "transformer_dim": 512,
+    "ff_mult": 4,
+    "n_layers": 6,
+    "head_dim": 32,
+    "stem_dim": 32,
+    "dropout": {
+      "frontend": 0.1,
+      "transformer": 0.2
+    }
+  },
+  "source_revision": "b95c8ab0c58c2d9fcfd40508ae8dffbc05ac4f5c",
+  "fps": 50
+}

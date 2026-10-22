@@ -1,0 +1,160 @@
+{
+  "status": "DONE_CPU_WITH_CONCERNS",
+  "completed_utc": "2026-10-06T19:55:18.751858+00:00",
+  "gap_ids": [
+    "R10-01",
+    "R10-02",
+    "R10-03",
+    "R10-04",
+    "R10-05",
+    "R10-06"
+  ],
+  "rebates": [],
+  "sources_after14": {
+    "scripts/eval/capabilities.py": {
+      "sha256": "8aed6b72f25ccc4bc7df770ef2f228492c141ae42b7abbceb9ae406f25fbb931",
+      "bytes": 9841
+    },
+    "scripts/eval/capabilities_evidence.py": {
+      "sha256": "9910de6777844a0104656a421c9e167e9f0eb439dba4d8de8ae90cac9e6149e6",
+      "bytes": 4245
+    },
+    "scripts/eval/capabilities_metrics.py": {
+      "sha256": "4646d7ff16733e471b1788ef3de3a229df8a2c6c735e4565d645b23d07a04d6d",
+      "bytes": 2149
+    },
+    "scripts/eval/capabilities_native.py": {
+      "sha256": "9201a702d41513ecd7a3416a38189cdec3f785ad1865c72d2642013b443efb05",
+      "bytes": 24291
+    },
+    "scripts/eval/capabilities_plan.py": {
+      "sha256": "38663fae694975bbab72a1413f4490e97fb5d3a5b0fc558dc67af898e0160ed2",
+      "bytes": 6102
+    },
+    "scripts/eval/capabilities_runtime.py": {
+      "sha256": "bc3371d152f781edc03b961f37a24081fa52d60e08b9b30567c304a5ff2c6862",
+      "bytes": 9856
+    },
+    "scripts/eval/tests/test_capabilities_checks.py": {
+      "sha256": "82b0a8e0c12ac2264bbb6a1d0c6f1716ff43f7dd9e7081c5918c501401d3feb2",
+      "bytes": 13932
+    },
+    "scripts/eval/tests/test_capabilities_cli.py": {
+      "sha256": "d1b62aacc90bfa9786a59d7ae2e5f6001635d1fe78a9e6441add6f64cf5d5356",
+      "bytes": 2509
+    },
+    "scripts/eval/tests/test_capabilities_evidence.py": {
+      "sha256": "4e60da0a1605717d8cc9d7c8cf50bc56da736dfab9403ba593b8ff0f7f0cb94b",
+      "bytes": 1170
+    },
+    "scripts/eval/tests/test_capabilities_fix1.py": {
+      "sha256": "b7f2ac0336a79a883b4217680e72d0dfa1a5ef2a337cf874e8a22ae67364dade",
+      "bytes": 21952
+    },
+    "scripts/eval/tests/test_capabilities_metrics.py": {
+      "sha256": "3e0a67ce4e9ee66755c22777d80309528aab0a78e24089dc732c1901f3a7a282",
+      "bytes": 2045
+    },
+    "scripts/eval/tests/test_capabilities_native.py": {
+      "sha256": "4ab34515db15594a012517b2f9b4ec9716d1d53cb16f3b747ad5c463fff068bd",
+      "bytes": 5506
+    },
+    "scripts/eval/tests/test_capabilities_plan.py": {
+      "sha256": "77f70e15cae2d9f07d7727d5b451c47c4ed8b67218f9c42d45d4161159e6637a",
+      "bytes": 1520
+    },
+    "scripts/eval/tests/test_capabilities_runtime.py": {
+      "sha256": "25ce0604123f1a1a1b86988340eb4bb2c366146de06110e58d5da53aa4154e89",
+      "bytes": 3883
+    }
+  },
+  "coverage_official_file_percentages": {
+    "scripts\\eval\\capabilities.py": 72.26890756302521,
+    "scripts\\eval\\capabilities_evidence.py": 100.0,
+    "scripts\\eval\\capabilities_metrics.py": 100.0,
+    "scripts\\eval\\capabilities_native.py": 87.97653958944281,
+    "scripts\\eval\\capabilities_plan.py": 95.91836734693878,
+    "scripts\\eval\\capabilities_runtime.py": 82.66666666666667
+  },
+  "coverage_arithmetic_mean6": 89.80508019434558,
+  "junit_tests": 79,
+  "descriptor_tests": 5,
+  "plan_rows": 522,
+  "verified": false,
+  "final_cli_session": "t10-fix1-final-106e7295daf141fb87e2dcb9343d59e5",
+  "source_adoption": false,
+  "gpu_or_model_inference": false,
+  "musical_prerequisites_pending": true,
+  "red_evidence_by_gap": [
+    {
+      "gap": "R10-01",
+      "test": "scripts/eval/tests/test_capabilities_fix1.py::test_r01_effective_generation_params_instruction",
+      "failure": "AssertionError: 4 instrucciones efectivas conservaron el default text2music",
+      "date": "2026-10-06"
+    },
+    {
+      "gap": "R10-02",
+      "test": "scripts/eval/tests/test_capabilities_fix1.py::test_r02_input_contract_data_relative",
+      "failure": "AssertionError: data/inputs/ref.wav frente inputs/ref.wav",
+      "date": "2026-10-06"
+    },
+    {
+      "gap": "R10-03",
+      "test": "scripts/eval/tests/test_capabilities_fix1.py::test_r03_unregistered_marker_is_not_audited_lora",
+      "failure": "Failed: DID NOT RAISE ValueError ante marker ajeno/licencia vacia/commercial_use null",
+      "date": "2026-10-06"
+    },
+    {
+      "gap": "R10-04",
+      "test": "scripts/eval/tests/test_capabilities_fix1.py::test_r04_cli_resources_cannot_override_original_text",
+      "failure": "AssertionError: API.calls no vacia, override llego a POST",
+      "date": "2026-10-06"
+    },
+    {
+      "gap": "R10-05",
+      "test": "scripts/eval/tests/test_capabilities_fix1.py::test_r05_contract_output_is_relative_to_data",
+      "failure": "ValueError: output_not_raw_job con ruta contractual tmp/job/output.wav",
+      "date": "2026-10-06"
+    },
+    {
+      "gap": "R10-06",
+      "test": "scripts/eval/tests/test_capabilities_fix1.py::test_r06_complete_initialized_lm_keeps_source",
+      "failure": "AssertionError: LM codes would bypass vocals source; use_lm True",
+      "date": "2026-10-06"
+    },
+    {
+      "gap": "R10-03",
+      "test": "scripts/eval/tests/test_capabilities_fix1.py::test_r03_registered_metadata_rejected",
+      "failure": "Failed: DID NOT RAISE ValueError para licencia, commercial_use, revision y consent",
+      "date": "2026-10-06"
+    }
+  ],
+  "private_receipt_sha256": "56b91d0a37b09869ae7e760a90430950d3b6ce4271468be1330c106927dce1a3",
+  "root_verified_frozen_sources": 45,
+  "root_verified_preimages": 13,
+  "root_verified_sources": 14,
+  "root_verified_artifacts": 917,
+  "root_verified_lab_artifacts": 9,
+  "root_verified_incident_directories": 12,
+  "root_verified_red_logs": 7,
+  "root_computed_official_mean": 89.80508019434558,
+  "root_verified_junit": {
+    "tests": 79,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0
+  },
+  "changed_sources": [
+    "scripts/eval/capabilities.py",
+    "scripts/eval/capabilities_native.py",
+    "scripts/eval/capabilities_plan.py",
+    "scripts/eval/capabilities_runtime.py",
+    "scripts/eval/tests/test_capabilities_checks.py",
+    "scripts/eval/tests/test_capabilities_cli.py",
+    "scripts/eval/tests/test_capabilities_fix1.py",
+    "scripts/eval/tests/test_capabilities_runtime.py"
+  ],
+  "review2_passed": false,
+  "qa_passed": false,
+  "task_complete": false
+}

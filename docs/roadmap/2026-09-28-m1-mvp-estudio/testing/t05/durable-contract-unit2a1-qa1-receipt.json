@@ -1,0 +1,41 @@
+{
+  "status": "SCOPEDPASS",
+  "utc": "2026-10-08T20:40:03.451152+00:00",
+  "ownership": [],
+  "tests": {
+    "cases": 74,
+    "failures_errors": 0,
+    "skipped": 0,
+    "exit_code": 0,
+    "run_count": 1,
+    "junit": "official/junit.xml"
+  },
+  "coverage": {
+    "module": "apps/server/app/worker/contracts.py",
+    "summary": {
+      "covered_lines": 268,
+      "num_statements": 274,
+      "percent_covered": 97.81021897810218,
+      "percent_covered_display": "98",
+      "missing_lines": 6,
+      "excluded_lines": 0,
+      "percent_statements_covered": 97.81021897810218,
+      "percent_statements_covered_display": "98"
+    },
+    "excluded_lines": [],
+    "single_fresh_trace": "official/.coverage",
+    "json": "official/coverage.json",
+    "merged": false
+  },
+  "lint_exit": 0,
+  "exact_11_protected_unchanged": true,
+  "implementation_originals_unchanged": true,
+  "all_frozen_inputs_unchanged": true,
+  "test_hash_current_preexecution": true,
+  "root_acceptance_pending": true,
+  "full_T05_accepted": false,
+  "models_tokens_EUR_IAhours": null,
+  "media_DB_SQL_CAS_FS_publication_custody_runtime_native_child_group": "UNKNOWN",
+  "child_wait_returned": true,
+  "process_group_custody": "UNKNOWN"
+}

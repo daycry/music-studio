@@ -1,0 +1,138 @@
+{
+  "status": "SCOPED_FIX_WITH_CONCERNS",
+  "accepted": false,
+  "full_t09_accepted": false,
+  "review_qa": "Fresh independent review THEN QA ROOT required; counters not reset",
+  "scope": [
+    "scripts/eval/benchmark_process.py",
+    "scripts/eval/benchmark_canonical_runtime.py",
+    "scripts/eval/tests/test_benchmark_native_error_cleanup.py"
+  ],
+  "changes": [
+    "scripts\\eval\\benchmark_canonical_runtime.py",
+    "scripts\\eval\\benchmark_process.py",
+    "scripts\\eval\\tests\\test_benchmark_native_error_cleanup.py"
+  ],
+  "source_before": "/.cache\\dev-cycle\\t09\\native-protocol-cleanup-fix1\\source-before.json",
+  "source_after": "/.cache\\dev-cycle\\t09\\native-protocol-cleanup-fix1\\source-after.json",
+  "protected_root_count": 66,
+  "protected_root_byte_exact": true,
+  "prior_diagnosis_inventory_files": 542,
+  "prior_diagnosis_inventory_mismatches": [],
+  "original_test_sha256": "ec70abecbd64a7d50dc303a74f9c6a359cca97bb74ac47c31b393bf5961032c1",
+  "old_tests_byte_and_ast_exact": true,
+  "causal_reds": {
+    "red-original": {
+      "started_utc": "2026-10-08T05:18:02.569687+00:00",
+      "finished_utc": "2026-10-08T05:18:04.009168+00:00",
+      "exit": 1
+    },
+    "red-new": {
+      "started_utc": "2026-10-08T05:19:00.943491+00:00",
+      "finished_utc": "2026-10-08T05:19:02.324512+00:00",
+      "exit": 1
+    }
+  },
+  "minimum_green": {
+    "started_utc": "2026-10-08T05:19:44.058567+00:00",
+    "finished_utc": "2026-10-08T05:19:45.434968+00:00",
+    "exit": 0
+  },
+  "regressions": {
+    "started_utc": "2026-10-08T05:20:00.656089+00:00",
+    "finished_utc": "2026-10-08T05:20:07.144574+00:00",
+    "exit": 0
+  },
+  "final_run": {
+    "started_utc": "2026-10-08T05:35:23.390554+00:00",
+    "finished_utc": "2026-10-08T05:40:20.339825+00:00",
+    "exit": 0
+  },
+  "junit": {
+    "tests": 253,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "path": "/.cache\\dev-cycle\\t09\\native-protocol-cleanup-fix1\\final-baseline3\\junit.xml"
+  },
+  "coverage": {
+    "official": "/.cache\\dev-cycle\\t09\\native-protocol-cleanup-fix1\\final-baseline3\\coverage-official.json",
+    "same_run_traces": "/.cache\\dev-cycle\\t09\\native-protocol-cleanup-fix1\\final-baseline3\\same-run-traces.json",
+    "per_child": "/.cache\\dev-cycle\\t09\\native-protocol-cleanup-fix1\\final-baseline3\\per-child-summary.json",
+    "WHOLE_each": {
+      "scripts\\eval\\benchmark_canonical_runtime.py": {
+        "covered_lines": 651,
+        "num_statements": 736,
+        "percent_covered": 84.38133874239351,
+        "percent_covered_display": "84",
+        "missing_lines": 85,
+        "excluded_lines": 0,
+        "percent_statements_covered": 88.45108695652173,
+        "percent_statements_covered_display": "88",
+        "num_branches": 250,
+        "num_partial_branches": 69,
+        "covered_branches": 181,
+        "missing_branches": 69,
+        "percent_branches_covered": 72.4,
+        "percent_branches_covered_display": "72"
+      },
+      "scripts\\eval\\benchmark_process.py": {
+        "covered_lines": 400,
+        "num_statements": 462,
+        "percent_covered": 81.90184049079754,
+        "percent_covered_display": "82",
+        "missing_lines": 62,
+        "excluded_lines": 0,
+        "percent_statements_covered": 86.58008658008659,
+        "percent_statements_covered_display": "87",
+        "num_branches": 190,
+        "num_partial_branches": 54,
+        "covered_branches": 134,
+        "missing_branches": 56,
+        "percent_branches_covered": 70.52631578947368,
+        "percent_branches_covered_display": "71"
+      }
+    },
+    "current_source_exact": true,
+    "unmapped_births": [
+      "571f0ffe2d1649d4b3fbd9ac22c2820b",
+      "f79c24049f88496c9617b81d2162e1ae"
+    ],
+    "unpersisted_detail": "/.cache\\dev-cycle\\t09\\native-protocol-cleanup-fix1\\native-unpersisted-coverage.json",
+    "native_uuid_traces": 253,
+    "historical_union": false
+  },
+  "native_current": {
+    "births": 255,
+    "CLOSED_CONFIRMED": 232,
+    "UNKNOWN_QUARANTINED": 23,
+    "missing_cleanup": 0,
+    "stderr": "Original DEVNULL: unavailable UNKNOWN",
+    "raw_stdout": "Authenticated received frames archived in per-run events.json; complete raw pipe stream including startup/EOF not separately archived. Real empty reads asserted by new passthrough ReadObserver."
+  },
+  "physicalReadFile_zero_bytes_BLOCKED": "UNTESTED",
+  "integration_before": "Earlier five-source 80.52–86.51 run accepted only within its limited scope; after canonical runtime changes it is historical dependency evidence, not a current five-module acceptance/freeze.",
+  "out_of_scope": [
+    "hardware",
+    "SLA",
+    "matrix160",
+    "calibration",
+    "material",
+    "cadence",
+    "liveCLI",
+    "GPU",
+    "UI",
+    "E2E",
+    "fullT09"
+  ],
+  "knowledge": "Candidate identified in report for documenter/root; no docs/knowledge writes",
+  "actual_model_tokens_EUR_IAhours": null,
+  "incidents": [
+    "Initial CONTINUE read included history; not used as current state.",
+    "static1 Ruff imported fixture/line-format issues; own new fixture wrapper and formatting repaired, static2 exit0.",
+    "final-baseline1 private extra checkpoint instrumentation failed 10 first-progress barriers (243PASS/10FAIL/13deselected); original outputs/traces retained, no product/test/budget correction. Returning to established checkpoint pattern plus one _load_factory checkpoint passed exact covered case and justified final-baseline2. Internal mechanism of the checkpoint scheduling delay not independently established.",
+    "final-baseline2 passed 253 with 13 deselected but 20 births had no persistent coverage base, including new protocol children. Private scheduler-only _sealed_factory/reply checkpoints validated 10 regressions with 20/20 persistent child traces, then final-baseline3 alone supplies current coverage; no union with baseline2 or validation run. Any missing final birth remains explicitly UNKNOWN, not invented coverage.",
+    "Invalid multi-operation patch was rejected atomically before mutation; corrected private patch applied.",
+    "Read-only PowerShell pipeline syntax error when enumerating unmapped births; corrected read-only command succeeded, no native test run or mutations."
+  ]
+}

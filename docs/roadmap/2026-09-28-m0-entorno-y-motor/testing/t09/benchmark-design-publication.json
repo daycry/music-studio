@@ -1,0 +1,24 @@
+{
+  "selected": "O1",
+  "local_sources": 36,
+  "official_pinned_sources": 7,
+  "private_design_sha256": "533232362f8f6d17f3c262a44413b489c28ca3c1e46f4335af48afc082bbb861",
+  "private_receipt_sha256": "fbfed9949a2c14389d6d7268a71e82d9ac6e6580d26cc216998f07d1a85cb463",
+  "public_design_sha256": "89996de790282c53e2e268e2a94f605ccddfbb4a363cbd923b2b659586041d5e",
+  "projection": "Frontmatter spec/plan/ADR ajustado a la ubicación pública; original privado íntegro",
+  "authorized_documentation_drift": [
+    {
+      "path": "docs/legal/licencias.md",
+      "design_observed_sha256": "6ab077e2b84bc3602cf4052d8fec02354d40088ef5564337b7a5dc857ed2ee3a",
+      "current_sha256": "2343cf3bc7f6ea7a39160253da61c58983d01ffd27c71aa8d553782aaa90817f",
+      "reason": "Actualización de root para ADR-0033 después de investigación; no cambio de producción"
+    },
+    {
+      "path": "docs/arquitectura/contrato-engines.md",
+      "design_observed_sha256": "7216560382e92b8360b48c0f27cf4e838b731ae7d6cf3336c6a4991684c6ba3d",
+      "current_sha256": "47cff8be209cd8179287108c88b94967f09f000e87d01ab2cb2299a4445d445f",
+      "reason": "Actualización de root para ADR-0033 después de investigación; no cambio de producción"
+    }
+  ],
+  "benchmark_executed": false
+}

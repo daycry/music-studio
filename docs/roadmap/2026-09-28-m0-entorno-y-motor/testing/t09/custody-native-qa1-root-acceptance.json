@@ -1,0 +1,60 @@
+{
+  "utc": "2026-10-07T22:31:31.328740+00:00",
+  "technical_component_accepted": true,
+  "scope": "individual native Windows capsule storage dependency only",
+  "sources": {
+    "scripts/eval/benchmark_custody.py": {
+      "sha256": "9a9bab6fc3e869bce9d2a55ce970af34dcb9ed50b5d419a77486defaa36260fc",
+      "bytes": 25180
+    },
+    "scripts/eval/tests/test_benchmark_custody.py": {
+      "sha256": "28c99614c5b84c796cf126e4b7a331d34a81f2bd8a18c9251be6d3a12ae2eac0",
+      "bytes": 41379
+    }
+  },
+  "whole_official_coverage": {
+    "covered_lines": 352,
+    "num_statements": 370,
+    "percent_covered": 93.85245901639344,
+    "percent_covered_display": "93.85",
+    "missing_lines": 18,
+    "excluded_lines": 0,
+    "percent_statements_covered": 95.13513513513513,
+    "percent_statements_covered_display": "95.14",
+    "num_branches": 118,
+    "num_partial_branches": 12,
+    "covered_branches": 106,
+    "missing_branches": 12,
+    "percent_branches_covered": 89.83050847457628,
+    "percent_branches_covered_display": "89.83"
+  },
+  "native_tests": {
+    "passed": 92,
+    "skipped": 1,
+    "failed": 0
+  },
+  "independent_native_variants": 3,
+  "closed_qa_inventory_files": 66,
+  "protected_sources_exact": 60,
+  "formal_T09_next_review": 4,
+  "not_accepted": [
+    "T09 task",
+    "T13",
+    "canonical state",
+    "packs",
+    "FINAL",
+    "runtime integration",
+    "quarantine worker termination integration",
+    "GPU",
+    "UI",
+    "160 outcomes",
+    "musical quality",
+    "Git shipping"
+  ],
+  "limitations": [
+    "historical operational exceptions preserved",
+    "tiny probe zero elapsed resolution is not zero compute cost",
+    "no Linux native protection certification",
+    "unknown_quarantined does not certify resources returned"
+  ]
+}

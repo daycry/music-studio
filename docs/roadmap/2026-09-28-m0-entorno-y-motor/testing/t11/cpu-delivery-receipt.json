@@ -1,0 +1,400 @@
+{
+  "utc": "2026-10-07T06:53:07.614164+00:00",
+  "status": "PARTIAL_CPU_CUSTODIED_FRESH_REVIEW_PENDING",
+  "owned": {
+    "scripts/eval/run.py": {
+      "sha256": "84fe2b10b48459066ef9ec702b8665e2bd3e3491619201fae96766a7ed35b8ba",
+      "bytes": 29471
+    },
+    "scripts/eval/metrics.py": {
+      "sha256": "98367252e174417e57a5fa79d78cc15a030cd34d22ae04a9d4e77b7d8f53f51b",
+      "bytes": 12620
+    },
+    "scripts/eval/tests/test_evaluation_cpu.py": {
+      "sha256": "1db041fc644abef5c5fe1bf6b133e95050c57cc1f835f22dd6a76a95c9b7b6fb",
+      "bytes": 20762
+    },
+    "scripts/eval/tests/test_evaluation_guards.py": {
+      "sha256": "e43efd8416216e999738d549e9b14efd8126ed3dc45e979c4175125786cf2c99",
+      "bytes": 18088
+    }
+  },
+  "protected_verified": 491,
+  "closed_verified": 1785,
+  "terminal_supplements_verified": 9,
+  "whole_modules": {
+    "scripts/eval/metrics.py": {
+      "covered_lines": 167,
+      "num_statements": 184,
+      "percent_covered": 90.76086956521739,
+      "percent_covered_display": "91",
+      "missing_lines": 17,
+      "excluded_lines": 0,
+      "percent_statements_covered": 90.76086956521739,
+      "percent_statements_covered_display": "91"
+    },
+    "scripts/eval/run.py": {
+      "covered_lines": 323,
+      "num_statements": 372,
+      "percent_covered": 86.82795698924731,
+      "percent_covered_display": "87",
+      "missing_lines": 49,
+      "excluded_lines": 0,
+      "percent_statements_covered": 86.82795698924731,
+      "percent_statements_covered_display": "87"
+    }
+  },
+  "unit_tests": 48,
+  "distinct_neighbor_tests": 30,
+  "native_synthetic_audio_receipts": 4,
+  "root_pinned_tool_receipt": {
+    "sha256": "43370a118365f708711046c3b9cf917c52926bd0ac1709abd179569213c16f03",
+    "bytes": 1292
+  },
+  "functional_reds": [
+    {
+      "metadata": "worker-red-blind-order.command.json",
+      "command": {
+        "log": "worker-red-blind-order.log",
+        "argv": [
+          "uv",
+          "run",
+          "--no-sync",
+          "pytest",
+          "scripts/eval/tests/test_evaluation_guards.py::test_public_blind_order_does_not_disclose_plan_slot_order",
+          "-q",
+          "--basetemp=.cache/dev-cycle/t11/cpu-implementation/red-order-temp",
+          "-o",
+          "cache_dir=.cache/dev-cycle/t11/cpu-implementation/pytest-cache"
+        ],
+        "utc_end": "2026-10-07T06:33:20.8179237Z",
+        "exit_code": 1,
+        "utc_start": "2026-10-07T06:33:20.1681974Z"
+      }
+    },
+    {
+      "metadata": "worker-red-metric-harness.command.json",
+      "command": {
+        "log": "worker-red-metric-harness.log",
+        "argv": [
+          "uv",
+          "run",
+          "--no-sync",
+          "pytest",
+          "scripts/eval/tests/test_evaluation_cpu.py::test_metrics_harness_exact_bindings_staging_native_axes",
+          "-q",
+          "--basetemp=.cache/dev-cycle/t11/cpu-implementation/red-metric-temp",
+          "-o",
+          "cache_dir=.cache/dev-cycle/t11/cpu-implementation/pytest-cache"
+        ],
+        "utc_end": "2026-10-07T06:23:11.6089662Z",
+        "exit_code": 1,
+        "utc_start": "2026-10-07T06:23:10.8200049Z"
+      }
+    },
+    {
+      "metadata": "worker-red-test_analysis_stages_under_job_in_with_exact_hash.command.json",
+      "command": {
+        "log": "worker-red-test_analysis_stages_under_job_in_with_exact_hash.log",
+        "argv": [
+          "uv",
+          "run",
+          "--no-sync",
+          "pytest",
+          "scripts/eval/tests/test_evaluation_cpu.py::test_analysis_stages_under_job_in_with_exact_hash",
+          "-q",
+          "--basetemp=.cache/dev-cycle/t11/cpu-implementation/red-temp",
+          "-o",
+          "cache_dir=.cache/dev-cycle/t11/cpu-implementation/pytest-cache"
+        ],
+        "utc_end": "2026-10-07T06:17:03.7933623Z",
+        "exit_code": 1,
+        "utc_start": "2026-10-07T06:17:03.3486342Z"
+      }
+    },
+    {
+      "metadata": "worker-red-test_blind_collection_exclusive_stable_private_map.command.json",
+      "command": {
+        "log": "worker-red-test_blind_collection_exclusive_stable_private_map.log",
+        "argv": [
+          "uv",
+          "run",
+          "--no-sync",
+          "pytest",
+          "scripts/eval/tests/test_evaluation_cpu.py::test_blind_collection_exclusive_stable_private_map",
+          "-q",
+          "--basetemp=.cache/dev-cycle/t11/cpu-implementation/red-temp",
+          "-o",
+          "cache_dir=.cache/dev-cycle/t11/cpu-implementation/pytest-cache"
+        ],
+        "utc_end": "2026-10-07T06:17:03.3080228Z",
+        "exit_code": 1,
+        "utc_start": "2026-10-07T06:17:02.8621452Z"
+      }
+    },
+    {
+      "metadata": "worker-red-test_blind_resume_recovers_missing_copy_keeps_same_map.command.json",
+      "command": {
+        "log": "worker-red-test_blind_resume_recovers_missing_copy_keeps_same_map.log",
+        "argv": [
+          "uv",
+          "run",
+          "--no-sync",
+          "pytest",
+          "scripts/eval/tests/test_evaluation_guards.py::test_blind_resume_recovers_missing_copy_keeps_same_map",
+          "-q",
+          "--basetemp=.cache/dev-cycle/t11/cpu-implementation/red-guards-temp",
+          "-o",
+          "cache_dir=.cache/dev-cycle/t11/cpu-implementation/pytest-cache"
+        ],
+        "utc_end": "2026-10-07T06:27:31.8990846Z",
+        "exit_code": 1,
+        "utc_start": "2026-10-07T06:27:31.2738018Z"
+      }
+    },
+    {
+      "metadata": "worker-red-test_descriptor_resolution_exact_verified_no_profile_inheritance.command.json",
+      "command": {
+        "log": "worker-red-test_descriptor_resolution_exact_verified_no_profile_inheritance.log",
+        "argv": [
+          "uv",
+          "run",
+          "--no-sync",
+          "pytest",
+          "scripts/eval/tests/test_evaluation_cpu.py::test_descriptor_resolution_exact_verified_no_profile_inheritance",
+          "-q",
+          "--basetemp=.cache/dev-cycle/t11/cpu-implementation/red-temp",
+          "-o",
+          "cache_dir=.cache/dev-cycle/t11/cpu-implementation/pytest-cache"
+        ],
+        "utc_end": "2026-10-07T06:17:05.0531538Z",
+        "exit_code": 1,
+        "utc_start": "2026-10-07T06:17:04.3285030Z"
+      }
+    },
+    {
+      "metadata": "worker-red-test_fixed_gain_is_proportional_and_conflict_keeps_raw.command.json",
+      "command": {
+        "log": "worker-red-test_fixed_gain_is_proportional_and_conflict_keeps_raw.log",
+        "argv": [
+          "uv",
+          "run",
+          "--no-sync",
+          "pytest",
+          "scripts/eval/tests/test_evaluation_cpu.py::test_fixed_gain_is_proportional_and_conflict_keeps_raw",
+          "-q",
+          "--basetemp=.cache/dev-cycle/t11/cpu-implementation/red-temp",
+          "-o",
+          "cache_dir=.cache/dev-cycle/t11/cpu-implementation/pytest-cache"
+        ],
+        "utc_end": "2026-10-07T06:17:02.8204644Z",
+        "exit_code": 1,
+        "utc_start": "2026-10-07T06:17:02.3727363Z"
+      }
+    },
+    {
+      "metadata": "worker-red-test_floor_profile_mismatch_never_adjusts_raw_wer.command.json",
+      "command": {
+        "log": "worker-red-test_floor_profile_mismatch_never_adjusts_raw_wer.log",
+        "argv": [
+          "uv",
+          "run",
+          "--no-sync",
+          "pytest",
+          "scripts/eval/tests/test_evaluation_guards.py::test_floor_profile_mismatch_never_adjusts_raw_wer",
+          "-q",
+          "--basetemp=.cache/dev-cycle/t11/cpu-implementation/red-final-temp",
+          "-o",
+          "cache_dir=.cache/dev-cycle/t11/cpu-implementation/pytest-cache"
+        ],
+        "utc_end": "2026-10-07T06:30:45.2384429Z",
+        "exit_code": 1,
+        "utc_start": "2026-10-07T06:30:44.4341636Z"
+      }
+    },
+    {
+      "metadata": "worker-red-test_floor_requires_real_declared_whole_content_matched_profile.command.json",
+      "command": {
+        "log": "worker-red-test_floor_requires_real_declared_whole_content_matched_profile.log",
+        "argv": [
+          "uv",
+          "run",
+          "--no-sync",
+          "pytest",
+          "scripts/eval/tests/test_evaluation_cpu.py::test_floor_requires_real_declared_whole_content_matched_profile",
+          "-q",
+          "--basetemp=.cache/dev-cycle/t11/cpu-implementation/red-temp",
+          "-o",
+          "cache_dir=.cache/dev-cycle/t11/cpu-implementation/pytest-cache"
+        ],
+        "utc_end": "2026-10-07T06:17:04.2763830Z",
+        "exit_code": 1,
+        "utc_start": "2026-10-07T06:17:03.8333224Z"
+      }
+    },
+    {
+      "metadata": "worker-red-test_missing_prerequisites_fail_before_any_transport.command.json",
+      "command": {
+        "log": "worker-red-test_missing_prerequisites_fail_before_any_transport.log",
+        "argv": [
+          "uv",
+          "run",
+          "--no-sync",
+          "pytest",
+          "scripts/eval/tests/test_evaluation_cpu.py::test_missing_prerequisites_fail_before_any_transport",
+          "-q",
+          "--basetemp=.cache/dev-cycle/t11/cpu-implementation/red-temp",
+          "-o",
+          "cache_dir=.cache/dev-cycle/t11/cpu-implementation/pytest-cache"
+        ],
+        "utc_end": "2026-10-07T06:17:01.8487399Z",
+        "exit_code": 1,
+        "utc_start": "2026-10-07T06:17:01.3851361Z"
+      }
+    },
+    {
+      "metadata": "worker-red-test_plan_has_thirty_fixed_slots_and_literal_inputs.command.json",
+      "command": {
+        "log": "worker-red-test_plan_has_thirty_fixed_slots_and_literal_inputs.log",
+        "argv": [
+          "uv",
+          "run",
+          "--no-sync",
+          "pytest",
+          "scripts/eval/tests/test_evaluation_cpu.py::test_plan_has_thirty_fixed_slots_and_literal_inputs",
+          "-q",
+          "--basetemp=.cache/dev-cycle/t11/cpu-implementation/red-temp",
+          "-o",
+          "cache_dir=.cache/dev-cycle/t11/cpu-implementation/pytest-cache"
+        ],
+        "utc_end": "2026-10-07T06:17:01.3194651Z",
+        "exit_code": 1,
+        "utc_start": "2026-10-07T06:17:00.7455322Z"
+      }
+    },
+    {
+      "metadata": "worker-red-test_sealed_plan_rejects_catalog_replacement_before_transport.command.json",
+      "command": {
+        "log": "worker-red-test_sealed_plan_rejects_catalog_replacement_before_transport.log",
+        "argv": [
+          "uv",
+          "run",
+          "--no-sync",
+          "pytest",
+          "scripts/eval/tests/test_evaluation_guards.py::test_sealed_plan_rejects_catalog_replacement_before_transport",
+          "-q",
+          "--basetemp=.cache/dev-cycle/t11/cpu-implementation/red-guards-temp",
+          "-o",
+          "cache_dir=.cache/dev-cycle/t11/cpu-implementation/pytest-cache"
+        ],
+        "utc_end": "2026-10-07T06:27:31.2352593Z",
+        "exit_code": 1,
+        "utc_start": "2026-10-07T06:27:30.4385082Z"
+      }
+    },
+    {
+      "metadata": "worker-red-test_synthetic_complete_workflow_thirty_unique_jobs.command.json",
+      "command": {
+        "log": "worker-red-test_synthetic_complete_workflow_thirty_unique_jobs.log",
+        "argv": [
+          "uv",
+          "run",
+          "--no-sync",
+          "pytest",
+          "scripts/eval/tests/test_evaluation_cpu.py::test_synthetic_complete_workflow_thirty_unique_jobs",
+          "-q",
+          "--basetemp=.cache/dev-cycle/t11/cpu-implementation/red-temp",
+          "-o",
+          "cache_dir=.cache/dev-cycle/t11/cpu-implementation/pytest-cache"
+        ],
+        "utc_end": "2026-10-07T06:17:05.5436052Z",
+        "exit_code": 1,
+        "utc_start": "2026-10-07T06:17:05.0921316Z"
+      }
+    },
+    {
+      "metadata": "worker-red-test_unknown_plan_schema_fails_closed.command.json",
+      "command": {
+        "log": "worker-red-test_unknown_plan_schema_fails_closed.log",
+        "argv": [
+          "uv",
+          "run",
+          "--no-sync",
+          "pytest",
+          "scripts/eval/tests/test_evaluation_guards.py::test_unknown_plan_schema_fails_closed",
+          "-q",
+          "--basetemp=.cache/dev-cycle/t11/cpu-implementation/red-final-temp",
+          "-o",
+          "cache_dir=.cache/dev-cycle/t11/cpu-implementation/pytest-cache"
+        ],
+        "utc_end": "2026-10-07T06:30:44.3725840Z",
+        "exit_code": 1,
+        "utc_start": "2026-10-07T06:30:43.5325703Z"
+      }
+    },
+    {
+      "metadata": "worker-red-test_unknown_submit_ack_retains_identity_never_retries_and_sanitizes.command.json",
+      "command": {
+        "log": "worker-red-test_unknown_submit_ack_retains_identity_never_retries_and_sanitizes.log",
+        "argv": [
+          "uv",
+          "run",
+          "--no-sync",
+          "pytest",
+          "scripts/eval/tests/test_evaluation_guards.py::test_unknown_submit_ack_retains_identity_never_retries_and_sanitizes",
+          "-q",
+          "--basetemp=.cache/dev-cycle/t11/cpu-implementation/red-guards-temp",
+          "-o",
+          "cache_dir=.cache/dev-cycle/t11/cpu-implementation/pytest-cache"
+        ],
+        "utc_end": "2026-10-07T06:27:30.3748882Z",
+        "exit_code": 1,
+        "utc_start": "2026-10-07T06:27:29.6464644Z"
+      }
+    },
+    {
+      "metadata": "worker-red-test_wer_preserves_sung_tags_and_pending_floor.command.json",
+      "command": {
+        "log": "worker-red-test_wer_preserves_sung_tags_and_pending_floor.log",
+        "argv": [
+          "uv",
+          "run",
+          "--no-sync",
+          "pytest",
+          "scripts/eval/tests/test_evaluation_cpu.py::test_wer_preserves_sung_tags_and_pending_floor",
+          "-q",
+          "--basetemp=.cache/dev-cycle/t11/cpu-implementation/red-temp",
+          "-o",
+          "cache_dir=.cache/dev-cycle/t11/cpu-implementation/pytest-cache"
+        ],
+        "utc_end": "2026-10-07T06:17:02.3325395Z",
+        "exit_code": 1,
+        "utc_start": "2026-10-07T06:17:01.8891384Z"
+      }
+    },
+    {
+      "metadata": "worker-red-v1.command.json",
+      "command": {
+        "log": "worker-red-v1.log",
+        "argv": [
+          "uv",
+          "run",
+          "--no-sync",
+          "pytest",
+          "scripts/eval/tests/test_evaluation_cpu.py::test_v1_http_mock_auth_explicit_model_events_cleanup",
+          "-q",
+          "--basetemp=.cache/dev-cycle/t11/cpu-implementation/red-v1-temp",
+          "-o",
+          "cache_dir=.cache/dev-cycle/t11/cpu-implementation/pytest-cache"
+        ],
+        "utc_end": "2026-10-07T06:17:23.2712183Z",
+        "exit_code": 1,
+        "utc_start": "2026-10-07T06:17:22.5174427Z"
+      }
+    }
+  ],
+  "real_generation_count": 0,
+  "real_wer_floor": null,
+  "human_assessment": null,
+  "task_complete": false
+}

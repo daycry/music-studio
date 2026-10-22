@@ -1,0 +1,418 @@
+{
+  "schema_version": 1,
+  "status": "FAILED_NO_ACCEPTANCE_VERIFICATION_COMPLETE",
+  "utc": "2026-10-08T20:29:19.995394+00:00",
+  "agent_id": "/root/resume_t08_stable_inputs",
+  "context": "native reused SAME T08 task verification, not fresh independent QA",
+  "product_edits": [],
+  "original_ownership_root": [
+    "scripts/fetch_web_dependencies.py",
+    "tests/test_fetch_web_dependencies.py",
+    "tests/test_web_build_inputs.py"
+  ],
+  "baseline": {
+    "argv": [
+      "/.venv\\Scripts\\python.exe",
+      "-m",
+      "pytest",
+      "tests/test_fetch_web_dependencies.py",
+      "tests/test_web_build_inputs.py",
+      "-q",
+      "-o",
+      "cache_dir=/.cache\\dev-cycle\\m1\\t08-stable-inputs-review1-fix-resume1\\pytest-cache",
+      "--junitxml=/.cache\\dev-cycle\\m1\\t08-stable-inputs-review1-fix-resume1\\baseline-junit.xml",
+      "--cov=scripts.fetch_web_dependencies",
+      "--cov-config=/.cache\\dev-cycle\\m1\\t08-stable-inputs-review1-fix-resume1\\coverage.ini",
+      "--cov-report=json:/.cache\\dev-cycle\\m1\\t08-stable-inputs-review1-fix-resume1\\coverage.json",
+      "--cov-report=term-missing"
+    ],
+    "utc_start": "2026-10-08T19:49:44.774536+00:00",
+    "cwd": "",
+    "source_before": {
+      "scripts/fetch_web_dependencies.py": {
+        "bytes": 18653,
+        "sha256": "5245ecda5e9831533262240a589b90c477e23f83f752244e590e974dd8358db8"
+      },
+      "tests/test_fetch_web_dependencies.py": {
+        "bytes": 15982,
+        "sha256": "6467df693cba35519bbea015e968405782ab8199760a2fef8443f53ea671205a"
+      },
+      "tests/test_web_build_inputs.py": {
+        "bytes": 11669,
+        "sha256": "ea4c3b68b133547f3d85042d2748dbdac728bdea0c7af6690aa5a4ff8336dcd5"
+      },
+      "scripts/web_build_inputs.py": {
+        "bytes": 11050,
+        "sha256": "784f46aac62382b2d7cda2eac8c8b58c359608dbf2ff3911442a9949878b085b"
+      }
+    },
+    "runner_before": {
+      "bytes": 8404,
+      "sha256": "708eae7fdc513268676d8f1ff5374458ee8dd28c5ff16976222ed0498ea3bcf8"
+    },
+    "config_before": {
+      "bytes": 101,
+      "sha256": "892eefaf46bb61f81e02c1680cdc432b574004c810e66407e92e2a20b5c8b7ff"
+    },
+    "parent_pid": 9844,
+    "private_env": {
+      "TEMP": "/.cache\\dev-cycle\\m1\\t08-stable-inputs-review1-fix-resume1\\temp",
+      "TMP": "/.cache\\dev-cycle\\m1\\t08-stable-inputs-review1-fix-resume1\\temp",
+      "UV_CACHE_DIR": "/.cache\\dev-cycle\\m1\\t08-stable-inputs-review1-fix-resume1\\uv",
+      "PYTHONPYCACHEPREFIX": "/.cache\\dev-cycle\\m1\\t08-stable-inputs-review1-fix-resume1\\pycache",
+      "STUDIO_TEST_ROOT": "/.cache\\dev-cycle\\m1\\t08-stable-inputs-review1-fix-resume1\\test-workspaces",
+      "COVERAGE_FILE": "/.cache\\dev-cycle\\m1\\t08-stable-inputs-review1-fix-resume1\\.coverage",
+      "RUFF_CACHE_DIR": "/.cache\\dev-cycle\\m1\\t08-stable-inputs-review1-fix-resume1\\ruff"
+    },
+    "pid": 19764,
+    "utc_end": "2026-10-08T20:28:35.576488+00:00",
+    "exit": 1,
+    "source_after": {
+      "scripts/fetch_web_dependencies.py": {
+        "bytes": 18653,
+        "sha256": "5245ecda5e9831533262240a589b90c477e23f83f752244e590e974dd8358db8"
+      },
+      "tests/test_fetch_web_dependencies.py": {
+        "bytes": 15982,
+        "sha256": "6467df693cba35519bbea015e968405782ab8199760a2fef8443f53ea671205a"
+      },
+      "tests/test_web_build_inputs.py": {
+        "bytes": 11669,
+        "sha256": "ea4c3b68b133547f3d85042d2748dbdac728bdea0c7af6690aa5a4ff8336dcd5"
+      },
+      "scripts/web_build_inputs.py": {
+        "bytes": 11050,
+        "sha256": "784f46aac62382b2d7cda2eac8c8b58c359608dbf2ff3911442a9949878b085b"
+      }
+    },
+    "observer_stopped": true
+  },
+  "junit": {
+    "name": "pytest",
+    "errors": "0",
+    "failures": "1",
+    "skipped": "0",
+    "tests": "65",
+    "time": "2329.521",
+    "timestamp": "2026-10-08T21:49:45.953406+02:00",
+    "hostname": "local-ai"
+  },
+  "counts": {
+    "tests": 65,
+    "failures": 1,
+    "errors": 0,
+    "skipped": 0,
+    "passed": 64
+  },
+  "failed_cases": [
+    {
+      "name": "test_original586_missing23",
+      "classname": "tests.test_fetch_web_dependencies",
+      "kind": "failure",
+      "message": "AssertionError: assert 24 == 23\n +  where 24 = len({'02034af8d41dcc67ac8eab88f642e129bb8a2e8922abf30229c32725f54d8fd6.tgz', '057af0a53995f7a57dcb044f4da9b629baca7ad70c01...35f697e6db9fe350bc50740cdaefb865d580.tgz', '1bbea47d1387406da5b6ccc4184cc61eae6851cc0db5c1d9bbd088ea9daa0b4a.tgz', ...})",
+      "original_text": "repository = WindowsPath('/.cache/dev-cycle/m1/t08-stable-inputs-review1-fix-resume1/test-workspaces/c32e0742f06149f9876e7c6a402a5077/repo')\n\n    def test_original586_missing23(repository):\n        source = repository / \"input\"\n        package = json.loads(deps.read_file(PROJECT, PROJECT / \"apps/web/package.json\"))\n        direct = set(package[\"dependencies\"]) | set(package[\"devDependencies\"])\n        lock, _ = deps.load_lock(PROJECT)\n        omitted = {\n            row[\"sha256\"] + \".tgz\" for row in lock[\"artifacts\"] if row[\"name\"] in direct\n        }\n>       assert len(omitted) == 23\nE       AssertionError: assert 24 == 23\nE        +  where 24 = len({'02034af8d41dcc67ac8eab88f642e129bb8a2e8922abf30229c32725f54d8fd6.tgz', '057af0a53995f7a57dcb044f4da9b629baca7ad70c01...35f697e6db9fe350bc50740cdaefb865d580.tgz', '1bbea47d1387406da5b6ccc4184cc61eae6851cc0db5c1d9bbd088ea9daa0b4a.tgz', ...})\n\ntests\\test_fetch_web_dependencies.py:212: AssertionError",
+      "time": "0.154"
+    }
+  ],
+  "coverage": {
+    "whole_fetch": {
+      "covered_lines": 327,
+      "num_statements": 349,
+      "percent_covered": 93.69627507163324,
+      "percent_covered_display": "94",
+      "missing_lines": 22,
+      "excluded_lines": 0,
+      "percent_statements_covered": 93.69627507163324,
+      "percent_statements_covered_display": "94"
+    },
+    "excluded_lines": [],
+    "threshold_gate": true,
+    "coverage_original": {
+      "bytes": 53248,
+      "sha256": "331634edf7fc9e067bcbcd3c48032de5cba9c6ac95d7773d0cc8739e2fbb26bf"
+    },
+    "coverage_json": {
+      "bytes": 15071,
+      "sha256": "241410a5bcc8861c465ced0abeae4eef375f8a027840f82c6308920db8069c1f"
+    },
+    "scope": "current executed baseline trace only; failed suite is not a passing verification or acceptance"
+  },
+  "custody": {
+    "sources_count": 968,
+    "sources_exact": true,
+    "source_drift": {},
+    "protected_count": 11,
+    "protected_exact": true,
+    "canonical609_exact": true,
+    "prior_original_count": 180,
+    "prior_originals_exact": true,
+    "baseline_four_sources_exact": true,
+    "contracts_names_present_in_freeze_vs_current": {
+      "added": [],
+      "missing": [],
+      "limit": "comparison to names in source freeze; no independent before-time complete directory inventory claimed"
+    },
+    "root_schema_coordination": {
+      "old_cli_exit": null,
+      "path": "packages/contracts/song-v1.schema.json",
+      "incident": "potential authorized ownership overlap detected by root and resolved without observed change; final before/after determines actual drift",
+      "root_actor": "U2a CLI exec7796",
+      "current_sha256": "556a5e576d0d0f1a72fa986f5c2a4cdbc97888b426669feac0f44bad249bc3a8",
+      "exact_observed": true,
+      "root_reported_status": "INCOMPLETE, no production/tests touched; schema unchanged at20:09:20UTC",
+      "utc_observed": "2026-10-08T20:11:58.5204485Z",
+      "root_reported_finish": "2026-10-08T20:08:45Z",
+      "active_goal": "stop revoked, goal ACTIVE full roadmap",
+      "frozen_sha256": "556a5e576d0d0f1a72fa986f5c2a4cdbc97888b426669feac0f44bad249bc3a8",
+      "future_rule": "root avoids additions or mutations packages/contracts JSON until current baseline terminal"
+    }
+  },
+  "old45_semantics": {
+    "old_tests": 45,
+    "whole_exact": 44,
+    "normalized_bootstrap": 1,
+    "files": {
+      "tests/test_fetch_web_dependencies.py": {
+        "test_import_native609": {
+          "whole_AST_exact": true
+        },
+        "test_missing_before_partial": {
+          "whole_AST_exact": true
+        },
+        "test_unknown_preserves_foreign": {
+          "whole_AST_exact": true
+        },
+        "test_source_escape": {
+          "whole_AST_exact": true
+        },
+        "test_source_hardlink": {
+          "whole_AST_exact": true
+        },
+        "test_changed_lock": {
+          "whole_AST_exact": true
+        },
+        "test_bad_lock": {
+          "whole_AST_exact": true
+        },
+        "test_incomplete_existing_never_overwritten": {
+          "whole_AST_exact": true
+        },
+        "test_reserved_path": {
+          "whole_AST_exact": true
+        },
+        "test_native_executable_identity": {
+          "whole_AST_exact": true
+        },
+        "test_original586_missing23": {
+          "whole_AST_exact": false,
+          "normalized": true,
+          "reason": "only bootstrap derives physical586 from current canonical609 minus current direct23; args/decorators/source variable and original rejection/assertion tail exact"
+        },
+        "test_atomic_publication_and_no_clobber": {
+          "whole_AST_exact": true
+        },
+        "test_concurrent_publication_lease": {
+          "whole_AST_exact": true
+        },
+        "test_rollback_exact_owned_files": {
+          "whole_AST_exact": true
+        },
+        "test_stage_foreign_preserved_fail_closed": {
+          "whole_AST_exact": true
+        },
+        "test_stage_integrity_tamper": {
+          "whole_AST_exact": true
+        },
+        "test_ancestor_native_rename_denied": {
+          "whole_AST_exact": true
+        },
+        "test_junction_before_stage_rejected": {
+          "whole_AST_exact": true
+        },
+        "test_portable_reserved_names": {
+          "whole_AST_exact": true
+        },
+        "test_unknown_and_duplicate_opaque_archive": {
+          "whole_AST_exact": true
+        },
+        "test_local_cli_error_and_finite_operations": {
+          "whole_AST_exact": true
+        },
+        "test_sri_mismatch_even_with_correct_sha256": {
+          "whole_AST_exact": true
+        },
+        "test_source_special_directory_rejected": {
+          "whole_AST_exact": true
+        },
+        "test_root_cannot_authorize_escape": {
+          "whole_AST_exact": true
+        },
+        "test_caller_lock_cannot_mint_official_metadata": {
+          "whole_AST_exact": true
+        },
+        "test_library_boundary_cannot_expand_repo": {
+          "whole_AST_exact": true
+        },
+        "test_publication_race_preserves_new_foreign_output": {
+          "whole_AST_exact": true
+        },
+        "test_stage_native_directory_swap_preserves_foreign": {
+          "whole_AST_exact": true
+        },
+        "test_native_read_handle_blocks_file_write": {
+          "whole_AST_exact": true
+        },
+        "test_read_limits_and_missing_input": {
+          "whole_AST_exact": true
+        },
+        "test_lock_batch_bounds": {
+          "whole_AST_exact": true
+        }
+      },
+      "tests/test_web_build_inputs.py": {
+        "test_context_native609_pnpm901": {
+          "whole_AST_exact": true
+        },
+        "test_missing_context_input_no_publication": {
+          "whole_AST_exact": true
+        },
+        "test_existing_foreign_destination": {
+          "whole_AST_exact": true
+        },
+        "test_pnpm_tamper_no_publication": {
+          "whole_AST_exact": true
+        },
+        "test_base_tools_pin_mismatch": {
+          "whole_AST_exact": true
+        },
+        "test_context_destination_escape": {
+          "whole_AST_exact": true
+        },
+        "test_destination_junction_before_stage": {
+          "whole_AST_exact": true
+        },
+        "test_context_cannot_write_sources": {
+          "whole_AST_exact": true
+        },
+        "test_pnpm_unknown_foreign_file": {
+          "whole_AST_exact": true
+        },
+        "test_changed_linux_identity": {
+          "whole_AST_exact": true
+        },
+        "test_web_manifest_changed_pin": {
+          "whole_AST_exact": true
+        },
+        "test_caller_linux_identity_not_authoritative": {
+          "whole_AST_exact": true
+        },
+        "test_context_cli_finite_error": {
+          "whole_AST_exact": true
+        },
+        "test_native_changed_input_rollback": {
+          "whole_AST_exact": true
+        }
+      }
+    }
+  },
+  "manifest_current": {
+    "bytes_original": {
+      "bytes": 301913,
+      "sha256": "f01bfccbe09318dc675c22b828ce2376030bcd7e43bf4dd8a4f173cd1aaacdb3"
+    },
+    "entries": 1562,
+    "archives": 609,
+    "pnpm": 901,
+    "archives_metadata_exact": true,
+    "pnpm_metadata_exact": true,
+    "observation": {
+      "utc": "2026-10-08T20:06:38.684061+00:00",
+      "original_path": "/.cache\\dev-cycle\\m1\\t08-stable-inputs-review1-fix-resume1\\test-workspaces\\87c3583c73dc4dc198d994a607afb744\\repo\\.cache\\output\\context\\build-inputs.json",
+      "bytes": 301913,
+      "sha256": "f01bfccbe09318dc675c22b828ce2376030bcd7e43bf4dd8a4f173cd1aaacdb3",
+      "files": 1562,
+      "observer": "readonly thread in runner; original bytes, no independent payload retention/hash claim"
+    },
+    "limit": "original manifest captured readonly; payload verification by producer/test, no independent retained payload freeze"
+  },
+  "current_workspaces_remaining": [],
+  "observer_stopped": true,
+  "process_close_preflight": {
+    "observer_joined": true,
+    "old_cli_exit": null,
+    "baseline_native_child_wait_exit": 1,
+    "utc": "2026-10-08T20:29:18.3806525Z",
+    "child_pid19764": [],
+    "native_exec42686_exit_observed": 1,
+    "current_phase_python_matches": [],
+    "runner_pid9844": [],
+    "goal_status": "ACTIVE stop revoked"
+  },
+  "old_CLI_exit": null,
+  "old_baseline_exit": null,
+  "old_workspace_cleanup": "UNKNOWN; retained intact, no ownership adopted",
+  "nested_OS_descendants": "UNKNOWN; direct child wait/PID/CIM recorded",
+  "actual_model": null,
+  "actual_tokens": null,
+  "actual_EUR": null,
+  "actual_AI_hours": null,
+  "acceptance": false,
+  "authorization_current": "stop revoked by user; goal ACTIVE entire roadmap. This actor verification only; no blind fix/retest. Root cause/fix/reviewQA next.",
+  "old_RED_copy_limit": "fix1 reconstructed RED tests after hash capture, not relabeled before-run copies; current baseline complete source/config/test copies archived before child",
+  "finite_finalizer_child": {
+    "argv": [
+      "/.venv\\Scripts\\python.exe",
+      "-B",
+      "/.cache\\dev-cycle\\m1\\t08-stable-inputs-review1-fix-resume1\\finalize_failed.py",
+      "generate"
+    ],
+    "utc_start": "2026-10-08T20:29:18.718866+00:00",
+    "invoked_before": {
+      "bytes": 14875,
+      "sha256": "172b44ebb2922c972334cf74c96eb2e1be887aeca31026736b4661c93991661c"
+    },
+    "pid": 24652,
+    "exit": 0,
+    "utc_end": "2026-10-08T20:29:20.007060+00:00",
+    "invoked_after": {
+      "bytes": 14875,
+      "sha256": "172b44ebb2922c972334cf74c96eb2e1be887aeca31026736b4661c93991661c"
+    }
+  },
+  "physical586_case": "FAILED before copy/rejection; physical586 NOT created/verified by this test in current run",
+  "failed_bootstrap_metadata_analysis": {
+    "operation": "finite readonly JSON analysis after actual failed baseline; no library invocation/copy/test/retest",
+    "actual_name_filter_count": 24,
+    "exact_name_version_pair_metadata_count": 23,
+    "duplicates": {
+      "postcss": {
+        "manifest_exact_specifier": "8.5.29",
+        "artifacts_selected_by_current_name_filter": [
+          {
+            "version": "8.5.23",
+            "sha256": "d2cf324ff10baf8c34e1c79309bf2bfe15ee9b6e957f665737b9a9604c0744f1"
+          },
+          {
+            "version": "8.5.29",
+            "sha256": "c02fcaea0bef927cae3a287dd6c316d8a9da12c8b9ba104f2387978fbe16234d"
+          }
+        ]
+      }
+    },
+    "limit": "exact pin pair count is metadata only, not a passing physical586 test; no fix performed"
+  },
+  "process_close_final": {
+    "native_finalizer_exec_exit_observed": 0,
+    "old_cli_exit": null,
+    "surface": "Win32_Process CIM after baseline+finite finalizer terminal, before finite sealing only",
+    "goal_status": "ACTIVE stop revoked",
+    "utc": "2026-10-08T20:32:12.9371346Z",
+    "child_pid19764": [],
+    "native_exec42686_exit_observed": 1,
+    "finite_finalizer_child_pid": 24652,
+    "runner_pid9844": [],
+    "finite_finalizer_child_wait_exit": 0,
+    "current_phase_python_matches": [],
+    "finite_finalizer_current_state": []
+  }
+}

@@ -1,0 +1,240 @@
+{
+  "utc": "2026-10-07T05:00:41.676241+00:00",
+  "lenses": {
+    "a": {
+      "cli-metadata.json": {
+        "sha256": "cff76fff6214db8fc5e292c1221fb9a6bf73582cd3c37e5bbaac765a425faa4c",
+        "bytes": 732
+      },
+      "cli-original.jsonl": {
+        "sha256": "30e5274c0881c9e3193644ea09c1c6192f43e48aff7bf6c9b3676e4d7c53c2eb",
+        "bytes": 4823
+      },
+      "cli-stderr-original.txt": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "final-original.md": {
+        "sha256": "c91793d2dc5920f61d3f3f8bb25ecebe030a600edf66e026c0998300a9f1ddaf",
+        "bytes": 4451
+      }
+    },
+    "b": {
+      "cli-metadata.json": {
+        "sha256": "283d8d843e1e498f28c1a44643b2ee2b30c6a6f4a483dc84691bedd941770eb5",
+        "bytes": 732
+      },
+      "cli-original.jsonl": {
+        "sha256": "06883b8e4b4f4b01c105f2688baf2eaac7aab064bc047d8986f5f409d7d0f4a1",
+        "bytes": 4778
+      },
+      "cli-stderr-original.txt": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "final-original.md": {
+        "sha256": "70478dfac6eeea3a0eb33861cdb690f979075e9351de1cef422d6f1e5fb0eb62",
+        "bytes": 4407
+      }
+    },
+    "c": {
+      "cli-metadata.json": {
+        "sha256": "f5add2972c2fe7efd39a8844853ae9ceb0e4c0568b8e4e356e5ebe787f7d4ac4",
+        "bytes": 732
+      },
+      "cli-original.jsonl": {
+        "sha256": "cf407797052d388dc7eb17bd502c70b557a741f162321e611d3eea0ae1e49717",
+        "bytes": 2903
+      },
+      "cli-stderr-original.txt": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "final-original.md": {
+        "sha256": "9c768aa468023958245cb25ec7e19aab1a44980cfe4172b71bb86ea827c9a6c4",
+        "bytes": 2538
+      }
+    },
+    "d": {
+      "cli-metadata.json": {
+        "sha256": "1569e6e5ac5ffa47dad87bfbf9571421d81ab68fcb11a72ab0d6e5131bac6403",
+        "bytes": 732
+      },
+      "cli-original.jsonl": {
+        "sha256": "83074ea866196af37764dc26993b629048d977e07c13416c4120c8748df4d931",
+        "bytes": 3768
+      },
+      "cli-stderr-original.txt": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "final-original.md": {
+        "sha256": "ff43068598bf279bd4f84db45d586819f49275fe865249689e3d892a70ecdf6b",
+        "bytes": 3405
+      }
+    }
+  },
+  "source_freeze": {
+    "apps/server/alembic.ini": {
+      "bytes": 100,
+      "sha256": "13cdfa146e51b68c87a55e040b22bbbd617264fdb9fa77fa77fb2a134087b58b"
+    },
+    "apps/server/app/backup.py": {
+      "bytes": 7356,
+      "sha256": "f6517db23f1bcc3d64a53037a765b9bb5742e90ad70ef24c3fb511ac62cea32c"
+    },
+    "apps/server/app/db.py": {
+      "bytes": 2583,
+      "sha256": "7641b7d718ee53ba18307aa1e3c8e47755db6dc6ee1476ab9ca2c6f7192d388d"
+    },
+    "apps/server/app/main.py": {
+      "bytes": 2758,
+      "sha256": "2d223ad6e719ba58d4719ac5fbb673b930c6c8834bc6f2129ce79e97c4fbc94a"
+    },
+    "apps/server/app/migrations/__init__.py": {
+      "bytes": 53,
+      "sha256": "26578ae0326059d901d2abf14bb6edf1114dd924cb118e9d76dc547ce5faa52e"
+    },
+    "apps/server/app/migrations/env.py": {
+      "bytes": 669,
+      "sha256": "552e3eba3d0536d95bcf18ccfe995b3ad7ef4afc69d4dbee57b2c199540f4194"
+    },
+    "apps/server/app/migrations/initial_invariants.py": {
+      "bytes": 9711,
+      "sha256": "91c5cd6e6bc05b0e62dcd0403a10a55826bed9a6cb63abf89d2c133aeed4e4c6"
+    },
+    "apps/server/app/migrations/initial_relations.json": {
+      "bytes": 3679,
+      "sha256": "456c0b2a3f9fba88afb1fb2d40b5ae4df8386516bf5649bd51e2093dc0364910"
+    },
+    "apps/server/app/migrations/versions/0001_initial.py": {
+      "bytes": 3450,
+      "sha256": "762e019de05c245e08172814fba3138e5fb8311b5c987f6ffc715bef50f5eac5"
+    },
+    "apps/server/app/migrations/versions/0001_schema.sql": {
+      "bytes": 46637,
+      "sha256": "9fe867481051286ff592e9b668deae8d65cf88f475d6e7faf9a7cdf8d53a3998"
+    },
+    "apps/server/app/migrations/versions/__init__.py": {
+      "bytes": 30,
+      "sha256": "321bbcdfa7b590f46141a0963ee2e2001ee2f58bcdc51ec587b943c304cc91e1"
+    },
+    "apps/server/app/models/__init__.py": {
+      "bytes": 19898,
+      "sha256": "d7ec10eadeea81b3787f14d4b55c067a20290911bafe800f6929922066664392"
+    },
+    "apps/server/app/models/song-v1.schema.json": {
+      "bytes": 61985,
+      "sha256": "770650be540e22fd4b6206f7abd12a0ed4bd5fbc6d58a54cb15b55eae55d0d10"
+    },
+    "apps/server/app/models/timeline-v1.schema.json": {
+      "bytes": 1772,
+      "sha256": "d85666a0dbb7f9e67a6d7442d2e44d6b971ca9584eb424941b6330e582948660"
+    },
+    "apps/server/app/snapshots.py": {
+      "bytes": 11890,
+      "sha256": "ddcc32d2ec1759d5e0d3b7d4c5eb5d0c481aaf386878d61a469c293d29b330a1"
+    },
+    "apps/server/pyproject.toml": {
+      "bytes": 607,
+      "sha256": "e33b73a4b0bc6bfb3d525c74712783d01e2a90e60cf3c3b4099daeb82d5ae4ab"
+    },
+    "apps/server/README.md": {
+      "bytes": 4222,
+      "sha256": "961567f744597a21464be89239f3dd8758ae24b8962b185629d40dee0438e804"
+    },
+    "apps/server/tests/test_persistence_t02.py": {
+      "bytes": 35466,
+      "sha256": "7ca513aa97c67c0ea7bf7544497a84e79c4d160003a7708069fe6e5ec9363abc"
+    },
+    "apps/server/tests/test_schema_t02.py": {
+      "bytes": 2047,
+      "sha256": "b319b4cb9c877d014e9cd017e60d0296c2a7400cdf42450cec74d14e9c6ea049"
+    },
+    "packages/contracts/song-v1.schema.json": {
+      "bytes": 61985,
+      "sha256": "770650be540e22fd4b6206f7abd12a0ed4bd5fbc6d58a54cb15b55eae55d0d10"
+    },
+    "packages/contracts/timeline-v1.schema.json": {
+      "bytes": 1772,
+      "sha256": "d85666a0dbb7f9e67a6d7442d2e44d6b971ca9584eb424941b6330e582948660"
+    },
+    "uv.lock": {
+      "bytes": 107385,
+      "sha256": "aa222669e00ce27ccdfe5f739858ec78f95cbfabc25de7c7c1fbd5784f4f0582"
+    }
+  },
+  "source_count": 22,
+  "critical": 0,
+  "important": 8,
+  "minor": 1,
+  "rows": [
+    [
+      "R02-01",
+      "Important",
+      "Ra\u00edz can\u00f3nica modificable fuera de cambios de aristas",
+      "A-G1/B01",
+      "initial_invariants.py:139"
+    ],
+    [
+      "R02-02",
+      "Important",
+      "Mover sujeto deja linaje cruzado entre canciones",
+      "A-G2/B02",
+      "initial_invariants.py:117"
+    ],
+    [
+      "R02-03",
+      "Important",
+      "Referencias globales a artwork de otra canci\u00f3n rompen snapshot",
+      "A-G3/B03",
+      "snapshots.py:210"
+    ],
+    [
+      "R02-04",
+      "Important",
+      "Una proyecci\u00f3n fallida aborta reconciliaci\u00f3n y arranque",
+      "B04",
+      "snapshots.py:295"
+    ],
+    [
+      "R02-05",
+      "Important",
+      "due acepta backup no restaurable y aplaza copia v\u00e1lida",
+      "B05",
+      "backup.py:85"
+    ],
+    [
+      "R02-06",
+      "Minor",
+      "Eventos de errores no llegan identificables al logger configurado",
+      "B06",
+      "db.py:58 / backup.py:156"
+    ],
+    [
+      "R02-07",
+      "Important",
+      "Cada commit escanea y publica toda la biblioteca",
+      "D01",
+      "db.py:55 / snapshots.py:175"
+    ],
+    [
+      "R02-08",
+      "Important",
+      "Cada arista recalcula todos los takes incluso ajenos",
+      "D02",
+      "initial_invariants.py:139"
+    ],
+    [
+      "R02-09",
+      "Important",
+      "Borrado FTS por columna UNINDEXED escanea biblioteca",
+      "D03",
+      "0001_initial.py:44"
+    ]
+  ],
+  "reproduction_not_yet_executed_by_root": true,
+  "next_review_attempt": 2,
+  "max_attempts": 3,
+  "task_closed": false
+}

@@ -3,7 +3,7 @@ documento: entorno
 titulo: Entorno de desarrollo y ejecución
 estado: vigente
 fecha: 2026-09-28
-actualizado: 2026-09-28
+actualizado: 2026-10-06
 fuentes-verificadas: 2026-09-28
 ---
 
@@ -31,11 +31,11 @@ fuentes-verificadas: 2026-09-28
 | Imagen oficial `ghcr.io/ace-step/ace-step-1.5:0.1.8` | **Solo como referencia**, no se usa | Carga por defecto el LM 4B (OOM en 12 GB) y trae el ffmpeg GPL de apt |
 | **engine-analysis** | `pytorch/pytorch:2.14.0-cuda13.0-cudnn9-runtime` + dependencias fijadas con uv | PyTorch 2.14.0 (2 de septiembre de 2026) es la versión estable actual. Desde la 2.12 no hay ruedas cu128; las cu126 no traen sm_120 |
 | **engine-comfy** | ComfyUI fijado por commit sobre `pytorch/pytorch:2.14.0-cuda13.0-cudnn9-runtime` (cu130), con `--disable-pinned-memory` | NVFP4 solo rinde con cu130; la memoria *pinned* da problemas en WSL2 ([ADR-0016](../decisiones/ADR-0016-comfyui-como-motor-de-imagen-y-video.md)) |
-| **engine-llm** | llama.cpp (build CUDA con sm_120) fijado por tag | GGUF de Gemma 4 ([ADR-0012](../decisiones/ADR-0012-llm-de-letras.md)) |
+| **engine-llm** | Adaptador Docker `/v1`, sin inferencia propia, hacia Ollama compartido en Ubuntu WSL2; implementación M2 pendiente | Modelo y conectividad privada a validar ([ADR-0035](../decisiones/ADR-0035-despliegue-docker-y-ollama-wsl.md)) |
 | **NGC `nvcr.io/nvidia/pytorch`** | No se usa | Su `/etc/pip/constraint.txt` choca con los repos que fijan versión de torch |
-| **server** | Python 3.12, uv | Sin torch |
+| **server** | Python 3.12, uv; despliegue Docker Compose pendiente en M1 | Sin torch; incluye worker CPU |
 | **web** | Node 22 LTS, pnpm | |
-| **ffmpeg (server)** | BtbN `win64-lgpl` (≥ 7.1), en `tools/ffmpeg/` y fijado en `tools/tools.lock.json` | Post-proceso, render y exportaciones ([ADR-0017](../decisiones/ADR-0017-postproceso-y-manifiesto-en-el-server.md)) |
+| **ffmpeg (server)** | Contenedor: build BtbN `linux64-lgpl` o `linux64-lgpl-shared` compatible, fijada por revisión y SHA-256 en `tools/tools.lock.json`; adopción y validación M1 pendientes. `win64-lgpl` queda para utilidades nativas | Post-proceso, render y exportaciones; verificar LGPL y carga real en Linux ([ADR-0017](../decisiones/ADR-0017-postproceso-y-manifiesto-en-el-server.md), [ADR-0035](../decisiones/ADR-0035-despliegue-docker-y-ollama-wsl.md)) |
 | **ffmpeg (engines)** | BtbN `linux64-lgpl-shared` (7.x) con sus `.so` en `LD_LIBRARY_PATH` | torchcodec necesita las **librerías compartidas** de FFmpeg 4–8. El ffmpeg de apt y las builds estáticas de johnvansickle son GPL |
 
 **Comprobaciones obligatorias al construir cada imagen:**
@@ -44,6 +44,10 @@ fuentes-verificadas: 2026-09-28
 - `ffmpeg -buildconf`:
   - **incluye** `--enable-libmp3lame`, `--enable-libsoxr` y `--enable-libopus`;
   - **no incluye** `--enable-gpl` ni `--enable-nonfree`.
+
+Ollama permanece como servicio compartido en Ubuntu WSL2; el adaptador no instala otra instancia ni gestiona su servicio. La ruta privada Docker→WSL2 se valida en M2. Docker Desktop utiliza WSL2 como backend: ComfyUI en Docker ya corre en Linux sobre WSL2, con CUDA prevista para la RTX y validación pendiente ([ADR-0035](../decisiones/ADR-0035-despliegue-docker-y-ollama-wsl.md)).
+
+**Herramientas frontend de desarrollo:** [ADR-0048](../decisiones/ADR-0048-herramientas-frontend-portatiles.md) fija Node22.23.2/pnpm9.12.0 portátiles bajo `tools/`, con extracción/hash y cachés confinadas. Implementación y migración de env/bootstrap pendientes; el launcher pnpm del perfil no es la receta aceptada para las nuevas fases. La web de producto continúa en Docker. Lock transitivo e imagen Linux se verifican por separado.
 
 ## 3. Problemas conocidos en sm_120, WSL2 y Docker (y qué hacer)
 
@@ -63,7 +67,7 @@ fuentes-verificadas: 2026-09-28
 | E-12 | Lectura lenta de `models/` a través del bind mount de Windows | Medir en M0 T-09 ([ADR-0005](../decisiones/ADR-0005-todo-en-la-carpeta.md)) |
 | E-13 | Liberar un modelo en torch no libera el contexto CUDA (0,3–0,5 GB) | Modelo en un **proceso hijo** que se termina al descargar ([ADR-0007](../decisiones/ADR-0007-gpu-local-12gb.md)) |
 | E-14 | Docker publica los puertos en `0.0.0.0` | `127.0.0.1:P:P` en compose ([ADR-0020](../decisiones/ADR-0020-seguridad-local.md)) |
-| E-16 | **Otros procesos en la GPU.** El stack `knowledge-graphs` (Ollama con `qwen3.5:9b`, ≈ 8,9 GB) ocupa la VRAM mientras Kwipu indexa o responde: el 2026-09-28 la 5070 marcaba 11.621 de 12.227 MiB en uso | Antes de medir o generar con GPU: `wsl -d Ubuntu -e ollama stop <modelo>` (sin parar el servicio ni borrar el modelo) y comprobar con `nvidia-smi` que la VRAM usada es ≤ ~1,6 GB. Después, `ollama run <modelo>` para volver a cargarlo ([ADR-0022](../decisiones/ADR-0022-memoria-tecnica-kwipu-graphiti.md)) |
+| E-16 | **Otros procesos en la GPU.** El stack `knowledge-graphs` (Ollama con `qwen3.5:9b`, ≈ 8,9 GB) ocupa la VRAM mientras Kwipu indexa o responde: el 2026-09-28 la 5070 marcaba 11.621 de 12.227 MiB en uso | Observar primero `ollama ps`; descargar solo los modelos que impiden el turno sin parar el servicio ni borrar pesos; comprobar VRAM usada ≤ ~1,6 GB. Al terminar restaurar solo lo observado y descargado por esta operación; si estaba vacío, dejarlo vacío. Comprobar interferencias de consumidores ajenos sin prometer exclusión global ([ADR-0022](../decisiones/ADR-0022-memoria-tecnica-kwipu-graphiti.md), [ADR-0035](../decisiones/ADR-0035-despliegue-docker-y-ollama-wsl.md)) |
 | E-15 | Las cachés de HF, uv y pnpm van por defecto a `%USERPROFILE%` y duplican gigas | Variables `HF_HOME`, `UV_CACHE_DIR`, `npm_config_store_dir` y `TORCH_HOME` apuntando dentro de la carpeta ([convenciones.md](./convenciones.md) §4) |
 
 ## 4. Sincronización con Synology Drive
@@ -89,6 +93,8 @@ Los tres primeros los rehace de una vez `.\scripts\bootstrap.ps1` (o `source scr
 
 ## 5. Puesta en marcha (objetivo al final de M0 y M1)
 
+El bloque siguiente conserva las herramientas de preparación y laboratorio de M0. El arranque del producto en M1 pasa a Docker Compose según [ADR-0035](../decisiones/ADR-0035-despliegue-docker-y-ollama-wsl.md); todavía debe implementarse y validarse.
+
 ```powershell
 # Requisitos (M0 T-00): Docker Desktop (WSL2), Node 22, pnpm, uv, git; .wslconfig; filtro de Synology
 . .\scripts\env.ps1                               # intérprete, cachés y .venv dentro de la carpeta
@@ -97,7 +103,24 @@ uv run scripts/fetch_models.py --model ace-step-1.5 # descarga fijada por revisi
 docker compose --profile engines up -d engine-acestep engine-analysis
 uv run scripts/init_env.py                          # .env + STUDIO_ENGINE_TOKEN (una vez)
 uv run scripts/generate.py --brief B-02              # M0: primera canción
-# M1:
-cd apps/server; uv run alembic upgrade head; uv run fastapi dev --host 127.0.0.1
-cd apps/web; pnpm dev
 ```
+
+Objetivo M1: arrancar web, server y engines necesarios con Compose; ejecutar migraciones dentro del server y validar persistencia, nombres internos, hosts permitidos y FFmpeg LGPL Linux. Los comandos exactos se concretan al implementar. Ollama no es requisito del MVP M1; los comandos nativos siguen disponibles para desarrollo.
+
+## Almacenamiento operativo persistente (ADR-0069)
+
+[ADR-0069](../decisiones/ADR-0069-almacenamiento-ext4-del-proyecto-para-publicacion-atomica.md)
+fija ext4 respaldado por `data/_storage/studio-data.vhdx`, dentro del
+proyecto. Server y engines comparten la misma raíz lógica montada; sus
+paths de dominio/manifiestos siguen relativos. El punto de montaje WSL es
+una vista virtual, no persistencia adicional fuera del proyecto. Código,
+modelos y herramientas conservan sus ubicaciones.
+
+La provisión de plataforma requiere privilegios de montaje; el server no
+recibe SYS_ADMIN, loop ni socket Docker. Sin mount/UUID correcto o sin
+NOREPLACE nativo, startup aborta antes de publicar. No hay fallback a
+rename ordinario, directorio parcial, tmpfs o volumen externo. La biblioteca
+NTFS existente no se migra ni se borra automáticamente. Acceso Windows y
+verificadores usan la vista WSL/Docker o exportación explícita al proyecto.
+Backup de VHDX requiere quiesce/flush/detach propios; no copiarlo activo ni
+parar servicios ajenos. Implementación y QA persistente siguen pendientes.

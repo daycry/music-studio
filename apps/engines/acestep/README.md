@@ -16,3 +16,9 @@ El CLI expone `--inference-steps` y `--guidance-scale`, también sobre briefs. S
 La frontera de entrada a DiT conserva el valor7 histórico de GenerationParams en Turbo; su handler fuerza después guidance_scale=1 porque Turbo no aplica CFG como SFT. Capturar argumentos a la entrada no acredita el valor interno del sampler ni calidad musical. [ADR-0027](../../../docs/decisiones/ADR-0027-controles-de-inferencia-sft.md) documenta la configuración completa y la comparación con transporte emparejado.
 
 Los tokenizadores, plantillas, reserva LM y límites DiT se comprueban antes de aceptar entradas; ninguna opción permite truncar instrucciones silenciosamente. Las pruebas CPU de controles no equivalen a inferencia GPU ni aprobación por escucha.
+
+## Resolución del condicionamiento DiT
+
+Los recibos nuevos usan `receipt_version: 2`. Antes de cargar modelos se ejecuta el resolver puro de la revisión upstream fijada y se presupuestan sus dos resultados legítimos: `text2music` sin códigos LM y `cover` con códigos no vacíos. La solicitud pública sigue siendo música desde texto. No se presupone que el LM producirá códigos. El resumen HTTP incluye la versión y ambos candidatos en `dit`; los registros `text` y `lyrics` conservan el candidato sin códigos como referencia.
+
+La captura registra tipo inicial, presencia booleana de códigos, tipo resuelto y SHA-256 de la instrucción, sin guardar códigos ni textos en esa frontera. La instrucción efectiva y los IDs activos del tokenizador deben coincidir exactamente con el candidato elegido; instrucciones desconocidas, mutaciones y truncamiento siguen rechazados. CLI y manifiesto validan la rama y su vínculo con el planned antes de publicar. Los recibos v1 se leen con su política histórica, sin atribuirles esta frontera nueva. [ADR-0032](../../../docs/decisiones/ADR-0032-condicionamiento-dit-segun-rama-nativa.md) recoge la decisión.

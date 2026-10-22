@@ -8,11 +8,13 @@ dependencies = [
     "fastapi>=0.142.2",
     "jsonschema>=4.26.0",
     "nvidia-ml-py>=13.615.71",
+    "studio-storage-guard",
     "uvicorn>=0.54.0",
 ]
 
 [tool.uv.sources]
 engine-contract = { workspace = true }
+studio-storage-guard = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

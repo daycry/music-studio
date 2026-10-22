@@ -1,0 +1,57 @@
+{
+  "utc": "2026-10-07T18:42:04.253680+00:00",
+  "sources": {
+    "scripts/eval/run.py": {
+      "sha256": "75b6d207bc4e6fd63621f04ab8cbf473c405c67d7654da9b8d466df3b2da5ed4",
+      "bytes": 37762
+    },
+    "scripts/eval/metrics.py": {
+      "sha256": "b332e48a2e531d4f2adba3eb9e5499b49e8da5fdbb87f58fad923efc2f5a2f51",
+      "bytes": 13714
+    },
+    "scripts/eval/tests/test_evaluation_cpu.py": {
+      "sha256": "1db041fc644abef5c5fe1bf6b133e95050c57cc1f835f22dd6a76a95c9b7b6fb",
+      "bytes": 20762
+    },
+    "scripts/eval/tests/test_evaluation_guards.py": {
+      "sha256": "e43efd8416216e999738d549e9b14efd8126ed3dc45e979c4175125786cf2c99",
+      "bytes": 18088
+    },
+    "scripts/eval/tests/test_evaluation_fix1.py": {
+      "sha256": "8b00b5cf2a2ddac097d31fd4a11de370ca1bc0c5e75d27950f258b92dc0ca1dd",
+      "bytes": 23180
+    },
+    "scripts/eval/tests/test_evaluation_stream_silence.py": {
+      "sha256": "b7517c4bedca2576dd6d7e6087ed294d0a254e1903429bfa03e7fe659e847d84",
+      "bytes": 8904
+    }
+  },
+  "suite_pass": 130,
+  "whole_modules": {
+    "scripts/eval/metrics.py": {
+      "covered_lines": 187,
+      "num_statements": 190,
+      "percent_covered": 98.42105263157895,
+      "percent_covered_display": "98",
+      "missing_lines": 3,
+      "excluded_lines": 0,
+      "percent_statements_covered": 98.42105263157895,
+      "percent_statements_covered_display": "98"
+    },
+    "scripts/eval/run.py": {
+      "covered_lines": 439,
+      "num_statements": 483,
+      "percent_covered": 90.89026915113871,
+      "percent_covered_display": "91",
+      "missing_lines": 44,
+      "excluded_lines": 0,
+      "percent_statements_covered": 90.89026915113871,
+      "percent_statements_covered_display": "91"
+    }
+  },
+  "protected_four_exact": true,
+  "closed_nonCLI_verified": 107,
+  "R11-07": "candidate corrected nativequiet2s noPOSTduplicate",
+  "R11-06": "Minor remains pending",
+  "QA_task_acceptance": false
+}

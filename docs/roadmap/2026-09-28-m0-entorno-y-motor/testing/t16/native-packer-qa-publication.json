@@ -1,0 +1,9 @@
+{
+  "root_verified_sources": 71,
+  "root_verified_artifacts": 14,
+  "original_report_sha256": "a6235c732bc771f4cbc97f5a2d07488dcef7990b2afe06c5651118fd36cc7e31",
+  "receipt_sha256": "492047519a090876a7c96cb33ed5d274af2b23827e7f6382eba90825f2882eea",
+  "report_changes": "Sólo enlaces para resolver evidencia privada desde la copia pública",
+  "note": "El mensaje intermedio decía73; freeze/recibo/informe verificables contienen71 rutas",
+  "passed": 20
+}

@@ -1,0 +1,23 @@
+{
+  "task": "M0/T-09",
+  "kind": "private_performance_inputs",
+  "effective_lyrics_sha256": "421a2aaa97998b38b71db4aa939f468e4f6fb54a0b3d0c895d93fbae7ad5e635",
+  "effective_caption_sha256": "22471b4c4326638c937d5ac12347ca84ddc3b90407a590f3d5abcdc071e1757b",
+  "durations_s": [
+    30,
+    60,
+    180,
+    300
+  ],
+  "inputs_sha256": "a1c83e0776ef1ef5bd39e51e14a423ff8918a7039dd28409d51bc2af37da8e41",
+  "same_lyrics_and_style_across_all_durations": true,
+  "purpose": "measure_performance_with_constant_conditioning_not_full_song_quality",
+  "source_fragment_duration_s": 90,
+  "new_lyrics_created": false,
+  "jobs_submitted": 0,
+  "historical_job_ids_or_codes_reused": false,
+  "source_unchanged": true,
+  "authorship_declared": true,
+  "fixture_count": 4,
+  "status": "prepared_offline_not_benchmarked"
+}

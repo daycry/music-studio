@@ -1,0 +1,129 @@
+{
+  "utc": "2026-10-08T01:09:34.605033+00:00",
+  "technical_component_accepted": true,
+  "scope": "T04 U1 backend, resolver, immutable staging and admission dispatcher only",
+  "sources": {
+    "apps/server/app/queue/__init__.py": {
+      "sha256": "688c1153e32b1c37dea8ea9dcca1649e306bc10a8b3cf45d257d84a0e927864f",
+      "bytes": 63
+    },
+    "apps/server/app/queue/admission.py": {
+      "sha256": "81fa543d4a9ab52eb37b1571b4109f9c6b8e65562567bc704bbc8e6a1033080c",
+      "bytes": 15696
+    },
+    "apps/server/app/queue/backends/__init__.py": {
+      "sha256": "857fa877e5987db077e485c4ee7f9b546dee6141efed5d66e7434096f87460d1",
+      "bytes": 65
+    },
+    "apps/server/app/queue/backends/http.py": {
+      "sha256": "7688edef1f7e276004126ffe49ad1951648b01901c5eb5c47a4a50c113738403",
+      "bytes": 10361
+    },
+    "apps/server/app/queue/backends/protocol.py": {
+      "sha256": "48ca5a6b14929f2a8ea14408dde2240468e817f9df7f0cd7243f4b7c6d623f15",
+      "bytes": 1824
+    },
+    "apps/server/app/queue/dispatcher.py": {
+      "sha256": "c239bbf372174b3f15fbbc7d1ff82257e5e83b3bde5290e2f270933b94cb6e4c",
+      "bytes": 8909
+    },
+    "apps/server/app/queue/inputs.py": {
+      "sha256": "1b5460402cc59e5720b61fadc171216d40a23ae1ce3e1af5844d2cfbe8483890",
+      "bytes": 8464
+    },
+    "apps/server/app/queue/resolver.py": {
+      "sha256": "80cbfa88d69ee8ce9518b822eca968ec8860d867c954e836f7cf06c378aced65",
+      "bytes": 11982
+    }
+  },
+  "source_freeze_verified": 72,
+  "root_protected_verified": 62,
+  "inventory_verified": 2779,
+  "tests": {
+    "passed": 215,
+    "failed": 0,
+    "skipped": 0,
+    "neighbors": 25,
+    "u1": 190,
+    "baseline_runs": 1
+  },
+  "whole_each_coverage": {
+    "apps/server/app/queue/admission.py": {
+      "covered_lines": 192,
+      "num_statements": 203,
+      "percent_covered": 94.58128078817734,
+      "percent_covered_display": "95",
+      "missing_lines": 11,
+      "excluded_lines": 0,
+      "percent_statements_covered": 94.58128078817734,
+      "percent_statements_covered_display": "95"
+    },
+    "apps/server/app/queue/backends/http.py": {
+      "covered_lines": 157,
+      "num_statements": 170,
+      "percent_covered": 92.3529411764706,
+      "percent_covered_display": "92",
+      "missing_lines": 13,
+      "excluded_lines": 0,
+      "percent_statements_covered": 92.3529411764706,
+      "percent_statements_covered_display": "92"
+    },
+    "apps/server/app/queue/backends/protocol.py": {
+      "covered_lines": 32,
+      "num_statements": 32,
+      "percent_covered": 100.0,
+      "percent_covered_display": "100",
+      "missing_lines": 0,
+      "excluded_lines": 0,
+      "percent_statements_covered": 100.0,
+      "percent_statements_covered_display": "100"
+    },
+    "apps/server/app/queue/dispatcher.py": {
+      "covered_lines": 128,
+      "num_statements": 145,
+      "percent_covered": 88.27586206896552,
+      "percent_covered_display": "88",
+      "missing_lines": 17,
+      "excluded_lines": 0,
+      "percent_statements_covered": 88.27586206896552,
+      "percent_statements_covered_display": "88"
+    },
+    "apps/server/app/queue/inputs.py": {
+      "covered_lines": 116,
+      "num_statements": 134,
+      "percent_covered": 86.56716417910448,
+      "percent_covered_display": "87",
+      "missing_lines": 18,
+      "excluded_lines": 0,
+      "percent_statements_covered": 86.56716417910448,
+      "percent_statements_covered_display": "87"
+    },
+    "apps/server/app/queue/resolver.py": {
+      "covered_lines": 151,
+      "num_statements": 163,
+      "percent_covered": 92.63803680981596,
+      "percent_covered_display": "93",
+      "missing_lines": 12,
+      "excluded_lines": 0,
+      "percent_statements_covered": 92.63803680981596,
+      "percent_statements_covered_display": "93"
+    }
+  },
+  "native_windows_databases": 136,
+  "current_wheel": {
+    "sha256": "6475825af556d9110f2e8d5bd4b2a46515b4e598a70be272828e29b587c54ebb",
+    "bytes": 75369,
+    "import": "actual extracted current wheel with managed venv dependencies; no clean dependency reinstall or Docker/Linux claim"
+  },
+  "review_counter": 5,
+  "review": "A+B+D clean, no own functional rerun by reviewers",
+  "next": "Fresh U2 events, retry, recovery, cancellation and lifespan against current accepted U1",
+  "not_accepted": [
+    "T04 eight full acceptance criteria",
+    "U2 U3 chains and manual retry",
+    "real engine GPU throughput or music quality",
+    "fresh Docker Linux installation",
+    "task Git integration or full M1"
+  ],
+  "actual_model_tokens_EUR_AIhours": null
+}

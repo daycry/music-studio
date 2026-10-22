@@ -1,0 +1,14 @@
+{
+  "utc": "2026-10-08T01:20:09.456495+00:00",
+  "counter": 1,
+  "Critical": 0,
+  "Important": 1,
+  "Minor": 1,
+  "merged_findings": {
+    "A-01/B-01": "Auditor TAR rejection misrepresented as product installer block",
+    "A-02": "Each helper exit0 contradicted preserved failed delivery receipt"
+  },
+  "decision": "Correct prose only in fresh private candidate, preserve original data/archives/rejection/failure; new review2 before adoption",
+  "technical_adoption": false,
+  "actual_model_tokens_EUR_AIhours": null
+}

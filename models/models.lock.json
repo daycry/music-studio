@@ -460,7 +460,12 @@
               "path": "silence_latent.pt",
               "bytes": 3841215,
               "sha256": "a778e9dd942f5e8b2c09c55370782d318834432b03dabbcdf70e6ed49ad6358b",
-              "format": "metadata"
+              "format": "pickle",
+              "converted": {
+                "dest": "silence_latent.safetensors",
+                "sha256": "3c9d1758b016fa80778981a4c1ecac50b75e10d2367ec193982801be5ac32632",
+                "bytes": 3840136
+              }
             }
           ]
         }

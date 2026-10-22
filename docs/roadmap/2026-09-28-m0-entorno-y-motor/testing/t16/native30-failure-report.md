@@ -1,0 +1,8 @@
+# T-16 — toma diagnóstica SFT de 30 s: fallo localizado
+
+2026-10-06. [Recibo](native30-failure-receipt.json). La [QA CPU independiente](diagnostic-qa-report.md) aceptó el arnés: cuatro escenarios, integridad41fuentes, preparación offline y padre sinTorch. Root comprobó originales29/candidato12/QA15SHA antes de ejecutar. Imagen9e4fc86 y producto/runnerseis intactos.
+
+Una única toma SFT30s, sesión01M47GK7JJV456GFP80XQC91HJ y job01M47GK7JJ4R75GV377Z7MYRAK. Exec53788 terminalexit1,179,343s, stop_reasonnull, unload_confirmedtrue. La traza del hijo alcanzó progreso52%; `_prepare_text_conditioning_inputs` terminó y `service_generate` propagó EngineError por `conditioning_batch.py:117` y `adapter.py:224`, antes de completar el primer avance del decoder. El primer resumen no detectó los registros de `boundaries`. La [investigación posterior](native30-diagnosis-report.md) confirma captura parcial de argumentos LM, prompt LM y argumentos DiT; la captura no estaba vacía. No conservó los IDs finales ni la rama DiT resuelta. El tipo de excepción y la posición acotan el fallo; no prueban OOM, desbordamiento ni causa nativa sin investigar el contenido técnico privado.
+
+Baseline1315MiB/Ollamavacío; posterior1315MiB, sólo servicio8101 antiguo permanece. Contenedor propio retirado, sin modelo Ollama que restaurar. Trazas privadas persistidas fuera del TMP fallido y verificadas por SHA, sin publicar textos, caption, letra ni traceback. No repetir seis tomas ni cambiar producto sin hipótesis probada. DiagnósticoCPU fresco de la frontera capturada es el siguiente paso. CA3/4/T16/M0 abiertos, ninguna aprobación artística.
+

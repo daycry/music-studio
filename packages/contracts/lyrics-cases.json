@@ -1,0 +1,1795 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "plain",
+      "input": "he dicho [coro]\n😀 *voz*",
+      "expected": {
+        "version": 1,
+        "original": "he dicho [coro]\n😀 *voz*",
+        "sections": [],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "verse-rap",
+      "input": "**[VERSO 1 - HOMBRE · RAP]**\nvoz",
+      "expected": {
+        "version": 1,
+        "original": "**[VERSO 1 - HOMBRE · RAP]**\nvoz",
+        "sections": [
+          {
+            "kind": "verse",
+            "alias": "VERSO",
+            "aliasRange": {
+              "start": 3,
+              "end": 8
+            },
+            "number": 1,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 29
+            },
+            "bodyRange": {
+              "start": 29,
+              "end": 32
+            },
+            "directions": {
+              "text": "HOMBRE · RAP",
+              "range": {
+                "start": 13,
+                "end": 25
+              }
+            },
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "final-orchestra",
+      "input": "**[CORO FINAL - AMBOS Y CORO · Orquesta completa]**\nx",
+      "expected": {
+        "version": 1,
+        "original": "**[CORO FINAL - AMBOS Y CORO · Orquesta completa]**\nx",
+        "sections": [
+          {
+            "kind": "chorus",
+            "alias": "CORO",
+            "aliasRange": {
+              "start": 3,
+              "end": 7
+            },
+            "number": null,
+            "qualifier": "final",
+            "headerRange": {
+              "start": 0,
+              "end": 52
+            },
+            "bodyRange": {
+              "start": 52,
+              "end": 53
+            },
+            "directions": {
+              "text": "AMBOS Y CORO · Orquesta completa",
+              "range": {
+                "start": 16,
+                "end": 48
+              }
+            },
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "accent",
+      "input": "[INTRODUCCIÓN]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[INTRODUCCIÓN]\nx",
+        "sections": [
+          {
+            "kind": "intro",
+            "alias": "INTRODUCCIÓN",
+            "aliasRange": {
+              "start": 1,
+              "end": 13
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 15
+            },
+            "bodyRange": {
+              "start": 15,
+              "end": 16
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "bom-astral",
+      "input": "﻿\t[coro]\r\n😀\r\n",
+      "expected": {
+        "version": 1,
+        "original": "﻿\t[coro]\r\n😀\r\n",
+        "sections": [
+          {
+            "kind": "chorus",
+            "alias": "coro",
+            "aliasRange": {
+              "start": 3,
+              "end": 7
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 10
+            },
+            "bodyRange": {
+              "start": 10,
+              "end": 14
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "preamble",
+      "input": "😀\n[solo]\nx",
+      "expected": {
+        "version": 1,
+        "original": "😀\n[solo]\nx",
+        "sections": [
+          {
+            "kind": "solo",
+            "alias": "solo",
+            "aliasRange": {
+              "start": 4,
+              "end": 8
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 3,
+              "end": 10
+            },
+            "bodyRange": {
+              "start": 10,
+              "end": 11
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "max",
+      "input": "[verso 9007199254740991]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[verso 9007199254740991]\nx",
+        "sections": [
+          {
+            "kind": "verse",
+            "alias": "verso",
+            "aliasRange": {
+              "start": 1,
+              "end": 6
+            },
+            "number": 9007199254740991,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 25
+            },
+            "bodyRange": {
+              "start": 25,
+              "end": 26
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "literal-directions",
+      "input": " [coro -  x - y! ] \nx",
+      "expected": {
+        "version": 1,
+        "original": " [coro -  x - y! ] \nx",
+        "sections": [
+          {
+            "kind": "chorus",
+            "alias": "coro",
+            "aliasRange": {
+              "start": 2,
+              "end": 6
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 20
+            },
+            "bodyRange": {
+              "start": 20,
+              "end": 21
+            },
+            "directions": {
+              "text": " x - y! ",
+              "range": {
+                "start": 9,
+                "end": 17
+              }
+            },
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "empty-consecutive",
+      "input": "[intro]\n[coro]\n \t\r\n",
+      "expected": {
+        "version": 1,
+        "original": "[intro]\n[coro]\n \t\r\n",
+        "sections": [
+          {
+            "kind": "intro",
+            "alias": "intro",
+            "aliasRange": {
+              "start": 1,
+              "end": 6
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 8
+            },
+            "bodyRange": {
+              "start": 8,
+              "end": 8
+            },
+            "directions": null,
+            "empty": true
+          },
+          {
+            "kind": "chorus",
+            "alias": "coro",
+            "aliasRange": {
+              "start": 9,
+              "end": 13
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 8,
+              "end": 15
+            },
+            "bodyRange": {
+              "start": 15,
+              "end": 19
+            },
+            "directions": null,
+            "empty": true
+          }
+        ],
+        "annotations": [],
+        "warnings": [
+          {
+            "code": "EMPTY_SECTION",
+            "range": {
+              "start": 0,
+              "end": 8
+            }
+          },
+          {
+            "code": "EMPTY_SECTION",
+            "range": {
+              "start": 8,
+              "end": 15
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "overflow",
+      "input": "[verso 9007199254740992]\n",
+      "expected": {
+        "version": 1,
+        "original": "[verso 9007199254740992]\n",
+        "sections": [],
+        "annotations": [
+          {
+            "code": "MALFORMED_TAG",
+            "range": {
+              "start": 0,
+              "end": 25
+            },
+            "text": "[verso 9007199254740992]\n"
+          }
+        ],
+        "warnings": [
+          {
+            "code": "MALFORMED_TAG",
+            "range": {
+              "start": 0,
+              "end": 25
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "zero",
+      "input": "[verso 0]\n",
+      "expected": {
+        "version": 1,
+        "original": "[verso 0]\n",
+        "sections": [],
+        "annotations": [
+          {
+            "code": "MALFORMED_TAG",
+            "range": {
+              "start": 0,
+              "end": 10
+            },
+            "text": "[verso 0]\n"
+          }
+        ],
+        "warnings": [
+          {
+            "code": "MALFORMED_TAG",
+            "range": {
+              "start": 0,
+              "end": 10
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "leading-zero",
+      "input": "[verso 01]\n",
+      "expected": {
+        "version": 1,
+        "original": "[verso 01]\n",
+        "sections": [],
+        "annotations": [
+          {
+            "code": "MALFORMED_TAG",
+            "range": {
+              "start": 0,
+              "end": 11
+            },
+            "text": "[verso 01]\n"
+          }
+        ],
+        "warnings": [
+          {
+            "code": "MALFORMED_TAG",
+            "range": {
+              "start": 0,
+              "end": 11
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "unknown",
+      "input": "[misterio 2]\n",
+      "expected": {
+        "version": 1,
+        "original": "[misterio 2]\n",
+        "sections": [],
+        "annotations": [
+          {
+            "code": "UNKNOWN_TAG",
+            "range": {
+              "start": 0,
+              "end": 13
+            },
+            "text": "[misterio 2]\n"
+          }
+        ],
+        "warnings": [
+          {
+            "code": "UNKNOWN_TAG",
+            "range": {
+              "start": 0,
+              "end": 13
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "nested",
+      "input": "[coro [voz]]\n",
+      "expected": {
+        "version": 1,
+        "original": "[coro [voz]]\n",
+        "sections": [],
+        "annotations": [
+          {
+            "code": "MALFORMED_TAG",
+            "range": {
+              "start": 0,
+              "end": 13
+            },
+            "text": "[coro [voz]]\n"
+          }
+        ],
+        "warnings": [
+          {
+            "code": "MALFORMED_TAG",
+            "range": {
+              "start": 0,
+              "end": 13
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "incomplete",
+      "input": "**[coro]\n",
+      "expected": {
+        "version": 1,
+        "original": "**[coro]\n",
+        "sections": [],
+        "annotations": [
+          {
+            "code": "MALFORMED_TAG",
+            "range": {
+              "start": 0,
+              "end": 9
+            },
+            "text": "**[coro]\n"
+          }
+        ],
+        "warnings": [
+          {
+            "code": "MALFORMED_TAG",
+            "range": {
+              "start": 0,
+              "end": 9
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "single-wrapper",
+      "input": "*[coro]*\n",
+      "expected": {
+        "version": 1,
+        "original": "*[coro]*\n",
+        "sections": [],
+        "annotations": [
+          {
+            "code": "MALFORMED_TAG",
+            "range": {
+              "start": 0,
+              "end": 9
+            },
+            "text": "*[coro]*\n"
+          }
+        ],
+        "warnings": [
+          {
+            "code": "MALFORMED_TAG",
+            "range": {
+              "start": 0,
+              "end": 9
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "suffix",
+      "input": "[coro] texto\n",
+      "expected": {
+        "version": 1,
+        "original": "[coro] texto\n",
+        "sections": [],
+        "annotations": [
+          {
+            "code": "MALFORMED_TAG",
+            "range": {
+              "start": 0,
+              "end": 13
+            },
+            "text": "[coro] texto\n"
+          }
+        ],
+        "warnings": [
+          {
+            "code": "MALFORMED_TAG",
+            "range": {
+              "start": 0,
+              "end": 13
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "negative",
+      "input": "[coro -2]\n",
+      "expected": {
+        "version": 1,
+        "original": "[coro -2]\n",
+        "sections": [],
+        "annotations": [
+          {
+            "code": "MALFORMED_TAG",
+            "range": {
+              "start": 0,
+              "end": 10
+            },
+            "text": "[coro -2]\n"
+          }
+        ],
+        "warnings": [
+          {
+            "code": "MALFORMED_TAG",
+            "range": {
+              "start": 0,
+              "end": 10
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "alias-intro",
+      "input": "[intro]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[intro]\nx",
+        "sections": [
+          {
+            "kind": "intro",
+            "alias": "intro",
+            "aliasRange": {
+              "start": 1,
+              "end": 6
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 8
+            },
+            "bodyRange": {
+              "start": 8,
+              "end": 9
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-introducción",
+      "input": "[introducción]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[introducción]\nx",
+        "sections": [
+          {
+            "kind": "intro",
+            "alias": "introducción",
+            "aliasRange": {
+              "start": 1,
+              "end": 13
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 15
+            },
+            "bodyRange": {
+              "start": 15,
+              "end": 16
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-verse",
+      "input": "[verse]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[verse]\nx",
+        "sections": [
+          {
+            "kind": "verse",
+            "alias": "verse",
+            "aliasRange": {
+              "start": 1,
+              "end": 6
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 8
+            },
+            "bodyRange": {
+              "start": 8,
+              "end": 9
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-verses",
+      "input": "[verses]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[verses]\nx",
+        "sections": [
+          {
+            "kind": "verse",
+            "alias": "verses",
+            "aliasRange": {
+              "start": 1,
+              "end": 7
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 9
+            },
+            "bodyRange": {
+              "start": 9,
+              "end": 10
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-verso",
+      "input": "[verso]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[verso]\nx",
+        "sections": [
+          {
+            "kind": "verse",
+            "alias": "verso",
+            "aliasRange": {
+              "start": 1,
+              "end": 6
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 8
+            },
+            "bodyRange": {
+              "start": 8,
+              "end": 9
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-versos",
+      "input": "[versos]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[versos]\nx",
+        "sections": [
+          {
+            "kind": "verse",
+            "alias": "versos",
+            "aliasRange": {
+              "start": 1,
+              "end": 7
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 9
+            },
+            "bodyRange": {
+              "start": 9,
+              "end": 10
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-estrofa",
+      "input": "[estrofa]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[estrofa]\nx",
+        "sections": [
+          {
+            "kind": "verse",
+            "alias": "estrofa",
+            "aliasRange": {
+              "start": 1,
+              "end": 8
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 10
+            },
+            "bodyRange": {
+              "start": 10,
+              "end": 11
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-estrofas",
+      "input": "[estrofas]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[estrofas]\nx",
+        "sections": [
+          {
+            "kind": "verse",
+            "alias": "estrofas",
+            "aliasRange": {
+              "start": 1,
+              "end": 9
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 11
+            },
+            "bodyRange": {
+              "start": 11,
+              "end": 12
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-pre-chorus",
+      "input": "[pre-chorus]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[pre-chorus]\nx",
+        "sections": [
+          {
+            "kind": "pre-chorus",
+            "alias": "pre-chorus",
+            "aliasRange": {
+              "start": 1,
+              "end": 11
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 13
+            },
+            "bodyRange": {
+              "start": 13,
+              "end": 14
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-pre chorus",
+      "input": "[pre chorus]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[pre chorus]\nx",
+        "sections": [
+          {
+            "kind": "pre-chorus",
+            "alias": "pre chorus",
+            "aliasRange": {
+              "start": 1,
+              "end": 11
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 13
+            },
+            "bodyRange": {
+              "start": 13,
+              "end": 14
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-precoro",
+      "input": "[precoro]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[precoro]\nx",
+        "sections": [
+          {
+            "kind": "pre-chorus",
+            "alias": "precoro",
+            "aliasRange": {
+              "start": 1,
+              "end": 8
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 10
+            },
+            "bodyRange": {
+              "start": 10,
+              "end": 11
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-pre-coro",
+      "input": "[pre-coro]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[pre-coro]\nx",
+        "sections": [
+          {
+            "kind": "pre-chorus",
+            "alias": "pre-coro",
+            "aliasRange": {
+              "start": 1,
+              "end": 9
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 11
+            },
+            "bodyRange": {
+              "start": 11,
+              "end": 12
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-preestribillo",
+      "input": "[preestribillo]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[preestribillo]\nx",
+        "sections": [
+          {
+            "kind": "pre-chorus",
+            "alias": "preestribillo",
+            "aliasRange": {
+              "start": 1,
+              "end": 14
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 16
+            },
+            "bodyRange": {
+              "start": 16,
+              "end": 17
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-chorus",
+      "input": "[chorus]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[chorus]\nx",
+        "sections": [
+          {
+            "kind": "chorus",
+            "alias": "chorus",
+            "aliasRange": {
+              "start": 1,
+              "end": 7
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 9
+            },
+            "bodyRange": {
+              "start": 9,
+              "end": 10
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-choruses",
+      "input": "[choruses]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[choruses]\nx",
+        "sections": [
+          {
+            "kind": "chorus",
+            "alias": "choruses",
+            "aliasRange": {
+              "start": 1,
+              "end": 9
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 11
+            },
+            "bodyRange": {
+              "start": 11,
+              "end": 12
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-coro",
+      "input": "[coro]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[coro]\nx",
+        "sections": [
+          {
+            "kind": "chorus",
+            "alias": "coro",
+            "aliasRange": {
+              "start": 1,
+              "end": 5
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 7
+            },
+            "bodyRange": {
+              "start": 7,
+              "end": 8
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-coros",
+      "input": "[coros]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[coros]\nx",
+        "sections": [
+          {
+            "kind": "chorus",
+            "alias": "coros",
+            "aliasRange": {
+              "start": 1,
+              "end": 6
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 8
+            },
+            "bodyRange": {
+              "start": 8,
+              "end": 9
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-estribillo",
+      "input": "[estribillo]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[estribillo]\nx",
+        "sections": [
+          {
+            "kind": "chorus",
+            "alias": "estribillo",
+            "aliasRange": {
+              "start": 1,
+              "end": 11
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 13
+            },
+            "bodyRange": {
+              "start": 13,
+              "end": 14
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-estribillos",
+      "input": "[estribillos]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[estribillos]\nx",
+        "sections": [
+          {
+            "kind": "chorus",
+            "alias": "estribillos",
+            "aliasRange": {
+              "start": 1,
+              "end": 12
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 14
+            },
+            "bodyRange": {
+              "start": 14,
+              "end": 15
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-post-chorus",
+      "input": "[post-chorus]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[post-chorus]\nx",
+        "sections": [
+          {
+            "kind": "post-chorus",
+            "alias": "post-chorus",
+            "aliasRange": {
+              "start": 1,
+              "end": 12
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 14
+            },
+            "bodyRange": {
+              "start": 14,
+              "end": 15
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-post chorus",
+      "input": "[post chorus]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[post chorus]\nx",
+        "sections": [
+          {
+            "kind": "post-chorus",
+            "alias": "post chorus",
+            "aliasRange": {
+              "start": 1,
+              "end": 12
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 14
+            },
+            "bodyRange": {
+              "start": 14,
+              "end": 15
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-postcoro",
+      "input": "[postcoro]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[postcoro]\nx",
+        "sections": [
+          {
+            "kind": "post-chorus",
+            "alias": "postcoro",
+            "aliasRange": {
+              "start": 1,
+              "end": 9
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 11
+            },
+            "bodyRange": {
+              "start": 11,
+              "end": 12
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-post-coro",
+      "input": "[post-coro]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[post-coro]\nx",
+        "sections": [
+          {
+            "kind": "post-chorus",
+            "alias": "post-coro",
+            "aliasRange": {
+              "start": 1,
+              "end": 10
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 12
+            },
+            "bodyRange": {
+              "start": 12,
+              "end": 13
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-postestribillo",
+      "input": "[postestribillo]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[postestribillo]\nx",
+        "sections": [
+          {
+            "kind": "post-chorus",
+            "alias": "postestribillo",
+            "aliasRange": {
+              "start": 1,
+              "end": 15
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 17
+            },
+            "bodyRange": {
+              "start": 17,
+              "end": 18
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-bridge",
+      "input": "[bridge]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[bridge]\nx",
+        "sections": [
+          {
+            "kind": "bridge",
+            "alias": "bridge",
+            "aliasRange": {
+              "start": 1,
+              "end": 7
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 9
+            },
+            "bodyRange": {
+              "start": 9,
+              "end": 10
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-puente",
+      "input": "[puente]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[puente]\nx",
+        "sections": [
+          {
+            "kind": "bridge",
+            "alias": "puente",
+            "aliasRange": {
+              "start": 1,
+              "end": 7
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 9
+            },
+            "bodyRange": {
+              "start": 9,
+              "end": 10
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-hook",
+      "input": "[hook]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[hook]\nx",
+        "sections": [
+          {
+            "kind": "hook",
+            "alias": "hook",
+            "aliasRange": {
+              "start": 1,
+              "end": 5
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 7
+            },
+            "bodyRange": {
+              "start": 7,
+              "end": 8
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-gancho",
+      "input": "[gancho]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[gancho]\nx",
+        "sections": [
+          {
+            "kind": "hook",
+            "alias": "gancho",
+            "aliasRange": {
+              "start": 1,
+              "end": 7
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 9
+            },
+            "bodyRange": {
+              "start": 9,
+              "end": 10
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-break",
+      "input": "[break]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[break]\nx",
+        "sections": [
+          {
+            "kind": "break",
+            "alias": "break",
+            "aliasRange": {
+              "start": 1,
+              "end": 6
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 8
+            },
+            "bodyRange": {
+              "start": 8,
+              "end": 9
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-pausa",
+      "input": "[pausa]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[pausa]\nx",
+        "sections": [
+          {
+            "kind": "break",
+            "alias": "pausa",
+            "aliasRange": {
+              "start": 1,
+              "end": 6
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 8
+            },
+            "bodyRange": {
+              "start": 8,
+              "end": 9
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-instrumental",
+      "input": "[instrumental]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[instrumental]\nx",
+        "sections": [
+          {
+            "kind": "instrumental",
+            "alias": "instrumental",
+            "aliasRange": {
+              "start": 1,
+              "end": 13
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 15
+            },
+            "bodyRange": {
+              "start": 15,
+              "end": 16
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-solo",
+      "input": "[solo]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[solo]\nx",
+        "sections": [
+          {
+            "kind": "solo",
+            "alias": "solo",
+            "aliasRange": {
+              "start": 1,
+              "end": 5
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 7
+            },
+            "bodyRange": {
+              "start": 7,
+              "end": 8
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-outro",
+      "input": "[outro]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[outro]\nx",
+        "sections": [
+          {
+            "kind": "outro",
+            "alias": "outro",
+            "aliasRange": {
+              "start": 1,
+              "end": 6
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 8
+            },
+            "bodyRange": {
+              "start": 8,
+              "end": 9
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-salida",
+      "input": "[salida]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[salida]\nx",
+        "sections": [
+          {
+            "kind": "outro",
+            "alias": "salida",
+            "aliasRange": {
+              "start": 1,
+              "end": 7
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 9
+            },
+            "bodyRange": {
+              "start": 9,
+              "end": 10
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "interior-spaces",
+      "input": "[pre  chorus]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[pre  chorus]\nx",
+        "sections": [
+          {
+            "kind": "pre-chorus",
+            "alias": "pre  chorus",
+            "aliasRange": {
+              "start": 1,
+              "end": 12
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 14
+            },
+            "bodyRange": {
+              "start": 14,
+              "end": 15
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "alias-tab-cr",
+      "input": "[post\tchorus 2]\rx",
+      "expected": {
+        "version": 1,
+        "original": "[post\tchorus 2]\rx",
+        "sections": [
+          {
+            "kind": "post-chorus",
+            "alias": "post\tchorus",
+            "aliasRange": {
+              "start": 1,
+              "end": 12
+            },
+            "number": 2,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 16
+            },
+            "bodyRange": {
+              "start": 16,
+              "end": 17
+            },
+            "directions": null,
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "astral-directions",
+      "input": "[solo - ?? - ! ]\nx",
+      "expected": {
+        "version": 1,
+        "original": "[solo - ?? - ! ]\nx",
+        "sections": [
+          {
+            "kind": "solo",
+            "alias": "solo",
+            "aliasRange": {
+              "start": 1,
+              "end": 5
+            },
+            "number": null,
+            "qualifier": null,
+            "headerRange": {
+              "start": 0,
+              "end": 17
+            },
+            "bodyRange": {
+              "start": 17,
+              "end": 18
+            },
+            "directions": {
+              "text": "?? - ! ",
+              "range": {
+                "start": 8,
+                "end": 15
+              }
+            },
+            "empty": false
+          }
+        ],
+        "annotations": [],
+        "warnings": []
+      }
+    },
+    {
+      "id": "roman-numeral-not-letter",
+      "input": "[\u2163]\n",
+      "expected": {
+        "version": 1,
+        "original": "[\u2163]\n",
+        "sections": [],
+        "annotations": [
+          {
+            "code": "MALFORMED_TAG",
+            "range": {
+              "start": 0,
+              "end": 4
+            },
+            "text": "[\u2163]\n"
+          }
+        ],
+        "warnings": [
+          {
+            "code": "MALFORMED_TAG",
+            "range": {
+              "start": 0,
+              "end": 4
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

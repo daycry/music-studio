@@ -92,7 +92,11 @@ def test_large_seeds_exact_distinct_after_real_parser(
         generate_music=generate,
         GenerationParams=lambda **kw: kw,
         GenerationConfig=lambda **kw: kw,
-        torch=SimpleNamespace(cuda=SimpleNamespace(max_memory_allocated=lambda: 0)),
+        torch=SimpleNamespace(
+            cuda=SimpleNamespace(
+                max_memory_allocated=lambda: 0, synchronize=lambda: None
+            )
+        ),
     )
     request = {
         "task": "music.instrumental",
@@ -120,6 +124,8 @@ def test_cuda_oom_status_becomes_vram_exceeded(
         is_bf16_supported=lambda: True,
         set_per_process_memory_fraction=lambda f: None,
         reset_peak_memory_stats=lambda: None,
+        synchronize=lambda: None,
+        max_memory_allocated=lambda: 0,
     )
     runtime = SimpleNamespace(
         torch=SimpleNamespace(cuda=cuda, bfloat16="bf16"),
@@ -178,6 +184,8 @@ def test_cuda_oom_exception_becomes_vram_exceeded(
         is_bf16_supported=lambda: True,
         set_per_process_memory_fraction=lambda f: None,
         reset_peak_memory_stats=lambda: None,
+        synchronize=lambda: None,
+        max_memory_allocated=lambda: 0,
     )
     runtime = SimpleNamespace(
         torch=SimpleNamespace(cuda=cuda, bfloat16="bf16"),

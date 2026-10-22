@@ -1,0 +1,76 @@
+{
+  "started_utc": "2026-10-06T19:11:29.350725+00:00",
+  "image_id": "sha256:00c32a76c951a4494a23282edf4e53d946f43f244e0790cbd59e806030bd7f43",
+  "gpu_workload_executed": false,
+  "models_loaded": false,
+  "purpose": "Read installed PEFT metadata/source only; no imports of PEFT or torch",
+  "container_exit_code": 0,
+  "runtime": "runc",
+  "network": "none",
+  "readonly_rootfs": true,
+  "device_requests": null,
+  "version": "0.18.1",
+  "license": "Apache",
+  "license_expression": null,
+  "torch_imported": false,
+  "source_files": {
+    "peft/peft_model.py": {
+      "sha256": "b847795c28bc4b00b3224c0dcea90edbee40ee60384cd104fdafd7056afcb13e",
+      "bytes": 161424
+    },
+    "peft/config.py": {
+      "sha256": "b0506247934fb067e53b805b8f67a43692850809b837711a8e5efb09b806fc85",
+      "bytes": 17107
+    },
+    "peft/utils/save_and_load.py": {
+      "sha256": "499d7bc36929d172da951b97ae81129834a5c69d6d4c434a1ee4359f256149ca",
+      "bytes": 37191
+    },
+    "peft/utils/other.py": {
+      "sha256": "c5e3db7e853791235b110e5ecbf0a77095179b7ba42491da4bcb8c80a6c0c53d",
+      "bytes": 72581
+    }
+  },
+  "license_files": {
+    "peft-0.18.1.dist-info/licenses/LICENSE": {
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "bytes": 11357
+    }
+  },
+  "own_container_removed": true,
+  "finished_utc": "2026-10-06T19:11:29.922709+00:00",
+  "artifacts": {
+    "payload.py": {
+      "sha256": "52c66383b86417e90d5c563fa018cf67e6bc8d9ef5500b841420dc23772a2ceb",
+      "bytes": 883
+    },
+    "stderr.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "stdout.json": {
+      "sha256": "0896e76d272d07670f91676a3520aca8e111e167ddd5798413370663b77040a5",
+      "bytes": 309640
+    },
+    "sources/peft/config.py": {
+      "sha256": "b0506247934fb067e53b805b8f67a43692850809b837711a8e5efb09b806fc85",
+      "bytes": 17107
+    },
+    "sources/peft/peft_model.py": {
+      "sha256": "b847795c28bc4b00b3224c0dcea90edbee40ee60384cd104fdafd7056afcb13e",
+      "bytes": 161424
+    },
+    "sources/peft/utils/other.py": {
+      "sha256": "c5e3db7e853791235b110e5ecbf0a77095179b7ba42491da4bcb8c80a6c0c53d",
+      "bytes": 72581
+    },
+    "sources/peft/utils/save_and_load.py": {
+      "sha256": "499d7bc36929d172da951b97ae81129834a5c69d6d4c434a1ee4359f256149ca",
+      "bytes": 37191
+    }
+  },
+  "private_receipt_sha256": "437311a3b0d9a239840f72c25b126e378781626f59f43af56a8f2326c6b743bc",
+  "loader_safety_approved": false,
+  "lora_loaded": false,
+  "inspection_scope": "Four installed source files and package metadata; not full loader certification"
+}

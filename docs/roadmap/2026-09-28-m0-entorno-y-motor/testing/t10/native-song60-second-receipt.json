@@ -1,0 +1,222 @@
+{
+  "status": "RAW_AUDIO_EVIDENCE_ACCEPTED_WITH_STRICT_FAILED_CHECK",
+  "session": "t10-native-song60-second-128a0c4629474126982f1cd657b52835",
+  "job_id": "01M49GF1NMKYKKNE0KMS6QJS10",
+  "source_audio": {
+    "wav_seal": {
+      "bytes": 23040088,
+      "sha256": "312ec507da990e81c5eacd5f4c11973bab618b547b6d7a8d88d6be84e06bf57d"
+    },
+    "format": "WAV",
+    "subtype": "FLOAT",
+    "sample_rate": 48000,
+    "channels": 2,
+    "frames": 2880000,
+    "duration_s": 60.0,
+    "sample_count": 5760000,
+    "finite_count": 5760000,
+    "peak": 1.0,
+    "rms_per_channel": [
+      0.1831687365204609,
+      0.17558962799457203
+    ],
+    "mean_per_channel": [
+      0.0016091199568753745,
+      0.0018581259984059247
+    ],
+    "samples_abs_ge1": 1,
+    "samples_abs_eq1": 1,
+    "nonzero_samples": 5760000,
+    "peak_dbfs": 0.0,
+    "fullscale_locations_frame_channel": [
+      [
+        2607868,
+        0
+      ]
+    ],
+    "fullscale_neighbors": [
+      {
+        "frame": 2607868,
+        "channel": 0,
+        "samples": [
+          -0.3214285671710968,
+          -0.1510416716337204,
+          -0.5714285969734192,
+          -1.0,
+          -0.9404761791229248,
+          -0.8333333134651184,
+          -0.7083333134651184
+        ]
+      }
+    ],
+    "pcm_shape": [
+      2,
+      2880000
+    ],
+    "pcm_dtype": "float32",
+    "pcm_bytes_sha256_channels_frames": "0198c5b768522689c47e8b2da7e54cb368be196707ddc094e2352775a728b6e5"
+  },
+  "input_hashes": {
+    "style_utf8_sha256": "fbd6e43c264963e9886a9406e6b04413fd016f22da7aa1be4ac647ba9f390585",
+    "lyrics_utf8_sha256": "bf305fc0fdfa0986eb2b26b7687230bc74125497228b290d00c83e690a851dc0",
+    "lm_prompt_sha256": "dbade5a642197338da7b4f90d2fb3ced037c8a07cc7ff9050918e8c7b6e7fc40",
+    "lm_tokens_sha256_recorded": "c5a9a14633aa1b1e0356bde0a2b6dd80d962fd5cfc27883ee3614fe2cdb90f5b",
+    "dit_tokenizers": [
+      {
+        "text_sha256": "b1f1d208437928f2c3e69e15f6d4a72ec33ad7c70013def415443f412967ef7f",
+        "tokens_sha256_json": "24d7f4a7312ac419549e12047acf6886a719340e9cf431eac8a11c906d8692c2",
+        "count": 94,
+        "limit": 256
+      },
+      {
+        "text_sha256": "b81dae5fecb2b3538b9ea8a9013d70ec51b72dc4a80dd6d34b6ca172a687caab",
+        "tokens_sha256_json": "00a82525aa3f27aa262056add69e390ba643b41e3ebed0cc9ce2ff87bac12454",
+        "count": 120,
+        "limit": 2048
+      }
+    ]
+  },
+  "budget": {
+    "lm_input": 198,
+    "lm_reserve": 310,
+    "lm_limit": 4096,
+    "dit_style": 94,
+    "dit_style_limit": 256,
+    "dit_lyrics": 120,
+    "dit_lyrics_limit": 2048
+  },
+  "telemetry": {
+    "samples": 126,
+    "first_utc": "2026-10-06T21:03:43.280940+00:00",
+    "last_utc": "2026-10-06T21:05:53.301137+00:00",
+    "nvml_used_mb_max": 9747.0,
+    "pdh_dedicated_mb_max": 9761.140625,
+    "pdh_shared_mb_max": 224.40234375,
+    "pdh_shared_baseline_mb": 135.09375,
+    "after_unload": {
+      "utc": "2026-10-06T21:05:54.531836+00:00",
+      "nvml": {
+        "name": "NVIDIA GeForce RTX 5070",
+        "total_mb": 12227.0,
+        "used_mb": 1276.0,
+        "free_mb": 10668.0
+      },
+      "windows": {
+        "scope": "adapter_aggregate",
+        "gpu_mapping_status": "resolved",
+        "instance": "luid_0x00000000_0x0000BFF3_phys_0",
+        "paths": {
+          "shared_mb": "\\GPU Adapter Memory(luid_0x00000000_0x0000BFF3_phys_0)\\Shared Usage",
+          "dedicated_mb": "\\GPU Adapter Memory(luid_0x00000000_0x0000BFF3_phys_0)\\Dedicated Usage"
+        },
+        "shared_mb": 142.40234375,
+        "dedicated_mb": 1289.55078125,
+        "pdh_status": {
+          "shared_mb": {
+            "collect": 0,
+            "return": 0,
+            "cstatus": 0
+          },
+          "dedicated_mb": {
+            "collect": 0,
+            "return": 0,
+            "cstatus": 0
+          }
+        }
+      }
+    }
+  },
+  "timing": {
+    "clock": "perf_counter_ns_cuda_synchronized",
+    "cuda_sync": true,
+    "infer_end_ns": 14367568189973,
+    "infer_start_ns": 14344639265845,
+    "inference_s": 22.928924128,
+    "scope": "upstream_generate_music",
+    "version": 1
+  },
+  "qa_strict_junit": {
+    "tests": 41,
+    "errors": 0,
+    "failures": 1,
+    "skipped": 0
+  },
+  "qa_passed_checks": 40,
+  "qa_total_checks": 41,
+  "canonical_audio_validation": {
+    "duration_s": 60.0,
+    "rms_dbfs": -14.922621355541871,
+    "sample_rate": 48000,
+    "channels": 2
+  },
+  "clipping_fraction": 1.7361111111111112e-07,
+  "clipping_contract_threshold": 0.005,
+  "post": {
+    "outputs": [
+      {
+        "role": "master",
+        "path": "master.flac",
+        "media_type": "audio/flac",
+        "sha256": "5a538fe7967a4a103f03e3c61ec92669cf743631d7dbf6994591e618b5893ce5",
+        "bytes": 12730093,
+        "meta": {
+          "duration_s": 60.0,
+          "rms_dbfs": -14.922621355541871,
+          "sample_rate": 48000,
+          "channels": 2
+        }
+      },
+      {
+        "role": "listen",
+        "path": "listen.mp3",
+        "media_type": "audio/mpeg",
+        "sha256": "f76b87d4c41cc31fad4b77a38b424c71a54ddcff0aa0f74fb2ff1145f19d9f76",
+        "bytes": 2401964,
+        "meta": {
+          "duration_s": 60.0,
+          "rms_dbfs": -14.922621355541871,
+          "sample_rate": 48000,
+          "channels": 2,
+          "lufs": -14.000498384717245,
+          "true_peak": -1.3
+        }
+      },
+      {
+        "role": "peaks",
+        "path": "peaks.json",
+        "media_type": "application/json",
+        "sha256": "340ae3e1fba3e0e2a407e4d109c2a6a13f9d0c5921dfd9a4ca66c007ef69c2ad",
+        "bytes": 166687,
+        "meta": {}
+      }
+    ],
+    "post": {
+      "lufs_in": -12.919107757760258,
+      "lufs_out": -14.000498384717245,
+      "gain_db": -1.083757820810737,
+      "limiter": true,
+      "true_peak_dbtp": -1.3
+    }
+  },
+  "source_unchanged": true,
+  "derived_receipt_encoding_caveat": true,
+  "native_text_has_original_accents": true,
+  "sources59_preserved": true,
+  "task_complete": false,
+  "verified": false,
+  "musical_acceptance": null,
+  "task_manager_calibrated_under_load": false,
+  "limitations": [
+    "Evaluación técnica del único WAV real; no escucha ni naturalidad, afinación, inteligibilidad, fidelidad acústica de letra ni aceptación musical.",
+    "verdict=null, verified=false y musical_acceptance=null permanecen; no cierre de T-10 ni matriz 522 verde.",
+    "El recibo derivado del driver decodificó texto UTF-8 con cp1252 y muestra mojibake; result.json y native-receipt.json leídos explícitamente UTF-8 son la autoridad. No modificación ni rerun.",
+    "LM: se verifican hash del prompt y presupuesto registrado en captura real; no se repitió tokenizer ni se reconstruyeron los 198 IDs LM porque no están conservados. DiT conserva sus listas de IDs y se verifica su longitud y contenido sellado.",
+    "Timer 22.928924128 s: una sola llamada upstream con sincronización CUDA; no benchmark ni extrapolación a matriz 160.",
+    "Task Manager intentado por root durante generación: imagen equivocada, no panel GPU persistido; sin calibración T-09 representativa.",
+    "Telemetría muestreada sin guardas activadas no prueba ausencia absoluta de spill de RAM/GPU.",
+    "Cleanup y lease constan en recibo root; QA no volvió a consultar Docker/WSL/GPU.",
+    "Éxito posterior corrobora el efecto del fix; no prueba causa histórica única.",
+    "Sin UI/E2E/qa-gate Playwright en este alcance; sin suites o cobertura repetidas."
+  ],
+  "qa_private_receipt_sha256": "7a1f847799732b75bb485cf732b41750987693d2c6cc65d7fee0418660ca1914"
+}

@@ -1,0 +1,41 @@
+{
+  "status": "SCOPED_CURRENT_NATIVE_QA_PASS",
+  "utc": "2026-10-08T03:45:53.007772+00:00",
+  "tests": {
+    "tests": 65,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "whole_changed_production": {
+    "scripts\\pnpm.py": {
+      "covered_lines": 159,
+      "num_statements": 165,
+      "percent_covered": 96.36363636363636,
+      "percent_covered_display": "96",
+      "missing_lines": 6,
+      "excluded_lines": 0,
+      "percent_statements_covered": 96.36363636363636,
+      "percent_statements_covered_display": "96"
+    }
+  },
+  "coverage_data": ".coverage-current",
+  "coverage_JSON": "coverage-current.json",
+  "fresh_trace_only": true,
+  "zero_exclusions": true,
+  "source_and_protected_before_after_exact": true,
+  "official_tool_payloads_before_after_exact": true,
+  "official_tool_payloads_count": 2935,
+  "protected_count": 27,
+  "actual_model": null,
+  "actual_tokens": null,
+  "actual_EUR": null,
+  "actual_AIhours": null,
+  "estimated_weight": 1.5,
+  "task_acceptance": false,
+  "global_quality_acceptance": false,
+  "TDD": "n/a independent readonly QA",
+  "command_accounting": "actor-command-accounting.json",
+  "native_metadata": "actual fixture argv/UTC/exit/raw bytes; PID where captured, otherwise UNKNOWN; FILETIME/Job UNKNOWN",
+  "cleanup": "cleanup.json"
+}

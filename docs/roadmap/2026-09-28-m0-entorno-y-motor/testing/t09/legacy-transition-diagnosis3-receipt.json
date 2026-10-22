@@ -1,0 +1,36 @@
+{
+  "utc": "2026-10-07T19:42:36.318896+00:00",
+  "phases_completed": [
+    1,
+    2,
+    3
+  ],
+  "fix_applied": false,
+  "nonCLI_verified": 102,
+  "original_premature_CLI_seal_mismatches": [
+    "cli-original.jsonl"
+  ],
+  "original_invalid_inventory_preserved": true,
+  "diagnostic_report": {
+    "sha256": "3fefa776b82f0353fc415d600c9d4dfda7a4addaec75a37080dff2554ad0ca62",
+    "bytes": 13313
+  },
+  "protected_initial_final_comparison": {
+    "original_paths": 2205,
+    "changed": 0,
+    "time_bounded": "at diagnostic final check; later T03/T04/root changes legitimate, not globally current-stable"
+  },
+  "reproduction_exits": [
+    1,
+    1,
+    0
+  ],
+  "real_clock_counterprobe_exit": 0,
+  "native_provider_spawned": false,
+  "CLI_normal_legacy_blocked": true,
+  "Python_injected_legacy_reachable": true,
+  "five_technical_RED": true,
+  "sixth_policy_conflict": "old resource-preservation expectation vsADR0045",
+  "reviewcounter_reset": false,
+  "GPU_QA_task_accepted": false
+}

@@ -1,0 +1,124 @@
+{
+  "status": "QA_UNIT_PASS",
+  "ownership": [],
+  "baseline": {
+    "argv": [
+      "/.venv\\Scripts\\python.exe",
+      "-m",
+      "pytest",
+      "-c",
+      "/.cache\\dev-cycle\\m1\\t06-sse-bus-qa1\\pytest.ini",
+      "--confcutdir",
+      "/.cache\\dev-cycle\\m1\\t06-sse-bus-qa1\\tests",
+      "-o",
+      "cache_dir=/.cache\\dev-cycle\\m1\\t06-sse-bus-qa1\\pytest-cache",
+      "--junitxml=/.cache\\dev-cycle\\m1\\t06-sse-bus-qa1\\junit.xml",
+      "/.cache\\dev-cycle\\m1\\t06-sse-bus-qa1\\tests\\test_dispatcher_admission.py",
+      "/.cache\\dev-cycle\\m1\\t06-sse-bus-qa1\\tests\\test_dispatcher_cancellation.py",
+      "/.cache\\dev-cycle\\m1\\t06-sse-bus-qa1\\tests\\test_dispatcher_events.py",
+      "/.cache\\dev-cycle\\m1\\t06-sse-bus-qa1\\tests\\test_dispatcher_lifespan.py",
+      "/.cache\\dev-cycle\\m1\\t06-sse-bus-qa1\\tests\\test_dispatcher_recovery.py",
+      "/.cache\\dev-cycle\\m1\\t06-sse-bus-qa1\\tests\\test_dispatcher_retry.py",
+      "/.cache\\dev-cycle\\m1\\t06-sse-bus-qa1\\tests\\test_dispatcher_scanning.py",
+      "/.cache\\dev-cycle\\m1\\t06-sse-bus-qa1\\tests\\test_queue_backend.py",
+      "/.cache\\dev-cycle\\m1\\t06-sse-bus-qa1\\tests\\test_queue_chains.py",
+      "/.cache\\dev-cycle\\m1\\t06-sse-bus-qa1\\tests\\test_queue_inputs.py",
+      "/.cache\\dev-cycle\\m1\\t06-sse-bus-qa1\\tests\\test_queue_manual_retry.py",
+      "/.cache\\dev-cycle\\m1\\t06-sse-bus-qa1\\tests\\test_queue_references.py",
+      "/.cache\\dev-cycle\\m1\\t06-sse-bus-qa1\\tests\\test_queue_resolver.py",
+      "/.cache\\dev-cycle\\m1\\t06-sse-bus-qa1\\tests\\test_sse_bus.py",
+      "/.cache\\dev-cycle\\m1\\t06-sse-bus-qa1\\tests\\test_sse_frames.py",
+      "--cov=app.queue.events",
+      "--cov=app.sse",
+      "--cov-config=/.cache\\dev-cycle\\m1\\t06-sse-bus-qa1\\coverage.ini",
+      "--cov-report=json:/.cache\\dev-cycle\\m1\\t06-sse-bus-qa1\\coverage-original.json"
+    ],
+    "started_utc": "2026-10-08T22:13:07.759848+00:00",
+    "runner_pid": 5436,
+    "environment": {
+      "TEMP": "/.cache\\dev-cycle\\m1\\t06-sse-bus-qa1\\temp",
+      "TMP": "/.cache\\dev-cycle\\m1\\t06-sse-bus-qa1\\temp",
+      "UV_CACHE_DIR": "/.cache\\dev-cycle\\m1\\t06-sse-bus-qa1\\uv-cache",
+      "PYTHONPYCACHEPREFIX": "/.cache\\dev-cycle\\m1\\t06-sse-bus-qa1\\pycache",
+      "STUDIO_TEST_ROOT": "/.cache\\dev-cycle\\m1\\t06-sse-bus-qa1\\fixtures",
+      "STUDIO_QUEUE_TEST_ROOT": "/.cache\\dev-cycle\\m1\\t06-sse-bus-qa1\\fixtures",
+      "COVERAGE_FILE": "/.cache\\dev-cycle\\m1\\t06-sse-bus-qa1\\.coverage",
+      "PYTHONPATH": "/apps/server;/packages/engine-contract"
+    },
+    "pid": 25332,
+    "exit_code": 0,
+    "ended_utc": "2026-10-08T22:16:55.525971+00:00"
+  },
+  "junit_counts": {
+    "cases": 453,
+    "failed": 0,
+    "skipped": 0,
+    "passed": 453
+  },
+  "failed": [],
+  "coverage_whole_each": {
+    "apps/server/app/queue/events.py": {
+      "covered_lines": 195,
+      "num_statements": 203,
+      "percent_covered": 96.05911330049261,
+      "percent_covered_display": "96",
+      "missing_lines": 8,
+      "excluded_lines": 0,
+      "percent_statements_covered": 96.05911330049261,
+      "percent_statements_covered_display": "96"
+    },
+    "apps/server/app/sse.py": {
+      "covered_lines": 202,
+      "num_statements": 208,
+      "percent_covered": 97.11538461538461,
+      "percent_covered_display": "97",
+      "missing_lines": 6,
+      "excluded_lines": 0,
+      "percent_statements_covered": 97.11538461538461,
+      "percent_statements_covered_display": "97"
+    }
+  },
+  "single_fresh_trace": true,
+  "sources_exact": true,
+  "source_changes": [],
+  "copied_tests_helpers_exact": true,
+  "runner_tests_config_exact": true,
+  "reviewed_four_exact": true,
+  "original_producer": {
+    "exit_code": 1,
+    "passed": 452,
+    "failed": 1,
+    "timeout_case": "test_global_busy_gpu_negative_once_and_available_cpu_native[801]",
+    "cause": "UNKNOWN",
+    "retroactively_green": false
+  },
+  "native_descendant_cleanup": "UNKNOWN",
+  "scope": "SQLite real fixtures; bus in process, real threads/asyncio; no native custody acceptance",
+  "full_T06_M1_acceptance": false,
+  "HTTP_heartbeat_snapshot_auth_LastEventID_browser_E2E": "PENDING",
+  "CLI_exit": null,
+  "tokens": null,
+  "eur": null,
+  "ia_hours": null,
+  "tdd": "Historical six U1 RED and canonical A01 red-2 verified; no new RED or tests; TDD n/a private runner/static configuration",
+  "protected_causal_scope_exact": true,
+  "selected_tests_helpers_exact": true,
+  "consumer_ast_unchanged": true,
+  "ledger_lint": {
+    "argv": [
+      "/.venv\\Scripts\\python.exe",
+      "<plugin>/agent-kits/shared/ledger-lint.py",
+      "/docs\\roadmap\\2026-09-28-m1-mvp-estudio\\tasks.md"
+    ],
+    "started_utc": "2026-10-08T22:17:01.378615+00:00",
+    "pid": 7052,
+    "exit_code": 0,
+    "ended_utc": "2026-10-08T22:17:01.504043+00:00"
+  },
+  "nonselected_tests_scope": "Archival copies only, not protected worker/global freeze; see selected-tests-helpers-exact.json",
+  "archival_nonselected_observed_changes": [
+    "apps/server/tests/test_worker_native_custody.py"
+  ],
+  "classification_correction": "Initial broad archival comparison included disjoint active custody test; original classification retained; acceptance predicate now uses protected causal scope and selected/transitive helpers only. No baseline rerun.",
+  "four_source_review_freeze_exact": true
+}

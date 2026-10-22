@@ -1,0 +1,24 @@
+{
+  "task": "M0/T-16",
+  "session": "01M47Q4EJZK09RBPA0ECWC57D4",
+  "recorded_at": "2026-10-06T05:23:10.791Z",
+  "imported_at": "2026-10-06T05:24:59.884223+00:00",
+  "source_sha256": "2143e5fef2d9f07be85277628070505d507b41690670de23eb42766b281bfdf9",
+  "source_bytes": 885,
+  "source": "owner_downloaded_json",
+  "original_preserved": true,
+  "pairs_with_explicit_preference": 1,
+  "pairs_pending_preference": 2,
+  "numeric_scores_completed": 0,
+  "numeric_scores_blank": 24,
+  "comments_completed": 4,
+  "preference_by_pair": {
+    "1": "P1A",
+    "2": null,
+    "3": null
+  },
+  "quality_approved": false,
+  "winner": null,
+  "status": "partial_owner_feedback",
+  "blind_mapping_disclosed": false
+}

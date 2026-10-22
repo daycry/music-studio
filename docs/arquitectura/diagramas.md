@@ -3,7 +3,7 @@ documento: diagramas
 titulo: Diagramas — arquitectura y workflow de canciones
 estado: vigente
 fecha: 2026-09-28
-actualizado: 2026-09-28
+actualizado: 2026-10-06
 ---
 
 # Diagramas
@@ -14,12 +14,12 @@ actualizado: 2026-09-28
 flowchart TB
     user(["👤 Usuario<br/>navegador en 127.0.0.1"])
 
-    subgraph WEB["web · Next.js :3000"]
+    subgraph WEB["web · Docker · Next.js :3000"]
         ui["Crear · Canciones · Vista de canción<br/>Editor de vídeo · Personajes · Sistema"]
         player["Reproductor persistente<br/>wavesurfer.js · Web Audio"]
     end
 
-    subgraph SERVER["server · FastAPI :8000 (sin torch)"]
+    subgraph SERVER["server · Docker · FastAPI :8000 (sin torch)"]
         api["API REST<br/>/songs /takes /videos /characters"]
         sse["SSE /events<br/>progreso en vivo"]
         disp["Dispatcher<br/>1 trabajo GPU a la vez<br/>prioridad · nocturnos"]
@@ -31,7 +31,7 @@ flowchart TB
     subgraph ENGINES["Engines · Docker · 127.0.0.1 · offline (sin descargas) · contrato /v1 · 1 modelo en VRAM"]
         ace["engine-acestep :8101<br/>ACE-Step 1.5 (MIT)<br/>música"]
         comfy["engine-comfy :8110<br/>ComfyUI headless<br/>Wan 2.2 · InfiniteTalk<br/>Qwen-Image · FLUX.2 klein"]
-        llm["engine-llm :8120<br/>Gemma 4 12B Q4 (GGUF)<br/>letras · guion"]
+        llm["engine-llm :8120<br/>adaptador /v1 sin inferencia propia<br/>letras · guion"]
         ana["engine-analysis :8130<br/>beat_this · Qwen3-ASR<br/>ForcedAligner · CLAP · Audiobox"]
         mock["engine-mock :8199<br/>tests y desarrollo UI"]
     end
@@ -47,7 +47,8 @@ flowchart TB
         tmp[("data/tmp/‹job_id›/")]
     end
 
-    gpu{{"RTX 5070 · 12 GB<br/>sm_120 · BF16"}}
+    ollama["Ollama · Ubuntu WSL2<br/>servicio compartido con otras aplicaciones<br/>modelo de letras a validar en M2"]
+    gpu{{"RTX 5070 · 12 GB<br/>sm_120 · BF16 · uso por turnos"}}
 
     user --> ui
     user --> player
@@ -60,8 +61,14 @@ flowchart TB
     disp -- "POST /v1/jobs · NDJSON<br/>/v1/unload" --> ENGINES
     disp -- "carril remote" --> remote
     remote -. "solo si está activado" .-> EXT
-    ENGINES --> gpu
-    ENGINES -- "leen pesos (ro)" --> models
+    ace --> gpu
+    comfy --> gpu
+    ana --> gpu
+    llm -- "API local; ruta pendiente de validar" --> ollama
+    ollama --> gpu
+    ace -- "leen pesos (ro)" --> models
+    comfy --> models
+    ana --> models
     ENGINES -- "escriben salida" --> tmp
     tmp -- "salida cruda" --> post
     disp -- "carril cpu" --> post
@@ -74,7 +81,8 @@ flowchart TB
 
 - El **server** es la única fuente de verdad y el único que escribe en la base de datos. Su **worker CPU** hace el post-proceso, los manifiestos y el render ([ADR-0017](../decisiones/ADR-0017-postproceso-y-manifiesto-en-el-server.md)); los engines solo devuelven salida cruda.
 - Los **engines** no guardan estado ni tocan la base de datos. Cada familia de modelo va en su propio contenedor, porque necesitan versiones de dependencias incompatibles entre sí.
-- El **dispatcher** descarga el modelo del engine activo antes de usar otro (`POST /v1/unload`), porque solo cabe uno en 12 GB.
+- El **dispatcher** mantiene un modelo residente por turno. Para engines propios, `POST /v1/unload` termina el proceso hijo; para Ollama compartido, el adaptador descarga el modelo y verifica VRAM libre sin detener su servicio. No se presume exclusión global con otras aplicaciones.
+- El producto se despliega en Docker Compose sobre WSL2; ComfyUI usa CUDA. Ollama permanece fuera de Docker para reutilizarlo en otras aplicaciones. Es el diseño objetivo, con integración pendiente ([ADR-0035](../decisiones/ADR-0035-despliegue-docker-y-ollama-wsl.md)).
 - Lo **externo** va con línea discontinua: los adapters viven en el server (carril `remote`), están apagados de fábrica y quedan registrados en el manifiesto ([ADR-0014](../decisiones/ADR-0014-local-por-defecto.md)).
 
 ## 2. Workflow de una canción

@@ -1,0 +1,126 @@
+{
+  "utc": "2026-10-09T05:02:15.903916+00:00",
+  "technical_component_accepted": true,
+  "scope": "Native worker custody/drain with trusted Windows/Linux fixtures; not complete CPU publication or whole T05.",
+  "current_sources": {
+    "apps/server/app/worker/custody.py": {
+      "sha256": "43b322e0941a7a4478bb2d81e37cf5478b2b7d1d1542b67d383e557cc58691e0",
+      "bytes": 13155
+    },
+    "apps/server/app/worker/custody_linux.py": {
+      "sha256": "04d99a7bd0c7e6c55ce0dffd43282bffcba322b783da09c07fcd513add024034",
+      "bytes": 12879
+    },
+    "apps/server/app/worker/custody_linux_supervisor.py": {
+      "sha256": "dfed377ad9a2343e84e19631c484b9e51e04266e3a892709de53d5722d9068e0",
+      "bytes": 12582
+    },
+    "apps/server/app/worker/custody_windows.py": {
+      "sha256": "0ce95826b90c15e490fbf2cf2fd1c0d832bf99d4d88203810f1be9ee9c7ed884",
+      "bytes": 23695
+    },
+    "apps/server/tests/fixtures/worker_custody_child.py": {
+      "sha256": "74025c3dc5c68986f5b56e6d9ed3bf05d3beb7ea07e0d34c8c18be57f96913ff",
+      "bytes": 3907
+    },
+    "apps/server/tests/fixtures/worker_custody_linux_child.py": {
+      "sha256": "6635cff64f5c78b2b485f9f7e022f9218b98b54af49ec5a963b0c7c5b568380c",
+      "bytes": 4739
+    },
+    "apps/server/tests/test_worker_native_custody.py": {
+      "sha256": "a176d465d92f3af8510425afbdd38edb8bb192dbe4e55701b11214aef67ec39d",
+      "bytes": 37578
+    },
+    "apps/server/tests/test_worker_native_linux_custody.py": {
+      "sha256": "d20ea609f99d00b7aa31ef65e07771b5aca8cbb8398a7cdc940e9842998332f3",
+      "bytes": 44154
+    }
+  },
+  "current_runtime_whole_each": {
+    "apps\\server\\app\\worker\\custody.py": {
+      "covered_lines": 201,
+      "num_statements": 222,
+      "percent_covered": 88.17567567567568,
+      "percent_covered_display": "88",
+      "missing_lines": 21,
+      "excluded_lines": 0,
+      "percent_statements_covered": 90.54054054054055,
+      "percent_statements_covered_display": "91",
+      "num_branches": 74,
+      "num_partial_branches": 12,
+      "covered_branches": 60,
+      "missing_branches": 14,
+      "percent_branches_covered": 81.08108108108108,
+      "percent_branches_covered_display": "81"
+    },
+    "apps\\server\\app\\worker\\custody_linux.py": {
+      "covered_lines": 231,
+      "num_statements": 257,
+      "percent_covered": 86.78678678678679,
+      "percent_covered_display": "87",
+      "missing_lines": 26,
+      "excluded_lines": 0,
+      "percent_statements_covered": 89.88326848249027,
+      "percent_statements_covered_display": "90",
+      "num_branches": 76,
+      "num_partial_branches": 18,
+      "covered_branches": 58,
+      "missing_branches": 18,
+      "percent_branches_covered": 76.3157894736842,
+      "percent_branches_covered_display": "76"
+    },
+    "apps\\server\\app\\worker\\custody_linux_supervisor.py": {
+      "covered_lines": 206,
+      "num_statements": 247,
+      "percent_covered": 81.65137614678899,
+      "percent_covered_display": "82",
+      "missing_lines": 41,
+      "excluded_lines": 0,
+      "percent_statements_covered": 83.40080971659918,
+      "percent_statements_covered_display": "83",
+      "num_branches": 80,
+      "num_partial_branches": 13,
+      "covered_branches": 61,
+      "missing_branches": 19,
+      "percent_branches_covered": 76.25,
+      "percent_branches_covered_display": "76"
+    },
+    "apps\\server\\app\\worker\\custody_windows.py": {
+      "covered_lines": 354,
+      "num_statements": 384,
+      "percent_covered": 88.18897637795276,
+      "percent_covered_display": "88",
+      "missing_lines": 30,
+      "excluded_lines": 0,
+      "percent_statements_covered": 92.1875,
+      "percent_statements_covered_display": "92",
+      "num_branches": 124,
+      "num_partial_branches": 30,
+      "covered_branches": 94,
+      "missing_branches": 30,
+      "percent_branches_covered": 75.80645161290323,
+      "percent_branches_covered_display": "76"
+    }
+  },
+  "native_cases": 88,
+  "linux_cases": 42,
+  "windows_cases": 46,
+  "native_run_uuid": "6ff3aa28-f208-4cfd-a933-ad14b04b9854",
+  "native_raw_count": 87,
+  "format_QA01": "Corrected by layout-only change, AST identical; current independent Ruff check and format check pass.",
+  "evidence": "Original independent88 native execution, current byte-identical runtime and semantic-identical test AST; supplementary static QA, not a new native88 run.",
+  "review": "Composite A/B/C/D clean; formatting A/B/D clean, C auto false.",
+  "limits": [
+    "Linux pinned base image interpreter/stdlib/libc, kernel and Docker daemon are unobserved base-image TCB; not physically copied out before subprocess start.",
+    "Transient/unloaded import closure UNKNOWN; no universal resource closure, foreign-holder census or scheduler guarantee.",
+    "Host files copied before Python launch; native final-handle alias resolution verified by bootstrap before case launch. Source/provider copies are hashed before imports; source alias final-handle resolution before Linux launch not separately captured.",
+    "Initial bootstrap compared historical preimage fixture; failed before collection, preserved in bootstrap-history1. First Start-Process ExitCode null remains UNKNOWN; not reconstructed.",
+    "Bootstrap repair success was directly observed via shell LASTEXITCODE=0; complete standalone PID/wait/UTC command receipt for that repair unavailable.",
+    "Fixture teardown observations may be post-event; embedded birth/journal/witness records retain actual timestamps, no retrospective event timing inferred.",
+    "Windows selected tests execute current checkout with prior physical copies; Linux executes fresh bind-mounted source/tools. Test AST, decorators, params, assertions and timeouts unchanged.",
+    "No performance benchmark, task/roadmap/quality/GPU/E2E acceptance. Root adjudicates."
+  ],
+  "resources_universally_returned": "UNPROVEN; per-case trusted fixture evidence only.",
+  "task_accepted": false,
+  "actual_model_tokens_EUR_AIhours": null
+}
