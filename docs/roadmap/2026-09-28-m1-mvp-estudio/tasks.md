@@ -284,12 +284,49 @@ verificacion: obligatoria
 ## Fase 3 — API
 
 ### T-07 — API mínima: canciones, letras, generaciones, takes y sistema
-- **Descripción**: **Recortado.** CRUD de canciones con papelera simple, versiones de letra, `POST` de generaciones, takes (valorar y marcar maestro), descargas MP3/FLAC y `GET /system` mínimo. Las colecciones quedan fuera.
-- **Hallazgo H1 de T-05**: el post falla con `AUDIO_DURATION_MISSING` si la petición no trae `params.duration_s`. La admisión debe rechazarlo o poner un valor por defecto, y la web debe enviarlo (ver T-09).
+- **Descripción**: **Recortado.** CRUD de canciones con papelera simple, versiones de letra, `POST` de generaciones, takes (valorar y marcar maestro), descargas MP3/FLAC y `GET /system` mínimo. Las colecciones quedan fuera: el código existente se conserva, pero no se amplía.
+
+  El mapa del 2026-10-22 dice qué está hecho y qué falta:
+  - **Ya funciona:** todas las rutas tienen handler real con sesión y owner-scope. Las descargas sirven `listen.mp3`/`master.flac` con Range 206/416, comprueban la pertenencia del asset y usan `safe_path`. `export_contracts.py --check` da `up to date`. La API pasa (`-k "routes or api"`): 69 passed, 7 skipped.
+  - **Huecos:**
+    - H1: falta `duration_s`;
+    - no hay modo «descargar» (`attachment`);
+    - `_take_dict` genera `/api/takes/{id}/{role}` para roles sin ruta;
+    - `/api/system`, `/api/models`, `/estimate`, `/peaks` y el PATCH de canción/take no tienen esquema de respuesta en OpenAPI, y el cliente web se genera de ahí;
+    - la cola de `/api/system` no filtra por owner;
+    - no hay tests de H1, Range inválido ni path traversal desde la API.
+
+  **Decisiones del propietario (2026-10-22):**
+  - **Duración por defecto: 30 s** si no viene; 422 si viene fuera de (0, 600].
+  - **Se elimina el código creativo de M2 del server** (`apps/server/app/creative/` y sus 4 tests). Sigue en `36d4e99` y en el archivo de M2. Con esto se cierra la consecuencia de ADR-0089 que delegaba esa decisión en T-07.
+- **Hallazgo H1 de T-05**: el post falla con `AUDIO_DURATION_MISSING` si la petición no trae `params.duration_s`.
 - **Estado**: en-progreso
+- **Tipo**: backend
 - **Dependencias**: T-04, T-05
-- **Archivos**: `apps/server/app/domain_routes.py`, `apps/server/app/api_models.py`
-- **Verificación**: `uv run pytest apps/server/tests -k "routes or api" -m "not gpu"` en verde · `openapi.json` regenerado sin diferencias.
+- **Archivos**: `apps/server/app/domain_routes.py`, `apps/server/app/api_models.py`, `apps/server/app/creative/` (se elimina), `apps/server/tests/test_domain_routes*.py`, `apps/server/tests/test_openapi_t03.py`, `apps/server/tests/test_creative_*.py` (se eliminan), `apps/server/tests/test_api_*.py` (nuevos), `packages/contracts/openapi.json`, `docs/arquitectura/iteracion-creativa.md` (nota de retirada)
+- **Verificación**:
+  - Windows: `uv run pytest apps/server/tests -m "not gpu"` → 0 failed, 0 errors · `uv run scripts/export_contracts.py --check` → `up to date`.
+  - Docker (orquestador): `server` + `engine-mock`; `POST /api/generations` **sin** `params.duration_s` → take `ready`. Descargar MP3 y FLAC con `?download=1` → `attachment`, y el hash coincide con el manifiesto.
+
+**Criterios de aceptación**
+- [ ] CA-1 (H1):
+  - `POST /api/generations` y `/estimate` sin `params.duration_s` usan **30 s**, que queda persistido en `job.request.params` y en los `take.params`, así que el post y el reintento lo encuentran.
+  - Con `duration_s` no numérico o fuera de (0, 600] → **422 `INVALID_PARAMS`** antes de crear nada.
+  - Si el descriptor del modelo fija límites más estrictos (ACE-Step: 10–600), el resolver los sigue aplicando.
+- [ ] CA-2 (descargas):
+  - `GET /api/takes/{id}/audio` y `/master` con `?download=1` → `Content-Disposition: attachment; filename="<song-title-saneado>-<take>.mp3|flac"` (nombre seguro en ASCII o con `filename*` RFC 5987). Sin el parámetro sigue `inline`.
+  - Tests:
+    - Range inválido o múltiple → 416;
+    - un asset de otro take u owner → 404;
+    - un `asset.path` manipulado con `..`, ruta absoluta o symlink → error controlado, nunca servido.
+- [ ] CA-3: `_take_dict` solo genera URLs de assets que tienen ruta real; un rol sin ruta no publica URL rota. Test.
+- [ ] CA-4 (contrato tipado):
+  - `/api/system`, `/api/models`, `/api/generations/estimate`, `/api/takes/{id}/peaks`, `PATCH /api/songs/{id}` y `PATCH /api/takes/{id}` declaran su modelo de respuesta en OpenAPI.
+  - `/api/system` mínimo: GPU/VRAM, engines, modelos y cola **filtrada por owner**.
+  - `openapi.json` regenerado, `--check` en verde y `test_openapi_t03.py` en verde.
+- [ ] CA-5: eliminados `apps/server/app/creative/` y los tests `test_creative_{composition,recipes,contract_compatibility,persistence}.py`, sin romper modelos ni migraciones. `docs/arquitectura/iteracion-creativa.md` lleva una nota de que el código se retiró de `main` (ADR-0089) y dónde recuperarlo.
+- [ ] CA-6: la suite del server completa en verde y `-k "routes or api"` en verde.
+- **Changelog**: Las generaciones sin duración usan 30 s en lugar de fallar. Los MP3/FLAC se pueden descargar como fichero y la API publica un contrato tipado para la web.
 
 ## Fase 4 — Web
 
