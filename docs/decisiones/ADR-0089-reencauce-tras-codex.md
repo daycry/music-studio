@@ -58,5 +58,5 @@ Todo ese estado está congelado, con las rutas personales limpiadas, en el commi
 ## Consecuencias
 
 - Los ledgers, briefs y evidencias de la etapa Codex pasan a `docs/archive/codex-2026-10/`. Las evidencias crudas solo existen en el commit `36d4e99`.
-- El código de M2 que ya está en el árbol (`apps/server/app/creative/`, recetas) no se borra. En M1/T-05 y T-07 se decide si se queda o sale, según lo que use el camino mínimo.
+- El código de M2 que ya está en el árbol (`apps/server/app/creative/`, recetas) no se borra en este cambio. En M1/T-05 y T-07 se decide si se queda o sale, según lo que use el camino mínimo. **Resuelto el 2026-10-22 en M1/T-07:** el propietario decidió retirarlo de `main`, junto con sus tests, sus fixtures y `creative-recipe-v1.schema.json`. Se recupera en `36d4e99`.
 - La aceptación de M1 vuelve a exigir una canción real con ACE-Step escuchada en la web.

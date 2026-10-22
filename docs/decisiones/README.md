@@ -38,7 +38,7 @@ Formato: `ADR-XXXX-slug.md` con **Estado** (propuesta · aceptada · sustituida 
 | [0032](ADR-0032-condicionamiento-dit-segun-rama-nativa.md) | Planificación de ambas ramas DiT y validación exacta de la resolución nativa con códigos LM; contenido y guardas íntegros | aceptada |
 | [0033](ADR-0033-perfiles-y-medicion-directa-del-benchmark.md) | Benchmark del engine mediante /v1: perfiles base/XL, INT8 efectivo, inferencia directa y observación WDDM; copia interior efímera y referencias comparables | aceptada; implementación pendiente |
 | [0088](ADR-0088-salidas-externas-y-custodia-del-recolector-python.md) | Salidas externas desde creación y custodia propia del recolector Python | aceptada; O1 ratificada por ROOT tras revisión documental y QA84/84; implementación runtime pendiente |
-| [0089](ADR-0089-reencauce-tras-codex.md) | Reencauce tras Codex: un hito activo, M1 recortado, M2/M3 congelados, journal Windows aparcado y proceso ligero | aceptada |
+| [0089](ADR-0089-reencauce-tras-codex.md) | Reencauce tras Codex: un hito activo, M1 recortado, M2/M3 congelados, journal Windows aparcado y proceso ligero (código creativo de M2 retirado de `main` en M1/T-07) | aceptada |
 | [0090](ADR-0090-reintento-acotado-de-intentos-dudosos.md) | Un intento de engine dudoso tras un reinicio (ausencia confirmada y salida previa) pasa a error retryable y consume un intento | aceptada |
 
 | [0034](ADR-0034-capacidades-nativas-y-accesibles-por-v1.md) | Matriz de capacidades con /v1 y laboratorio nativo seguro separados; verified sólo desde evidencia accesible del producto | aceptada; medición pendiente |

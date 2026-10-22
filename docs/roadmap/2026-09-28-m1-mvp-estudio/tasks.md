@@ -349,6 +349,7 @@ verificacion: obligatoria
 
 ### T-08 — Web: esqueleto, tokens, tema oscuro, i18n, layout y cliente de API
 - **Descripción**: Next.js con `next-intl` (castellano), tokens de diseño, layout y cliente generado desde `openapi.json`. El tema claro queda fuera.
+- **Pendiente detectado en la revisión de T-07**: `apps/web/lib/api.ts` (`SystemInfo`) espera `gpu.limit_mb`, pero el server envía `cap_mb`. Conviene usar los tipos generados de `api.d.ts` en lugar de tipos a mano.
 - **Estado**: en-progreso
 - **Dependencias**: T-03
 - **Verificación**: `pnpm lint` y `pnpm test` en verde · `pnpm --filter web build` sin errores.
@@ -533,3 +534,25 @@ Lentes A y B sobre el fix2 (`b61878f..a9fc73d`).
 | # | Grado | Gap | Tarea | Corrección | Evidencia |
 |---|---|---|---|---|---|
 | N7 | Minor | Los fallos **permanentes** de borrado (symlink o junction como destino, un no-directorio o algo fuera de `data/`) entran en `deferred` para siempre y registran `worker.cleanup.failed` (ERROR) cada 2 s, sin tope | T-04 | deuda aceptada; se trata con H5/B5 (mismo barrido) | `cleanup.py:50,55,142,183`; repro `scratchpad/n2_perm.py` |
+
+## Revisión de dos lentes — intento 1: Fase 3 (T-07) — sin gaps Critical/Important
+
+Lentes A, B y C. C la activó el orquestador a mano porque el diff construye `Content-Disposition` con el título de la canción y sirve ficheros. Diff `2d3f0a5..511c9e7`.
+
+- **Lente A:** CA-1 a CA-5 ✓.
+  - CA-2: el 403 para un take ajeno no contradice ningún documento vigente.
+  - CA-4: `tsc --noEmit` limpio y el `api.d.ts` regenerado es idéntico.
+  - CA-6 y Docker: sin verificar por la lente.
+- **Lente C:** sin hallazgos.
+  - `Content-Disposition` saneado frente a CRLF, comillas, `..` y caracteres bidi.
+  - Owner-scope intacto.
+  - Los DTO solo documentan, no filtran.
+- **Lente B:** los 30 s por defecto también se aplican a `music.instrumental`; el retry y la compensación funcionan.
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| 1 | Minor | Un entero JSON de más de unos 309 dígitos en `duration_s` → `OverflowError` → 500 (generations) / 503 (estimate), en vez de 422 | T-07 | pendiente (fix1) | `domain_routes.py:143,867-870,1453-1456` (lentes B y C) |
+| 2 | Minor | CA-3 quitaba la entrada `manifest` entera de `take.assets` (con su `sha256`), que `ProvenancePanel.tsx` muestra y exporta. Regresión | T-07 | pendiente (fix1) | `domain_routes.py:361-371` (lente B) |
+| 3 | Minor | ADR-0089 seguía diciendo que el código M2 «no se borra» | T-07 | corregido: nota de resolución en ADR-0089 y en el índice | `ADR-0089:61` (lente A) |
+
+**Fuera de T-07:** el tipo a mano `SystemInfo` de la web espera `gpu.limit_mb`, pero el server envía `cap_mb`. Es anterior a T-07 → se corrige en **T-08**.
