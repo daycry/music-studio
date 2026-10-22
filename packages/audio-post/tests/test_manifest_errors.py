@@ -408,3 +408,55 @@ def test_cli_m0_relative_manifests_unchanged(tmp_path, manifest):
     assert module.main([str(run / "manifest.json")]) == 0  # S4
     (run / "fixture.txt").write_bytes(b"x")
     assert module.main([str(run / "manifest.json")]) == 1  # S4b
+
+
+@pytest.mark.parametrize(
+    "rel",
+    [
+        "data/songs/S/./takes/T/fixture.txt",
+        "data/songs//S/takes/T/fixture.txt",
+        "data/songs/S/takes/T/fixture.txt/",
+        "data//songs/S/takes/T/fixture.txt",
+        "data/songs/S/takes/../takes/T/fixture.txt",
+        "data/fixture.txt",
+    ],
+)
+def test_cli_rejects_non_canonical_data_paths(tmp_path, manifest, rel):
+    take = tmp_path / "a" / "songs" / "S" / "takes" / "T"
+    _put(take, GOOD, rel, manifest)
+    module = _cli()
+    assert module.main([str(take / "manifest.json")]) == 1
+    assert (
+        module.main([str(take / "manifest.json"), "--data-dir", str(tmp_path / "a")])
+        == 1
+    )
+
+
+@pytest.mark.parametrize("bad", ["x", {"role": "master"}, {"path": 5}])
+def test_cli_malformed_outputs_are_a_clean_error(tmp_path, manifest, bad, capsys):
+    take = tmp_path / "a" / "songs" / "S" / "takes" / "T"
+    value = _put(take, GOOD, TAKE_REL, manifest)
+    value["outputs"].append(bad)
+    (take / "manifest.json").write_text(json.dumps(value), encoding="utf-8")
+    assert _cli().main([str(take / "manifest.json")]) == 1
+    assert "Traceback" not in capsys.readouterr().err
+
+
+def test_cli_data_dir_comparison_ignores_case_on_windows(tmp_path, manifest):
+    import sys
+
+    if sys.platform != "win32":
+        pytest.skip("la comparación insensible a mayúsculas es de Windows")
+    take = tmp_path / "a" / "songs" / "S" / "takes" / "T"
+    _put(take, GOOD, TAKE_REL, manifest)
+    module = _cli()
+    assert (
+        module.main(
+            [str(take / "manifest.json"), "--data-dir", str(tmp_path / "a").upper()]
+        )
+        == 0
+    )
+    assert (
+        module.main([str(Path(str(take).replace("songs", "SONGS")) / "manifest.json")])
+        == 0
+    )

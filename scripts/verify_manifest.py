@@ -2,17 +2,24 @@
 
 import argparse
 import json
+import os
 import sys
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 
 from audio_post import verify_manifest
+from audio_post.manifest import _validate
 
 
-def _output_paths(payload):
-    outputs = payload.get("outputs") if isinstance(payload, dict) else None
-    if not isinstance(outputs, list):
-        return []
-    return [o["path"] for o in outputs if isinstance(o, dict) and "path" in o]
+def _norm(value):
+    return os.path.normcase(str(value))
+
+
+def _split(value):
+    """Partes de `data/<rel>` como string crudo: sin vacíos, `.`, `..` ni barra final."""
+    parts = value[len("data/") :].split("/")
+    if len(parts) < 2 or any(part in ("", ".", "..") for part in parts):
+        raise ValueError("OUTPUT_OUTSIDE_TAKE: ruta de salida data/ no canónica")
+    return parts
 
 
 def base_for(path, payload, data_dir):
@@ -22,29 +29,31 @@ def base_for(path, payload, data_dir):
     carpeta del manifiesto debe ser exactamente `<datos>/dirname(<rel>)`. Nunca se
     buscan ancestros `data/` ni se valida contra ficheros ajenos al manifiesto.
     """
-    paths = _output_paths(payload)
-    flagged = [isinstance(v, str) and v.startswith("data/") for v in paths]
+    _validate(payload)  # esquema v1 sobre el manifiesto ORIGINAL, antes de la vista
+    paths = [o["path"] for o in payload["outputs"]]
+    flagged = [v.startswith("data/") for v in paths]
     if not any(flagged):
         return path.parent, None, payload
     if not all(flagged):
         raise ValueError(
             "OUTPUT_MIXED_PATHS: salidas data/ y relativas en un manifiesto"
         )
-    parents = {PurePosixPath(v[len("data/") :]).parent for v in paths}
-    if len(parents) != 1:
+    split = [_split(v) for v in paths]
+    if len({tuple(parts[:-1]) for parts in split}) != 1:
         raise ValueError("OUTPUT_OUTSIDE_TAKE: salidas en carpetas distintas")
-    parent = parents.pop()
+    parent = split[0][:-1]
     folder = path.absolute().parent
-    if ".." in parent.parts or folder.parts[
-        len(folder.parts) - len(parent.parts) :
-    ] != (parent.parts):
+    tail = folder.parts[len(folder.parts) - len(parent) :]
+    if [_norm(x) for x in tail] != [_norm(x) for x in parent]:
         raise ValueError(
             "OUTPUT_OUTSIDE_TAKE: las salidas no están en la carpeta del manifiesto"
         )
     derived = folder
-    for _ in parent.parts:
+    for _ in parent:
         derived = derived.parent
-    if data_dir is not None and Path(data_dir).resolve() != derived.resolve():
+    if data_dir is not None and _norm(Path(data_dir).resolve()) != _norm(
+        derived.resolve()
+    ):
         raise ValueError(
             "OUTPUT_OUTSIDE_TAKE: --data-dir no contiene la carpeta del manifiesto"
         )
@@ -52,7 +61,7 @@ def base_for(path, payload, data_dir):
     view = {
         **payload,
         "outputs": [
-            {**o, "path": PurePosixPath(o["path"]).name} for o in payload["outputs"]
+            {**o, "path": parts[-1]} for o, parts in zip(payload["outputs"], split)
         ],
     }
     return folder, derived, view
@@ -91,7 +100,7 @@ def main(argv=None):
             checked += 1
             base, context, view = base_for(path, payload, args.data_dir)
             verify_manifest(view, base, private_context_root=context)
-        except (ValueError, OSError) as error:
+        except (ValueError, OSError, TypeError, KeyError) as error:
             print(f"{path.name}: {error}", file=sys.stderr)
             failed = True
     if failed:
