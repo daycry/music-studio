@@ -143,6 +143,24 @@ verificacion: obligatoria
     - `verify_manifest.py` sobre el take real: `all valid` con `--data-dir` del directorio aislado. *(Corregido en la revisión, intento 3, gap 4: la autodetección se comprobó con una **copia** del take en una estructura `<raíz>/data/`, no sobre el take en su sitio. Sin `--data-dir`, el take aislado da `PRIVATE_CONTEXT_INVALID`.)*
     - `test_manifest_errors.py` + `test_generate.py`: 109 passed.
     - Suite completa del server tras fix3 (informe del implementer): `2542 passed, 73 skipped`.
+- **Fix5** (2026-10-22, 0,61 h IA medidas). Commit `5d989b4`; lo autoriza el propietario tras el 3.er intento:
+  - `verify_manifest.py` deriva la raíz de datos del propio manifiesto, sin buscar ancestros.
+  - Todas las salidas `data/...` tienen que estar en la carpeta del manifiesto (`OUTPUT_OUTSIDE_TAKE`).
+  - No se admite mezclar rutas `data/` y relativas (`OUTPUT_MIXED_PATHS`).
+  - **Comprobado por el orquestador:**
+    - Escenarios del revisor: S1, S2, S2b, S3 y S4b dan rc=1; S4 (M0) da rc=0.
+    - Los takes reales de `.cache/e2e-t05` y `.cache/e2e-t05c` y la copia `<x>/data/` dan `all valid` **sin opciones**.
+    - `test_manifest_errors.py` + `test_generate.py`: 115 passed.
+- **Fix6** (2026-10-22, 0,1 h IA medidas). Commit `3ec7112`:
+  - Se valida el esquema sobre el manifiesto original.
+  - Las rutas `data/` se tratan como texto crudo canónico, sin partes vacías, `.`, `..` ni barra final.
+  - Los errores se capturan por manifiesto.
+  - Las rutas se comparan con `normcase`.
+  - **Comprobado por el orquestador:**
+    - Sondas del revisor: P1–P5 y P8–P11 dan rc=1 sin traceback; P6, P7 y P7b (mayúsculas) dan rc=0; P13 (junction) da `UNSAFE_PATH`.
+    - S1–S4b como se esperaba.
+    - Takes reales: `all valid`.
+    - `test_manifest_errors.py` + `test_generate.py`: 125 passed; `ruff` limpio.
 - **Commits**: `65e8156` (publicación con fallback, limpieza de staging y marcadores), `406f259` (hash del fixture), `6045e79` (fix1 de la revisión, gaps 1–4).
 - **Fix1** (2026-10-22, 0,88 h IA medidas):
   - Limpieza de arranque después del commit.
@@ -284,3 +302,13 @@ Lentes A y B en un revisor de contexto fresco, sobre el diff `860f0a3..a8bff17`.
 | 2 | Minor | Ni la autodetección ni `--data-dir` exigen que las salidas `data/...` estén en el take del propio manifiesto, y no rechazan mezclar salidas `data/` y relativas | T-05 (H2) | pendiente (se corrige junto al 1) | S2b/S3: `verify_manifest.py:21-31` |
 | 3 | Minor | Si una toma falla después de `process_audio`, su `.pending-<exec>/<take>` queda con ficheros, `rmdir` falla y se emite `worker.cleanup.failed` (error) en una ejecución `mixed`. El staging dura hasta el siguiente arranque | T-05 (H3) | deuda aceptable: la limpieza de arranque lo cubre | `execution.py:244-247` |
 | 4 | Minor | El ledger decía «autodetección sobre el take real» | T-05 | corregido en el ledger | `tasks.md` (Fix3 + fix4) |
+
+## Revisión de dos lentes — intento 4: Fase 2 (T-05) — fix5 cierra el gap; regresión Important
+
+Revisión corta autorizada por el propietario, con lentes A y B sobre el diff `93971b1..5d989b4`. Los criterios (1) a (5) del contrato del fix5 se cumplen. Escenarios S1–S4b ✓; comparación por partes, no por sufijo ✓; junctions ✓.
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| 1 | Important | La vista sustituye `path` por el nombre base **antes** de validar el esquema, y `PurePosixPath` normaliza `./`, `//` y la barra final. La CLI da «all valid» a manifiestos que el esquema y `safe_path` rechazan; con `93971b1` daban rc=1 `MANIFEST_SCHEMA` | T-05 | corregido (`3ec7112`) | `verify_manifest.py:33,52-57`; sondas P1–P3 |
+| 2 | Minor | Una salida que no es dict o que no tiene `path` produce `TypeError`/`KeyError` sin capturar y aborta el recorrido del directorio | T-05 | corregido (`3ec7112`) | `verify_manifest.py:55,94` |
+| 3 | Minor | En Windows, la comparación de la carpeta distingue mayúsculas (`absolute()`): un take legítimo da un falso negativo, pero falla cerrado | T-05 | corregido (`3ec7112`) | `verify_manifest.py:37-40` |
