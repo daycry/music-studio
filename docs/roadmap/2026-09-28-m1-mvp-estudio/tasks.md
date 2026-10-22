@@ -83,13 +83,49 @@ verificacion: obligatoria
 ## Fase 2 — Cola y post-proceso
 
 ### T-04 — Cola de un carril: reintentos, cancelación y recuperación
-- **Descripción**: **Recortado.** Un carril GPU y uno CPU, reintento `retryable` ×2, cancelar, e `interrupted` → reencolar al arrancar. Las dependencias entre jobs (análisis) quedan fuera.
-- **Deuda de la revisión de T-05 (gap 6)**: `reconcile_startup` vuelve a procesar en cada arranque las ejecuciones ya `interrupted`.
-- **Pendiente heredado de T-05**: reencolar el `post.audio` interrumpido tras un reinicio (hoy queda `interrupted`/`CPU_CUSTODY_UNKNOWN` sin camino de vuelta). Hay que decidir entre reutilizar `cpu_execution` y la intent o abrir el ordinal 2.
+- **Descripción**: **Recortado.** Un carril GPU y uno CPU, reintento `retryable` ×2, cancelación y recuperación al arrancar. Las dependencias entre jobs (análisis) quedan fuera.
+
+  El mapa del 2026-10-22 dice qué está hecho y qué falta:
+  - **Ya funciona:** los carriles (GPU 1, CPU 2), el retry ×2 del engine con la semilla congelada, la cancelación del engine y el reenvío del mismo attempt cuando el engine confirma que no lo tiene y no hay salida previa.
+  - **Huecos:**
+    - un `post.audio` interrumpido no tiene camino de vuelta;
+    - dos `post.audio` interrumpidos bloquean para siempre el carril CPU;
+    - un post interrumpido no se puede cancelar;
+    - cancelar no limpia `data/tmp`;
+    - un job GPU dudoso queda `interrupted` para siempre;
+    - `reconcile_startup` no es idempotente (gap 6 de T-05).
+
+  **Decisiones del propietario (2026-10-22):**
+  - El post interrumpido se **reanuda** sobre la misma `cpu_execution`, sin migración (opción A, frente a B «ordinal 2 + migración» y C «fallar y regenerar la GPU»).
+  - Un job GPU dudoso usa **reintento acotado**: si el engine confirma que no lo tiene, pasa a `failed` retryable y lo recoge el retry ×2.
 - **Estado**: en-progreso
-- **Dependencias**: T-02
-- **Archivos**: `apps/server/app/queue/`
-- **Verificación**: `uv run pytest apps/server/tests -k "queue or dispatcher or retry or recovery or cancel" -m "not gpu"` en verde.
+- **Tipo**: backend
+- **Dependencias**: T-02, T-05
+- **Archivos**: `apps/server/app/queue/`, `apps/server/app/worker/execution.py`, `apps/server/app/worker/publications.py`, `apps/server/tests/test_dispatcher_*.py`, `apps/server/tests/test_queue_*.py`, `apps/server/tests/test_worker_*.py`
+- **Verificación**:
+  - Windows: `uv run pytest apps/server/tests -m "not gpu"` → 0 failed, 0 errors. Antes hay que cargar el entorno con `source scripts/env.sh`.
+  - Docker (orquestador):
+    - `server` + `engine-mock` sobre `.cache/`; SIGKILL del server con el post a mitad y arranque de nuevo → el **mismo take llega a `ready`** sin intervención y `verify_manifest.py` da `all valid`.
+    - Cancelar un post interrumpido → `cancelled` y sin `data/tmp/<attempt>`.
+    - Tests de Linux real del worker en verde.
+
+**Criterios de aceptación**
+- [ ] CA-1 (reanudar, opción A):
+  - Tras un reinicio, un `post.audio` `interrupted` cuyo proceso anterior se **prueba** muerto (epoch de supervisor o arranque nuevo, sin ningún `owner` vivo) pasa la custodia de `unknown` a `confirmed`, transiciona `interrupted → prepared` con lease nuevo y se re-ejecuta desde el WAV crudo de `data/tmp`.
+  - Las intents `reserved` se vuelven a procesar y las `prepared` se republican desde su staging, que T-05 conserva.
+  - El take termina `ready` con su manifiesto válido.
+  - Sin prueba de muerte, no se confirma nada y el post sigue `interrupted`.
+  - No hay migración: solo transiciones que ya permiten los triggers de `cpu_publication_invariants.py`.
+- [ ] CA-2: el carril CPU no se bloquea. `claim_job` cuenta como ocupadas solo las ejecuciones vivas (no `interrupted` sin owner, ni borradas, ni de otro owner).
+- [ ] CA-3 (cancelar):
+  - Un post `interrupted` tras un reinicio se puede cancelar y queda `cancelled`, con sus intents y su `cpu_execution` en estados finales válidos.
+  - Cancelar cualquier job (engine o CPU) borra su `data/tmp/<attempt>` cuando ya no lo necesita ningún otro job (el WAV crudo lo usa el post, que depende de la generación). El borrado sigue las reglas de T-05: no sigue symlinks/junctions, se queda dentro de `data/` y los errores son eventos.
+- [ ] CA-4 (GPU dudoso): un job de engine en recuperación `uncertain`:
+  - si el engine confirma que no lo tiene → `failed` con `retryable` y lo recoge el retry ×2 existente (attempt nuevo, misma semilla, respetando `max_attempts`);
+  - si el engine no responde → sigue esperando como ahora.
+- [ ] CA-5 (gap 6): `reconcile_startup` es idempotente. Un segundo arranque sin cambios no incrementa `revision` ni reescribe filas ya `interrupted`.
+- [ ] CA-6: la suite de cola (`-k "queue or dispatcher or retry or recovery or cancel"`) y la del server completa siguen en verde.
+- **Changelog**: Si el server se reinicia a mitad de una canción, el post-proceso se reanuda solo hasta dejar el take listo. Los trabajos se pueden cancelar sin dejar restos, y la cola no se queda bloqueada.
 
 ### T-05 — Post-proceso y publicación sencilla de takes
 - **Descripción**: **Rediseño (ADR-0089 §2).** Hoy la publicación final (`publications.py::rename_noreplace`) exige `renameat2(RENAME_NOREPLACE)`, que devuelve `EINVAL` sobre el bind 9p de Docker Desktop, y por eso ningún take llega a `ready` en el despliegue real. Se sustituye por una publicación sencilla:
