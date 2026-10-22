@@ -459,6 +459,22 @@ verificacion: obligatoria
 - **Verificación en Docker** (orquestador, 2026-10-22): imagen reconstruida, `server` + `engine-mock`.
   - Generación correcta, y aparte SIGKILL a mitad con reanudación: tras `ready` y `audio.beats` `succeeded`, en `data/tmp` **solo quedan los contenedores vacíos** `_server_cpu/` y `_server_inputs/`, sin `.pending-*`.
   - `verify_manifest.py`: `all valid (2 manifests)`.
+- **Fix1** (2026-10-22, 4,84 h IA medidas). Commit `dc733e0`:
+  - Conjunto en memoria de jobs **resueltos** en lugar del cursor por `updated_at`, que dependía del reloj del engine.
+  - Consulta solo de ids y trozos de 200, de más nuevos a más viejos.
+  - El barrido inicial ya no bloquea `start()`.
+  - Lectura por columnas (`json_extract`) sin hidratar `JobAttempt`.
+  - Un único `worker.cleanup.failed` por proceso.
+  - Tests de regresión con un `audio.beats` real pendiente y con reintento manual tras el barrido.
+  - **Medido con 9.000 terminales:** antes, 10,5 s bloqueando `start()`; ahora, 3,0 s repartidos en 46 pasadas de unos 66 ms. En régimen, unos 14 ms por pasada cada 2 s.
+  - **Tests:**
+    - Suite completa del server (implementer): `2001 passed, 77 skipped`, 0 failed.
+    - Focales (orquestador): 96 passed.
+    - Repro del revisor: 2 passed.
+    - **Docker Linux:** 90 passed, 2 skipped.
+  - **De punta a punta en Docker:**
+    - En 3 secuencias de «canción normal y después SIGKILL con reanudación» el take llega a `ready` (reanudación en 31–60 s), y al terminar quedan **0 ficheros en `data/tmp`**; `verify_manifest.py`: `all valid (6 manifests)`.
+    - Una primera ejecución se cortó con el take aún `queued` a los 180 s: era una espera demasiado corta para un post de 600 s de audio. Con el seguimiento cada 20 s se vio que los temporales se conservan mientras el post está vivo y se borran al terminar.
 - **Changelog**: El estudio ya no acumula copias de audio ni ficheros temporales en `data/tmp` tras cada canción.
 
 ## Revisión de dos lentes — intento 1: Fase 2 (T-05) — dos Important pendientes
@@ -632,8 +648,8 @@ Veredicto por criterio:
 
 | # | Grado | Gap | Tarea | Corrección | Evidencia |
 |---|---|---|---|---|---|
-| 1 | Important | Un fallo permanente se registra varias veces: con `MARGIN_S=5` de producción y un barrido cada 2 s se reexamina mientras `updated_at >= since`, y también en cada arranque. El test lo ocultaba con `MARGIN_S=0` | T-17 | pendiente (fix1) | `cleanup.py:142,247-248`; `test_tmp_cleanup_t17.py:30`; repro: COUNT 3 |
-| 2 | Important | El `updated_at` de un terminal viene del `ts` del engine (reloj del contenedor). Si el engine va ≥ 5 s por detrás (deriva de WSL2), el barrido incremental no lo ve nunca hasta el siguiente arranque. Es una fuga | T-17 | pendiente (fix1) | `events.py:250,447`, `cleanup.py:142`; repro: RAW EXISTS True |
-| 3 | Important | CA-4 pide tests con un `audio.beats` real pendiente y con reintento manual tras el barrido. El test `…pending_beats…` crea un `post.audio` | T-17 | pendiente (fix1) | `test_tmp_cleanup_t17.py:193-210` |
-| 4 | Important | El barrido hidrata el `JobAttempt` completo (validación pydantic de provenance, contratos y terminal) cuando solo necesita `id` y `engine_request.inputs`. Medido con 9.000 jobs: 7,06 s frente a 1,03 s con columnas | T-17 | pendiente (fix1) | `cleanup.py:103-109,152-156` (lente D) |
-| 5 | Minor | El barrido de arranque recorre todo el histórico de terminales dentro de `runtime.start()`, y el server no atiende HTTP hasta que termina (3,5 s con 3.000; 9,9 s con 9.000) | T-17 | pendiente (fix1) | `runtime.py:169`, `main.py:72` (lente D) |
+| 1 | Important | Un fallo permanente se registra varias veces: con `MARGIN_S=5` de producción y un barrido cada 2 s se reexamina mientras `updated_at >= since`, y también en cada arranque. El test lo ocultaba con `MARGIN_S=0` | T-17 | corregido (`dc733e0`) | `cleanup.py:142,247-248`; `test_tmp_cleanup_t17.py:30`; repro: COUNT 3 |
+| 2 | Important | El `updated_at` de un terminal viene del `ts` del engine (reloj del contenedor). Si el engine va ≥ 5 s por detrás (deriva de WSL2), el barrido incremental no lo ve nunca hasta el siguiente arranque. Es una fuga | T-17 | corregido (`dc733e0`) | `events.py:250,447`, `cleanup.py:142`; repro: RAW EXISTS True |
+| 3 | Important | CA-4 pide tests con un `audio.beats` real pendiente y con reintento manual tras el barrido. El test `…pending_beats…` crea un `post.audio` | T-17 | corregido (`dc733e0`) | `test_tmp_cleanup_t17.py:193-210` |
+| 4 | Important | El barrido hidrata el `JobAttempt` completo (validación pydantic de provenance, contratos y terminal) cuando solo necesita `id` y `engine_request.inputs`. Medido con 9.000 jobs: 7,06 s frente a 1,03 s con columnas | T-17 | corregido (`dc733e0`) | `cleanup.py:103-109,152-156` (lente D) |
+| 5 | Minor | El barrido de arranque recorre todo el histórico de terminales dentro de `runtime.start()`, y el server no atiende HTTP hasta que termina (3,5 s con 3.000; 9,9 s con 9.000) | T-17 | corregido (`dc733e0`) | `runtime.py:169`, `main.py:72` (lente D) |
