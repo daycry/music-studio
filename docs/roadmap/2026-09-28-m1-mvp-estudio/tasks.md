@@ -300,7 +300,7 @@ verificacion: obligatoria
   - **Duración por defecto: 30 s** si no viene; 422 si viene fuera de (0, 600].
   - **Se elimina el código creativo de M2 del server** (`apps/server/app/creative/` y sus 4 tests). Sigue en `36d4e99` y en el archivo de M2. Con esto se cierra la consecuencia de ADR-0089 que delegaba esa decisión en T-07.
 - **Hallazgo H1 de T-05**: el post falla con `AUDIO_DURATION_MISSING` si la petición no trae `params.duration_s`.
-- **Estado**: en-progreso
+- **Estado**: en-revision
 - **Tipo**: backend
 - **Dependencias**: T-04, T-05
 - **Archivos**: `apps/server/app/domain_routes.py`, `apps/server/app/api_models.py`, `apps/server/app/creative/` (se elimina), `apps/server/tests/test_domain_routes*.py`, `apps/server/tests/test_openapi_t03.py`, `apps/server/tests/test_creative_*.py` (se eliminan), `apps/server/tests/test_api_*.py` (nuevos), `packages/contracts/openapi.json`, `docs/arquitectura/iteracion-creativa.md` (nota de retirada), `apps/web/lib/generated/api.d.ts` (cliente regenerado con `pnpm gen`), `apps/server/tests/fixtures/creative/` y `packages/contracts/creative-recipe-v1.schema.json` (eliminados: solo los usaban los tests de M2)
@@ -309,23 +309,23 @@ verificacion: obligatoria
   - Docker (orquestador): `server` + `engine-mock`; `POST /api/generations` **sin** `params.duration_s` → take `ready`. Descargar MP3 y FLAC con `?download=1` → `attachment`, y el hash coincide con el manifiesto.
 
 **Criterios de aceptación**
-- [ ] CA-1 (H1):
+- [x] CA-1 (H1):
   - `POST /api/generations` y `/estimate` sin `params.duration_s` usan **30 s**, que queda persistido en `job.request.params` y en los `take.params`, así que el post y el reintento lo encuentran.
   - Con `duration_s` no numérico o fuera de (0, 600] → **422 `INVALID_PARAMS`** antes de crear nada.
   - Si el descriptor del modelo fija límites más estrictos (ACE-Step: 10–600), el resolver los sigue aplicando.
-- [ ] CA-2 (descargas):
+- [x] CA-2 (descargas):
   - `GET /api/takes/{id}/audio` y `/master` con `?download=1` → `Content-Disposition: attachment; filename="<song-title-saneado>-<take>.mp3|flac"` (nombre seguro en ASCII o con `filename*` RFC 5987). Sin el parámetro sigue `inline`.
   - Tests:
     - Range inválido o múltiple → 416;
     - un asset de otro take u owner → 404;
     - un `asset.path` manipulado con `..`, ruta absoluta o symlink → error controlado, nunca servido.
-- [ ] CA-3: `_take_dict` solo genera URLs de assets que tienen ruta real; un rol sin ruta no publica URL rota. Test.
-- [ ] CA-4 (contrato tipado):
+- [x] CA-3: `_take_dict` solo genera URLs de assets que tienen ruta real; un rol sin ruta no publica URL rota. Test.
+- [x] CA-4 (contrato tipado):
   - `/api/system`, `/api/models`, `/api/generations/estimate`, `/api/takes/{id}/peaks`, `PATCH /api/songs/{id}` y `PATCH /api/takes/{id}` declaran su modelo de respuesta en OpenAPI.
   - `/api/system` mínimo: GPU/VRAM, engines, modelos y cola **filtrada por owner**.
   - `openapi.json` regenerado, `--check` en verde y `test_openapi_t03.py` en verde.
-- [ ] CA-5: eliminados `apps/server/app/creative/` y los tests `test_creative_{composition,recipes,contract_compatibility,persistence}.py`, sin romper modelos ni migraciones. `docs/arquitectura/iteracion-creativa.md` lleva una nota de que el código se retiró de `main` (ADR-0089) y dónde recuperarlo.
-- [ ] CA-6: la suite del server completa en verde y `-k "routes or api"` en verde.
+- [x] CA-5: eliminados `apps/server/app/creative/` y los tests `test_creative_{composition,recipes,contract_compatibility,persistence}.py`, sin romper modelos ni migraciones. `docs/arquitectura/iteracion-creativa.md` lleva una nota de que el código se retiró de `main` (ADR-0089) y dónde recuperarlo.
+- [x] CA-6: la suite del server completa en verde y `-k "routes or api"` en verde.
 - **Implementación** (2026-10-22). Commit `511c9e7`; borra unas 11.700 líneas, casi todas del código de M2:
   - **RED → GREEN** (implementer):
     - CA-1: `KeyError: 'duration_s'`.
@@ -348,6 +348,16 @@ verificacion: obligatoria
   - `take.assets` conserva todas las entradas (`manifest` con `sha256`) y solo publica `url` en los roles con ruta; en el esquema, `url` pasa a ser opcional.
   - **Comprobado por el orquestador:** focales 105 passed, 1 skipped (symlink en Windows); `export_contracts.py --check` `up to date`; `tsc --noEmit` exit 0.
   - `pnpm` hay que ejecutarlo desde PowerShell: el wrapper de bash rechaza Git Bash.
+- **Verificación en Docker** (orquestador, 2026-10-22; imagen reconstruida, `server` + `engine-mock` sobre `.cache/`):
+  - `POST /api/generations` **sin** `duration_s` → 202 y take **`ready`** con `params.duration_s: 30`.
+  - `duration_s: 601` → 422 `INVALID_PARAMS`.
+  - `take.assets` lleva `master`, `listen`, `peaks` (con `url`) y `manifest` (con `sha256`, sin `url`).
+  - `?download=1` en `/audio` y `/master` → `attachment; filename="Sin titulo-<take>.mp3|flac"; filename*=UTF-8''Sin%20t%C3%ADtulo-…`, y **el hash coincide con el manifiesto** en los dos casos. Sin el parámetro → `inline`.
+- **QA** (2026-10-22, orquestador, modo sin UI acotado a T-07, mismo criterio que T-04 y T-05):
+  - `ledger-lint`: 0 incoherencias.
+  - `coverage-check`: exit 0.
+  - **`qa-gate.py`: exit 1** («sin resultados»). Las E2E que cubren T-07 (E2E-01, E2E-02, E2E-07, E2E-08, E2E-10, E2E-11) son de T-15.
+  - T-07 queda `en-revision`, se integra y pasa a `completado` cuando T-15 las ejecute en verde.
 - **Changelog**: Las generaciones sin duración usan 30 s en lugar de fallar. Los MP3/FLAC se pueden descargar como fichero y la API publica un contrato tipado para la web.
 
 ## Fase 4 — Web
@@ -399,7 +409,7 @@ verificacion: obligatoria
 
 ### T-15 — Suite E2E del camino mínimo (Playwright + engine-mock)
 - **Descripción**: E2E de crear, generar, biblioteca, canción, reproductor y errores contra `engine-mock` (actualizar `test-plan.md` al recorte).
-- **Cierra también T-05 y T-04**: cuando E2E-01 y E2E-09 (T-05) y E2E-04, E2E-05 y E2E-06 (T-04) pasen con `qa-gate` en verde, esas tareas pasan a `completado`.
+- **Cierra también T-04, T-05 y T-07**: cuando E2E-01 y E2E-09 (T-05), E2E-04, E2E-05 y E2E-06 (T-04) y E2E-01, E2E-02, E2E-07, E2E-08, E2E-10 y E2E-11 (T-07) pasen con `qa-gate` en verde, esas tareas pasan a `completado`.
 - **Estado**: en-progreso
 - **Dependencias**: T-09 a T-13
 - **Verificación**: `pnpm --filter web exec playwright test` en verde; informe de `qa` con 0 fallos.
