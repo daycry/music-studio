@@ -3,10 +3,14 @@
 import hashlib
 import json
 import logging
+import math
+import re
 import shutil
+import unicodedata
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Literal
+from urllib.parse import quote
 
 from audio_post.manifest import safe_path
 from engine_contract import JobRequest
@@ -17,7 +21,13 @@ from sqlalchemy.orm import Session
 from starlette.responses import JSONResponse, Response
 
 from . import models
-from .api_models import ProblemDTO
+from .api_models import (
+    EstimateResultDTO,
+    ModelsDTO,
+    PeaksDTO,
+    ProblemDTO,
+    SystemInfoDTO,
+)
 from .errors import problem
 from .event_routes import _credential
 from .local_sessions import SessionError
@@ -109,6 +119,48 @@ class EstimateDTO(BaseModel):
 
 
 TRASH_RETENTION = timedelta(days=30)
+
+DEFAULT_DURATION_S = 30
+MAX_DURATION_S = 600
+# Roles de asset con ruta real; el resto no publica URL.
+ASSET_ROUTES = {"master": "master", "listen": "audio", "peaks": "peaks"}
+
+
+def _params_with_duration(params, task):
+    """Valida `duration_s` (0, 600] y aplica los 30 s por defecto en tareas music.*.
+
+    Lanza ValueError si viene y no es un número finito en rango; el resolver
+    sigue aplicando los límites más estrictos del descriptor del modelo.
+    """
+    params = dict(params)
+    if "duration_s" in params:
+        value = params["duration_s"]
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(value)
+            or not 0 < value <= MAX_DURATION_S
+        ):
+            raise ValueError("INVALID_DURATION")
+    elif task.startswith("music."):
+        params["duration_s"] = DEFAULT_DURATION_S
+    return params
+
+
+def _download_names(title, take_id, extension):
+    """Devuelve (nombre ASCII seguro, nombre Unicode saneado) para `attachment`."""
+    clean = re.sub(r'[\x00-\x1f\x7f/\\:*?"<>|]+', "_", title or "")
+    clean = re.sub(r"\.{2,}", ".", clean).strip(" ._") or "cancion"
+    clean = clean[:80].strip(" ._") or "cancion"
+    ascii_title = (
+        unicodedata.normalize("NFKD", clean).encode("ascii", "ignore").decode("ascii")
+    )
+    ascii_title = re.sub(r"[^A-Za-z0-9._ -]+", "_", ascii_title).strip(" ._")
+    ascii_title = ascii_title or "cancion"
+    return (
+        f"{ascii_title}-{take_id}.{extension}",
+        f"{clean}-{take_id}.{extension}",
+    )
 
 
 _OPENAPI_SONG = {
@@ -275,6 +327,10 @@ def _json_response(schema, description):
     }
 
 
+def _model_response(model, description):
+    return {"description": description, "model": model}
+
+
 def _take_dict(take, *, assets=None, lineage=None):
     result = {
         "id": take.id,
@@ -308,17 +364,23 @@ def _take_dict(take, *, assets=None, lineage=None):
                 "media_type": asset.media_type,
                 "bytes": asset.bytes,
                 "sha256": asset.sha256,
-                "url": f"/api/takes/{take.id}/master"
-                if asset.role == "master"
-                else f"/api/takes/{take.id}/audio"
-                if asset.role == "listen"
-                else f"/api/takes/{take.id}/{asset.role}",
+                "url": f"/api/takes/{take.id}/{ASSET_ROUTES[asset.role]}",
             }
             for asset in assets
+            if asset.role in ASSET_ROUTES
         }
     if lineage is not None:
         result["lineage"] = lineage
     return result
+
+
+_DOWNLOAD_PARAM = {
+    "name": "download",
+    "in": "query",
+    "required": False,
+    "description": "1 o true: Content-Disposition attachment en lugar de inline",
+    "schema": {"type": "string", "enum": ["0", "1", "true", "false"]},
+}
 
 
 def _responses():
@@ -802,6 +864,10 @@ async def _create_generation(request: Request, payload: GenerationCreateDTO):
             return problem("INVALID_PARAMS")
         if payload.task == "music.instrumental" and payload.lyrics is not None:
             return problem("INVALID_PARAMS")
+        try:
+            base_params = _params_with_duration(payload.params, payload.task)
+        except ValueError:
+            return problem("INVALID_PARAMS")
         if payload.song_id is None:
             with Session(engine) as session, session.begin():
                 writer(session)
@@ -847,7 +913,7 @@ async def _create_generation(request: Request, payload: GenerationCreateDTO):
             task=payload.task,
             request={
                 "params": {
-                    **payload.params,
+                    **base_params,
                     "style": payload.style_prompt,
                     **(
                         {
@@ -1142,11 +1208,16 @@ def _restore_take(request: Request, take_id: str):
         return problem(error.code)
 
 
-def _asset_response(request: Request, take_id: str, role: str, *, range_header=None):
+def _asset_response(
+    request: Request, take_id: str, role: str, *, range_header=None, download=False
+):
     try:
         binding, engine = _auth(request)
         with Session(engine) as session:
             take = _owned_take(session, binding.owner_id, take_id)
+            song_title = session.scalar(
+                select(models.Song.title).where(models.Song.id == take.song_id)
+            )
             asset = session.scalar(
                 select(models.Asset).where(
                     models.Asset.owner_id == binding.owner_id,
@@ -1194,10 +1265,18 @@ def _asset_response(request: Request, take_id: str, role: str, *, range_header=N
         extension = {"audio/mpeg": "mp3", "audio/flac": "flac", "audio/wav": "wav"}.get(
             asset.media_type, "bin"
         )
+        if download:
+            safe_name, full_name = _download_names(song_title, take_id, extension)
+            disposition = (
+                f'attachment; filename="{safe_name}"; '
+                f"filename*=UTF-8''{quote(full_name, safe='')}"
+            )
+        else:
+            disposition = f'inline; filename="{take_id}-{role}.{extension}"'
         headers = {
             "Accept-Ranges": "bytes",
             "Content-Length": str(len(payload)),
-            "Content-Disposition": f'inline; filename="{take_id}-{role}.{extension}"',
+            "Content-Disposition": disposition,
         }
         if status == 206:
             headers["Content-Range"] = f"bytes {start}-{end}/{size}"
@@ -1210,15 +1289,27 @@ def _asset_response(request: Request, take_id: str, role: str, *, range_header=N
         return problem("NOT_FOUND")
 
 
+def _wants_download(request: Request):
+    return request.query_params.get("download") in {"1", "true"}
+
+
 def _take_audio(request: Request, take_id: str):
     return _asset_response(
-        request, take_id, "listen", range_header=request.headers.get("range")
+        request,
+        take_id,
+        "listen",
+        range_header=request.headers.get("range"),
+        download=_wants_download(request),
     )
 
 
 def _take_master(request: Request, take_id: str):
     return _asset_response(
-        request, take_id, "master", range_header=request.headers.get("range")
+        request,
+        take_id,
+        "master",
+        range_header=request.headers.get("range"),
+        download=_wants_download(request),
     )
 
 
@@ -1359,6 +1450,10 @@ async def _estimate_generation(request: Request, payload: EstimateDTO):
         resolver = getattr(runtime, "resolver", None)
         if resolver is None:
             return problem("SERVICE_UNAVAILABLE")
+        try:
+            params = _params_with_duration(payload.params, payload.task)
+        except ValueError:
+            return problem("INVALID_PARAMS")
         for backend in resolver.backends.values():
             try:
                 _health, descriptors = await resolver._catalog(backend)
@@ -1373,7 +1468,7 @@ async def _estimate_generation(request: Request, payload: EstimateDTO):
                     task=payload.task,
                     model_id=payload.model_id,
                     inputs=[],
-                    params=payload.params,
+                    params=params,
                     seed=payload.seed,
                     n_outputs=payload.n_outputs,
                     output_dir=f"tmp/{job_id}",
@@ -1410,7 +1505,7 @@ async def _unload_system(request: Request):
 
 async def _system_info(request: Request):
     try:
-        _binding, engine = _auth(request)
+        binding, engine = _auth(request)
         runtime = getattr(request.app.state, "queue", None)
         resolver = getattr(runtime, "resolver", None)
         engines = []
@@ -1453,7 +1548,12 @@ async def _system_info(request: Request):
         with Session(engine) as session:
             queue = {
                 status: session.scalar(
-                    select(models.Job.id).where(models.Job.status == status).limit(1)
+                    select(models.Job.id)
+                    .where(
+                        models.Job.owner_id == binding.owner_id,
+                        models.Job.status == status,
+                    )
+                    .limit(1)
                 )
                 is not None
                 for status in ("queued", "blocked", "running")
@@ -1677,7 +1777,7 @@ def register_domain_routes(application):
         _patch_song,
         methods=["PATCH"],
         operation_id="patch_song",
-        responses=_responses(),
+        responses={200: _json_response(_OPENAPI_SONG, "Song"), **_responses()},
     )
     application.add_api_route(
         "/api/songs/{song_id}",
@@ -1745,7 +1845,7 @@ def register_domain_routes(application):
         _patch_take,
         methods=["PATCH"],
         operation_id="patch_take",
-        responses=_responses(),
+        responses={200: _json_response(_OPENAPI_TAKE, "Take"), **_responses()},
     )
     application.add_api_route(
         "/api/takes/{take_id}",
@@ -1768,6 +1868,7 @@ def register_domain_routes(application):
         methods=["GET"],
         operation_id="get_take_audio",
         response_class=Response,
+        openapi_extra={"parameters": [_DOWNLOAD_PARAM]},
         responses={
             200: {
                 "description": "MPEG audio",
@@ -1790,6 +1891,7 @@ def register_domain_routes(application):
         methods=["GET"],
         operation_id="get_take_master",
         response_class=Response,
+        openapi_extra={"parameters": [_DOWNLOAD_PARAM]},
         responses={
             200: {
                 "description": "FLAC audio",
@@ -1811,7 +1913,7 @@ def register_domain_routes(application):
         _take_peaks,
         methods=["GET"],
         operation_id="get_take_peaks",
-        responses=_responses(),
+        responses={200: _model_response(PeaksDTO, "Peaks"), **_responses()},
     )
     application.add_api_route(
         "/api/takes/{take_id}/analysis",
@@ -1848,14 +1950,17 @@ def register_domain_routes(application):
         _list_models,
         methods=["GET"],
         operation_id="list_models",
-        responses=_responses(),
+        responses={200: _model_response(ModelsDTO, "Models"), **_responses()},
     )
     application.add_api_route(
         "/api/generations/estimate",
         _estimate_generation,
         methods=["POST"],
         operation_id="estimate_generation",
-        responses=_responses(),
+        responses={
+            200: _model_response(EstimateResultDTO, "Estimate"),
+            **_responses(),
+        },
     )
     application.add_api_route(
         "/api/system/unload",
@@ -1869,5 +1974,8 @@ def register_domain_routes(application):
         _system_info,
         methods=["GET"],
         operation_id="system_info",
-        responses=_responses(),
+        responses={
+            200: _model_response(SystemInfoDTO, "System status"),
+            **_responses(),
+        },
     )

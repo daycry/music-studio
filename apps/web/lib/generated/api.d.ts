@@ -510,6 +510,17 @@ export interface components {
              */
             timeout_s: number;
         };
+        /** EstimateResultDTO */
+        EstimateResultDTO: {
+            /** Cost Eur */
+            cost_eur?: number | null;
+            /** Eta S */
+            eta_s: number;
+            /** Vram Mb */
+            vram_mb: number;
+        } & {
+            [key: string]: unknown;
+        };
         /** GenerationCreateDTO */
         GenerationCreateDTO: {
             /** Language */
@@ -578,6 +589,69 @@ export interface components {
             /** Take Id */
             take_id: string;
         };
+        /** ModelItemDTO */
+        ModelItemDTO: {
+            /** Commercial Use */
+            commercial_use?: boolean | null;
+            /** Engine Id */
+            engine_id?: string | null;
+            /** Engine Version */
+            engine_version?: string | null;
+            /** Family */
+            family?: string | null;
+            /** Id */
+            id: string;
+            /** License */
+            license?: string | null;
+            /** Modes */
+            modes?: {
+                [key: string]: unknown;
+            }[] | null;
+            /** Provider */
+            provider?: {
+                [key: string]: unknown;
+            } | null;
+            /** Remote Code */
+            remote_code?: {
+                [key: string]: unknown;
+            }[] | null;
+            /** Revision */
+            revision?: string | null;
+            /** Tasks */
+            tasks?: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            } | null;
+            /** Training Data */
+            training_data?: string | null;
+            /** Version */
+            version?: string | null;
+            /** Weights */
+            weights?: {
+                [key: string]: unknown;
+            }[] | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ModelsDTO */
+        ModelsDTO: {
+            /** Items */
+            items: components["schemas"]["ModelItemDTO"][];
+        };
+        /** PeaksDTO */
+        PeaksDTO: {
+            /** Channels */
+            channels?: number | null;
+            /** Data */
+            data: number[][][];
+            /** Length */
+            length?: number | null;
+            /** Version */
+            version?: number | null;
+        } & {
+            [key: string]: unknown;
+        };
         /**
          * SessionCredentialDTO
          * @description El bootstrap autorizado exporta intencionadamente la credencial pública.
@@ -630,6 +704,122 @@ export interface components {
             tags?: string[] | null;
             /** Title */
             title?: string | null;
+        };
+        /** SystemBytesDTO */
+        SystemBytesDTO: {
+            /** Free Bytes */
+            free_bytes?: number | null;
+            /** Total Bytes */
+            total_bytes?: number | null;
+        };
+        /** SystemEngineDTO */
+        SystemEngineDTO: {
+            /** Engine Id */
+            engine_id?: string | null;
+            /** Engine Version */
+            engine_version?: string | null;
+            gpu?: components["schemas"]["SystemGpuDTO"] | null;
+            /** State */
+            state: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** SystemGpuDTO */
+        SystemGpuDTO: {
+            /** Cap Mb */
+            cap_mb?: number | null;
+            /** Free Mb */
+            free_mb?: number | null;
+            /** Total Mb */
+            total_mb?: number | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** SystemInfoDTO */
+        SystemInfoDTO: {
+            disk: components["schemas"]["SystemBytesDTO"];
+            /** Engines */
+            engines: components["schemas"]["SystemEngineDTO"][];
+            gpu: components["schemas"]["SystemGpuDTO"] | null;
+            /** Models */
+            models: components["schemas"]["SystemModelDTO"][];
+            queue: components["schemas"]["SystemQueueDTO"];
+            ram: components["schemas"]["SystemBytesDTO"];
+        };
+        /** SystemModelDTO */
+        SystemModelDTO: {
+            /** Commercial Use */
+            commercial_use?: boolean | null;
+            /** Engine Id */
+            engine_id?: string | null;
+            /** Engine Version */
+            engine_version?: string | null;
+            /** Family */
+            family?: string | null;
+            /** Id */
+            id: string;
+            /** License */
+            license?: string | null;
+            /** Modes */
+            modes?: {
+                [key: string]: unknown;
+            }[] | null;
+            /** Provider */
+            provider?: {
+                [key: string]: unknown;
+            } | null;
+            /** Remote Code */
+            remote_code?: {
+                [key: string]: unknown;
+            }[] | null;
+            /** Revision */
+            revision?: string | null;
+            /** Tasks */
+            tasks?: {
+                [key: string]: components["schemas"]["SystemTaskDTO"];
+            } | null;
+            /** Training Data */
+            training_data?: string | null;
+            /** Version */
+            version?: string | null;
+            /** Weights */
+            weights?: {
+                [key: string]: unknown;
+            }[] | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** SystemQueueDTO */
+        SystemQueueDTO: {
+            /** Blocked */
+            blocked: boolean;
+            /** Queued */
+            queued: boolean;
+            /** Running */
+            running: boolean;
+        };
+        /** SystemTaskDTO */
+        SystemTaskDTO: {
+            /** Device */
+            device?: string | null;
+            /**
+             * Features
+             * @default {}
+             */
+            features: {
+                [key: string]: unknown;
+            };
+            /** Params Schema */
+            params_schema?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Verified
+             * @default false
+             */
+            verified: boolean;
+        } & {
+            [key: string]: unknown;
         };
         /** TakePatchDTO */
         TakePatchDTO: {
@@ -1554,13 +1744,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description Estimate */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["EstimateResultDTO"];
                 };
             };
             /** @description Session required */
@@ -2104,13 +2294,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description Models */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ModelsDTO"];
                 };
             };
             /** @description Session required */
@@ -3544,13 +3734,30 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description Song */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": {
+                        artist: string | null;
+                        collection_id: string | null;
+                        created_at: string;
+                        current_lyrics_version_id: string | null;
+                        deleted_at?: string | null;
+                        id: string;
+                        language: string | null;
+                        master_take_id: string | null;
+                        negative_prompt: string | null;
+                        notes: string | null;
+                        purge_after?: string | null;
+                        status: string;
+                        style_prompt: string;
+                        tags: unknown[];
+                        title: string;
+                        updated_at: string;
+                    };
                 };
             };
             /** @description Session required */
@@ -4906,13 +5113,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description System status */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["SystemInfoDTO"];
                 };
             };
             /** @description Session required */
@@ -5676,13 +5883,47 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description Take */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": {
+                        assets?: {
+                            [key: string]: {
+                                bytes: number;
+                                media_type: string;
+                                role: string;
+                                sha256: string;
+                                url: string;
+                            };
+                        };
+                        batch_id: string | null;
+                        commercial_use: boolean;
+                        created_at: string;
+                        derivation: string;
+                        duration_s: number | null;
+                        error_code: string | null;
+                        favorite: boolean;
+                        id: string;
+                        job_id: string | null;
+                        label: string | null;
+                        lineage?: Record<string, never>[];
+                        lyrics_version_id: string | null;
+                        model_id: string;
+                        model_version: string | null;
+                        params: Record<string, never>;
+                        rating: number | null;
+                        root_id: string | null;
+                        sample_rate: number | null;
+                        seed: number | null;
+                        song_id: string;
+                        status: string;
+                        task: string;
+                        updated_at: string;
+                        variant_index: number;
+                    };
                 };
             };
             /** @description Session required */
@@ -6035,7 +6276,10 @@ export interface operations {
     };
     get_take_audio: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description 1 o true: Content-Disposition attachment en lugar de inline */
+                download?: "0" | "1" | "true" | "false";
+            };
             header?: never;
             path: {
                 take_id: string;
@@ -6228,7 +6472,10 @@ export interface operations {
     };
     get_take_master: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description 1 o true: Content-Disposition attachment en lugar de inline */
+                download?: "0" | "1" | "true" | "false";
+            };
             header?: never;
             path: {
                 take_id: string;
@@ -6430,13 +6677,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description Peaks */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["PeaksDTO"];
                 };
             };
             /** @description Session required */

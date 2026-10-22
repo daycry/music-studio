@@ -92,6 +92,36 @@
         "title": "EstimateDTO",
         "type": "object"
       },
+      "EstimateResultDTO": {
+        "additionalProperties": true,
+        "properties": {
+          "cost_eur": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Eur"
+          },
+          "eta_s": {
+            "title": "Eta S",
+            "type": "number"
+          },
+          "vram_mb": {
+            "title": "Vram Mb",
+            "type": "number"
+          }
+        },
+        "required": [
+          "eta_s",
+          "vram_mb"
+        ],
+        "title": "EstimateResultDTO",
+        "type": "object"
+      },
       "GenerationCreateDTO": {
         "additionalProperties": false,
         "properties": {
@@ -274,6 +304,252 @@
           "take_id"
         ],
         "title": "MasterDTO",
+        "type": "object"
+      },
+      "ModelItemDTO": {
+        "additionalProperties": true,
+        "properties": {
+          "commercial_use": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commercial Use"
+          },
+          "engine_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Engine Id"
+          },
+          "engine_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Engine Version"
+          },
+          "family": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Family"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "license": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "License"
+          },
+          "modes": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modes"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "remote_code": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remote Code"
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision"
+          },
+          "tasks": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tasks"
+          },
+          "training_data": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Training Data"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          },
+          "weights": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weights"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "ModelItemDTO",
+        "type": "object"
+      },
+      "ModelsDTO": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ModelItemDTO"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "ModelsDTO",
+        "type": "object"
+      },
+      "PeaksDTO": {
+        "additionalProperties": true,
+        "properties": {
+          "channels": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Channels"
+          },
+          "data": {
+            "items": {
+              "items": {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              "type": "array"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "length": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Length"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "PeaksDTO",
         "type": "object"
       },
       "SessionCredentialDTO": {
@@ -510,6 +786,404 @@
           }
         },
         "title": "SongPatchDTO",
+        "type": "object"
+      },
+      "SystemBytesDTO": {
+        "properties": {
+          "free_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Free Bytes"
+          },
+          "total_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Bytes"
+          }
+        },
+        "title": "SystemBytesDTO",
+        "type": "object"
+      },
+      "SystemEngineDTO": {
+        "additionalProperties": true,
+        "properties": {
+          "engine_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Engine Id"
+          },
+          "engine_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Engine Version"
+          },
+          "gpu": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SystemGpuDTO"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state"
+        ],
+        "title": "SystemEngineDTO",
+        "type": "object"
+      },
+      "SystemGpuDTO": {
+        "additionalProperties": true,
+        "properties": {
+          "cap_mb": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cap Mb"
+          },
+          "free_mb": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Free Mb"
+          },
+          "total_mb": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Mb"
+          }
+        },
+        "title": "SystemGpuDTO",
+        "type": "object"
+      },
+      "SystemInfoDTO": {
+        "properties": {
+          "disk": {
+            "$ref": "#/components/schemas/SystemBytesDTO"
+          },
+          "engines": {
+            "items": {
+              "$ref": "#/components/schemas/SystemEngineDTO"
+            },
+            "title": "Engines",
+            "type": "array"
+          },
+          "gpu": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SystemGpuDTO"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/SystemModelDTO"
+            },
+            "title": "Models",
+            "type": "array"
+          },
+          "queue": {
+            "$ref": "#/components/schemas/SystemQueueDTO"
+          },
+          "ram": {
+            "$ref": "#/components/schemas/SystemBytesDTO"
+          }
+        },
+        "required": [
+          "gpu",
+          "ram",
+          "engines",
+          "models",
+          "queue",
+          "disk"
+        ],
+        "title": "SystemInfoDTO",
+        "type": "object"
+      },
+      "SystemModelDTO": {
+        "additionalProperties": true,
+        "properties": {
+          "commercial_use": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commercial Use"
+          },
+          "engine_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Engine Id"
+          },
+          "engine_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Engine Version"
+          },
+          "family": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Family"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "license": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "License"
+          },
+          "modes": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modes"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "remote_code": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remote Code"
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision"
+          },
+          "tasks": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/SystemTaskDTO"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tasks"
+          },
+          "training_data": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Training Data"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          },
+          "weights": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weights"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "SystemModelDTO",
+        "type": "object"
+      },
+      "SystemQueueDTO": {
+        "properties": {
+          "blocked": {
+            "title": "Blocked",
+            "type": "boolean"
+          },
+          "queued": {
+            "title": "Queued",
+            "type": "boolean"
+          },
+          "running": {
+            "title": "Running",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "queued",
+          "blocked",
+          "running"
+        ],
+        "title": "SystemQueueDTO",
+        "type": "object"
+      },
+      "SystemTaskDTO": {
+        "additionalProperties": true,
+        "properties": {
+          "device": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device"
+          },
+          "features": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Features",
+            "type": "object"
+          },
+          "params_schema": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Params Schema"
+          },
+          "verified": {
+            "default": false,
+            "title": "Verified",
+            "type": "boolean"
+          }
+        },
+        "title": "SystemTaskDTO",
         "type": "object"
       },
       "TakePatchDTO": {
@@ -2434,10 +3108,12 @@
           "200": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/EstimateResultDTO"
+                }
               }
             },
-            "description": "Successful Response"
+            "description": "Estimate"
           },
           "401": {
             "content": {
@@ -3548,10 +4224,12 @@
           "200": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ModelsDTO"
+                }
               }
             },
-            "description": "Successful Response"
+            "description": "Models"
           },
           "401": {
             "content": {
@@ -6731,10 +7409,106 @@
           "200": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "properties": {
+                    "artist": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "collection_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "created_at": {
+                      "type": "string"
+                    },
+                    "current_lyrics_version_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "deleted_at": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "language": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "master_take_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "negative_prompt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "notes": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "purge_after": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "style_prompt": {
+                      "type": "string"
+                    },
+                    "tags": {
+                      "items": {},
+                      "type": "array"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "updated_at": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "title",
+                    "artist",
+                    "collection_id",
+                    "status",
+                    "style_prompt",
+                    "negative_prompt",
+                    "language",
+                    "tags",
+                    "notes",
+                    "current_lyrics_version_id",
+                    "master_take_id",
+                    "updated_at",
+                    "created_at"
+                  ],
+                  "type": "object"
+                }
               }
             },
-            "description": "Successful Response"
+            "description": "Song"
           },
           "401": {
             "content": {
@@ -9682,10 +10456,12 @@
           "200": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/SystemInfoDTO"
+                }
               }
             },
-            "description": "Successful Response"
+            "description": "System status"
           },
           "401": {
             "content": {
@@ -11341,10 +12117,179 @@
           "200": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "properties": {
+                    "assets": {
+                      "additionalProperties": {
+                        "properties": {
+                          "bytes": {
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "media_type": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "type": "string"
+                          },
+                          "sha256": {
+                            "type": "string"
+                          },
+                          "url": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "role",
+                          "url",
+                          "media_type",
+                          "bytes",
+                          "sha256"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "object"
+                    },
+                    "batch_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "commercial_use": {
+                      "type": "boolean"
+                    },
+                    "created_at": {
+                      "type": "string"
+                    },
+                    "derivation": {
+                      "type": "string"
+                    },
+                    "duration_s": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "error_code": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "favorite": {
+                      "type": "boolean"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "job_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "label": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "lineage": {
+                      "items": {
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "lyrics_version_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "model_id": {
+                      "type": "string"
+                    },
+                    "model_version": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "params": {
+                      "type": "object"
+                    },
+                    "rating": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "root_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "sample_rate": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "seed": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "song_id": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "task": {
+                      "type": "string"
+                    },
+                    "updated_at": {
+                      "type": "string"
+                    },
+                    "variant_index": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "song_id",
+                    "job_id",
+                    "lyrics_version_id",
+                    "status",
+                    "batch_id",
+                    "variant_index",
+                    "root_id",
+                    "derivation",
+                    "task",
+                    "model_id",
+                    "model_version",
+                    "seed",
+                    "params",
+                    "duration_s",
+                    "sample_rate",
+                    "rating",
+                    "favorite",
+                    "label",
+                    "commercial_use",
+                    "error_code",
+                    "created_at",
+                    "updated_at"
+                  ],
+                  "type": "object"
+                }
               }
             },
-            "description": "Successful Response"
+            "description": "Take"
           },
           "401": {
             "content": {
@@ -12085,6 +13030,21 @@
               "title": "Take Id",
               "type": "string"
             }
+          },
+          {
+            "description": "1 o true: Content-Disposition attachment en lugar de inline",
+            "in": "query",
+            "name": "download",
+            "required": false,
+            "schema": {
+              "enum": [
+                "0",
+                "1",
+                "true",
+                "false"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -12472,6 +13432,21 @@
             "required": true,
             "schema": {
               "title": "Take Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "1 o true: Content-Disposition attachment en lugar de inline",
+            "in": "query",
+            "name": "download",
+            "required": false,
+            "schema": {
+              "enum": [
+                "0",
+                "1",
+                "true",
+                "false"
+              ],
               "type": "string"
             }
           }
@@ -12869,10 +13844,12 @@
           "200": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/PeaksDTO"
+                }
               }
             },
-            "description": "Successful Response"
+            "description": "Peaks"
           },
           "401": {
             "content": {

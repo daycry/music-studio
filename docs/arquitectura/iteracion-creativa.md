@@ -1,5 +1,7 @@
 # Captura privada de iteración creativa
 
+> **Nota (M1/T-07, ADR-0089):** el código descrito aquí (`app.creative`, sus tests, fixtures y el esquema `creative-recipe-v1`) se retiró de `main`. Es recuperable en el commit `36d4e99` (rama `rescue/2026-10-22-codex`).
+
 La unidad `app.creative.recipes` implementa la captura, lectura y proyección pura
 del [contrato privado de recetas](../roadmap/2026-10-10-m2-iteracion-creativa/recipe-contract-design.md),
 ratificado mediante [ADR-0077](../decisiones/ADR-0077-envelope-privado-de-recetas-creativas.md).
