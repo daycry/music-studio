@@ -653,3 +653,20 @@ Veredicto por criterio:
 | 3 | Important | CA-4 pide tests con un `audio.beats` real pendiente y con reintento manual tras el barrido. El test `…pending_beats…` crea un `post.audio` | T-17 | corregido (`dc733e0`) | `test_tmp_cleanup_t17.py:193-210` |
 | 4 | Important | El barrido hidrata el `JobAttempt` completo (validación pydantic de provenance, contratos y terminal) cuando solo necesita `id` y `engine_request.inputs`. Medido con 9.000 jobs: 7,06 s frente a 1,03 s con columnas | T-17 | corregido (`dc733e0`) | `cleanup.py:103-109,152-156` (lente D) |
 | 5 | Minor | El barrido de arranque recorre todo el histórico de terminales dentro de `runtime.start()`, y el server no atiende HTTP hasta que termina (3,5 s con 3.000; 9,9 s con 9.000) | T-17 | corregido (`dc733e0`) | `runtime.py:169`, `main.py:72` (lente D) |
+
+## Revisión de dos lentes — intento 2: Fase 5 (T-17) — un Important nuevo
+
+Lentes A, B y D sobre el fix1 (`19cffeb..dc733e0`).
+- Gaps del intento 1: 1 ✓ · 2 ✓ · 3 ✓ parcial · 4 ✓ · 5 ✓.
+- **Ventana inicial sin Critical**: `LIVE` incluye `interrupted` y `queued`, así que el WAV de una generación con un post por reanudar o reencolado se conserva.
+- `json_extract` es equivalente al contrato.
+- Memoria de los resueltos: unos 0,5 MB con 10⁴.
+- Tests: 48 passed.
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| 1 | Important | Con 200 jobs o más que nunca se resuelven (`waiting`/`deferred`), el presupuesto se agota siempre en ellos: los antiguos no se barren nunca y, con `pending>0`, el barrido corre cada 0,1 s en lugar de cada 2 s (~30 % del bucle). Hay causas reales de `waiting` eterno: offload `VRAM_EXCEEDED`, cambio de engine o modelo, carril `remote` | T-17 | pendiente (fix2) | `cleanup.py:268-270,278-279`; `runtime.py:609-610,44`; bench `rev2/bench2.py` (2000+250: `resolved=0`) |
+| 2 | Minor | El test de «beats real» usa la arista beats→generación, pero producción crea beats→post | T-17 | pendiente (fix2) | `test_tmp_cleanup_t17.py:457-461` frente a `chains.py:133` |
+| 3 | Minor | `sweep_cancelled` (la vía de la cancelación CPU) vuelve a registrar los fallos permanentes en cada cancelación | T-17 | pendiente (fix2) | `execution.py:1486`, `cleanup.py:232-236` |
+| 4 | Minor | `sweep_cancelled` mete todos los cancelados en un `IN (...)`; por encima de 32.766 falla con `too many SQL variables` y se salta `_remove_stages` | T-17 | pendiente (fix2) | `cleanup.py:135-136,151,167`; `execution.py:1485-1490` |
+| 5 | Minor (D) | La consulta de ids crece de forma lineal con el histórico, sin índice sobre `status`: 15 ms con 10⁴ y unos 150 ms extrapolados con 10⁵ | T-17 | pendiente (fix2, si es barato sin migración); si no, deuda | `cleanup.py:97-100` |
