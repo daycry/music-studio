@@ -98,7 +98,7 @@ verificacion: obligatoria
   **Decisiones del propietario (2026-10-22):**
   - El post interrumpido se **reanuda** sobre la misma `cpu_execution`, sin migración (opción A, frente a B «ordinal 2 + migración» y C «fallar y regenerar la GPU»).
   - Un job GPU dudoso usa **reintento acotado**: si el engine confirma que no lo tiene, pasa a `failed` retryable y lo recoge el retry ×2.
-- **Estado**: en-progreso
+- **Estado**: en-revision
 - **Tipo**: backend
 - **Dependencias**: T-02, T-05
 - **Archivos**: `apps/server/app/queue/`, `apps/server/app/worker/execution.py`, `apps/server/app/worker/publications.py`, `apps/server/app/worker/audio_child.py` (salta las takes ya empaquetadas al reanudar: `resume-skip.json`), `apps/server/tests/test_dispatcher_*.py`, `apps/server/tests/test_queue_*.py`, `apps/server/tests/test_worker_*.py`
@@ -110,21 +110,21 @@ verificacion: obligatoria
     - Tests de Linux real del worker en verde.
 
 **Criterios de aceptación**
-- [ ] CA-1 (reanudar, opción A):
+- [x] CA-1 (reanudar, opción A):
   - Tras un reinicio, un `post.audio` `interrupted` cuyo proceso anterior se **prueba** muerto (epoch de supervisor o arranque nuevo, sin ningún `owner` vivo) pasa la custodia de `unknown` a `confirmed`, transiciona `interrupted → prepared` con lease nuevo y se re-ejecuta desde el WAV crudo de `data/tmp`.
   - Las intents `reserved` se vuelven a procesar y las `prepared` se republican desde su staging, que T-05 conserva.
   - El take termina `ready` con su manifiesto válido.
   - Sin prueba de muerte, no se confirma nada y el post sigue `interrupted`.
   - No hay migración: solo transiciones que ya permiten los triggers de `cpu_publication_invariants.py`.
-- [ ] CA-2: el carril CPU no se bloquea. `claim_job` cuenta como ocupadas solo las ejecuciones vivas (no `interrupted` sin owner, ni borradas, ni de otro owner).
-- [ ] CA-3 (cancelar):
+- [x] CA-2: el carril CPU no se bloquea. `claim_job` cuenta como ocupadas solo las ejecuciones vivas (no `interrupted` sin owner, ni borradas, ni de otro owner).
+- [x] CA-3 (cancelar):
   - Un post `interrupted` tras un reinicio se puede cancelar y queda `cancelled`, con sus intents y su `cpu_execution` en estados finales válidos.
   - Cancelar cualquier job (engine o CPU) borra su `data/tmp/<attempt>` cuando ya no lo necesita ningún otro job (el WAV crudo lo usa el post, que depende de la generación). El borrado sigue las reglas de T-05: no sigue symlinks/junctions, se queda dentro de `data/` y los errores son eventos.
-- [ ] CA-4 (GPU dudoso): un job de engine en recuperación `uncertain`:
+- [x] CA-4 (GPU dudoso): un job de engine en recuperación `uncertain`:
   - si el engine confirma que no lo tiene → `failed` con `retryable` y lo recoge el retry ×2 existente (attempt nuevo, misma semilla, respetando `max_attempts`);
   - si el engine no responde → sigue esperando como ahora.
-- [ ] CA-5 (gap 6): `reconcile_startup` es idempotente. Un segundo arranque sin cambios no incrementa `revision` ni reescribe filas ya `interrupted`.
-- [ ] CA-6: la suite de cola (`-k "queue or dispatcher or retry or recovery or cancel"`) y la del server completa siguen en verde.
+- [x] CA-5 (gap 6): `reconcile_startup` es idempotente. Un segundo arranque sin cambios no incrementa `revision` ni reescribe filas ya `interrupted`.
+- [x] CA-6: la suite de cola (`-k "queue or dispatcher or retry or recovery or cancel"`) y la del server completa siguen en verde.
 - **Implementación** (2026-10-22, 3,05 h IA medidas). Commits `2917030` (GPU dudoso y borrado de `data/tmp` al cancelar) y `b613714` (reanudar `post.audio`).
   - **RED → GREEN por CA** (implementer):
     - CA-2: `test_ca2_*`, `assert False is True`.
@@ -174,6 +174,12 @@ verificacion: obligatoria
     - **Docker Linux: 139 passed, 5 skipped**, incluido el nuevo de N4.
   - **De punta a punta en Docker:** reanudar tras SIGKILL dio el take `ready` en 6 de 6 ejecuciones y una generación normal también; `verify_manifest.py`: `all valid`.
   - **Observado una vez de 6 (N6, Minor):** tras una reanudación quedó un `.pending-<exec>` (sin `worker.cleanup.failed` en las repeticiones). No se reproduce. Está acotado: la limpieza del siguiente arranque lo elimina.
+- **QA** (2026-10-22, orquestador, modo sin UI acotado a T-04; mismo criterio que el propietario fijó para T-05):
+  - `ledger-lint`: 0 incoherencias.
+  - `coverage-check`: exit 0, 0 referencias rotas.
+  - **`qa-gate.py`: exit 1** («sin resultados»). Las E2E que cubren T-04 (E2E-04 reintento, E2E-05 cancelar, E2E-06 recuperación) son de T-15.
+  - T-04 queda `en-revision`, se integra en `main` y pasa a `completado` cuando T-15 las ejecute con `qa-gate` en verde.
+  - Deuda abierta: N6 (`.pending` residual en 1 de 6 reanudaciones; lo elimina el siguiente arranque), N7 y B5 (con H5).
 - **Changelog**: Si el server se reinicia a mitad de una canción, el post-proceso se reanuda solo hasta dejar el take listo. Los trabajos se pueden cancelar sin dejar restos, y la cola no se queda bloqueada.
 
 ### T-05 — Post-proceso y publicación sencilla de takes
@@ -333,7 +339,7 @@ verificacion: obligatoria
 
 ### T-15 — Suite E2E del camino mínimo (Playwright + engine-mock)
 - **Descripción**: E2E de crear, generar, biblioteca, canción, reproductor y errores contra `engine-mock` (actualizar `test-plan.md` al recorte).
-- **Cierra también T-05**: cuando E2E-01 y E2E-09 pasen con `qa-gate` en verde, T-05 pasa a `completado`.
+- **Cierra también T-05 y T-04**: cuando E2E-01 y E2E-09 (T-05) y E2E-04, E2E-05 y E2E-06 (T-04) pasen con `qa-gate` en verde, esas tareas pasan a `completado`.
 - **Estado**: en-progreso
 - **Dependencias**: T-09 a T-13
 - **Verificación**: `pnpm --filter web exec playwright test` en verde; informe de `qa` con 0 fallos.
@@ -460,3 +466,16 @@ Lentes A y B sobre el fix1 (`7a6ed52..a1a7a8c`).
 | N3 | Minor | Un post reencolado (I1) deja huérfano `data/tmp/_server_cpu/<exec_viejo>/` | T-04 | corregido (`a9fc73d`) | `execution.py:839-841,346-369` |
 | N4 | Minor | La republicación de intents `prepared` no tiene test sin simulaciones (`publisher.reconcile` simulado) | T-04 | corregido (`a9fc73d`) | `test_worker_resume_prepared.py:446,466,141` |
 | N5 | Minor | `_probe_group` recorre todo `/proc` por cada post `interrupted` en cada tick sin backoff, y `_backoff` crece sin podarse | T-04 | corregido (`a9fc73d`) | `runtime.py:563`, `execution.py:119-121` |
+
+## Revisión de dos lentes — intento 3: Fase 2 (T-04) — sin gaps Critical/Important
+
+Lentes A y B sobre el fix2 (`b61878f..a9fc73d`).
+- N1(a) ✓: la detección de «sin Popen» es fiable, porque el grupo se registra antes de `Popen` y `process` solo existe cuando `Popen` vuelve.
+- N1(b) ✓: no es plausible un falso «muerto»; un `PermissionError` no prueba nada.
+- N2 ✓ · N3 ✓ · N5 ✓.
+- N4 se verificó en Docker (139 passed).
+- Focales: 41 passed.
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| N7 | Minor | Los fallos **permanentes** de borrado (symlink o junction como destino, un no-directorio o algo fuera de `data/`) entran en `deferred` para siempre y registran `worker.cleanup.failed` (ERROR) cada 2 s, sin tope | T-04 | deuda aceptada; se trata con H5/B5 (mismo barrido) | `cleanup.py:50,55,142,183`; repro `scratchpad/n2_perm.py` |
