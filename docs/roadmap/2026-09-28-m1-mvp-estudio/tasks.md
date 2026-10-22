@@ -102,7 +102,7 @@ verificacion: obligatoria
 - **Estado**: en-progreso
 - **Tipo**: backend
 - **Dependencias**: T-04
-- **Archivos**: `apps/server/app/worker/publications.py`, `apps/server/app/worker/execution.py`, `apps/server/tests/test_worker_*.py`, `apps/server/tests/conftest.py` y `pytest.ini` (marcadores de CA-4), `apps/server/tests/fixtures/creative/fixture-index.json` (hash LF del esquema, `406f259`)
+- **Archivos**: `apps/server/app/worker/publications.py`, `apps/server/app/worker/execution.py`, `apps/server/tests/test_worker_*.py`, `apps/server/tests/conftest.py` y `pytest.ini` (marcadores de CA-4), `apps/server/tests/fixtures/creative/fixture-index.json` (hash LF del esquema, `406f259`), `apps/server/app/logging.py` y `apps/server/app/queue/runtime.py` (eventos `worker.*` y logger del worker, fix2), `scripts/verify_manifest.py` y `packages/audio-post/tests/test_manifest_errors.py` (H2), `README.md` (aviso de WAL, H4)
 - **Verificación**:
   - Windows: `uv run pytest apps/server/tests -m "not gpu"` → **0 failed, 0 errors** (los tests Linux-only aparecen como `skipped` con motivo).
   - Docker: `docker compose run --rm server uv run pytest apps/server/tests -m "not gpu" -k "worker or publication"` en verde, incluidos los tests nativos Linux.
@@ -113,7 +113,7 @@ verificacion: obligatoria
 - [x] CA-2: se mantiene el no-clobber. Un destino ajeno existente (fichero, directorio o directorio vacío) se rechaza sin tocarlo, con y sin fallback, y el cross-device se rechaza antes del rename (los tests `test_native_noreplace_preserves_foreign_destination*` y `test_native_publication_rejects_cross_device_before_rename` pasan, adaptados si hace falta).
 - [x] CA-3: al arrancar, se eliminan los directorios `takes/.pending-<execution>/` de las ejecuciones no confirmadas. *(Reducido el 2026-10-22: reencolar un `post.audio` interrumpido exige cambiar la máquina de estados (`claim_job` solo acepta `queued`/`attempt=0`, más `UNIQUE(job_id, ordinal)` y `UNIQUE(take_id)` en la intent). Ese trabajo pasa a **T-04**, que ya cubre «interrupted → reencolar».)*
 - [x] CA-4: los tests que exigen Linux real o el arnés de custodia Windows de Codex (`CUSTODY_SOURCE_SHA256`) se marcan con un marcador explícito y se saltan con motivo cuando no aplican, en lugar de fallar o dar error.
-- [x] CA-5: verificación de punta a punta en Docker con `engine-mock` (bloque **Verificación**). *(El `verify_manifest.py` del host está pendiente del fix3.)*
+- [x] CA-5: verificación de punta a punta en Docker con `engine-mock` (bloque **Verificación**). *(`verify_manifest.py` del host en verde tras fix3 y fix4.)*
 - **RED → GREEN** (2026-10-22, implementer):
   - RED: `test_worker_publication_fallback.py` → 6 failed (`AttributeError: _native_noreplace`). GREEN: 6 passed.
   - RED: `test_worker_startup_staging.py::test_startup_removes_orphan_pending_staging` falló porque `.pending-<exec>` seguía existiendo. GREEN: con `test_dispatcher_cpu_worker.py`, 7 passed.
@@ -132,6 +132,17 @@ verificacion: obligatoria
     - (H2) `scripts/verify_manifest.py` resuelve las salidas respecto al directorio del manifiesto, pero los manifiestos del server usan rutas `data/...` → `OUTPUT_MISSING` → fix3.
     - (H3) Tras publicar con éxito queda un `.pending-<exec>` vacío hasta el siguiente arranque → fix3.
     - (H4) **Abrir `data/db/studio.sqlite` desde Windows mientras el contenedor lo usa en WAL sobre 9p borra el `-wal`/`-shm`, que el contenedor sigue usando, y se pierden escrituras.** Se reprodujo durante esta verificación, solo en `.cache`: la limpieza movió el take sin fila a `trash/orphans` y no se perdieron ficheros. → aviso en el README (fix3) y gotcha.
+- **Fix3 + fix4** (2026-10-22, 2,3 h IA medidas). Commits `4f3d284` y `a8bff17`:
+  - H2: `verify_manifest.py` autodetecta la raíz con `data/` y admite `--data-dir`.
+  - H3: `rmdir` del `.pending-<exec>` vacío tras el commit final.
+  - H4: aviso del WAL en el README.
+  - **Comprobado por el orquestador:**
+    - Docker Linux: **50 passed, 4 skipped**.
+    - De punta a punta: take `ready` sin `.pending-*` residual.
+    - SIGKILL a mitad: staging eliminado, sin papelera; el post queda `interrupted` (T-04).
+    - `verify_manifest.py` sobre el take real: `all valid` con autodetección y con `--data-dir` del directorio aislado.
+    - `test_manifest_errors.py` + `test_generate.py`: 109 passed.
+    - Suite completa del server tras fix3 (informe del implementer): `2542 passed, 73 skipped`.
 - **Commits**: `65e8156` (publicación con fallback, limpieza de staging y marcadores), `406f259` (hash del fixture), `6045e79` (fix1 de la revisión, gaps 1–4).
 - **Fix1** (2026-10-22, 0,88 h IA medidas):
   - Limpieza de arranque después del commit.
