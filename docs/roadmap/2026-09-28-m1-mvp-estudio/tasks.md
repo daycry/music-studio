@@ -101,7 +101,7 @@ verificacion: obligatoria
 - **Estado**: en-progreso
 - **Tipo**: backend
 - **Dependencias**: T-02, T-05
-- **Archivos**: `apps/server/app/queue/`, `apps/server/app/worker/execution.py`, `apps/server/app/worker/publications.py`, `apps/server/tests/test_dispatcher_*.py`, `apps/server/tests/test_queue_*.py`, `apps/server/tests/test_worker_*.py`
+- **Archivos**: `apps/server/app/queue/`, `apps/server/app/worker/execution.py`, `apps/server/app/worker/publications.py`, `apps/server/app/worker/audio_child.py` (salta las takes ya empaquetadas al reanudar: `resume-skip.json`), `apps/server/tests/test_dispatcher_*.py`, `apps/server/tests/test_queue_*.py`, `apps/server/tests/test_worker_*.py`
 - **Verificación**:
   - Windows: `uv run pytest apps/server/tests -m "not gpu"` → 0 failed, 0 errors. Antes hay que cargar el entorno con `source scripts/env.sh`.
   - Docker (orquestador):
