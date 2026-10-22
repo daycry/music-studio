@@ -179,7 +179,8 @@ def test_runtime_sweeps_cancelled_jobs_at_start_and_while_running(engine):
         runtime.sweep_s = 0.05
         await runtime.start()
         try:
-            assert not raw_first.exists()  # barrido de arranque
+            await asyncio.sleep(0.4)
+            assert not raw_first.exists()  # barrido de arranque, hecho por el bucle
             second, _, claim_second = await asyncio.to_thread(prepared, engine)
             raw_second = _tmp(claim_second.attempt_id)
             _status(engine, second, "cancelled")

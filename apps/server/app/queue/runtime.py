@@ -166,7 +166,7 @@ class QueueRuntime:
             await self.dbcall(self.cpu_service.reconcile_startup)
         if self.backends:
             await self.dbcall(self.recovery.startup)
-        await self._sweep_cancelled(force=True)
+        # El barrido inicial del histórico lo hace el bucle, por trozos: start() no espera.
         self.task = asyncio.create_task(self._run())
 
     def _default_cpu_service(self):
@@ -588,7 +588,7 @@ class QueueRuntime:
             await self.dbcall(self.cpu_service.cancel_job, job_id)
 
     async def _sweep_cancelled(self, force=False):
-        """Borra ``data/tmp`` de los jobs cancelados que nadie más necesita (CA-3)."""
+        """Barre ``data/tmp`` de los jobs terminales que nadie más necesita."""
         owner = getattr(self, "owner_id", None)
         if owner is None or not hasattr(self, "settings"):
             return
@@ -605,6 +605,8 @@ class QueueRuntime:
             )
         try:
             await self.dbcall(self._sweeper.run, force)
+            if self._sweeper.pending:
+                self._sweep_at = 0.0  # queda histórico por barrer: siguiente trozo ya
         except Exception:  # noqa: BLE001 -- la limpieza nunca para la cola
             self.logger.warning("queue.cleanup_failed")
 

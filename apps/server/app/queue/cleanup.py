@@ -5,13 +5,13 @@ sale de ``data/`` y un fallo es un evento fijo (``worker.cleanup.failed``), no
 una excepción que aborte el bucle de la cola.
 """
 
+import json
 import logging
 import re
 import shutil
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app import models
@@ -94,25 +94,10 @@ def _generation_id(job):
     return None
 
 
-def _retry_pending(session, job):
-    """Un ``failed`` que el retry x2 todavía puede recoger (conserva sus entradas)."""
-    if job.status != "failed" or job.cancel_requested_at or not job.attempt:
-        return False
-    if not (type(job.max_attempts) is int and 1 <= job.attempt < job.max_attempts <= 3):
-        return False
-    attempt = session.scalar(
-        select(models.JobAttempt).where(
-            models.JobAttempt.job_id == job.id,
-            models.JobAttempt.ordinal == job.attempt,
-            models.JobAttempt.deleted_at.is_(None),
-        )
-    )
-    terminal = attempt.terminal if attempt else None
-    return bool(
-        terminal is not None
-        and terminal.type == "error"
-        and terminal.data.get("retryable") is True
-    )
+def _terminal_ids(session, owner_id, statuses=TERMINAL):
+    """Ids de los jobs terminales locales, sin hidratar nada (consulta barata)."""
+    query = local_jobs(owner_id).where(models.Job.status.in_(list(statuses)))
+    return list(session.scalars(query.with_only_columns(models.Job.id)))
 
 
 def _staged_input(path):
@@ -123,41 +108,90 @@ def _staged_input(path):
     return None
 
 
-def terminal_targets(
-    session, owner_id, since=None, retry=(), report=None, statuses=TERMINAL
-):
+def _staged_names(raw):
+    try:
+        items = json.loads(raw) if isinstance(raw, str) else (raw or [])
+    except ValueError:
+        return set()
+    names = set()
+    for item in items if isinstance(items, list) else []:
+        name = _staged_input(item.get("path")) if isinstance(item, dict) else None
+        if name:
+            names.add(name)
+    return names
+
+
+def terminal_targets(session, owner_id, ids=None, statuses=TERMINAL, report=None):
     """``(job_id, (partes...))`` de lo que un job terminal ya no necesita.
 
     Cubre los directorios de TODOS los attempts del job (también los abandonados
     por el reintento), las entradas staged de sus peticiones y, para un post, sus
     ``_server_inputs/<exec>`` y ``_server_cpu/<exec>``. No toca nada que un job
     vivo necesite ni lo que un reintento automático pendiente va a reutilizar.
-    ``since`` acota a los tocados desde entonces; ``retry`` añade los aplazados.
-    ``report`` recoge cuántos se examinaron y cuáles hay que reintentar.
+    Solo lee las columnas que usa (nada de provenance ni terminales completos).
+    ``report`` recoge ``deferred`` (otro job vivo lo necesita) y ``waiting``
+    (reintento automático pendiente): ninguno de los dos queda resuelto.
     """
-    targets, deferred, scanned = [], set(), 0
-    terminal = local_jobs(owner_id).where(models.Job.status.in_(list(statuses)))
-    if since is not None:
-        terminal = terminal.where(
-            (models.Job.updated_at >= since) | models.Job.id.in_(list(retry))
-        )
-    for job in session.scalars(terminal):
-        scanned += 1
+    if ids is None:
+        ids = _terminal_ids(session, owner_id, statuses)
+    targets, deferred, waiting = [], set(), set()
+    if not ids:
+        if report is not None:
+            report.update(deferred=deferred, waiting=waiting)
+        return targets
+    jobs = session.execute(
+        select(
+            models.Job.id,
+            models.Job.task,
+            models.Job.status,
+            models.Job.attempt,
+            models.Job.max_attempts,
+            models.Job.cancel_requested_at,
+            func.json_extract(models.Job.request, "$.inputs[0].ref.id").label("gen"),
+        ).where(models.Job.id.in_(ids))
+    ).all()
+    attempts = {}
+    for row in session.execute(
+        select(
+            models.JobAttempt.job_id,
+            models.JobAttempt.id,
+            models.JobAttempt.ordinal,
+            models.JobAttempt.deleted_at,
+            func.json_extract(models.JobAttempt.engine_request, "$.inputs").label(
+                "inputs"
+            ),
+            func.json_extract(models.JobAttempt.terminal, "$.type").label("kind"),
+            func.json_type(models.JobAttempt.terminal, "$.data.retryable").label(
+                "retryable"
+            ),
+        ).where(models.JobAttempt.job_id.in_(ids))
+    ):
+        attempts.setdefault(row.job_id, []).append(row)
+    for job in jobs:
         if needed_by_live_job(session, job.id):
             deferred.add(job.id)
             continue
-        if _retry_pending(session, job):
+        rows = attempts.get(job.id, [])
+        if (
+            job.status == "failed"
+            and not job.cancel_requested_at
+            and job.attempt
+            and type(job.max_attempts) is int
+            and 1 <= job.attempt < job.max_attempts <= 3
+            and any(
+                r.ordinal == job.attempt
+                and r.deleted_at is None
+                and r.kind == "error"
+                and r.retryable == "true"
+                for r in rows
+            )
+        ):
+            waiting.add(job.id)  # el retry x2 reutiliza sus entradas congeladas
             continue
         staged = set()
-        for attempt in session.scalars(
-            select(models.JobAttempt).where(models.JobAttempt.job_id == job.id)
-        ):
-            targets.append((job.id, ("tmp", attempt.id)))
-            wire = attempt.engine_request.model_dump(mode="json")
-            for item in wire.get("inputs", []):
-                name = _staged_input(item.get("path"))
-                if name:
-                    staged.add(name)
+        for row in rows:
+            targets.append((job.id, ("tmp", row.id)))
+            staged |= _staged_names(row.inputs)
         for name in sorted(staged):
             targets.append((job.id, ("tmp", "_server_inputs", name)))
         if job.task != "post.audio":
@@ -167,7 +201,7 @@ def terminal_targets(
         ):
             targets.append((job.id, ("tmp", "_server_cpu", execution_id)))
             targets.append((job.id, ("tmp", "_server_inputs", execution_id)))
-        generation = _generation_id(job)
+        generation = job.gen if isinstance(job.gen, str) else None
         if generation is None:
             continue
         if needed_by_live_job(session, generation):
@@ -178,7 +212,7 @@ def terminal_targets(
         ):
             targets.append((job.id, ("tmp", attempt_id)))
     if report is not None:
-        report.update(scanned=scanned, deferred=deferred)
+        report.update(deferred=deferred, waiting=waiting)
     return targets
 
 
@@ -203,49 +237,51 @@ def sweep_cancelled(engine, owner_id, data_dir, log=None):
 
 
 class TerminalSweeper:
-    """Barrido incremental: el histórico entero solo se lee al arrancar.
+    """Barrido de ``data/tmp`` de los terminales, por conjunto de «resueltos».
 
-    Después solo se examinan los terminales tocados desde el barrido anterior
-    (con un margen para commits en vuelo) y los aplazados: porque otro job vivo
-    aún necesitaba sus salidas o porque un borrado transitorio falló (hasta
-    ``MAX_RETRIES`` veces; un fallo permanente se registra una vez y no se
-    reintenta). El estado vive en memoria: sin migración.
+    No depende de ningún reloj ni de ``updated_at``: en cada pasada se lee solo la
+    lista de ids terminales (sin hidratar), se descartan los ya resueltos y se
+    procesan, de ``BUDGET`` en ``BUDGET``, los nuevos y los pendientes. Un job
+    queda resuelto al limpiarse del todo, al registrar un fallo permanente (un
+    único ``worker.cleanup.failed`` por proceso) o tras ``MAX_RETRIES`` fallos
+    transitorios. Sigue pendiente si otro job vivo lo necesita o si un reintento
+    automático va a reutilizar sus entradas. El estado vive en memoria: sin
+    migración, y tras un reinicio se vuelve a recorrer el histórico por trozos.
     """
 
-    MARGIN_S = 5
+    BUDGET = 200
     MAX_RETRIES = 5
 
     def __init__(self, engine, owner_id, data_dir, log=None):
         self.engine, self.owner_id = engine, owner_id
         self.data_dir, self.log = data_dir, log
-        self.since, self.deferred, self.last_scanned = None, set(), 0
-        self.failures = {}
+        self.resolved, self.deferred, self.failures = set(), set(), {}
+        self.last_scanned, self.pending = 0, 0
 
     def run(self, force=False):
-        started = datetime.now(timezone.utc)
-        since = None if force or self.since is None else self.since
+        if force:
+            self.resolved, self.failures = set(), {}
         report = {}
         with Session(self.engine) as session:
-            targets = terminal_targets(
-                session,
-                self.owner_id,
-                since=since,
-                retry=self.deferred,
-                report=report,
-            )
-        self.last_scanned = report["scanned"]
+            current = set(_terminal_ids(session, self.owner_id))
+            self.resolved &= current  # un job que dejó de ser terminal se reevalúa
+            todo = sorted(current - self.resolved, reverse=True)
+            batch = todo[: self.BUDGET]
+            self.pending = len(todo) - len(batch)
+            targets = terminal_targets(session, self.owner_id, ids=batch, report=report)
+        self.last_scanned = len(batch)
         failed = set()
         removed = _remove_targets(targets, self.data_dir, self.log, failed)
-        for job_id in {job_id for job_id, _ in targets} - failed:
-            self.failures.pop(job_id, None)
         for job_id in failed:
             self.failures[job_id] = self.failures.get(job_id, 0) + 1
         gave_up = {j for j in failed if self.failures[j] >= self.MAX_RETRIES}
+        unresolved = report["deferred"] | report["waiting"] | (failed - gave_up)
+        self.resolved |= set(batch) - unresolved
+        for job_id in set(batch) - failed:
+            self.failures.pop(job_id, None)
         for job_id in gave_up:
             self.failures.pop(job_id, None)
         self.deferred = report["deferred"] | (failed - gave_up)
-        margin = started - timedelta(seconds=self.MARGIN_S)
-        self.since = margin.isoformat(timespec="microseconds").replace("+00:00", "Z")
         return removed
 
 

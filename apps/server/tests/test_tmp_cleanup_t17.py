@@ -295,3 +295,205 @@ def test_ca3_transient_failure_recovers_when_it_clears(engine, monkeypatch):
     sweeper.run()
     assert not raw.exists()
     assert jid not in sweeper.deferred
+
+
+# --- fix1: cómo se detecta qué barrer ----------------------------------------
+
+
+def test_fix1_permanent_failure_is_logged_once_per_process_with_production_values(
+    engine, caplog
+):
+    jid, owner, claim = prepared(engine)
+    target = settings().data_dir / "tmp" / claim.attempt_id
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(b"file")
+    _finish(engine, owner, claim, "done")
+    sweeper = TerminalSweeper(engine, owner, settings().data_dir)  # sin tocar nada
+    try:
+        with caplog.at_level(logging.INFO):
+            for _ in range(5):
+                sweeper.run()
+        assert caplog.text.count("worker.cleanup.failed") == 1
+        assert jid not in sweeper.deferred
+    finally:
+        target.unlink()
+
+
+def test_fix1_terminal_with_engine_clock_behind_is_swept(engine):
+    from datetime import datetime, timedelta, timezone
+
+    jid, owner, claim = prepared(engine)
+    raw = _tmp(claim.attempt_id)
+    sweeper = TerminalSweeper(engine, owner, settings().data_dir)
+    sweeper.run()  # el job sigue running
+    behind = (
+        (datetime.now(timezone.utc) - timedelta(seconds=30))
+        .isoformat(timespec="microseconds")
+        .replace("+00:00", "Z")
+    )
+    EventConsumer(engine, owner, EventBus()).accept(
+        claim.attempt_id,
+        "mock",
+        {
+            "job_id": claim.attempt_id,
+            "seq": 1,
+            "ts": behind,  # reloj del engine atrasado: job.updated_at queda en el pasado
+            "type": "done",
+            "data": {
+                "artifacts": [],
+                "telemetry": {"mode": "bf16", "model_revision": "s"},
+            },
+        },
+    )
+    for _ in range(3):
+        sweeper.run()
+    assert not raw.exists()
+
+
+def test_fix1_steady_state_does_not_rescan_resolved_jobs(engine):
+    jid, owner, claim = prepared(engine)
+    _tmp(claim.attempt_id)
+    _finish(engine, owner, claim, "done")
+    sweeper = TerminalSweeper(engine, owner, settings().data_dir)
+    sweeper.run()
+    assert sweeper.last_scanned == 1
+    statements = []
+    from sqlalchemy import event as sa_event
+
+    sa_event.listen(
+        engine, "before_cursor_execute", lambda *a: statements.append(a[2]), named=False
+    )
+    sweeper.run()
+    assert sweeper.last_scanned == 0
+    assert len(statements) <= 2  # solo la consulta de ids
+
+
+def test_fix1_budget_spreads_a_large_backlog_over_several_passes(engine):
+    owner = None
+    raws = []
+    for _ in range(5):
+        jid, owner, claim = prepared(engine)
+        raws.append(_tmp(claim.attempt_id))
+        _finish(engine, owner, claim, "done")
+    sweeper = TerminalSweeper(engine, owner, settings().data_dir)
+    sweeper.BUDGET = 2
+    sweeper.run()
+    assert sweeper.last_scanned == 2 and sweeper.pending == 3
+    sweeper.run()
+    sweeper.run()
+    assert sweeper.pending == 0
+    assert not any(raw.exists() for raw in raws)
+
+
+def test_fix1_sweep_reads_only_the_columns_it_needs(engine):
+    from sqlalchemy import event as sa_event
+
+    jid, owner, claim = prepared(engine)
+    _finish(engine, owner, claim, "error", retryable=True)
+    statements = []
+    sa_event.listen(engine, "before_cursor_execute", lambda *a: statements.append(a[2]))
+    TerminalSweeper(engine, owner, settings().data_dir).run()
+    text_ = "\n".join(statements)
+    assert "job_attempt.provenance" not in text_
+    assert "job_attempt.load_options" not in text_
+
+
+def test_fix1_runtime_start_does_not_wait_for_the_sweep(engine, monkeypatch):
+    import asyncio
+    import time
+
+    from app.queue import cleanup
+    from app.queue.runtime import QueueRuntime
+    from test_dispatcher_recovery import RecordedBackend
+
+    calls = []
+
+    def slow(self, force=False):
+        calls.append(time.monotonic())
+        time.sleep(1.0)
+        return 0
+
+    monkeypatch.setattr(cleanup.TerminalSweeper, "run", slow)
+    backend = RecordedBackend()
+
+    async def run():
+        runtime = QueueRuntime(
+            engine,
+            settings(),
+            backends={"mock": backend},
+            synthetic_registry=backend.synthetic_registry,
+        )
+        began = time.monotonic()
+        await runtime.start()
+        try:
+            assert time.monotonic() - began < 0.9
+            assert calls == []  # el barrido inicial lo hace el bucle, no start()
+        finally:
+            await runtime.close()
+
+    asyncio.run(run())
+
+
+# --- CA-4 (gap 3): regresiones con jobs reales --------------------------------
+
+
+def test_fix1_generation_with_a_real_pending_beats_job_keeps_its_tmp(engine):
+    jid, owner, claim = prepared(engine)
+    raw = _tmp(claim.attempt_id)
+    song = Session(engine).get(models.Job, jid).song_id
+    beats = models.new_id()
+    with Session(engine) as session, session.begin():
+        session.add(
+            models.Job(
+                id=beats,
+                owner_id=owner,
+                song_id=song,
+                task="audio.beats",
+                lane="cpu",
+                status="blocked",
+                request={"params": {}, "inputs": []},
+            )
+        )
+        session.flush()
+        session.add(
+            models.JobDependency(
+                id=models.new_id(), owner_id=owner, job_id=beats, depends_on_job_id=jid
+            )
+        )
+    _finish(engine, owner, claim, "done")
+    sweeper = TerminalSweeper(engine, owner, settings().data_dir)
+    sweeper.run()
+    assert raw.exists()
+    with engine.begin() as connection:
+        connection.execute(
+            text("UPDATE job SET status='succeeded', finished_at=:f WHERE id=:i"),
+            {"i": beats, "f": models.utc_now()},
+        )
+    sweeper.run()
+    assert not raw.exists()
+
+
+def test_fix1_manual_retry_still_works_after_the_sweep(engine):
+    import asyncio
+
+    from app.models import Job, Take
+    from app.queue.manual_retry import ManualRetry
+    from test_queue_chains import create, services
+    from test_queue_manual_retry import own_post_failure
+    from test_queue_references import accepted
+
+    owner, song, _, resolver = services(engine)
+    chain = create(engine, owner, song, resolver)
+    claim, _ = accepted(engine, chain, resolver, owner)
+    own_post_failure(engine, chain)
+    raw = _tmp(claim.attempt_id)
+    data_dir = settings().data_dir
+    TerminalSweeper(engine, owner, data_dir).run()
+    assert not raw.exists()  # post fallido: nadie vivo necesita el WAV crudo
+    new = asyncio.run(
+        ManualRetry(engine, owner, resolver).retry(chain.generation_job_id)
+    )
+    assert new is not None
+    with Session(engine) as s:
+        assert s.get(Job, new.generation_job_id).status == "queued"
+        assert s.get(Take, chain.take_ids[2]).job_id == new.generation_job_id
