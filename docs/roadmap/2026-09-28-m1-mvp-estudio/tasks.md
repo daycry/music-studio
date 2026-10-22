@@ -303,7 +303,7 @@ verificacion: obligatoria
 - **Estado**: en-progreso
 - **Tipo**: backend
 - **Dependencias**: T-04, T-05
-- **Archivos**: `apps/server/app/domain_routes.py`, `apps/server/app/api_models.py`, `apps/server/app/creative/` (se elimina), `apps/server/tests/test_domain_routes*.py`, `apps/server/tests/test_openapi_t03.py`, `apps/server/tests/test_creative_*.py` (se eliminan), `apps/server/tests/test_api_*.py` (nuevos), `packages/contracts/openapi.json`, `docs/arquitectura/iteracion-creativa.md` (nota de retirada)
+- **Archivos**: `apps/server/app/domain_routes.py`, `apps/server/app/api_models.py`, `apps/server/app/creative/` (se elimina), `apps/server/tests/test_domain_routes*.py`, `apps/server/tests/test_openapi_t03.py`, `apps/server/tests/test_creative_*.py` (se eliminan), `apps/server/tests/test_api_*.py` (nuevos), `packages/contracts/openapi.json`, `docs/arquitectura/iteracion-creativa.md` (nota de retirada), `apps/web/lib/generated/api.d.ts` (cliente regenerado con `pnpm gen`), `apps/server/tests/fixtures/creative/` y `packages/contracts/creative-recipe-v1.schema.json` (eliminados: solo los usaban los tests de M2)
 - **Verificación**:
   - Windows: `uv run pytest apps/server/tests -m "not gpu"` → 0 failed, 0 errors · `uv run scripts/export_contracts.py --check` → `up to date`.
   - Docker (orquestador): `server` + `engine-mock`; `POST /api/generations` **sin** `params.duration_s` → take `ready`. Descargar MP3 y FLAC con `?download=1` → `attachment`, y el hash coincide con el manifiesto.
@@ -326,6 +326,23 @@ verificacion: obligatoria
   - `openapi.json` regenerado, `--check` en verde y `test_openapi_t03.py` en verde.
 - [ ] CA-5: eliminados `apps/server/app/creative/` y los tests `test_creative_{composition,recipes,contract_compatibility,persistence}.py`, sin romper modelos ni migraciones. `docs/arquitectura/iteracion-creativa.md` lleva una nota de que el código se retiró de `main` (ADR-0089) y dónde recuperarlo.
 - [ ] CA-6: la suite del server completa en verde y `-k "routes or api"` en verde.
+- **Implementación** (2026-10-22). Commit `511c9e7`; borra unas 11.700 líneas, casi todas del código de M2:
+  - **RED → GREEN** (implementer):
+    - CA-1: `KeyError: 'duration_s'`.
+    - CA-2: `inline` cuando se esperaba `attachment`.
+    - CA-3: URLs rotas `beats`/`cover`.
+    - CA-4: OpenAPI sin `$ref` (6 casos) y cola sin filtro de owner.
+  - **Nuevo `test_api_t07.py`** (43 tests):
+    - 422 con 13 valores inválidos de `duration_s` sin crear nada;
+    - Range 416;
+    - assets ajenos;
+    - rutas manipuladas;
+    - el test del symlink se salta en Windows.
+  - **Interpretación de CA-2:** un take de otro owner responde **403 `FORBIDDEN_SCOPE`** (convención actual de `_owned_take`) y no 404. Un take sin asset de ese rol responde 404.
+  - **Tests:**
+    - Suite completa del server en Windows (implementer): `1978 passed, 77 skipped`, 0 failed. Baja respecto a 2616 porque se eliminaron unos 680 casos de los tests de M2 (171 funciones, 72 parametrizaciones).
+    - Focales (orquestador): 93 passed.
+    - `export_contracts.py --check`: `up to date` (verificado por el orquestador).
 - **Changelog**: Las generaciones sin duración usan 30 s en lugar de fallar. Los MP3/FLAC se pueden descargar como fichero y la API publica un contrato tipado para la web.
 
 ## Fase 4 — Web
