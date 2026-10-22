@@ -178,6 +178,16 @@ def main():
     pin = json.loads(read_file(TOOL_PIN, limit=65536))
     binary = TOOL_PIN.parent.parent / pin["dest"] / "bin/ffmpeg"
     tool(binary, plan)
+    skip = set()
+    marker = directory / "resume-skip.json"
+    if marker.exists():
+        # Reanudación: las takes ya empaquetadas en el intento anterior no se
+        # reprocesan (su staging lo republica el server).
+        value = json.loads(read_file(marker, limit=65536), object_pairs_hook=pairs)
+        ids = {entry.authority.take_id for entry in plan.takes}
+        if set(value) != {"skip"} or not set(value["skip"]) <= ids:
+            raise ValueError("PROVENANCE_MISMATCH")
+        skip = set(value["skip"])
     registry = socket.socket(fileno=int(registry_fd))
     registry.settimeout(5)
     launcher = FfmpegLauncher(registry, binary)
@@ -219,6 +229,8 @@ def main():
             requested = True
     successes = 0
     for entry in plan.takes:
+        if entry.authority.take_id in skip:
+            continue
         destination = stage(root, execution, entry)
         destination.parent.mkdir(parents=True, exist_ok=True)
         source = safe_path(root, entry.copied_source.path)
@@ -278,7 +290,7 @@ def main():
             )
         send("take_result", result.model_dump(mode="json"))
     launcher.exchange({"kind": "seal"}, b"S")
-    send("result", {"takes": len(plan.takes), "successes": successes})
+    send("result", {"takes": len(plan.takes) - len(skip), "successes": successes})
     send("closed", {})
     registry.close()
 

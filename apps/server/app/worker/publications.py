@@ -265,10 +265,13 @@ class Publisher:
         if self._context_rows(connection, plan) != self.context_seals[execution_id]:
             raise ValueError("PROVENANCE_MISMATCH")
 
-    def receipt_from_history(self, plan, execution_id, current_bytes):
-        """The old manifest SHA in SQL chooses the receipt, never fresh SQL."""
+    def receipt_from_history(self, plan, execution_id, current_bytes, entries=None):
+        """The old manifest SHA in SQL chooses the receipt, never fresh SQL.
+
+        ``entries`` acota la historia a las takes ya empaquetadas (reanudación).
+        """
         accepted = None
-        for entry in plan.takes:
+        for entry in plan.takes if entries is None else entries:
             with self.engine.connect() as connection:
                 intent = self.intent(connection, entry)
                 revision = (

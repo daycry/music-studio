@@ -17,8 +17,9 @@ from pydantic import TypeAdapter
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app import models
+from app import models, snapshots
 from app.migrations.cpu_publication_invariants import cas, validate_connection
+from app.queue.cleanup import remove_data_dir, sweep_cancelled
 
 from .contracts import (
     PerTakeResult,
@@ -33,11 +34,30 @@ from .packages import (
     MAX_PLAN_BYTES,
     canonical_bytes,
     read_file,
+    stage,
     tool,
     write_once,
 )
 from .planning import compose_post_plan, load_tool_pin
 from .publications import Publisher
+
+
+def _probe_birth(pid):
+    """Instante de nacimiento (``starttime``) de ``pid`` o ``None`` si ya no existe.
+
+    Solo Linux (``/proc``): sin él no hay forma honesta de probar una muerte y
+    se lanza ``OSError`` (el llamador no confirma nada).
+    """
+    if not Path("/proc/self/stat").exists():
+        raise OSError("PROC_UNAVAILABLE")
+    try:
+        text = Path(f"/proc/{pid}/stat").read_text()
+    except FileNotFoundError:
+        return None
+    fields = text.rsplit(")", 1)[1].split()
+    if fields[0] in {"Z", "X"}:
+        return None  # terminado aunque nadie lo haya recogido aún
+    return int(fields[19])
 
 
 class CpuAudioService:
@@ -51,6 +71,34 @@ class CpuAudioService:
         self.owners = {}
         self.job_executions = {}
         self._guard = threading.RLock()
+        self._birth_probe = _probe_birth
+        self._resumed = set()
+        self._skipped = {}
+
+    def _occupied_slots(self, session):
+        """Ejecuciones CPU vivas: ``running`` más las ``interrupted`` con dueño aquí.
+
+        Un job ``interrupted`` sin dueño vivo (reinicio) no ocupa carril; tampoco
+        los borrados ni los de otro owner.
+        """
+        with self._guard:
+            live = set(self.job_executions)
+        mine = (
+            models.Job.owner_id == self.owner_id
+            if self.owner_id is not None
+            else models.Job.owner_id.is_not(None)
+        )
+        return session.scalar(
+            select(func.count())
+            .select_from(models.Job)
+            .where(
+                models.Job.lane == "cpu",
+                models.Job.deleted_at.is_(None),
+                mine,
+                (models.Job.status == "running")
+                | ((models.Job.status == "interrupted") & models.Job.id.in_(live)),
+            )
+        )
 
     def claim_job(self, job_id):
         """Atomically acquire one of the two server CPU slots for post.audio."""
@@ -61,14 +109,7 @@ class CpuAudioService:
         )
         with Session(self.engine) as session, session.begin():
             job = session.get(models.Job, job_id)
-            active = session.scalar(
-                select(func.count())
-                .select_from(models.Job)
-                .where(
-                    models.Job.lane == "cpu",
-                    models.Job.status.in_(["running", "interrupted"]),
-                )
-            )
+            active = self._occupied_slots(session)
             if (
                 not job
                 or job.task != "post.audio"
@@ -203,6 +244,8 @@ class CpuAudioService:
             )
             count = 0
             for job, execution in rows:
+                if execution.state == "interrupted" and job.status == "interrupted":
+                    continue  # ya reconciliado: un segundo arranque no reescribe nada
                 job.status = "interrupted"
                 job.error_code = "CPU_CUSTODY_UNKNOWN"
                 job.error = "El server se reiniciÃ³ con custodia CPU activa"
@@ -338,6 +381,161 @@ class CpuAudioService:
         shutil.move(str(entry), str(destination))
         self.log.warning("worker.orphan.quarantined", extra=extra)
 
+    def _process_dead(self, identity):
+        """Prueba de muerte del proceso anterior a partir de su identidad durable.
+
+        ``None``: nunca llegó a lanzarse un workload con ese lease. Con identidad
+        ``{leader, birth}`` se compara el ``starttime`` actual de ese pid: ausente
+        o distinto (pid reutilizado tras reiniciar el contenedor) prueba la
+        muerte. Cualquier otra cosa (identidad ilegible, sin ``/proc``) no prueba
+        nada y la custodia sigue ``unknown``.
+        """
+        if identity is None:
+            return True
+        if not isinstance(identity, dict):
+            return False
+        leader, birth = identity.get("leader"), identity.get("birth")
+        if type(leader) is not int or type(birth) is not int or leader <= 0:
+            return False
+        try:
+            current = self._birth_probe(leader)
+        except (OSError, ValueError, IndexError):
+            return False
+        return current is None or current != birth
+
+    def _owner_filter(self):
+        if self.owner_id is not None:
+            return models.Job.owner_id == self.owner_id
+        return models.Job.owner_id.is_not(None)
+
+    def resumable_jobs(self):
+        """Posts ``interrupted`` cuyo proceso anterior se prueba muerto (CA-1)."""
+        with Session(self.engine) as session:
+            rows = list(
+                session.execute(
+                    select(
+                        models.Job.id,
+                        models.CpuExecution.id,
+                        models.CpuExecution.process_identity,
+                    )
+                    .join(
+                        models.CpuExecution,
+                        models.CpuExecution.job_id == models.Job.id,
+                    )
+                    .where(
+                        models.Job.task == "post.audio",
+                        models.Job.lane == "cpu",
+                        models.Job.status == "interrupted",
+                        models.Job.cancel_requested_at.is_(None),
+                        models.Job.deleted_at.is_(None),
+                        self._owner_filter(),
+                        models.CpuExecution.state == "interrupted",
+                        models.CpuExecution.deleted_at.is_(None),
+                    )
+                    .order_by(models.Job.created_at, models.Job.id)
+                )
+            )
+        with self._guard:
+            alive, tried = set(self.owners), set(self._resumed)
+        return [
+            job_id
+            for job_id, execution_id, identity in rows
+            if execution_id not in alive
+            and job_id not in tried
+            and self._process_dead(identity)
+        ]
+
+    def claim_resume(self, job_id):
+        """``interrupted → running`` sobre la misma ``cpu_execution`` (opción A).
+
+        Con la muerte del proceso anterior probada, la custodia pasa de
+        ``unknown`` a ``confirmed`` y la ejecución de ``interrupted`` a
+        ``prepared`` con un lease y un epoch nuevos, que son las únicas
+        transiciones que ya admiten los triggers. Devuelve el id de la
+        ejecución a reanudar o ``None`` si no procede.
+        """
+        with self._guard:
+            if job_id in self._resumed or job_id in self.job_executions:
+                return None
+            alive = set(self.owners)
+        with Session(self.engine) as session:
+            status = session.scalar(
+                select(models.Job.status).where(models.Job.id == job_id)
+            )
+        if status != "interrupted":
+            return None
+        stamp = models.utc_now()
+
+        def claim(connection):
+            job = (
+                connection.execute(
+                    select(models.Job.__table__).where(
+                        models.Job.id == job_id,
+                        models.Job.task == "post.audio",
+                        models.Job.lane == "cpu",
+                        models.Job.status == "interrupted",
+                        models.Job.deleted_at.is_(None),
+                        models.Job.cancel_requested_at.is_(None),
+                        self._owner_filter(),
+                    )
+                )
+                .mappings()
+                .one_or_none()
+            )
+            cpu = (
+                connection.execute(
+                    select(models.CpuExecution.__table__)
+                    .where(
+                        models.CpuExecution.job_id == job_id,
+                        models.CpuExecution.state == "interrupted",
+                        models.CpuExecution.deleted_at.is_(None),
+                    )
+                    .order_by(models.CpuExecution.ordinal.desc())
+                    .limit(1)
+                )
+                .mappings()
+                .one_or_none()
+            )
+            if (
+                job is None
+                or cpu is None
+                or cpu["id"] in alive
+                or not self._process_dead(cpu["process_identity"])
+                or self._occupied_slots(connection) >= 2
+            ):
+                return None
+            revision = cas(
+                connection,
+                "cpu_execution",
+                cpu["id"],
+                cpu["revision"],
+                "interrupted",
+                cleanup_state="confirmed",
+            )
+            cas(
+                connection,
+                "cpu_execution",
+                cpu["id"],
+                revision,
+                "prepared",
+                supervisor_epoch=secrets.token_hex(16),
+                lease_token=secrets.token_hex(16),
+                process_identity=None,
+                error_code=None,
+            )
+            connection.execute(
+                models.Job.__table__.update()
+                .where(models.Job.id == job_id)
+                .values(status="running", error_code=None, error=None, updated_at=stamp)
+            )
+            return cpu["id"]
+
+        execution_id = self.publisher.transaction(claim)
+        if execution_id is not None:
+            with self._guard:
+                self._resumed.add(job_id)
+        return execution_id
+
     def pending_cancellations(self):
         with Session(self.engine) as session:
             query = select(models.Job.id).where(
@@ -352,15 +550,24 @@ class CpuAudioService:
             return list(session.scalars(query))
 
     def execute_job(self, job_id, *, execution_id=None):
-        """Claim, plan and execute one durable ``post.audio`` job."""
-        execution_id = execution_id or models.new_id()
-        if not self.claim_job(job_id):
-            return None
+        """Claim, plan and execute one durable ``post.audio`` job.
+
+        Un post ``interrupted`` con la muerte del proceso anterior probada se
+        reanuda sobre su misma ``cpu_execution``; si no, se reclama como nuevo.
+        """
+        resume = False
+        if execution_id is None:
+            execution_id = self.claim_resume(job_id)
+            resume = execution_id is not None
+        if not resume:
+            execution_id = execution_id or models.new_id()
+            if not self.claim_job(job_id):
+                return None
         with self._guard:
             self.job_executions[job_id] = execution_id
         try:
             plan = self.plan_for_job(job_id, execution_id)
-            return self.execute(plan, execution_id=execution_id)
+            return self.execute(plan, execution_id=execution_id, resume=resume)
         except BaseException as error:
             self.fail_plan(job_id, str(error) or "POST_PLAN_INVALID")
             raise
@@ -398,7 +605,7 @@ class CpuAudioService:
             if directory.exists():
                 shutil.rmtree(directory)
 
-    def _prepare(self, plan, execution_id):
+    def _prepare(self, plan, execution_id, resume=False):
         plan = PostPlan.model_validate_json(plan.model_dump_json())
         raw = canonical_bytes(plan)
         if len(raw) > MAX_PLAN_BYTES:
@@ -431,6 +638,16 @@ class CpuAudioService:
         context_raw, digest = prepared_context.payload, prepared_context.digest
         if len(raw) + len(context_raw) > MAX_PLAN_BYTES:
             raise ValueError("PLAN_TOO_LARGE")
+        if previous is not None and resume:
+            return self._prepare_resume(
+                plan,
+                execution_id,
+                previous,
+                raw,
+                context,
+                prepared_context,
+                context_seals,
+            )
         if previous is not None:
             if previous["plan_sha256"] != canonical_sha256(plan):
                 raise ValueError("PROVENANCE_MISMATCH")
@@ -562,16 +779,197 @@ class CpuAudioService:
         stored = self.publisher.transaction(reserve)
         return stored, run
 
-    def execute(self, plan, *, execution_id):
+    def _prepare_resume(
+        self, plan, execution_id, previous, raw, context, prepared_context, seals
+    ):
+        """Reanuda una ejecución ``prepared`` tras ``claim_resume`` (CA-1).
+
+        Las intents ``reserved`` se vuelven a procesar desde el WAV crudo; las que
+        ya salieron de ``reserved`` se republican desde su staging (que T-05
+        conserva) y se excluyen del hijo con ``resume-skip.json``.
+        """
+        if previous["plan_sha256"] != canonical_sha256(plan):
+            raise ValueError("PROVENANCE_MISMATCH")
+        if previous["state"] != "prepared" or previous["cleanup_state"] != "confirmed":
+            raise ValueError("CPU_CUSTODY_UNKNOWN")
+        with self.engine.connect() as connection:
+            states = {
+                entry.authority.take_id: self.publisher.intent(connection, entry)[
+                    "state"
+                ]
+                for entry in plan.takes
+            }
+        pending = [e for e in plan.takes if states[e.authority.take_id] == "reserved"]
+        skipped = [e for e in plan.takes if states[e.authority.take_id] != "reserved"]
+        packaged = [
+            e
+            for e in skipped
+            if states[e.authority.take_id] in {"prepared", "renamed", "committed"}
+        ]
+        context_raw = prepared_context.payload
+        if packaged:
+            context, digest = self.publisher.receipt_from_history(
+                plan, execution_id, context_raw, entries=packaged
+            )
+            prepared_context = PreparedContext(
+                value=context, payload=context_raw, digest=digest
+            )
+        else:
+            digest = prepared_context.digest
+            self._put_receipt(context_raw, digest)
+        self.publisher.contexts[execution_id] = context
+        self.publisher.receipt_hashes[execution_id] = digest
+        self.publisher.prepared_contexts[execution_id] = prepared_context
+        self.publisher.context_seals[execution_id] = seals
+        self._skipped[execution_id] = {e.authority.take_id for e in skipped}
+        if not pending:
+            return previous, None
+        with self.engine.connect() as connection:
+            terminal = (
+                connection.execute(
+                    select(models.JobAttempt.__table__).where(
+                        models.JobAttempt.id
+                        == plan.takes[0].authority.winning_attempt_id
+                    )
+                )
+                .mappings()
+                .one()["terminal"]
+                .model_dump(mode="json")
+            )
+        for entry in pending:
+            artifacts = [
+                a
+                for a in terminal["data"]["artifacts"]
+                if a["output_index"] == entry.authority.output_index
+            ]
+            if len(artifacts) != 1 or (
+                entry.source.path,
+                entry.source.sha256,
+                entry.source.media_type,
+            ) != (
+                "data/" + artifacts[0]["path"],
+                artifacts[0]["sha256"],
+                artifacts[0]["media_type"],
+            ):
+                raise ValueError("PROVENANCE_MISMATCH")
+            expected_copy = f"data/tmp/_server_inputs/{execution_id}/{entry.authority.output_index}.wav"
+            if entry.copied_source.path != expected_copy:
+                raise ValueError("UNSAFE_PATH")
+            payload = read_file(safe_path(self.root, entry.source.path))
+            if (
+                len(payload) != entry.source.bytes
+                or hashlib.sha256(payload).hexdigest() != entry.source.sha256
+            ):
+                raise ValueError("PROVENANCE_MISMATCH")
+            copied = safe_path(self.root, expected_copy)
+            copied.parent.mkdir(parents=True, exist_ok=True)
+            if copied.exists():
+                if read_file(copied) != payload:
+                    raise ValueError("PROVENANCE_MISMATCH")
+            else:
+                write_once(copied, payload)
+            # Una salida a medias del hijo muerto no se reutiliza jamás.
+            remove_data_dir(
+                self.root / "data",
+                "songs",
+                entry.authority.song_id,
+                "takes",
+                f".pending-{execution_id}",
+                entry.authority.take_id,
+                log=self.log,
+                extra={"song_id": entry.authority.song_id},
+            )
+            if stage(self.root, execution_id, entry).exists():
+                raise ValueError("UNSAFE_PATH")
+        run = safe_path(self.root, f"data/tmp/_server_cpu/{execution_id}")
+        run.mkdir(parents=True, exist_ok=True)
+        plan_file = run / "post-plan.json"
+        if plan_file.exists():
+            if read_file(plan_file, limit=MAX_PLAN_BYTES) != raw:
+                raise ValueError("PROVENANCE_MISMATCH")
+        else:
+            write_once(plan_file, raw)
+        marker = run / "resume-skip.json"
+        if marker.exists():
+            marker.unlink()
+        write_once(
+            marker,
+            canonical_bytes({"skip": sorted(e.authority.take_id for e in skipped)}),
+        )
+        return previous, run
+
+    def _finish(self, plan, execution_id, results):
+        """``draining → finished`` con el post cerrado, y limpieza de lo crudo."""
+
+        def complete(connection):
+            current = self.publisher.authority(connection, plan, execution_id)
+            draining = cas(
+                connection,
+                "cpu_execution",
+                execution_id,
+                current["revision"],
+                "draining",
+                cleanup_state="confirmed",
+            )
+            self.publisher._complete_post(connection, plan, results)
+            ready = [r.take_id for r in results if isinstance(r, TakeSuccess)]
+            failed = [r.take_id for r in results if not isinstance(r, TakeSuccess)]
+            kind = (
+                "mixed" if ready and failed else "all_ready" if ready else "all_failed"
+            )
+            return cas(
+                connection,
+                "cpu_execution",
+                execution_id,
+                draining,
+                "finished",
+                outcome={
+                    "kind": kind,
+                    "ready_take_ids": ready,
+                    "failed_take_ids": failed,
+                },
+                finished_at=models.utc_now(),
+            )
+
+        self.publisher.transaction(complete)
+        self._cleanup_raw_outputs(plan)
+        self._remove_empty_stage(plan, execution_id)
+        return tuple(results)
+
+    def _finish_replay(self, plan, execution_id, cpu):
+        """Reanudación sin nada que reprocesar: republica y cierra la ejecución."""
+
+        def running(connection):
+            self.publisher.authority(connection, plan, execution_id)
+            return cas(
+                connection,
+                "cpu_execution",
+                execution_id,
+                cpu["revision"],
+                "running",
+            )
+
+        self.publisher.transaction(running)
+        self.publisher.reconcile(plan, execution_id)
+        results = self._stored_results(plan, execution_id)
+        if len(results) != len(plan.takes):
+            raise ValueError("CPU_EXECUTION_REQUIRES_RECOVERY")
+        return self._finish(plan, execution_id, results)
+
+    def execute(self, plan, *, execution_id, resume=False):
+
         # One local invocation owns this execution; SQLite CAS is still the
         # durable authority, and the shared coordinator governs every commit.
         with self._guard:
             if execution_id in self.owners:
                 raise ValueError("CPU_EXECUTION_ACTIVE")
-            cpu, run = self._prepare(plan, execution_id)
+            cpu, run = self._prepare(plan, execution_id, resume=resume)
             if run is None:
+                if resume:
+                    return self._finish_replay(plan, execution_id, cpu)
                 self.publisher.reconcile(plan, execution_id)
                 return self._stored_results(plan, execution_id)
+            skipped = self._skipped.pop(execution_id, set())
             group = LinuxGroup(
                 "audio",
                 run,
@@ -629,47 +1027,24 @@ class CpuAudioService:
                         self.publisher.fail(plan, execution_id, entry, result.code)
                     results.append(result)
             receipt = owner.join(20)
-            if not receipt.release_gate or len(results) != len(plan.takes):
+            if not receipt.release_gate or len(results) != len(plan.takes) - len(
+                skipped
+            ):
                 raise ValueError("CPU_CUSTODY_UNKNOWN")
+            if skipped:
+                # Las ya empaquetadas en el intento anterior se republican desde su
+                # staging y aportan su resultado almacenado.
+                self.publisher.reconcile(plan, execution_id)
+                stored = [
+                    r
+                    for r in self._stored_results(plan, execution_id)
+                    if r.take_id in skipped
+                ]
+                if len(stored) != len(skipped):
+                    raise ValueError("CPU_EXECUTION_REQUIRES_RECOVERY")
+                results.extend(stored)
 
-            def complete(connection):
-                current = self.publisher.authority(connection, plan, execution_id)
-                draining = cas(
-                    connection,
-                    "cpu_execution",
-                    execution_id,
-                    current["revision"],
-                    "draining",
-                    cleanup_state="confirmed",
-                )
-                self.publisher._complete_post(connection, plan, results)
-                ready = [r.take_id for r in results if isinstance(r, TakeSuccess)]
-                failed = [r.take_id for r in results if not isinstance(r, TakeSuccess)]
-                kind = (
-                    "mixed"
-                    if ready and failed
-                    else "all_ready"
-                    if ready
-                    else "all_failed"
-                )
-                return cas(
-                    connection,
-                    "cpu_execution",
-                    execution_id,
-                    draining,
-                    "finished",
-                    outcome={
-                        "kind": kind,
-                        "ready_take_ids": ready,
-                        "failed_take_ids": failed,
-                    },
-                    finished_at=models.utc_now(),
-                )
-
-            self.publisher.transaction(complete)
-            self._cleanup_raw_outputs(plan)
-            self._remove_empty_stage(plan, execution_id)
-            return tuple(results)
+            return self._finish(plan, execution_id, results)
         except BaseException as primary:
             owner.cancel()
             if owner.finalizer.ident is not None:
@@ -773,6 +1148,175 @@ class CpuAudioService:
         with self._guard:
             execution_id = self.job_executions.get(job_id)
         if execution_id is None:
-            return False
+            # Sin ejecución viva en este proceso (p. ej. tras un reinicio): se
+            # cancela el post interrumpido si se prueba la muerte del anterior.
+            return self.cancel_interrupted(job_id)
         self.cancel(execution_id)
         return True
+
+    _TERMINAL = ("finished", "failed", "cancelled")
+
+    def cancel_interrupted(self, job_id):
+        """Cancela un ``post.audio`` ``interrupted`` sin dueño vivo (CA-3).
+
+        Solo con prueba de muerte del proceso anterior: la custodia pasa a
+        ``confirmed`` y la ``cpu_execution`` y sus intents quedan en estados
+        finales válidos. Sin prueba no cambia nada y devuelve ``False``.
+        """
+        with self._guard:
+            live = set(self.owners)
+            if job_id in self.job_executions:
+                return False
+        stamp = models.utc_now()
+        songs = []
+
+        def cancel(connection):
+            job = (
+                connection.execute(
+                    select(models.Job.__table__).where(
+                        models.Job.id == job_id,
+                        models.Job.task == "post.audio",
+                        models.Job.status == "interrupted",
+                        models.Job.deleted_at.is_(None),
+                        models.Job.cancel_requested_at.is_not(None),
+                        self._owner_filter(),
+                    )
+                )
+                .mappings()
+                .one_or_none()
+            )
+            if job is None:
+                return False
+            executions = (
+                connection.execute(
+                    select(models.CpuExecution.__table__).where(
+                        models.CpuExecution.job_id == job_id,
+                        models.CpuExecution.deleted_at.is_(None),
+                        models.CpuExecution.state.not_in(self._TERMINAL),
+                    )
+                )
+                .mappings()
+                .all()
+            )
+            if any(
+                row["id"] in live or not self._process_dead(row["process_identity"])
+                for row in executions
+            ):
+                return False
+            for row in executions:
+                revision = row["revision"]
+                if row["state"] in {"running", "draining"}:
+                    revision = cas(
+                        connection,
+                        "cpu_execution",
+                        row["id"],
+                        revision,
+                        "interrupted",
+                        cleanup_state="confirmed",
+                    )
+                cas(
+                    connection,
+                    "cpu_execution",
+                    row["id"],
+                    revision,
+                    "cancelled",
+                    cleanup_state="confirmed",
+                    error_code="CANCELLED",
+                    finished_at=stamp,
+                )
+                self._cancel_intents(connection, row["id"], job["song_id"])
+            connection.execute(
+                models.Job.__table__.update()
+                .where(models.Job.id == job_id)
+                .values(
+                    status="cancelled",
+                    finished_at=stamp,
+                    updated_at=stamp,
+                    error_code=None,
+                    error=None,
+                )
+            )
+            songs.append(job["song_id"])
+            return True
+
+        if not self.publisher.transaction(cancel):
+            return False
+        for song_id in songs:
+            try:
+                snapshots.publish(self.engine, song_id, self.root / "data")
+            except Exception:  # noqa: BLE001 -- el snapshot nunca deshace la cancelación
+                self.log.error("worker.cleanup.failed", extra={"job_id": job_id})
+        try:
+            sweep_cancelled(self.engine, self.owner_id, self.root / "data", self.log)
+            for song_id in songs:
+                self._remove_stages(song_id, job_id)
+        except Exception:  # noqa: BLE001 -- la limpieza nunca aborta
+            self.log.error("worker.cleanup.failed", extra={"job_id": job_id})
+        return True
+
+    def _cancel_intents(self, connection, execution_id, song_id):
+        """Intents de una ejecución cancelada a estados finales (como ``fail``)."""
+        rows = (
+            connection.execute(
+                select(
+                    models.PublicationIntent.__table__,
+                    models.PublicationIntentRevision.id.label("revision_id"),
+                )
+                .join(
+                    models.PublicationIntentRevision.__table__,
+                    models.PublicationIntentRevision.intent_id
+                    == models.PublicationIntent.id,
+                )
+                .where(
+                    models.PublicationIntentRevision.cpu_execution_id == execution_id
+                )
+            )
+            .mappings()
+            .all()
+        )
+        for row in rows:
+            if row["state"] not in {"reserved", "prepared", "renamed"}:
+                continue  # committed conserva su take ready; el resto ya es final
+            target = "quarantined" if row["state"] == "renamed" else "cancelled"
+            connection.execute(
+                models.PublicationIntentRevision.__table__.update()
+                .where(
+                    models.PublicationIntentRevision.id == row["active_revision_id"],
+                    models.PublicationIntentRevision.error_code.is_(None),
+                )
+                .values(error_code="CANCELLED")
+            )
+            connection.execute(
+                models.Take.__table__.update()
+                .where(models.Take.id == row["take_id"], models.Take.status != "ready")
+                .values(status="cancelled", error_code="CANCELLED")
+            )
+            cas(
+                connection,
+                "publication_intent",
+                row["id"],
+                row["revision"],
+                target,
+                error_code="CANCELLED",
+            )
+
+    def _remove_stages(self, song_id, job_id):
+        """Quita ``takes/.pending-<exec>`` de las ejecuciones canceladas del post."""
+        with Session(self.engine) as session:
+            executions = list(
+                session.scalars(
+                    select(models.CpuExecution.id).where(
+                        models.CpuExecution.job_id == job_id
+                    )
+                )
+            )
+        for execution_id in executions:
+            remove_data_dir(
+                self.root / "data",
+                "songs",
+                song_id,
+                "takes",
+                f".pending-{execution_id}",
+                log=self.log,
+                extra={"job_id": job_id, "song_id": song_id},
+            )
