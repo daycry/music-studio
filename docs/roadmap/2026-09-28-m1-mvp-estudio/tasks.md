@@ -139,6 +139,28 @@ verificacion: obligatoria
   - **CA-1 de punta a punta:** SIGKILL con el `.pending-*` presente y arranque de nuevo → el **mismo take** pasa a `ready`, el post queda `succeeded` en la misma `cpu_execution` (ordinal 1, `finished/confirmed`) y la intent `committed`. `verify_manifest.py` da `all valid`.
   - **CA-3 de punta a punta:** `POST /api/jobs/<post>/cancel` con el post en curso → 202. Job, `cpu_execution` y take quedan `cancelled` (`confirmed`), sin `.pending`, con `_server_cpu/<exec>` y `_server_inputs/<exec>` borrados y sin el tmp crudo de la generación.
   - **Hallazgo H5 (anterior a T-04):** una generación **correcta** deja en `data/tmp` el `_server_inputs/<exec>/0.wav` (copia del WAV), `_server_cpu/<exec>/` con sus JSON, la salida `output-0.json` del attempt de `audio.beats` y directorios `_server_inputs/<hex>`. Es una fuga de disco que crece con cada canción.
+- **Fix1** (2026-10-22, 4,87 h IA medidas). Commit `a1a7a8c`:
+  - **I1:** los posts sin `cpu_execution` vuelven a `queued`, también sin backends.
+  - **I2:** 13 tests de reanudación mixta (intent A `prepared` republicada desde el staging y B `reserved` reprocesada) con hash y `write_once` reales, y validación de `resume-skip.json` falsificado (`PROVENANCE_MISMATCH`).
+  - **B1:** un único orden de locks, sin `_guard` dentro de la barrera.
+  - **B2:** solo se invalida el feed si se escribe algo, con backoff de 5 s ante un rechazo.
+  - **B3:** los owners vivos o retenidos ocupan carril.
+  - **m1:** marca `launching` antes de lanzar el grupo. Un post muerto en esa ventana queda `interrupted` hasta intervención manual: es conservador a propósito.
+  - **B4:** la muerte exige también que no quede ningún proceso del grupo o la sesión en `/proc`.
+  - **D1:** `CancelSweeper` incremental.
+  - **Tests:**
+    - Suite completa del server en Windows (implementer): `2603 passed, 75 skipped`, 0 failed.
+    - Focales (orquestador): 80 passed; `ruff` limpio.
+    - **Docker, Linux real: 125 passed, 5 skipped** (junctions).
+- **Verificación en Docker del fix1** (orquestador, 2026-10-22):
+  - **CA-1:** SIGKILL a mitad del post y arranque de nuevo → el mismo take pasa a `ready`.
+  - **CA-3 / I3 (cancelar un post interrumpido):** SIGKILL a mitad del post; con el server parado se marca `cancel_requested_at` (contenedor puntual) y se vuelve a arrancar. Resultado:
+    - post `cancelled`;
+    - `cpu_execution` `cancelled/confirmed`;
+    - intent `cancelled`;
+    - **no queda ningún fichero** de esa ejecución en `data/`;
+    - sin `.pending-*`;
+    - `verify_manifest.py` da `all valid`.
 - **Changelog**: Si el server se reinicia a mitad de una canción, el post-proceso se reanuda solo hasta dejar el take listo. Los trabajos se pueden cancelar sin dejar restos, y la cola no se queda bloqueada.
 
 ### T-05 — Post-proceso y publicación sencilla de takes
@@ -396,15 +418,15 @@ Lentes A, B y D (D por la ruta `worker`/`queue`; C no aplica), sobre el diff `e5
 
 | # | Grado | Gap | Tarea | Corrección | Evidencia |
 |---|---|---|---|---|---|
-| I1 | Important | Un post que muere tras `claim_job` y antes de crear su `cpu_execution` se queda `interrupted` para siempre, o `running` ocupando un carril si no hay backends. `resumable_jobs`, `claim_resume` y `claim_job` lo ignoran | T-04 | pendiente (implementer) | `execution.py:411-446,118-119,674-706,779`; reproducido (lente A) |
-| I2 | Important | La reanudación con intents `prepared` (republicar desde el staging y `resume-skip.json`) no tiene ningún test | T-04 | pendiente (implementer) | `execution.py:804-818,1034-1047`; `audio_child.py:181-190,232` |
-| I3 | Important | No hay evidencia en Docker de cancelar un post **interrumpido**: la pegada era de un post en curso | T-04 | pendiente (orquestador) | `tasks.md` (verificación de T-04) |
+| I1 | Important | Un post que muere tras `claim_job` y antes de crear su `cpu_execution` se queda `interrupted` para siempre, o `running` ocupando un carril si no hay backends. `resumable_jobs`, `claim_resume` y `claim_job` lo ignoran | T-04 | corregido (`a1a7a8c`) | `execution.py:411-446,118-119,674-706,779`; reproducido (lente A) |
+| I2 | Important | La reanudación con intents `prepared` (republicar desde el staging y `resume-skip.json`) no tiene ningún test | T-04 | corregido (`a1a7a8c`) | `execution.py:804-818,1034-1047`; `audio_child.py:181-190,232` |
+| I3 | Important | No hay evidencia en Docker de cancelar un post **interrumpido**: la pegada era de un post en curso | T-04 | corregido: evidencia en Docker (fix1) | `tasks.md` (verificación de T-04) |
 | I3b | Important | CA-4 (fallo sintético retryable que consume un intento) contradice ADR-0018 §20, ADR-0043 §16 y `sistema.md:103,106`. Falta un ADR y actualizar esos documentos | T-04 | corregido: ADR-0090, con ADR-0018, ADR-0043 y `sistema.md` actualizados | `recovery.py:51-68`, `runtime.py:248-255` |
-| B1 | Important | Inversión del orden de los locks: `claim_resume` toma `_guard` dentro de la barrera y `execute` los toma al revés. Resultado: `PublicationTimeout` y un post nuevo `failed` para siempre | T-04 | pendiente (implementer) | `execution.py:84,504,963-969,779`; reproducido (lente B) |
-| B2 | Important | Una reanudación o cancelación rechazada se repite cada 0,1 s y cada transacción sin efecto hace `mark_gap`, que corta todos los SSE (también lo señala D) | T-04 | pendiente (implementer) | `publications.py:346-352`, `execution.py:533,1242`, `runtime.py:563-569`; reproducido |
-| B3 | Important | `_occupied_slots` mira `job_executions` y no los `owners` retenidos, y filtra `deleted_at` aunque el proceso siga vivo. Puede haber 3 grupos CPU vivos | T-04 | pendiente (implementer) | `execution.py:84-100,576,1086-1088` |
-| m1 | Minor | Una identidad nula cuenta como muerte sin sondear; el ledger decía «en Windows sigue `unknown`» | T-04 | pendiente (implementer y ledger) | `execution.py:393-394,973-1005` |
-| m2 | Minor | La cláusula de CA-2 «ni de otro owner» no tiene test | T-04 | pendiente (implementer) | `test_worker_resume.py:53-90` |
-| B4 | Minor | Un líder zombi o un `/proc` ausente cuenta como muerte aunque el grupo siga vivo (otro espacio de PID) | T-04 | pendiente (implementer, si es barato) | `execution.py:58-59,133` |
+| B1 | Important | Inversión del orden de los locks: `claim_resume` toma `_guard` dentro de la barrera y `execute` los toma al revés. Resultado: `PublicationTimeout` y un post nuevo `failed` para siempre | T-04 | corregido (`a1a7a8c`) | `execution.py:84,504,963-969,779`; reproducido (lente B) |
+| B2 | Important | Una reanudación o cancelación rechazada se repite cada 0,1 s y cada transacción sin efecto hace `mark_gap`, que corta todos los SSE (también lo señala D) | T-04 | corregido (`a1a7a8c`) | `publications.py:346-352`, `execution.py:533,1242`, `runtime.py:563-569`; reproducido |
+| B3 | Important | `_occupied_slots` mira `job_executions` y no los `owners` retenidos, y filtra `deleted_at` aunque el proceso siga vivo. Puede haber 3 grupos CPU vivos | T-04 | corregido (`a1a7a8c`) | `execution.py:84-100,576,1086-1088` |
+| m1 | Minor | Una identidad nula cuenta como muerte sin sondear; el ledger decía «en Windows sigue `unknown`» | T-04 | corregido (`a1a7a8c`), conservador | `execution.py:393-394,973-1005` |
+| m2 | Minor | La cláusula de CA-2 «ni de otro owner» no tiene test | T-04 | corregido (test de regresión) | `test_worker_resume.py:53-90` |
+| B4 | Minor | Un líder zombi o un `/proc` ausente cuenta como muerte aunque el grupo siga vivo (otro espacio de PID) | T-04 | corregido (`a1a7a8c`) | `execution.py:58-59,133` |
 | B5 | Minor | El reintento de CA-4 deja huérfano el `data/tmp/<attempt antiguo>` | T-04 | se trata junto a H5 | `runtime.py:247-255`, `recovery.py:108` |
-| D1 | Minor | `sweep_cancelled` relee cada 2 s todos los cancelados del histórico (N+1). Con 500, unos 125 ms cada 2 s en el pool de 2 hilos | T-04 | pendiente (implementer) | `cleanup.py:91-124`, `runtime.py:772`; medido |
+| D1 | Minor | `sweep_cancelled` relee cada 2 s todos los cancelados del histórico (N+1). Con 500, unos 125 ms cada 2 s en el pool de 2 hilos | T-04 | corregido (`a1a7a8c`) | `cleanup.py:91-124`, `runtime.py:772`; medido |
