@@ -99,7 +99,7 @@ verificacion: obligatoria
   - al arrancar se limpian los staging huérfanos.
 
   Fuera de alcance: simplificar la custodia de procesos (`custody_*`, `pipe_protocol`), que funciona y no bloquea. `packages/storage-guard` se mantiene opcional (solo con `STUDIO_STORAGE_UUID`).
-- **Estado**: en-progreso
+- **Estado**: en-revision
 - **Tipo**: backend
 - **Dependencias**: T-04
 - **Archivos**: `apps/server/app/worker/publications.py`, `apps/server/app/worker/execution.py`, `apps/server/tests/test_worker_*.py`, `apps/server/tests/conftest.py` y `pytest.ini` (marcadores de CA-4), `apps/server/tests/fixtures/creative/fixture-index.json` (hash LF del esquema, `406f259`), `apps/server/app/logging.py` y `apps/server/app/queue/runtime.py` (eventos `worker.*` y logger del worker, fix2), `scripts/verify_manifest.py` y `packages/audio-post/tests/test_manifest_errors.py` (H2), `README.md` (aviso de WAL, H4)
@@ -161,6 +161,11 @@ verificacion: obligatoria
     - S1–S4b como se esperaba.
     - Takes reales: `all valid`.
     - `test_manifest_errors.py` + `test_generate.py`: 125 passed; `ruff` limpio.
+- **QA** (2026-10-22, modo sin UI acotado a T-05; informe en `testing/report-T-05.md`):
+  - `ledger-lint`: 0 incoherencias.
+  - `coverage-check`: exit 0, 0 referencias rotas.
+  - **`qa-gate.py`: exit 1** («sin resultados: results.json no existe»). El gate solo admite resultados de Playwright, y las E2E que cubren T-05 (E2E-01, E2E-09) son de T-15, que aún no está hecha.
+  - **Decisión del propietario (2026-10-22):** T-05 queda `en-revision` y se integra en `main` para que T-04, T-06 y T-07 construyan encima. Pasa a `completado` cuando T-15 ejecute E2E-01/E2E-09 con `qa-gate` en verde. No se rebaja el gate.
 - **Commits**: `65e8156` (publicación con fallback, limpieza de staging y marcadores), `406f259` (hash del fixture), `6045e79` (fix1 de la revisión, gaps 1–4).
 - **Fix1** (2026-10-22, 0,88 h IA medidas):
   - Limpieza de arranque después del commit.
@@ -243,6 +248,7 @@ verificacion: obligatoria
 
 ### T-15 — Suite E2E del camino mínimo (Playwright + engine-mock)
 - **Descripción**: E2E de crear, generar, biblioteca, canción, reproductor y errores contra `engine-mock` (actualizar `test-plan.md` al recorte).
+- **Cierra también T-05**: cuando E2E-01 y E2E-09 pasen con `qa-gate` en verde, T-05 pasa a `completado`.
 - **Estado**: en-progreso
 - **Dependencias**: T-09 a T-13
 - **Verificación**: `pnpm --filter web exec playwright test` en verde; informe de `qa` con 0 fallos.
