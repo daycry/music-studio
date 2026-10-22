@@ -343,6 +343,11 @@ verificacion: obligatoria
     - Suite completa del server en Windows (implementer): `1978 passed, 77 skipped`, 0 failed. Baja respecto a 2616 porque se eliminaron unos 680 casos de los tests de M2 (171 funciones, 72 parametrizaciones).
     - Focales (orquestador): 93 passed.
     - `export_contracts.py --check`: `up to date` (verificado por el orquestador).
+- **Fix1** (2026-10-22). Commit `e10ae0e`:
+  - Entero enorme → 422 en generations y estimate.
+  - `take.assets` conserva todas las entradas (`manifest` con `sha256`) y solo publica `url` en los roles con ruta; en el esquema, `url` pasa a ser opcional.
+  - **Comprobado por el orquestador:** focales 105 passed, 1 skipped (symlink en Windows); `export_contracts.py --check` `up to date`; `tsc --noEmit` exit 0.
+  - `pnpm` hay que ejecutarlo desde PowerShell: el wrapper de bash rechaza Git Bash.
 - **Changelog**: Las generaciones sin duración usan 30 s en lugar de fallar. Los MP3/FLAC se pueden descargar como fichero y la API publica un contrato tipado para la web.
 
 ## Fase 4 — Web
@@ -551,8 +556,8 @@ Lentes A, B y C. C la activó el orquestador a mano porque el diff construye `Co
 
 | # | Grado | Gap | Tarea | Corrección | Evidencia |
 |---|---|---|---|---|---|
-| 1 | Minor | Un entero JSON de más de unos 309 dígitos en `duration_s` → `OverflowError` → 500 (generations) / 503 (estimate), en vez de 422 | T-07 | pendiente (fix1) | `domain_routes.py:143,867-870,1453-1456` (lentes B y C) |
-| 2 | Minor | CA-3 quitaba la entrada `manifest` entera de `take.assets` (con su `sha256`), que `ProvenancePanel.tsx` muestra y exporta. Regresión | T-07 | pendiente (fix1) | `domain_routes.py:361-371` (lente B) |
+| 1 | Minor | Un entero JSON de más de unos 309 dígitos en `duration_s` → `OverflowError` → 500 (generations) / 503 (estimate), en vez de 422 | T-07 | corregido (`e10ae0e`) | `domain_routes.py:143,867-870,1453-1456` (lentes B y C) |
+| 2 | Minor | CA-3 quitaba la entrada `manifest` entera de `take.assets` (con su `sha256`), que `ProvenancePanel.tsx` muestra y exporta. Regresión | T-07 | corregido (`e10ae0e`) | `domain_routes.py:361-371` (lente B) |
 | 3 | Minor | ADR-0089 seguía diciendo que el código M2 «no se borra» | T-07 | corregido: nota de resolución en ADR-0089 y en el índice | `ADR-0089:61` (lente A) |
 
 **Fuera de T-07:** el tipo a mano `SystemInfo` de la web espera `gpu.limit_mb`, pero el server envía `cap_mb`. Es anterior a T-07 → se corrige en **T-08**.
