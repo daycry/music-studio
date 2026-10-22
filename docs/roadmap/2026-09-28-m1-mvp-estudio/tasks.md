@@ -312,3 +312,16 @@ Revisión corta autorizada por el propietario, con lentes A y B sobre el diff `9
 | 1 | Important | La vista sustituye `path` por el nombre base **antes** de validar el esquema, y `PurePosixPath` normaliza `./`, `//` y la barra final. La CLI da «all valid» a manifiestos que el esquema y `safe_path` rechazan; con `93971b1` daban rc=1 `MANIFEST_SCHEMA` | T-05 | corregido (`3ec7112`) | `verify_manifest.py:33,52-57`; sondas P1–P3 |
 | 2 | Minor | Una salida que no es dict o que no tiene `path` produce `TypeError`/`KeyError` sin capturar y aborta el recorrido del directorio | T-05 | corregido (`3ec7112`) | `verify_manifest.py:55,94` |
 | 3 | Minor | En Windows, la comparación de la carpeta distingue mayúsculas (`absolute()`): un take legítimo da un falso negativo, pero falla cerrado | T-05 | corregido (`3ec7112`) | `verify_manifest.py:37-40` |
+
+## Revisión de dos lentes — intento 5: Fase 2 (T-05) — sin gaps Critical/Important
+
+Revisión corta del fix6 (`5d989b4..3ec7112`), lentes A y B:
+- Los tres gaps del intento 4 están corregidos ✓.
+- El esquema se valida sobre el original antes de cualquier rama ✓.
+- rc≠0 en todo fallo ✓.
+- Sin regresión de S1–S4b ni de las junctions ✓.
+- Tests: 125 passed.
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| 1 | Minor | `normcase` iguala mayúsculas también en carpetas de Windows que las distinguen. Un gemelo en minúsculas creado a mano (`songs/s/takes/t`), con un manifiesto que declara `songs/S/takes/T`, da «valid» aunque las salidas verificadas son las del gemelo. Los ULID del server van siempre en mayúsculas; el contexto privado se busca por hash | T-05 | deuda aceptada (Minor; no bloquea) | `verify_manifest.py:47,54-56`; sonda `cs5probe.py` con `fsutil … setCaseSensitiveInfo` |
