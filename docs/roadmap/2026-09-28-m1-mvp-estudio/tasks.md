@@ -110,10 +110,10 @@ verificacion: obligatoria
 
 **Criterios de aceptación**
 - [x] CA-1: la publicación funciona donde `renameat2(NOREPLACE)` devuelve `EINVAL`/`ENOSYS`, con un fallback de comprobación de ausencia más `rename`. Un test simula `EINVAL` y comprueba que el take se publica.
-- [ ] CA-2: se mantiene el no-clobber. Un destino ajeno existente (fichero, directorio o directorio vacío) se rechaza sin tocarlo, con y sin fallback, y el cross-device se rechaza antes del rename (los tests `test_native_noreplace_preserves_foreign_destination*` y `test_native_publication_rejects_cross_device_before_rename` pasan, adaptados si hace falta).
+- [x] CA-2: se mantiene el no-clobber. Un destino ajeno existente (fichero, directorio o directorio vacío) se rechaza sin tocarlo, con y sin fallback, y el cross-device se rechaza antes del rename (los tests `test_native_noreplace_preserves_foreign_destination*` y `test_native_publication_rejects_cross_device_before_rename` pasan, adaptados si hace falta).
 - [x] CA-3: al arrancar, se eliminan los directorios `takes/.pending-<execution>/` de las ejecuciones no confirmadas. *(Reducido el 2026-10-22: reencolar un `post.audio` interrumpido exige cambiar la máquina de estados (`claim_job` solo acepta `queued`/`attempt=0`, más `UNIQUE(job_id, ordinal)` y `UNIQUE(take_id)` en la intent). Ese trabajo pasa a **T-04**, que ya cubre «interrupted → reencolar».)*
 - [x] CA-4: los tests que exigen Linux real o el arnés de custodia Windows de Codex (`CUSTODY_SOURCE_SHA256`) se marcan con un marcador explícito y se saltan con motivo cuando no aplican, en lugar de fallar o dar error.
-- [ ] CA-5: verificación de punta a punta en Docker con `engine-mock` (bloque **Verificación**).
+- [x] CA-5: verificación de punta a punta en Docker con `engine-mock` (bloque **Verificación**). *(El `verify_manifest.py` del host está pendiente del fix3.)*
 - **RED → GREEN** (2026-10-22, implementer):
   - RED: `test_worker_publication_fallback.py` → 6 failed (`AttributeError: _native_noreplace`). GREEN: 6 passed.
   - RED: `test_worker_startup_staging.py::test_startup_removes_orphan_pending_staging` falló porque `.pending-<exec>` seguía existiendo. GREEN: con `test_dispatcher_cpu_worker.py`, 7 passed.
@@ -121,6 +121,17 @@ verificacion: obligatoria
   - `uv run pytest apps/server/tests -m "not gpu"` → `1 failed, 2526 passed, 73 skipped in 708s`. El fallo era el hash CRLF del índice de fixtures creativo, corregido en `406f259`: `test_creative_contract_compatibility.py` da 69 passed.
   - Los 4 fallos y 68 errores del worker de la línea base pasan a `skipped` con motivo (`linux_real` / `custody_harness`).
   - **Pendiente:** la parte en Docker (los tests nativos de Linux de CA-2 y el recorrido de punta a punta de CA-5). Docker Desktop está parado.
+- **Verificación en Docker** (2026-10-22, imagen `music-studio/server:m1-t01`, solo CPU):
+  - **Linux real** (tests montados en la imagen, grupo dev instalado en el contenedor, ffmpeg fijado, `/proof` en tmpfs con un dispositivo distinto): `test_worker_{publication_fallback,startup_staging,private_context_integration,actual_execution}.py` y `test_dispatcher_cpu_worker.py` dan **47 passed, 3 skipped** (las junctions son de Windows). Se ejecutan de verdad el no-clobber nativo con `renameat2`, el cross-device y la ejecución real con ffmpeg (CA-2).
+  - **De punta a punta** (`server` y `engine-mock` sobre el bind de Windows `.cache/e2e-t05*`):
+    - `POST /api/generations` → 202 y take **`ready`**, con `master.flac`, `listen.mp3`, `peaks.json` y `manifest.json` en `data/songs/<song>/takes/<take>/`.
+    - `audio_post.verify_manifest(manifest, "/", private_context_root="/data")` en el contenedor → `valid: True`.
+    - SIGKILL del server en cuanto aparece el `.pending-*` (intent `reserved`) y arranque de nuevo: el staging se elimina (`worker.staging.removed` en `server.log`) y el post queda `interrupted`/`CPU_CUSTODY_UNKNOWN`, sin huérfanos. El reencolado es de T-04.
+  - **Hallazgos de la prueba real:**
+    - (H1) Si se omite `params.duration_s`, la generación se acepta, pero el post falla con `AUDIO_DURATION_MISSING`, y la web no envía `duration_s` → **T-07/T-09**.
+    - (H2) `scripts/verify_manifest.py` resuelve las salidas respecto al directorio del manifiesto, pero los manifiestos del server usan rutas `data/...` → `OUTPUT_MISSING` → fix3.
+    - (H3) Tras publicar con éxito queda un `.pending-<exec>` vacío hasta el siguiente arranque → fix3.
+    - (H4) **Abrir `data/db/studio.sqlite` desde Windows mientras el contenedor lo usa en WAL sobre 9p borra el `-wal`/`-shm`, que el contenedor sigue usando, y se pierden escrituras.** Se reprodujo durante esta verificación, solo en `.cache`: la limpieza movió el take sin fila a `trash/orphans` y no se perdieron ficheros. → aviso en el README (fix3) y gotcha.
 - **Commits**: `65e8156` (publicación con fallback, limpieza de staging y marcadores), `406f259` (hash del fixture), `6045e79` (fix1 de la revisión, gaps 1–4).
 - **Fix1** (2026-10-22, 0,88 h IA medidas):
   - Limpieza de arranque después del commit.
@@ -149,6 +160,7 @@ verificacion: obligatoria
 
 ### T-07 — API mínima: canciones, letras, generaciones, takes y sistema
 - **Descripción**: **Recortado.** CRUD de canciones con papelera simple, versiones de letra, `POST` de generaciones, takes (valorar y marcar maestro), descargas MP3/FLAC y `GET /system` mínimo. Las colecciones quedan fuera.
+- **Hallazgo H1 de T-05**: el post falla con `AUDIO_DURATION_MISSING` si la petición no trae `params.duration_s`. La admisión debe rechazarlo o poner un valor por defecto, y la web debe enviarlo (ver T-09).
 - **Estado**: en-progreso
 - **Dependencias**: T-04, T-05
 - **Archivos**: `apps/server/app/domain_routes.py`, `apps/server/app/api_models.py`
