@@ -126,6 +126,13 @@ MAX_DURATION_S = 600
 ASSET_ROUTES = {"master": "master", "listen": "audio", "peaks": "peaks"}
 
 
+def _in_duration_range(value):
+    try:
+        return math.isfinite(value) and 0 < value <= MAX_DURATION_S
+    except OverflowError:  # entero JSON enorme: no cabe en float
+        return False
+
+
 def _params_with_duration(params, task):
     """Valida `duration_s` (0, 600] y aplica los 30 s por defecto en tareas music.*.
 
@@ -138,8 +145,7 @@ def _params_with_duration(params, task):
         if (
             isinstance(value, bool)
             or not isinstance(value, (int, float))
-            or not math.isfinite(value)
-            or not 0 < value <= MAX_DURATION_S
+            or not _in_duration_range(value)
         ):
             raise ValueError("INVALID_DURATION")
     elif task.startswith("music."):
@@ -209,7 +215,7 @@ _OPENAPI_ASSET = {
         "bytes": {"type": "integer", "minimum": 0},
         "sha256": {"type": "string"},
     },
-    "required": ["role", "url", "media_type", "bytes", "sha256"],
+    "required": ["role", "media_type", "bytes", "sha256"],
 }
 _OPENAPI_TAKE = {
     "type": "object",
@@ -364,10 +370,14 @@ def _take_dict(take, *, assets=None, lineage=None):
                 "media_type": asset.media_type,
                 "bytes": asset.bytes,
                 "sha256": asset.sha256,
-                "url": f"/api/takes/{take.id}/{ASSET_ROUTES[asset.role]}",
+                # Sólo los roles con ruta real publican URL.
+                **(
+                    {"url": f"/api/takes/{take.id}/{ASSET_ROUTES[asset.role]}"}
+                    if asset.role in ASSET_ROUTES
+                    else {}
+                ),
             }
             for asset in assets
-            if asset.role in ASSET_ROUTES
         }
     if lineage is not None:
         result["lineage"] = lineage

@@ -9939,7 +9939,6 @@
                               },
                               "required": [
                                 "role",
-                                "url",
                                 "media_type",
                                 "bytes",
                                 "sha256"
@@ -11589,7 +11588,6 @@
                         },
                         "required": [
                           "role",
-                          "url",
                           "media_type",
                           "bytes",
                           "sha256"
@@ -12141,7 +12139,6 @@
                         },
                         "required": [
                           "role",
-                          "url",
                           "media_type",
                           "bytes",
                           "sha256"
@@ -14245,7 +14242,6 @@
                         },
                         "required": [
                           "role",
-                          "url",
                           "media_type",
                           "bytes",
                           "sha256"

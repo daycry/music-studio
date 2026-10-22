@@ -4909,7 +4909,7 @@ export interface operations {
                                     media_type: string;
                                     role: string;
                                     sha256: string;
-                                    url: string;
+                                    url?: string;
                                 };
                             };
                             batch_id: string | null;
@@ -5492,7 +5492,7 @@ export interface operations {
                                 media_type: string;
                                 role: string;
                                 sha256: string;
-                                url: string;
+                                url?: string;
                             };
                         };
                         batch_id: string | null;
@@ -5896,7 +5896,7 @@ export interface operations {
                                 media_type: string;
                                 role: string;
                                 sha256: string;
-                                url: string;
+                                url?: string;
                             };
                         };
                         batch_id: string | null;
@@ -6874,7 +6874,7 @@ export interface operations {
                                 media_type: string;
                                 role: string;
                                 sha256: string;
-                                url: string;
+                                url?: string;
                             };
                         };
                         batch_id: string | null;

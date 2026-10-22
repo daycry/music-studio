@@ -380,9 +380,15 @@ def test_take_dict_only_publishes_urls_for_routed_roles():
         return SimpleNamespace(role=role, media_type="x/y", bytes=1, sha256="a" * 64)
 
     result = _take_dict(
-        take, assets=[asset(r) for r in ("listen", "master", "peaks", "cover", "beats")]
+        take,
+        assets=[asset(r) for r in ("listen", "master", "peaks", "manifest", "cover")],
     )
-    urls = {role: value["url"] for role, value in result["assets"].items()}
+    assert set(result["assets"]) == {"listen", "master", "peaks", "manifest", "cover"}
+    assert result["assets"]["manifest"]["sha256"] == "a" * 64
+    assert result["assets"]["manifest"]["bytes"] == 1
+    urls = {
+        role: value["url"] for role, value in result["assets"].items() if "url" in value
+    }
     assert urls == {
         "listen": "/api/takes/T1/audio",
         "master": "/api/takes/T1/master",
@@ -451,3 +457,31 @@ def test_generation_rejects_non_finite_duration(tmp_path, literal):
             content=raw,
         )
         assert response.status_code == 422, response.text
+
+
+HUGE = int("9" * 400)
+
+
+def test_huge_integer_duration_is_422_not_500(tmp_path):
+    with TestClient(mock_app(tmp_path), base_url="http://127.0.0.1:8000") as client:
+        token = issue(client)
+        raw = (
+            '{"task":"music.song","lyrics":"[Verse]\nHola","lyrics_declaration":"own",'
+            '"params":{"duration_s":' + "9" * 400 + "}}"
+        )
+        response = client.post(
+            "/api/generations",
+            headers={**headers(token), "Content-Type": "application/json"},
+            content=raw,
+        )
+        assert response.status_code == 422, response.text
+        assert response.json()["code"] == "INVALID_PARAMS"
+        estimate = client.post(
+            "/api/generations/estimate",
+            headers={**headers(token), "Content-Type": "application/json"},
+            content='{"task":"music.song","model_id":"mock","params":{"duration_s":'
+            + "9" * 400
+            + "}}",
+        )
+        assert estimate.status_code == 422, estimate.text
+        assert estimate.json()["code"] == "INVALID_PARAMS"
