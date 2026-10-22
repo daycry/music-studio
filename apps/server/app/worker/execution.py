@@ -1484,10 +1484,13 @@ class CpuAudioService:
                 self.log.error("worker.cleanup.failed", extra={"job_id": job_id})
         try:
             sweep_cancelled(self.engine, self.owner_id, self.root / "data", self.log)
-            for song_id in songs:
-                self._remove_stages(song_id, job_id)
         except Exception:  # noqa: BLE001 -- la limpieza nunca aborta
             self.log.error("worker.cleanup.failed", extra={"job_id": job_id})
+        for song_id in songs:  # un fallo del barrido no impide quitar el staging
+            try:
+                self._remove_stages(song_id, job_id)
+            except Exception:  # noqa: BLE001 -- la limpieza nunca aborta
+                self.log.error("worker.cleanup.failed", extra={"job_id": job_id})
         return True
 
     def _cancel_intents(self, connection, execution_id, song_id):

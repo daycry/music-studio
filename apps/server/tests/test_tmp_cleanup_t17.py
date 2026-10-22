@@ -27,7 +27,7 @@ def _tmp(*parts):
 
 def _sweep(engine, owner, **kwargs):
     sweeper = TerminalSweeper(engine, owner, settings().data_dir, **kwargs)
-    sweeper.MARGIN_S = 0
+    sweeper.PARK_S = 0
     sweeper.run(force=True)
     return sweeper
 
@@ -462,6 +462,7 @@ def test_fix1_generation_with_a_real_pending_beats_job_keeps_its_tmp(engine):
         )
     _finish(engine, owner, claim, "done")
     sweeper = TerminalSweeper(engine, owner, settings().data_dir)
+    sweeper.PARK_S = 0
     sweeper.run()
     assert raw.exists()
     with engine.begin() as connection:
@@ -497,3 +498,232 @@ def test_fix1_manual_retry_still_works_after_the_sweep(engine):
     with Session(engine) as s:
         assert s.get(Job, new.generation_job_id).status == "queued"
         assert s.get(Take, chain.take_ids[2]).job_id == new.generation_job_id
+
+
+# --- fix2 ------------------------------------------------------------------------
+
+
+def test_fix2_parked_jobs_do_not_starve_old_history_nor_keep_the_fast_cadence(engine):
+    raws = []
+    for _ in range(3):  # histórico viejo: se puede limpiar
+        jid, owner, claim = prepared(engine)
+        raws.append(_tmp(claim.attempt_id))
+        _finish(engine, owner, claim, "done")
+    for _ in range(5):  # más nuevos, con reintento pendiente: nunca se resuelven
+        jid, owner, claim = prepared(engine)
+        raws.append(_tmp(claim.attempt_id))
+        _finish(engine, owner, claim, "error", retryable=True)
+    sweeper = TerminalSweeper(engine, owner, settings().data_dir)
+    sweeper.BUDGET = 2
+    passes = 0
+    while sweeper.pending or passes == 0:
+        sweeper.run()
+        passes += 1
+        assert passes <= 6  # (3 + 5) / 2 + margen: el presupuesto avanza siempre
+    assert not any(raw.exists() for raw in raws[:3])  # los viejos sí se barrieron
+    assert all(raw.exists() for raw in raws[3:])  # lo pendiente de reintento, no
+    assert sweeper.pending == 0  # cadencia lenta: solo hay aparcados
+    sweeper.run()
+    assert sweeper.last_scanned == 0  # los aparcados esperan su turno
+
+
+def test_fix2_parked_jobs_are_reevaluated_after_their_own_backoff(engine):
+    import time
+
+    jid, owner, claim = prepared(engine)
+    raw = _tmp(claim.attempt_id)
+    _finish(engine, owner, claim, "error", retryable=True)
+    sweeper = TerminalSweeper(engine, owner, settings().data_dir)
+    sweeper.PARK_S = 0.2
+    sweeper.run()
+    assert raw.exists() and jid in sweeper.parked
+    with engine.begin() as connection:
+        connection.execute(
+            text("UPDATE job SET max_attempts=1, attempt=1 WHERE id=:i"), {"i": jid}
+        )
+    sweeper.run()
+    assert raw.exists()  # aún en espera
+    time.sleep(0.3)
+    sweeper.run()
+    assert not raw.exists() and jid not in sweeper.parked
+
+
+def test_fix2_runtime_fast_cadence_only_while_new_history_remains():
+    import asyncio
+    import time
+
+    from app.queue.runtime import QueueRuntime
+
+    async def run(pending):
+        runtime = object.__new__(QueueRuntime)
+        runtime.owner_id, runtime.settings = "o", SimpleNamespace(data_dir=Path("."))
+        runtime.engine, runtime.sweep_s, runtime._sweep_at = None, 2.0, 0.0
+        runtime._sweeper = SimpleNamespace(run=lambda force=False: 0, pending=pending)
+
+        async def dbcall(function, *args):
+            return function(*args)
+
+        runtime.dbcall = dbcall
+        await runtime._sweep_cancelled()
+        return runtime._sweep_at
+
+    assert asyncio.run(run(7)) == 0.0  # queda histórico: siguiente trozo ya
+    assert asyncio.run(run(0)) > time.monotonic() + 1  # solo aparcados: 2 s
+
+
+def _bare(engine, **overrides):
+    from test_dispatcher_admission import add
+    from test_job_attempt_schema import insert_raw, request, row
+
+    lane = overrides.pop("lane", "gpu")
+    mode = overrides.pop("mode", "bf16")
+    jid, owner = add(
+        engine,
+        status="running",
+        engine_id="mock",
+        model_id="mock",
+        attempt=1,
+        lane=lane,
+    )
+    aid = models.new_id()
+    insert_raw(
+        engine,
+        dict(
+            row(),
+            id=aid,
+            job_id=jid,
+            owner_id=owner,
+            mode=mode,
+            load_options={"model_id": "mock", "mode": mode},
+            engine_request=dict(
+                request(), job_id=aid, output_dir=f"tmp/{aid}", mode=mode
+            ),
+        ),
+    )
+    return jid, owner, SimpleNamespace(attempt_id=aid)
+
+
+def _error(engine, owner, claim, code):
+    EventConsumer(engine, owner, EventBus()).accept(
+        claim.attempt_id,
+        "mock",
+        {
+            "job_id": claim.attempt_id,
+            "seq": 1,
+            "ts": models.utc_now(),
+            "type": "error",
+            "data": {"code": code, "message": "x", "retryable": True},
+        },
+    )
+
+
+def test_fix2_vram_exceeded_in_offload_will_never_be_retried_so_it_is_cleaned(engine):
+    jid, owner, claim = _bare(engine, mode="offload")
+    raw = _tmp(claim.attempt_id)
+    _error(engine, owner, claim, "VRAM_EXCEEDED")
+    TerminalSweeper(engine, owner, settings().data_dir).run()
+    assert not raw.exists()
+
+
+def test_fix2_vram_exceeded_in_bf16_can_still_retry_in_offload_so_it_is_kept(engine):
+    jid, owner, claim = _bare(engine, mode="bf16")
+    raw = _tmp(claim.attempt_id)
+    _error(engine, owner, claim, "VRAM_EXCEEDED")
+    TerminalSweeper(engine, owner, settings().data_dir).run()
+    assert raw.exists()
+
+
+def test_fix2_real_chain_generation_raw_goes_when_the_post_ends_beats_wait(engine):
+    from test_queue_chains import create, services
+    from test_queue_references import accepted
+
+    owner, song, _, resolver = services(engine)
+    chain = create(engine, owner, song, resolver)
+    claim, _ = accepted(engine, chain, resolver, owner)
+    raw = resolver.data_dir / "tmp" / claim.attempt_id
+    assert raw.exists()
+    sweeper = TerminalSweeper(engine, owner, resolver.data_dir)
+    sweeper.PARK_S = 0
+    sweeper.run()
+    assert raw.exists()  # el post (vivo) lo necesita
+    with engine.begin() as connection:
+        connection.execute(
+            text("UPDATE job SET status='succeeded', finished_at=:f WHERE id=:i"),
+            {"i": chain.post_job_id, "f": models.utc_now()},
+        )
+    sweeper.run()
+    # beats lee el asset publicado en songs/, no el WAV crudo: la generación se limpia,
+    assert not raw.exists()
+    # pero el post sigue aplazado mientras sus beats (que dependen de él) esperan
+    assert chain.post_job_id in sweeper.deferred
+    with engine.begin() as connection:
+        for beat in chain.beat_job_ids:
+            connection.execute(
+                text("UPDATE job SET status='succeeded', finished_at=:f WHERE id=:i"),
+                {"i": beat, "f": models.utc_now()},
+            )
+    sweeper.run()
+    assert chain.post_job_id not in sweeper.deferred
+
+
+def test_fix2_sweep_cancelled_does_not_relog_a_permanent_failure(engine, caplog):
+    from app.queue.cleanup import sweep_cancelled
+
+    jid, owner, claim = prepared(engine)
+    target = settings().data_dir / "tmp" / claim.attempt_id
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(b"file")
+    with engine.begin() as connection:
+        connection.execute(
+            text("UPDATE job SET status='cancelled', finished_at=:f WHERE id=:i"),
+            {"i": jid, "f": models.utc_now()},
+        )
+    try:
+        with caplog.at_level(logging.INFO):
+            for _ in range(4):
+                sweep_cancelled(engine, owner, settings().data_dir)
+        assert caplog.text.count("worker.cleanup.failed") == 1
+    finally:
+        target.unlink()
+
+
+def test_fix2_in_clauses_are_chunked(engine, monkeypatch):
+    import sqlite3
+
+    from app.queue import cleanup
+    from sqlalchemy import event as sa_event
+    from test_dispatcher_admission import add
+
+    for _ in range(30):
+        add(engine, status="cancelled", finished_at="2026-10-22T00:00:00Z")
+    owner = Session(engine).scalar(text("SELECT id FROM user LIMIT 1"))
+    monkeypatch.setattr(cleanup, "IN_CHUNK", 8, raising=False)
+
+    @sa_event.listens_for(engine, "connect")
+    def limit(dbapi_connection, record):
+        dbapi_connection.setlimit(sqlite3.SQLITE_LIMIT_VARIABLE_NUMBER, 12)
+
+    engine.dispose()  # fuerza conexiones nuevas con el límite
+    cleanup.sweep_cancelled(engine, owner, settings().data_dir)
+    sweeper = TerminalSweeper(engine, owner, settings().data_dir)
+    sweeper.run()
+
+
+def test_fix2_a_failing_sweep_does_not_skip_stage_removal(tmp_path, monkeypatch):
+    from app.worker import execution as execution_module
+    from test_worker_publication_invariants import POST
+    from test_worker_resume import _request_cancel, _reserved_world, _tmp_dirs
+
+    engine, service = _reserved_world(tmp_path)
+    dirs = _tmp_dirs(tmp_path)
+    _request_cancel(engine)
+
+    def boom(*args, **kwargs):
+        raise OSError("barrido roto")
+
+    monkeypatch.setattr(execution_module, "sweep_cancelled", boom)
+    try:
+        assert service.cancel_job(POST) is True
+        assert not dirs["stage"].exists()
+    finally:
+        engine.dispose()

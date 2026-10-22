@@ -9,6 +9,7 @@ import json
 import logging
 import re
 import shutil
+import time
 from pathlib import Path
 
 from sqlalchemy import func, select
@@ -22,6 +23,29 @@ LIVE = ("queued", "blocked", "running", "interrupted")
 TERMINAL = ("succeeded", "failed", "cancelled")
 PERMANENT = "permanent"  # fallo que reintentar no arregla
 _HEX = re.compile(r"[0-9a-f]{32}")
+IN_CHUNK = 500  # SQLite limita las variables de una sentencia (32.766 por defecto)
+_REPORTED = set()  # fallos permanentes ya registrados en este proceso
+_REPORTED_CAP = 10000
+
+
+def _chunks(items, size=None):
+    items = list(items)
+    size = size or IN_CHUNK
+    for start in range(0, len(items), size):
+        yield items[start : start + size]
+
+
+def _report_permanent(log, extra, key):
+    """Registra un fallo permanente una sola vez por proceso y destino."""
+    if key in _REPORTED:
+        return PERMANENT
+    if len(_REPORTED) >= _REPORTED_CAP:
+        _REPORTED.clear()
+    _REPORTED.add(key)
+    log.error("worker.cleanup.failed", extra=extra)
+    return PERMANENT
+
+
 _PART = re.compile(r"(?:\.pending-)?[0-9A-Za-z_]+")
 
 
@@ -40,9 +64,9 @@ def remove_data_dir(data_dir, *parts, log=None, extra=None):
     log = log or logging.getLogger(__name__)
     extra = extra or {}
     if not parts or not all(isinstance(p, str) and _PART.fullmatch(p) for p in parts):
-        log.error("worker.cleanup.failed", extra=extra)
-        return PERMANENT
+        return _report_permanent(log, extra, ("invalid", repr(parts)))
     data = Path(data_dir)
+    key = (str(data), parts)
     try:
         chain = [data]
         for part in parts:
@@ -51,13 +75,11 @@ def remove_data_dir(data_dir, *parts, log=None, extra=None):
         if not any(_link(p) or p.exists() for p in chain[1:]):
             return False
         if any(_link(p) for p in chain):
-            log.error("worker.cleanup.failed", extra=extra)
-            return PERMANENT
+            return _report_permanent(log, extra, key)
         if not target.exists():
             return False
         if not target.is_dir() or not target.resolve().is_relative_to(data.resolve()):
-            log.error("worker.cleanup.failed", extra=extra)
-            return PERMANENT
+            return _report_permanent(log, extra, key)
         shutil.rmtree(target)
         log.info("worker.staging.removed", extra=extra)
         return True
@@ -121,6 +143,44 @@ def _staged_names(raw):
     return names
 
 
+def _will_retry(job, rows):
+    """El retry x2 todavía puede recoger este ``failed`` (alineado con ``Retry``).
+
+    Replica ``Retry.eligible`` (estado, intentos, ``attempt.status == failed``,
+    terminal ``error`` retryable) más los carriles que el reintento nunca toca
+    (``remote``) y el caso en que ``reserve`` lo rechazaría siempre: un
+    ``VRAM_EXCEEDED`` que ya se probó en ``offload``. Lo que depende del catálogo
+    vivo (engine o modelo cambiado) no se replica: esos jobs quedan aparcados
+    con su propio backoff y no consumen el presupuesto del histórico.
+    """
+    if not (
+        job.status == "failed"
+        and job.lane in {"gpu", "cpu"}
+        and not job.cancel_requested_at
+        and job.attempt
+        and type(job.max_attempts) is int
+        and 1 <= job.attempt < job.max_attempts <= 3
+    ):
+        return False
+    last = next(
+        (
+            r
+            for r in rows
+            if r.ordinal == job.attempt
+            and r.deleted_at is None
+            and r.status == "failed"
+            and r.kind == "error"
+            and r.retryable == "true"
+        ),
+        None,
+    )
+    if last is None:
+        return False
+    if last.code == "VRAM_EXCEEDED" and any(r.mode == "offload" for r in rows):
+        return False
+    return True
+
+
 def terminal_targets(session, owner_id, ids=None, statuses=TERMINAL, report=None):
     """``(job_id, (partes...))`` de lo que un job terminal ya no necesita.
 
@@ -139,53 +199,49 @@ def terminal_targets(session, owner_id, ids=None, statuses=TERMINAL, report=None
         if report is not None:
             report.update(deferred=deferred, waiting=waiting)
         return targets
-    jobs = session.execute(
-        select(
-            models.Job.id,
-            models.Job.task,
-            models.Job.status,
-            models.Job.attempt,
-            models.Job.max_attempts,
-            models.Job.cancel_requested_at,
-            func.json_extract(models.Job.request, "$.inputs[0].ref.id").label("gen"),
-        ).where(models.Job.id.in_(ids))
-    ).all()
-    attempts = {}
-    for row in session.execute(
-        select(
-            models.JobAttempt.job_id,
-            models.JobAttempt.id,
-            models.JobAttempt.ordinal,
-            models.JobAttempt.deleted_at,
-            func.json_extract(models.JobAttempt.engine_request, "$.inputs").label(
-                "inputs"
-            ),
-            func.json_extract(models.JobAttempt.terminal, "$.type").label("kind"),
-            func.json_type(models.JobAttempt.terminal, "$.data.retryable").label(
-                "retryable"
-            ),
-        ).where(models.JobAttempt.job_id.in_(ids))
-    ):
-        attempts.setdefault(row.job_id, []).append(row)
+    jobs, attempts = [], {}
+    for part in _chunks(ids):
+        jobs += session.execute(
+            select(
+                models.Job.id,
+                models.Job.task,
+                models.Job.lane,
+                models.Job.status,
+                models.Job.attempt,
+                models.Job.max_attempts,
+                models.Job.cancel_requested_at,
+                func.json_extract(models.Job.request, "$.inputs[0].ref.id").label(
+                    "gen"
+                ),
+            ).where(models.Job.id.in_(part))
+        ).all()
+        for row in session.execute(
+            select(
+                models.JobAttempt.job_id,
+                models.JobAttempt.id,
+                models.JobAttempt.ordinal,
+                models.JobAttempt.status,
+                models.JobAttempt.mode,
+                models.JobAttempt.deleted_at,
+                func.json_extract(models.JobAttempt.engine_request, "$.inputs").label(
+                    "inputs"
+                ),
+                func.json_extract(models.JobAttempt.terminal, "$.type").label("kind"),
+                func.json_extract(models.JobAttempt.terminal, "$.data.code").label(
+                    "code"
+                ),
+                func.json_type(models.JobAttempt.terminal, "$.data.retryable").label(
+                    "retryable"
+                ),
+            ).where(models.JobAttempt.job_id.in_(part))
+        ):
+            attempts.setdefault(row.job_id, []).append(row)
     for job in jobs:
         if needed_by_live_job(session, job.id):
             deferred.add(job.id)
             continue
         rows = attempts.get(job.id, [])
-        if (
-            job.status == "failed"
-            and not job.cancel_requested_at
-            and job.attempt
-            and type(job.max_attempts) is int
-            and 1 <= job.attempt < job.max_attempts <= 3
-            and any(
-                r.ordinal == job.attempt
-                and r.deleted_at is None
-                and r.kind == "error"
-                and r.retryable == "true"
-                for r in rows
-            )
-        ):
+        if _will_retry(job, rows):
             waiting.add(job.id)  # el retry x2 reutiliza sus entradas congeladas
             continue
         staged = set()
@@ -240,34 +296,57 @@ class TerminalSweeper:
     """Barrido de ``data/tmp`` de los terminales, por conjunto de «resueltos».
 
     No depende de ningún reloj ni de ``updated_at``: en cada pasada se lee solo la
-    lista de ids terminales (sin hidratar), se descartan los ya resueltos y se
-    procesan, de ``BUDGET`` en ``BUDGET``, los nuevos y los pendientes. Un job
-    queda resuelto al limpiarse del todo, al registrar un fallo permanente (un
-    único ``worker.cleanup.failed`` por proceso) o tras ``MAX_RETRIES`` fallos
-    transitorios. Sigue pendiente si otro job vivo lo necesita o si un reintento
-    automático va a reutilizar sus entradas. El estado vive en memoria: sin
-    migración, y tras un reinicio se vuelve a recorrer el histórico por trozos.
+    lista de ids terminales (sin hidratar) y se descartan los ya resueltos.
+    El histórico NUEVO se procesa de ``BUDGET`` en ``BUDGET``; ``pending`` es lo
+    que queda de él y solo mientras sea > 0 conviene volver a llamar enseguida.
+
+    Un job queda resuelto al limpiarse del todo, al registrar un fallo permanente
+    (una vez por proceso) o tras ``MAX_RETRIES`` fallos transitorios. Los que no se
+    pueden resolver aún (otro job vivo los necesita, o un reintento automático va a
+    reutilizar sus entradas) quedan APARCADOS: se reevalúan cada ``PARK_S``
+    segundos con su propio presupuesto, de modo que ni consumen el del histórico
+    nuevo (sin inanición) ni mantienen la cadencia rápida. Los fallos transitorios
+    se reintentan en cada pasada. El estado vive en memoria: sin migración.
     """
 
     BUDGET = 200
     MAX_RETRIES = 5
+    PARK_S = 10.0
 
     def __init__(self, engine, owner_id, data_dir, log=None):
         self.engine, self.owner_id = engine, owner_id
         self.data_dir, self.log = data_dir, log
-        self.resolved, self.deferred, self.failures = set(), set(), {}
+        self.resolved, self.failures = set(), {}
+        self.parked, self.needed, self.transient = {}, set(), set()
         self.last_scanned, self.pending = 0, 0
+
+    @property
+    def deferred(self):
+        return self.needed | self.transient
 
     def run(self, force=False):
         if force:
             self.resolved, self.failures = set(), {}
+            self.parked, self.needed, self.transient = {}, set(), set()
+        now = time.monotonic()
         report = {}
         with Session(self.engine) as session:
             current = set(_terminal_ids(session, self.owner_id))
             self.resolved &= current  # un job que dejó de ser terminal se reevalúa
-            todo = sorted(current - self.resolved, reverse=True)
-            batch = todo[: self.BUDGET]
-            self.pending = len(todo) - len(batch)
+            self.transient &= current
+            for gone in set(self.parked) - current:
+                del self.parked[gone]
+            self.needed &= current
+            fresh = sorted(
+                current - self.resolved - set(self.parked) - self.transient,
+                reverse=True,
+            )
+            new = fresh[: self.BUDGET]
+            self.pending = len(fresh) - len(new)
+            due = [j for j, until in self.parked.items() if until <= now]
+            batch = list(
+                dict.fromkeys(new + due[: self.BUDGET] + sorted(self.transient))
+            )
             targets = terminal_targets(session, self.owner_id, ids=batch, report=report)
         self.last_scanned = len(batch)
         failed = set()
@@ -275,13 +354,20 @@ class TerminalSweeper:
         for job_id in failed:
             self.failures[job_id] = self.failures.get(job_id, 0) + 1
         gave_up = {j for j in failed if self.failures[j] >= self.MAX_RETRIES}
-        unresolved = report["deferred"] | report["waiting"] | (failed - gave_up)
-        self.resolved |= set(batch) - unresolved
+        retrying = failed - gave_up
+        self.transient = (self.transient - set(batch)) | retrying
+        parked = report["deferred"] | report["waiting"]
+        for job_id in batch:
+            self.parked.pop(job_id, None)
+            self.needed.discard(job_id)
+        for job_id in parked:
+            self.parked[job_id] = now + self.PARK_S
+        self.needed |= report["deferred"]
+        self.resolved |= set(batch) - parked - retrying
         for job_id in set(batch) - failed:
             self.failures.pop(job_id, None)
         for job_id in gave_up:
             self.failures.pop(job_id, None)
-        self.deferred = report["deferred"] | (failed - gave_up)
         return removed
 
 
