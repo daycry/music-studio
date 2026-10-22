@@ -304,6 +304,132 @@ def test_startup_cleanup_error_does_not_abort(tmp_path, monkeypatch, caplog):
     try:
         assert _service(engine, tmp_path).reconcile_startup() == 1
         assert broken.exists() and not other.exists()
-        assert "boom" in caplog.text or "staging" in caplog.text
+        assert "worker.cleanup.failed" in caplog.text
+        assert "boom" not in caplog.text
     finally:
+        engine.dispose()
+
+
+# --- fix2: junctions (CWE-59) y logs al fichero del server ---
+
+
+def _junction(link, target):
+    import subprocess
+    import sys
+
+    import pytest
+
+    if sys.platform != "win32":
+        pytest.skip("las junctions son de Windows")
+    subprocess.run(
+        ["cmd", "/c", "mklink", "/J", str(link), str(target)],
+        check=True,
+        capture_output=True,
+    )
+
+
+def _unlink_junction(link):
+    import os
+
+    os.rmdir(link)  # quita la junction sin tocar el destino
+
+
+def test_startup_does_not_follow_junction_takes(tmp_path):
+    from test_worker_publication_invariants import SONG
+
+    engine, _ = _interrupted_world(tmp_path)
+    outside = Path(tmp_path) / "outside"
+    (outside / ORPHAN_TAKE).mkdir(parents=True)
+    (outside / ORPHAN_TAKE / "secret").write_bytes(b"external")
+    (outside / f".pending-{OTHER_EXEC}").mkdir()
+    song = Path(tmp_path) / "data" / "songs" / SONG
+    song.mkdir(parents=True, exist_ok=True)
+    link = song / "takes"
+    _junction(link, outside)
+    try:
+        _service(engine, tmp_path).reconcile_startup()
+        assert (outside / ORPHAN_TAKE / "secret").read_bytes() == b"external"
+        assert (outside / f".pending-{OTHER_EXEC}").exists()
+        assert not (Path(tmp_path) / "data/trash/orphans").exists()
+    finally:
+        _unlink_junction(link)
+        engine.dispose()
+
+
+def test_startup_does_not_move_into_junction_trash(tmp_path):
+    engine, _ = _interrupted_world(tmp_path)
+    outside = Path(tmp_path) / "outside-trash"
+    outside.mkdir()
+    trash = Path(tmp_path) / "data" / "trash"
+    trash.mkdir(parents=True)
+    _junction(trash / "orphans", outside)
+    final = _takes_dir(tmp_path) / ORPHAN_TAKE
+    final.mkdir()
+    (final / "master.flac").write_bytes(b"maybe a take")
+    try:
+        _service(engine, tmp_path).reconcile_startup()
+        assert list(outside.iterdir()) == []
+        assert (final / "master.flac").read_bytes() == b"maybe a take"
+    finally:
+        _unlink_junction(trash / "orphans")
+        engine.dispose()
+
+
+def test_startup_does_not_move_into_junction_data_trash(tmp_path):
+    engine, _ = _interrupted_world(tmp_path)
+    outside = Path(tmp_path) / "outside-data-trash"
+    (outside / "orphans").mkdir(parents=True)
+    trash = Path(tmp_path) / "data" / "trash"
+    _junction(trash, outside)
+    final = _takes_dir(tmp_path) / ORPHAN_TAKE
+    final.mkdir()
+    try:
+        _service(engine, tmp_path).reconcile_startup()
+        assert list((outside / "orphans").iterdir()) == []
+        assert final.exists()
+    finally:
+        _unlink_junction(trash)
+        engine.dispose()
+
+
+def test_startup_cleanup_events_reach_server_log(tmp_path):
+    import re
+    from types import SimpleNamespace
+
+    from app.logging import configure_logging
+    from test_worker_publication_invariants import SONG, TAKE, common
+
+    engine, _ = _interrupted_world(tmp_path)
+    takes = _takes_dir(tmp_path)
+    (takes / f".pending-{OTHER_EXEC}").mkdir()
+    (takes / ORPHAN_TAKE).mkdir()
+    (takes / TAKE).mkdir()  # fila take en `queued`
+    logger = configure_logging(SimpleNamespace(data_dir=Path(tmp_path) / "data"))
+    service = CpuAudioService(
+        engine,
+        tmp_path,
+        coordinator=PublicationCoordinator(),
+        bus=None,
+        ffmpeg=tmp_path / "ffmpeg",
+        owner_id=common(SONG)["owner_id"],
+        logger=logger,
+    )
+    try:
+        service.reconcile_startup()
+        for handler in logger.handlers:
+            handler.flush()
+        text = (Path(tmp_path) / "data/logs/server.log").read_text(encoding="utf-8")
+        for event in (
+            "worker.staging.removed",
+            "worker.orphan.quarantined",
+            "worker.take.not_ready",
+        ):
+            assert event in text
+        assert "[redacted]" not in text
+        assert f'"song_id": "{SONG}"' in text
+        assert not re.search(r"[A-Za-z]:[\/]|data[\/]|\.pending", text)
+    finally:
+        for handler in list(logger.handlers):
+            handler.close()
+            logger.removeHandler(handler)
         engine.dispose()

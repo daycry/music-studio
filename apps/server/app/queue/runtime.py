@@ -189,6 +189,7 @@ class QueueRuntime:
             bus=self.bus,
             ffmpeg=ffmpeg,
             owner_id=self.owner_id,
+            logger=getattr(self.engine, "studio_logger", None),
         )
 
     def _active(self):

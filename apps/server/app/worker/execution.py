@@ -39,11 +39,12 @@ from .packages import (
 from .planning import compose_post_plan, load_tool_pin
 from .publications import Publisher
 
-LOG = logging.getLogger(__name__)
-
 
 class CpuAudioService:
-    def __init__(self, engine, root, *, coordinator, bus, ffmpeg, owner_id=None):
+    def __init__(
+        self, engine, root, *, coordinator, bus, ffmpeg, owner_id=None, logger=None
+    ):
+        self.log = logger or logging.getLogger(__name__)
         self.engine, self.root, self.ffmpeg = engine, Path(root), Path(ffmpeg)
         self.owner_id = owner_id
         self.publisher = Publisher(engine, root, coordinator, bus)
@@ -214,9 +215,18 @@ class CpuAudioService:
                 count += 1
         try:
             self._clean_staging()
-        except Exception:
-            LOG.exception("No se pudo recorrer el staging de takes")
+        except Exception:  # noqa: BLE001 -- la limpieza nunca aborta el arranque
+            self.log.error("worker.cleanup.failed")
         return count
+
+    @staticmethod
+    def _link(path):
+        """Symlink o junction de Windows: nunca se recorre ni se mueve (CWE-59)."""
+        return path.is_symlink() or path.is_junction()
+
+    def _inside_data(self, *paths):
+        data = (self.root / "data").resolve()
+        return all(p.resolve().is_relative_to(data) for p in paths)
 
     def _clean_staging(self):
         """Limpieza de arranque (ADR-0089 §2); la fila SQLite manda.
@@ -225,8 +235,14 @@ class CpuAudioService:
         permitiría recuperar: staging con intent ``prepared`` se conserva y un
         directorio final sin fila ``take`` se mueve a ``data/trash/orphans``.
         """
-        songs = self.root / "data" / "songs"
-        if not songs.is_dir() or songs.is_symlink():
+        data = self.root / "data"
+        songs = data / "songs"
+        if (
+            self._link(data)
+            or not songs.is_dir()
+            or self._link(songs)
+            or not self._inside_data(songs)
+        ):
             return
         with self.engine.connect() as connection:
             executions = {
@@ -251,43 +267,58 @@ class CpuAudioService:
             alive = set(self.owners)
         for song in sorted(songs.iterdir()):
             takes_dir = song / "takes"
-            if song.is_symlink() or not takes_dir.is_dir() or takes_dir.is_symlink():
+            if (
+                self._link(song)
+                or not song.is_dir()
+                or self._link(takes_dir)
+                or not takes_dir.is_dir()
+                or not self._inside_data(takes_dir)
+            ):
                 continue
+            extra = {"song_id": song.name}
             for entry in sorted(takes_dir.iterdir()):
-                if entry.is_symlink() or not entry.is_dir():
+                if self._link(entry) or not entry.is_dir():
                     continue
                 try:
-                    if entry.name.startswith(".pending-"):
-                        self._clean_pending(entry, executions, prepared, alive)
+                    if not self._inside_data(entry):
+                        self.log.warning("worker.cleanup.failed", extra=extra)
+                    elif entry.name.startswith(".pending-"):
+                        self._clean_pending(entry, executions, prepared, alive, extra)
                     elif entry.name not in takes:
-                        self._quarantine_orphan(entry)
+                        self._quarantine_orphan(entry, extra)
                     elif takes[entry.name] != "ready":
-                        LOG.info(
-                            "takes/%s no está ready; lo resuelve el reintento",
-                            entry.name,
-                        )
-                except OSError as error:
-                    LOG.error(
-                        "Limpieza de arranque fallida en %s: %s", entry.name, error
-                    )
+                        self.log.info("worker.take.not_ready", extra=extra)
+                except OSError:
+                    self.log.error("worker.cleanup.failed", extra=extra)
 
-    def _clean_pending(self, entry, executions, prepared, alive):
+    def _clean_pending(self, entry, executions, prepared, alive, extra):
         execution_id = entry.name[len(".pending-") :]
         if execution_id in alive:
             return
         if execution_id in prepared:
-            LOG.info("staging %s conservado: intent prepared", entry.name)
+            self.log.info("worker.staging.kept", extra=extra)
             return
         state = executions.get(execution_id)
         if state is None or state in {"finished", "failed", "cancelled", "interrupted"}:
             shutil.rmtree(entry)
+            self.log.info("worker.staging.removed", extra=extra)
 
-    def _quarantine_orphan(self, entry):
+    def _quarantine_orphan(self, entry, extra):
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
-        trash = self.root / "data" / "trash" / "orphans"
-        trash.mkdir(parents=True, exist_ok=True)
-        shutil.move(str(entry), str(trash / f"{entry.name}-{stamp}"))
-        LOG.warning("takes/%s sin fila take: movido a data/trash/orphans", entry.name)
+        data = self.root / "data"
+        trash, orphans = data / "trash", data / "trash" / "orphans"
+        for folder in (trash, orphans):
+            if self._link(folder):
+                self.log.error("worker.cleanup.failed", extra=extra)
+                return
+            if not folder.exists():
+                folder.mkdir()
+        destination = orphans / f"{entry.name}-{stamp}"
+        if not self._inside_data(entry, orphans, destination.parent):
+            self.log.error("worker.cleanup.failed", extra=extra)
+            return
+        shutil.move(str(entry), str(destination))
+        self.log.warning("worker.orphan.quarantined", extra=extra)
 
     def pending_cancellations(self):
         with Session(self.engine) as session:

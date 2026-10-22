@@ -12,6 +12,11 @@ SAFE_EVENTS = {
     "server.stopped",
     "request.completed",
     "request.failed",
+    "worker.staging.kept",
+    "worker.staging.removed",
+    "worker.orphan.quarantined",
+    "worker.take.not_ready",
+    "worker.cleanup.failed",
 }
 
 
