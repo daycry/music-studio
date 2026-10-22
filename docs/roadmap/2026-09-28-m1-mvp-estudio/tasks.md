@@ -140,7 +140,7 @@ verificacion: obligatoria
     - Docker Linux: **50 passed, 4 skipped**.
     - De punta a punta: take `ready` sin `.pending-*` residual.
     - SIGKILL a mitad: staging eliminado, sin papelera; el post queda `interrupted` (T-04).
-    - `verify_manifest.py` sobre el take real: `all valid` con autodetección y con `--data-dir` del directorio aislado.
+    - `verify_manifest.py` sobre el take real: `all valid` con `--data-dir` del directorio aislado. *(Corregido en la revisión, intento 3, gap 4: la autodetección se comprobó con una **copia** del take en una estructura `<raíz>/data/`, no sobre el take en su sitio. Sin `--data-dir`, el take aislado da `PRIVATE_CONTEXT_INVALID`.)*
     - `test_manifest_errors.py` + `test_generate.py`: 109 passed.
     - Suite completa del server tras fix3 (informe del implementer): `2542 passed, 73 skipped`.
 - **Commits**: `65e8156` (publicación con fallback, limpieza de staging y marcadores), `406f259` (hash del fixture), `6045e79` (fix1 de la revisión, gaps 1–4).
@@ -269,3 +269,18 @@ Lentes A y B en un revisor de contexto fresco, sobre el diff `406f259..6045e79`.
 |---|---|---|---|---|---|
 | N1 | Minor | El recorrido de limpieza solo filtra `is_symlink()` y sigue las junctions de Windows. Una junction dentro de `data/songs/*/takes` haría mover a la papelera contenido de fuera de `data/` (CWE-59). Lo mismo pasa si `data/trash` es una junction | T-05 | corregido (`a0856c2`) | Reproducido con `mklink /J`. `execution.py:229,255,258,287-289` |
 | N2 | Minor | El logger `app.worker.execution` no cuelga de `configure_logging`, así que los INFO/WARNING de la limpieza no llegan a `server.log`. Además, el `LOG.error` incluye la ruta absoluta | T-05 | corregido (`a0856c2`, `ece84d1`) | `execution.py:42,265,270-272,279`; `app/logging.py:50-52` |
+
+## Revisión de dos lentes — intento 3: Fase 2 (T-05) — un Important pendiente; decide el propietario
+
+Lentes A y B en un revisor de contexto fresco, sobre el diff `860f0a3..a8bff17`.
+- **H2:** `--data-dir` ✓, M0 ✓, escape del prefijo ✓, rc≠0 ✓.
+- **H3:** solo tras el commit ✓, sin carreras ✓, errores como evento ✓.
+- **H4:** ✓.
+- **Evidencia:** 126 passed.
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| 1 | Important | La autodetección de `verify_manifest.py` valida contra el primer ancestro con `data/` y no contra los ficheros que acompañan al manifiesto. Así, una copia corrupta de un take fuera de `data/` (por ejemplo en `.cache/` o en un backup) da «all valid» si el take vivo está bien | T-05 (H2) | el propietario elige corregir y volver a revisar (fix5, 2026-10-22) | Escenario S1 reproducido: `scripts/verify_manifest.py:32-35` |
+| 2 | Minor | Ni la autodetección ni `--data-dir` exigen que las salidas `data/...` estén en el take del propio manifiesto, y no rechazan mezclar salidas `data/` y relativas | T-05 (H2) | pendiente (se corrige junto al 1) | S2b/S3: `verify_manifest.py:21-31` |
+| 3 | Minor | Si una toma falla después de `process_audio`, su `.pending-<exec>/<take>` queda con ficheros, `rmdir` falla y se emite `worker.cleanup.failed` (error) en una ejecución `mixed`. El staging dura hasta el siguiente arranque | T-05 (H3) | deuda aceptable: la limpieza de arranque lo cubre | `execution.py:244-247` |
+| 4 | Minor | El ledger decía «autodetección sobre el take real» | T-05 | corregido en el ledger | `tasks.md` (Fix3 + fix4) |
