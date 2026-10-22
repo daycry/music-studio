@@ -1,6 +1,7 @@
 """Intención durable por toma; rename no-clobber y commit son fases separadas."""
 
 import ctypes
+import errno
 import hashlib
 import json
 import os
@@ -28,11 +29,15 @@ from .packages import (
 )
 
 
-def rename_noreplace(source, destination):
-    if source.parent.stat().st_dev != destination.parent.stat().st_dev:
-        raise ValueError("UNSAFE_PATH")
-    libc = ctypes.CDLL(None, use_errno=True)
-    rename = libc.renameat2
+_FALLBACK_ERRNOS = {errno.EINVAL, errno.ENOSYS}
+
+
+def _native_noreplace(source, destination):
+    """``renameat2(RENAME_NOREPLACE)``; ``OSError(ENOSYS)`` si la plataforma no lo ofrece."""
+    try:
+        rename = ctypes.CDLL(None, use_errno=True).renameat2
+    except (AttributeError, OSError, TypeError):
+        raise OSError(errno.ENOSYS, os.strerror(errno.ENOSYS)) from None
     rename.argtypes = [
         ctypes.c_int,
         ctypes.c_char_p,
@@ -44,8 +49,32 @@ def rename_noreplace(source, destination):
     if rename(-100, os.fsencode(source), -100, os.fsencode(destination), 1):
         code = ctypes.get_errno()
         raise OSError(code, os.strerror(code), str(destination))
-    fsync_directory(source.parent)
-    fsync_directory(destination.parent)
+
+
+def rename_noreplace(source, destination):
+    """Publica sin pisar: ``renameat2`` y, si el FS no lo soporta, ausencia + rename.
+
+    El destino es único por construcción (``takes/<take_ulid>``) y la fila SQLite
+    es la autoridad, así que el fallback sin atomicidad no abre una carrera real.
+    """
+    if source.parent.stat().st_dev != destination.parent.stat().st_dev:
+        raise ValueError("UNSAFE_PATH")
+    try:
+        _native_noreplace(source, destination)
+    except OSError as error:
+        if error.errno not in _FALLBACK_ERRNOS:
+            raise
+        if os.path.lexists(destination):
+            raise FileExistsError(
+                errno.EEXIST, os.strerror(errno.EEXIST), str(destination)
+            ) from None
+        os.rename(source, destination)
+    for directory in (source.parent, destination.parent):
+        try:
+            fsync_directory(directory)
+        except PermissionError:
+            if os.name != "nt":  # Windows no abre directorios para fsync
+                raise
 
 
 class Publisher:

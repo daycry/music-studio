@@ -40,3 +40,27 @@ def tmp_path():
     path = Path.cwd() / ".cache/dev-cycle/m1/t01-implementation/fixtures" / uuid4().hex
     path.mkdir(parents=True)
     return path
+
+
+_LINUX_FIXTURES = {"actual", "song_actual"}
+
+
+def pytest_collection_modifyitems(config, items):
+    """Marca y salta con motivo los tests que no aplican en este entorno (M1/T-05)."""
+    import sys
+
+    for item in items:
+        if _LINUX_FIXTURES & set(getattr(item, "fixturenames", ())):
+            item.add_marker(pytest.mark.linux_real)
+        if item.get_closest_marker("linux_real") and sys.platform != "linux":
+            item.add_marker(
+                pytest.mark.skip(reason="requiere Linux real (se ejecuta en Docker)")
+            )
+        if item.get_closest_marker("custody_harness") and not os.environ.get(
+            "CUSTODY_SOURCE_SHA256"
+        ):
+            item.add_marker(
+                pytest.mark.skip(
+                    reason="requiere el arnés de custodia Windows (CUSTODY_SOURCE_SHA256)"
+                )
+            )

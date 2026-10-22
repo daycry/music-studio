@@ -209,7 +209,21 @@ class CpuAudioService:
                 execution.revision += 1
                 execution.updated_at = stamp
                 count += 1
+                self._remove_pending_staging(execution)
             return count
+
+    def _remove_pending_staging(self, execution):
+        """Borra ``takes/.pending-<execution>/`` de una ejecución no confirmada.
+
+        El destino final es único por construcción y la fila SQLite manda, así que
+        el staging de una ejecución interrumpida nunca es autoridad de nada.
+        """
+        song_id = execution.plan.song_id
+        stage = safe_path(
+            self.root, f"data/songs/{song_id}/takes/.pending-{execution.id}"
+        )
+        if stage.is_dir() and not stage.is_symlink():
+            shutil.rmtree(stage, ignore_errors=True)
 
     def pending_cancellations(self):
         with Session(self.engine) as session:

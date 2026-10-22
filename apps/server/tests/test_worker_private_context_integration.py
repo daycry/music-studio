@@ -572,6 +572,7 @@ def test_native_noreplace_preserves_foreign_destination(tmp_path, foreign_kind):
         assert list(destination.iterdir()) == []
 
 
+@pytest.mark.linux_real
 def test_native_publication_rejects_cross_device_before_rename(tmp_path):
     from app.worker.publications import rename_noreplace
 

@@ -25,6 +25,7 @@ FIXTURE = Path(__file__).with_name("fixtures") / "worker_custody_child.py"
 PHASE = Path(os.environ["STUDIO_TEST_ROOT"])
 ID = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
 GROUPS = []
+pytestmark = pytest.mark.custody_harness
 
 
 @pytest.fixture(autouse=True)
