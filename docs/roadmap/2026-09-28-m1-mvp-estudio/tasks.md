@@ -430,3 +430,20 @@ Lentes A, B y D (D por la ruta `worker`/`queue`; C no aplica), sobre el diff `e5
 | B4 | Minor | Un líder zombi o un `/proc` ausente cuenta como muerte aunque el grupo siga vivo (otro espacio de PID) | T-04 | corregido (`a1a7a8c`) | `execution.py:58-59,133` |
 | B5 | Minor | El reintento de CA-4 deja huérfano el `data/tmp/<attempt antiguo>` | T-04 | se trata junto a H5 | `runtime.py:247-255`, `recovery.py:108` |
 | D1 | Minor | `sweep_cancelled` relee cada 2 s todos los cancelados del histórico (N+1). Con 500, unos 125 ms cada 2 s en el pool de 2 hilos | T-04 | corregido (`a1a7a8c`) | `cleanup.py:91-124`, `runtime.py:772`; medido |
+
+## Revisión de dos lentes — intento 2: Fase 2 (T-04) — un Important nuevo
+
+Lentes A y B sobre el fix1 (`7a6ed52..a1a7a8c`).
+
+**Gaps del intento 1:**
+- I1 ✓ · I2 ✓ parcial · B1 ✓ · B2 ✓ · B3 ✓ · m1 ✓ (regresión: N1) · m2 ✓ · B4 ✓ · D1 ✓.
+- Focales: 59 passed.
+- La frase del ledger «I2 con hash y `write_once` reales» es inexacta para la republicación: `publisher.reconcile` está simulado en el test. Ese paso sí lo ejecuta de verdad el E2E de CA-1 en Docker.
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| N1 | Important | Con la marca `{"launching": true}` el post no se puede cancelar ni reanudar nunca, ni en caliente ni tras un reinicio. Pasa también cuando `LinuxGroup` falla antes de `Popen` y no se llegó a lanzar ningún proceso. Antes del fix1 funcionaba. Además retiene para siempre el `data/tmp` de la generación | T-04 | pendiente (fix2) | `execution.py:1107-1118,503-505,1355-1359,541`; reproducido (`scratchpad/m1/test_m1_stuck.py`) |
+| N2 | Minor | Un borrado fallido no se reintenta: `since` avanza y el fallo no se aplaza | T-04 | pendiente (fix2) | `cleanup.py:176-179,55` |
+| N3 | Minor | Un post reencolado (I1) deja huérfano `data/tmp/_server_cpu/<exec_viejo>/` | T-04 | pendiente (fix2) | `execution.py:839-841,346-369` |
+| N4 | Minor | La republicación de intents `prepared` no tiene test sin simulaciones (`publisher.reconcile` simulado) | T-04 | pendiente (fix2, si es viable sin Linux; si no, se cubre con el E2E de Docker) | `test_worker_resume_prepared.py:446,466,141` |
+| N5 | Minor | `_probe_group` recorre todo `/proc` por cada post `interrupted` en cada tick sin backoff, y `_backoff` crece sin podarse | T-04 | pendiente (fix2) | `runtime.py:563`, `execution.py:119-121` |
