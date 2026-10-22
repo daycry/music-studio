@@ -612,3 +612,28 @@ Lentes A, B y C. C la activó el orquestador a mano porque el diff construye `Co
 | 3 | Minor | ADR-0089 seguía diciendo que el código M2 «no se borra» | T-07 | corregido: nota de resolución en ADR-0089 y en el índice | `ADR-0089:61` (lente A) |
 
 **Fuera de T-07:** el tipo a mano `SystemInfo` de la web espera `gpu.limit_mb`, pero el server envía `cap_mb`. Es anterior a T-07 → se corrige en **T-08**.
+
+## Revisión de dos lentes — intento 1: Fase 5 (T-17) — cuatro Important pendientes
+
+Lentes A+B (un revisor) y D (por la ruta `queue`), sobre el diff `81e38b9..face3d2`.
+
+**Sin borrados indebidos.** Los casos revisados:
+- **Reintento manual:** vuelve a resolver las entradas desde `data/songs` y `data/uploads` con un `<hex>` nuevo (`uuid4`).
+- **Reintento automático:** reutiliza el `<hex>` solo dentro del mismo job, y ese job se conserva.
+- **`audio.beats`:** lee el asset publicado.
+- **Generación con el post `queued`:** se aplaza.
+- **`<hex>` compartido:** imposible.
+
+Veredicto por criterio:
+- CA-1 ✓ en su letra.
+- CA-2 ✓.
+- CA-3 ✗ en «una vez».
+- CA-4 ✗ en los tests prometidos.
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| 1 | Important | Un fallo permanente se registra varias veces: con `MARGIN_S=5` de producción y un barrido cada 2 s se reexamina mientras `updated_at >= since`, y también en cada arranque. El test lo ocultaba con `MARGIN_S=0` | T-17 | pendiente (fix1) | `cleanup.py:142,247-248`; `test_tmp_cleanup_t17.py:30`; repro: COUNT 3 |
+| 2 | Important | El `updated_at` de un terminal viene del `ts` del engine (reloj del contenedor). Si el engine va ≥ 5 s por detrás (deriva de WSL2), el barrido incremental no lo ve nunca hasta el siguiente arranque. Es una fuga | T-17 | pendiente (fix1) | `events.py:250,447`, `cleanup.py:142`; repro: RAW EXISTS True |
+| 3 | Important | CA-4 pide tests con un `audio.beats` real pendiente y con reintento manual tras el barrido. El test `…pending_beats…` crea un `post.audio` | T-17 | pendiente (fix1) | `test_tmp_cleanup_t17.py:193-210` |
+| 4 | Important | El barrido hidrata el `JobAttempt` completo (validación pydantic de provenance, contratos y terminal) cuando solo necesita `id` y `engine_request.inputs`. Medido con 9.000 jobs: 7,06 s frente a 1,03 s con columnas | T-17 | pendiente (fix1) | `cleanup.py:103-109,152-156` (lente D) |
+| 5 | Minor | El barrido de arranque recorre todo el histórico de terminales dentro de `runtime.start()`, y el server no atiende HTTP hasta que termina (3,5 s con 3.000; 9,9 s con 9.000) | T-17 | pendiente (fix1) | `runtime.py:169`, `main.py:72` (lente D) |
