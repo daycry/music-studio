@@ -161,6 +161,19 @@ verificacion: obligatoria
     - **no queda ningún fichero** de esa ejecución en `data/`;
     - sin `.pending-*`;
     - `verify_manifest.py` da `all valid`.
+- **Fix2** (2026-10-22, 5,36 h IA medidas). Commit `a9fc73d`:
+  - **N1:** si el lanzamiento falla sin hijo, se limpia la marca `launching`. Tras un reinicio, `launching` solo prueba la muerte si ningún proceso de `/proc` lleva el id de ejecución en su `cmdline`.
+  - **N2:** reintento de los borrados fallidos.
+  - **N3:** se limpia el `_server_cpu/<ULID>` huérfano.
+  - **N4:** test `linux_real` de republicación de `prepared` sin simulaciones.
+  - **N5:** backoff de las sondas y poda.
+  - **Tests:**
+    - El repro del revisor (`test_m1_stuck.py`) ahora cancela: `LIVE True ... cancelled`.
+    - Focales (orquestador): 87 passed.
+    - Suite completa del server (implementer): `2616 passed, 76 skipped`, 0 failed.
+    - **Docker Linux: 139 passed, 5 skipped**, incluido el nuevo de N4.
+  - **De punta a punta en Docker:** reanudar tras SIGKILL dio el take `ready` en 6 de 6 ejecuciones y una generación normal también; `verify_manifest.py`: `all valid`.
+  - **Observado una vez de 6 (N6, Minor):** tras una reanudación quedó un `.pending-<exec>` (sin `worker.cleanup.failed` en las repeticiones). No se reproduce. Está acotado: la limpieza del siguiente arranque lo elimina.
 - **Changelog**: Si el server se reinicia a mitad de una canción, el post-proceso se reanuda solo hasta dejar el take listo. Los trabajos se pueden cancelar sin dejar restos, y la cola no se queda bloqueada.
 
 ### T-05 — Post-proceso y publicación sencilla de takes
@@ -442,8 +455,8 @@ Lentes A y B sobre el fix1 (`7a6ed52..a1a7a8c`).
 
 | # | Grado | Gap | Tarea | Corrección | Evidencia |
 |---|---|---|---|---|---|
-| N1 | Important | Con la marca `{"launching": true}` el post no se puede cancelar ni reanudar nunca, ni en caliente ni tras un reinicio. Pasa también cuando `LinuxGroup` falla antes de `Popen` y no se llegó a lanzar ningún proceso. Antes del fix1 funcionaba. Además retiene para siempre el `data/tmp` de la generación | T-04 | pendiente (fix2) | `execution.py:1107-1118,503-505,1355-1359,541`; reproducido (`scratchpad/m1/test_m1_stuck.py`) |
-| N2 | Minor | Un borrado fallido no se reintenta: `since` avanza y el fallo no se aplaza | T-04 | pendiente (fix2) | `cleanup.py:176-179,55` |
-| N3 | Minor | Un post reencolado (I1) deja huérfano `data/tmp/_server_cpu/<exec_viejo>/` | T-04 | pendiente (fix2) | `execution.py:839-841,346-369` |
-| N4 | Minor | La republicación de intents `prepared` no tiene test sin simulaciones (`publisher.reconcile` simulado) | T-04 | pendiente (fix2, si es viable sin Linux; si no, se cubre con el E2E de Docker) | `test_worker_resume_prepared.py:446,466,141` |
-| N5 | Minor | `_probe_group` recorre todo `/proc` por cada post `interrupted` en cada tick sin backoff, y `_backoff` crece sin podarse | T-04 | pendiente (fix2) | `runtime.py:563`, `execution.py:119-121` |
+| N1 | Important | Con la marca `{"launching": true}` el post no se puede cancelar ni reanudar nunca, ni en caliente ni tras un reinicio. Pasa también cuando `LinuxGroup` falla antes de `Popen` y no se llegó a lanzar ningún proceso. Antes del fix1 funcionaba. Además retiene para siempre el `data/tmp` de la generación | T-04 | corregido (`a9fc73d`) | `execution.py:1107-1118,503-505,1355-1359,541`; reproducido (`scratchpad/m1/test_m1_stuck.py`) |
+| N2 | Minor | Un borrado fallido no se reintenta: `since` avanza y el fallo no se aplaza | T-04 | corregido (`a9fc73d`) | `cleanup.py:176-179,55` |
+| N3 | Minor | Un post reencolado (I1) deja huérfano `data/tmp/_server_cpu/<exec_viejo>/` | T-04 | corregido (`a9fc73d`) | `execution.py:839-841,346-369` |
+| N4 | Minor | La republicación de intents `prepared` no tiene test sin simulaciones (`publisher.reconcile` simulado) | T-04 | corregido (`a9fc73d`) | `test_worker_resume_prepared.py:446,466,141` |
+| N5 | Minor | `_probe_group` recorre todo `/proc` por cada post `interrupted` en cada tick sin backoff, y `_backoff` crece sin podarse | T-04 | corregido (`a9fc73d`) | `runtime.py:563`, `execution.py:119-121` |
