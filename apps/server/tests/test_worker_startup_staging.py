@@ -111,7 +111,199 @@ def test_startup_removes_orphan_pending_staging(tmp_path):
     try:
         assert service.reconcile_startup() == 1
         assert not (takes / f".pending-{EXECUTION}").exists()
-        assert foreign.exists()  # no es de una ejecución conocida: no se toca
+        assert not foreign.exists()  # sin fila cpu_execution: huérfano (ADR-0089 §2)
         assert (final / "master.flac").read_bytes() == b"published"
+    finally:
+        engine.dispose()
+
+
+# --- fix1: la fila SQLite manda; no se destruye lo único que permite recuperar ---
+
+OTHER_EXEC = "01K7YYYYYYYYYYYYYYYYYYYYYY"
+ORPHAN_TAKE = "01K7XXXXXXXXXXXXXXXXXXXXXX"
+
+
+def _service(engine, tmp_path):
+    from test_worker_publication_invariants import SONG, common
+
+    return CpuAudioService(
+        engine,
+        tmp_path,
+        coordinator=PublicationCoordinator(),
+        bus=None,
+        ffmpeg=tmp_path / "ffmpeg",
+        owner_id=common(SONG)["owner_id"],
+    )
+
+
+def _takes_dir(tmp_path):
+    from test_worker_publication_invariants import SONG
+
+    path = Path(tmp_path) / "data" / "songs" / SONG / "takes"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def _make_prepared_intent(engine):
+    import json
+
+    from app.migrations.cpu_publication_invariants import cas
+    from test_worker_publication_invariants import (
+        INTENT,
+        REVISION,
+        canonical_sha256,
+        content,
+        insert_raw,
+        intent,
+        package,
+    )
+
+    insert_raw(engine, "publication_intent", intent())
+    insert_raw(engine, "publication_intent_revision", content())
+    with engine.begin() as connection:
+        cas(
+            connection,
+            "publication_intent",
+            INTENT,
+            1,
+            "reserved",
+            active_revision_id=REVISION,
+        )
+    value = package()
+    with engine.begin() as connection:
+        connection.exec_driver_sql(
+            "UPDATE publication_intent_revision SET package=?,package_sha256=? WHERE id=?",
+            (json.dumps(value), canonical_sha256(value), REVISION),
+        )
+        cas(connection, "publication_intent", INTENT, 2, "prepared")
+
+
+def test_startup_keeps_staging_with_prepared_intent(tmp_path):
+    from test_worker_publication_invariants import EXECUTION, TAKE
+
+    engine, _ = _interrupted_world(tmp_path)
+    _make_prepared_intent(engine)
+    pending = _takes_dir(tmp_path) / f".pending-{EXECUTION}" / TAKE
+    pending.mkdir(parents=True)
+    (pending / "master.flac").write_bytes(b"only copy")
+    try:
+        _service(engine, tmp_path).reconcile_startup()
+        assert (pending / "master.flac").read_bytes() == b"only copy"
+    finally:
+        engine.dispose()
+
+
+def test_startup_removes_pending_without_execution_row(tmp_path):
+    engine, _ = _interrupted_world(tmp_path)
+    orphan = _takes_dir(tmp_path) / f".pending-{OTHER_EXEC}" / "x"
+    orphan.mkdir(parents=True)
+    try:
+        _service(engine, tmp_path).reconcile_startup()
+        assert not orphan.parent.exists()
+    finally:
+        engine.dispose()
+
+
+def test_startup_removes_pending_of_terminal_execution(tmp_path):
+    from test_worker_publication_invariants import EXECUTION
+
+    engine, _ = _interrupted_world(tmp_path)
+    from app.migrations.cpu_publication_invariants import cas
+
+    with engine.begin() as connection:
+        connection.exec_driver_sql(
+            "UPDATE job SET status='failed',finished_at='2026-10-22T00:00:00Z' WHERE id IN (SELECT job_id FROM cpu_execution)"
+        )
+        cas(
+            connection,
+            "cpu_execution",
+            EXECUTION,
+            1,
+            "failed",
+            error_code="AUDIO_INVALID",
+            finished_at="2026-10-22T00:00:00Z",
+            cleanup_state="confirmed",
+        )
+    stale = _takes_dir(tmp_path) / f".pending-{EXECUTION}" / "x"
+    stale.mkdir(parents=True)
+    try:
+        assert _service(engine, tmp_path).reconcile_startup() == 0
+        assert not stale.parent.exists()
+    finally:
+        engine.dispose()
+
+
+def test_startup_moves_final_dir_without_take_row_to_trash(tmp_path):
+    engine, _ = _interrupted_world(tmp_path)
+    final = _takes_dir(tmp_path) / ORPHAN_TAKE
+    final.mkdir()
+    (final / "master.flac").write_bytes(b"maybe a take")
+    try:
+        _service(engine, tmp_path).reconcile_startup()
+        assert not final.exists()
+        moved = list((Path(tmp_path) / "data/trash/orphans").glob(f"{ORPHAN_TAKE}-*"))
+        assert len(moved) == 1
+        assert (moved[0] / "master.flac").read_bytes() == b"maybe a take"
+    finally:
+        engine.dispose()
+
+
+def test_startup_never_touches_take_with_row(tmp_path):
+    from test_worker_publication_invariants import TAKE
+
+    engine, _ = _interrupted_world(tmp_path)
+    folder = _takes_dir(tmp_path) / TAKE
+    folder.mkdir()
+    (folder / "master.flac").write_bytes(b"kept")
+    try:
+        for status in ("queued", "ready"):
+            with engine.begin() as connection:
+                connection.exec_driver_sql(
+                    "UPDATE take SET status=? WHERE id=?", (status, TAKE)
+                )
+            _service(engine, tmp_path).reconcile_startup()
+            assert (folder / "master.flac").read_bytes() == b"kept"
+    finally:
+        engine.dispose()
+
+
+def test_startup_skips_execution_alive_in_this_process(tmp_path):
+    from test_worker_publication_invariants import EXECUTION
+
+    engine, _ = _interrupted_world(tmp_path)
+    live = _takes_dir(tmp_path) / f".pending-{EXECUTION}" / "x"
+    live.mkdir(parents=True)
+    service = _service(engine, tmp_path)
+    service.owners[EXECUTION] = object()
+    try:
+        service.reconcile_startup()
+        assert live.exists()
+    finally:
+        engine.dispose()
+
+
+def test_startup_cleanup_error_does_not_abort(tmp_path, monkeypatch, caplog):
+    import shutil
+
+    from test_worker_publication_invariants import EXECUTION
+
+    engine, _ = _interrupted_world(tmp_path)
+    broken = _takes_dir(tmp_path) / f".pending-{EXECUTION}"
+    broken.mkdir()
+    other = _takes_dir(tmp_path) / f".pending-{OTHER_EXEC}"
+    other.mkdir()
+
+    real = shutil.rmtree
+
+    def flaky(path, *args, **kwargs):
+        if Path(path).name == broken.name:
+            raise OSError("boom")
+        return real(path, *args, **kwargs)
+
+    monkeypatch.setattr(shutil, "rmtree", flaky)
+    try:
+        assert _service(engine, tmp_path).reconcile_startup() == 1
+        assert broken.exists() and not other.exists()
+        assert "boom" in caplog.text or "staging" in caplog.text
     finally:
         engine.dispose()

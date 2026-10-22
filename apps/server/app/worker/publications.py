@@ -28,7 +28,6 @@ from .packages import (
     write_once,
 )
 
-
 _FALLBACK_ERRNOS = {errno.EINVAL, errno.ENOSYS}
 
 

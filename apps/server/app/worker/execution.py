@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import logging
 import os
 import secrets
 import shutil
@@ -37,6 +38,8 @@ from .packages import (
 )
 from .planning import compose_post_plan, load_tool_pin
 from .publications import Publisher
+
+LOG = logging.getLogger(__name__)
 
 
 class CpuAudioService:
@@ -209,21 +212,82 @@ class CpuAudioService:
                 execution.revision += 1
                 execution.updated_at = stamp
                 count += 1
-                self._remove_pending_staging(execution)
-            return count
+        try:
+            self._clean_staging()
+        except Exception:
+            LOG.exception("No se pudo recorrer el staging de takes")
+        return count
 
-    def _remove_pending_staging(self, execution):
-        """Borra ``takes/.pending-<execution>/`` de una ejecución no confirmada.
+    def _clean_staging(self):
+        """Limpieza de arranque (ADR-0089 §2); la fila SQLite manda.
 
-        El destino final es único por construcción y la fila SQLite manda, así que
-        el staging de una ejecución interrumpida nunca es autoridad de nada.
+        Se ejecuta tras el commit de la reconciliación. Nunca destruye lo único que
+        permitiría recuperar: staging con intent ``prepared`` se conserva y un
+        directorio final sin fila ``take`` se mueve a ``data/trash/orphans``.
         """
-        song_id = execution.plan.song_id
-        stage = safe_path(
-            self.root, f"data/songs/{song_id}/takes/.pending-{execution.id}"
-        )
-        if stage.is_dir() and not stage.is_symlink():
-            shutil.rmtree(stage, ignore_errors=True)
+        songs = self.root / "data" / "songs"
+        if not songs.is_dir() or songs.is_symlink():
+            return
+        with self.engine.connect() as connection:
+            executions = {
+                row.id: row.state
+                for row in connection.exec_driver_sql(
+                    "SELECT id,state FROM cpu_execution"
+                )
+            }
+            prepared = {
+                row[0]
+                for row in connection.exec_driver_sql(
+                    "SELECT DISTINCT r.cpu_execution_id FROM publication_intent_revision r "
+                    "JOIN publication_intent i ON i.id=r.intent_id "
+                    "WHERE i.state='prepared'"
+                )
+            }
+            takes = {
+                row.id: row.status
+                for row in connection.exec_driver_sql("SELECT id,status FROM take")
+            }
+        with self._guard:
+            alive = set(self.owners)
+        for song in sorted(songs.iterdir()):
+            takes_dir = song / "takes"
+            if song.is_symlink() or not takes_dir.is_dir() or takes_dir.is_symlink():
+                continue
+            for entry in sorted(takes_dir.iterdir()):
+                if entry.is_symlink() or not entry.is_dir():
+                    continue
+                try:
+                    if entry.name.startswith(".pending-"):
+                        self._clean_pending(entry, executions, prepared, alive)
+                    elif entry.name not in takes:
+                        self._quarantine_orphan(entry)
+                    elif takes[entry.name] != "ready":
+                        LOG.info(
+                            "takes/%s no está ready; lo resuelve el reintento",
+                            entry.name,
+                        )
+                except OSError as error:
+                    LOG.error(
+                        "Limpieza de arranque fallida en %s: %s", entry.name, error
+                    )
+
+    def _clean_pending(self, entry, executions, prepared, alive):
+        execution_id = entry.name[len(".pending-") :]
+        if execution_id in alive:
+            return
+        if execution_id in prepared:
+            LOG.info("staging %s conservado: intent prepared", entry.name)
+            return
+        state = executions.get(execution_id)
+        if state is None or state in {"finished", "failed", "cancelled", "interrupted"}:
+            shutil.rmtree(entry)
+
+    def _quarantine_orphan(self, entry):
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+        trash = self.root / "data" / "trash" / "orphans"
+        trash.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(entry), str(trash / f"{entry.name}-{stamp}"))
+        LOG.warning("takes/%s sin fila take: movido a data/trash/orphans", entry.name)
 
     def pending_cancellations(self):
         with Session(self.engine) as session:
