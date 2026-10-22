@@ -16,25 +16,33 @@ def data_relative(payload):
     )
 
 
-def base_for(path, payload, root):
-    """Los manifiestos del server llevan rutas `data/...` relativas a la raíz del proyecto."""
+def base_for(path, payload, data_dir):
+    """Base y contexto privado; `data_dir` es el directorio de datos en sí (el que el server monta)."""
     if not data_relative(payload):
-        return path.parent, None
+        return path.parent, None, payload
+    if data_dir is not None:
+        # Vista privada como la del server: sin prefijo `data/`; el manifiesto en disco no se toca.
+        outputs = [
+            {**o, "path": o["path"][len("data/") :]}
+            if isinstance(o, dict) and str(o.get("path", "")).startswith("data/")
+            else o
+            for o in payload["outputs"]
+        ]
+        return Path(data_dir), Path(data_dir), {**payload, "outputs": outputs}
+    root = next((p for p in path.absolute().parents if (p / "data").is_dir()), None)
     if root is None:
-        root = next((p for p in path.absolute().parents if (p / "data").is_dir()), None)
-    if root is None:
-        return path.parent, None
-    return Path(root), Path(root) / "data"
+        return path.parent, None, payload
+    return root, root / "data", payload
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("path", type=Path)
     parser.add_argument(
-        "--root",
+        "--data-dir",
         type=Path,
-        help="raíz que contiene data/ cuando las rutas del manifiesto empiezan por data/ "
-        "y el directorio no se llama data",
+        help="directorio de datos en sí (el que el server monta como /data); "
+        "para manifiestos con rutas data/... cuando no cuelga de un directorio data/",
     )
     args = parser.parse_args(argv)
     directory = args.path.is_dir()
@@ -59,8 +67,8 @@ def main(argv=None):
             ):
                 continue
             checked += 1
-            base, context = base_for(path, payload, args.root)
-            verify_manifest(payload, base, private_context_root=context)
+            base, context, view = base_for(path, payload, args.data_dir)
+            verify_manifest(view, base, private_context_root=context)
         except (ValueError, OSError) as error:
             print(f"{path.name}: {error}", file=sys.stderr)
             failed = True

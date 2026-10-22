@@ -294,14 +294,20 @@ def test_cli_validates_server_manifests_with_data_relative_paths(
     assert "HASH_MISMATCH" in capsys.readouterr().err
 
 
-def test_cli_explicit_root_for_data_relative_paths(tmp_path, manifest, capsys):
-    root, take = _server_style(tmp_path, manifest)
-    outside = tmp_path / "elsewhere"
-    outside.mkdir()
-    copy_path = outside / "manifest.json"
-    copy_path.write_text((take / "manifest.json").read_text(), encoding="utf-8")
+def test_cli_data_dir_is_the_data_directory_itself(tmp_path, manifest, capsys):
+    """STUDIO_DATA_ROOT aislado: el directorio de datos no se llama `data` ni tiene hijo `data/`."""
+    data_dir = tmp_path / "e2e-data"
+    take = data_dir / "songs" / "S" / "takes" / "T"
+    take.mkdir(parents=True)
+    (take / "fixture.txt").write_bytes(b"music-studio fixture\n")
+    manifest["outputs"][0]["path"] = "data/songs/S/takes/T/fixture.txt"
+    (take / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
     module = _cli()
-    assert module.main([str(copy_path)]) == 1  # sin ancestro `data` ni --root
+    assert module.main([str(data_dir / "songs")]) == 1  # sin autodetección posible
     capsys.readouterr()
-    assert module.main([str(copy_path), "--root", str(root)]) == 0
+    assert module.main([str(data_dir / "songs"), "--data-dir", str(data_dir)]) == 0
     assert "all valid" in capsys.readouterr().out
+    assert (take / "manifest.json").read_text().count('"path": "data/') == 1
+    (take / "fixture.txt").write_bytes(b"tampered")
+    assert module.main([str(take / "manifest.json"), "--data-dir", str(data_dir)]) == 1
+    assert "HASH_MISMATCH" in capsys.readouterr().err
