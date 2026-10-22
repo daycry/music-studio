@@ -39,8 +39,8 @@ verificacion: obligatoria
 | Fase 2 — Cola y post-proceso | 0 | 3 | 0% | 0 |
 | Fase 3 — API | 0 | 1 | 0% | 0 |
 | Fase 4 — Web | 0 | 7 | 0% | 1 (T-14) |
-| Fase 5 — Pruebas y cierre | 0 | 2 | 0% | 0 |
-| **TOTAL** | **0** | **17** | **0%** | **2** |
+| Fase 5 — Pruebas y cierre | 0 | 3 | 0% | 0 |
+| **TOTAL** | **0** | **18** | **0%** | **2** |
 
 **Orden recomendado:**
 
@@ -419,6 +419,38 @@ verificacion: obligatoria
 - **Estado**: en-progreso
 - **Dependencias**: T-15, M0/T-13
 - **Verificación**: take real `ready` con manifiesto válido, escuchado y aceptado por el propietario · README seguido desde cero.
+
+
+### T-17 — Fuga de temporales en `data/tmp` (vía rápida)
+- **Descripción**: Vía rápida (`quick-implement`, 2026-10-22). Recoge los hallazgos H5 de T-04, B5 de T-04/ADR-0090 y N7 de T-04. Hoy cada canción correcta deja en `data/tmp`:
+  - la copia del WAV en `_server_inputs/<exec>/`;
+  - los JSON de `_server_cpu/<exec>/`;
+  - la salida `tmp/<attempt>` de `audio.beats`;
+  - directorios `_server_inputs/<hex>` de engine.
+
+  Además, el reintento de ADR-0090 abandona `tmp/<attempt>`, y `CancelSweeper` reintenta para siempre los fallos permanentes de borrado.
+- **Estado**: en-progreso
+- **Tipo**: backend
+- **Dependencias**: T-04, T-05
+- **Archivos**: `apps/server/app/worker/execution.py`, `apps/server/app/queue/cleanup.py`, `apps/server/app/queue/runtime.py`, `apps/server/app/queue/events.py`, `apps/server/app/queue/inputs.py`, `apps/server/tests/test_tmp_cleanup_t17.py` (nuevo), `apps/server/tests/test_queue_cancel_cleanup.py`
+- **Verificación**:
+  - Windows: `uv run pytest apps/server/tests -m "not gpu"` → 0 failed, 0 errors.
+  - Docker (orquestador):
+    - una generación correcta con `engine-mock` → tras `ready` (y el beats), en `data/tmp` no queda **nada** de esa canción;
+    - un SIGKILL a mitad y la reanudación, igual;
+    - `verify_manifest.py` → `all valid`.
+
+**Criterios de aceptación**
+- [ ] CA-1 (H5): cuando un job llega a un estado terminal (`succeeded`, `failed` o `cancelled`), el server borra lo que ese job dejó en `data/tmp` y ya no necesita ningún job vivo (dependiente, hermano, reintento manual o automático pendiente). Cubre:
+  - `tmp/<attempt>` de los jobs de engine (generación y `audio.beats`) y de **todos** sus attempts;
+  - `_server_inputs/<exec>` y `_server_cpu/<exec>` de los posts;
+  - los `_server_inputs/<hex>` que crea `queue/inputs.py`.
+
+  Un `failed` que todavía puede reintentarse conserva lo que necesita el reintento.
+- [ ] CA-2 (B5): el `tmp/<attempt>` de un intento abandonado por el reintento acotado (ADR-0090) se borra como parte de CA-1.
+- [ ] CA-3 (N7): los fallos **permanentes** de borrado (destino symlink o junction, no-directorio, fuera de `data/`) se registran **una vez** (`worker.cleanup.failed`) y salen de `deferred`. Solo se reintentan los transitorios (`OSError` de `rmtree`), con un tope de intentos.
+- [ ] CA-4: las reglas de borrado seguro de T-05 siguen intactas (no seguir enlaces, quedarse dentro de `data/`, errores como evento) y no se borra nada que use un job vivo. Hay tests de regresión: post vivo, `audio.beats` pendiente y reintento manual posible.
+- **Changelog**: El estudio ya no acumula copias de audio ni ficheros temporales en `data/tmp` tras cada canción.
 
 ## Revisión de dos lentes — intento 1: Fase 2 (T-05) — dos Important pendientes
 
