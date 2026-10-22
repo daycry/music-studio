@@ -427,7 +427,7 @@ def test_startup_cleanup_events_reach_server_log(tmp_path):
             assert event in text
         assert "[redacted]" not in text
         assert f'"song_id": "{SONG}"' in text
-        assert not re.search(r"[A-Za-z]:[\/]|data[\/]|\.pending", text)
+        assert not re.search(r"[A-Za-z]:|\\|/|\.pending", text)
     finally:
         for handler in list(logger.handlers):
             handler.close()
