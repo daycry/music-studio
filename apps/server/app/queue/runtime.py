@@ -24,7 +24,7 @@ from .admission import Admission, Claim, occupancy_filters
 from .backends.http import HttpEngineBackend
 from .backends.protocol import BackendFailure, ConfirmedAbsent
 from .cancellation import Cancellation, local_jobs
-from .cleanup import CancelSweeper
+from .cleanup import TerminalSweeper
 from .dispatcher import Dispatcher, Resident
 from .events import EventBus, EventConsumer
 from .provenance import MUSIC_TASKS, SelectedProvenance, capture_before_send
@@ -597,7 +597,7 @@ class QueueRuntime:
             return
         self._sweep_at = now + getattr(self, "sweep_s", 2.0)
         if getattr(self, "_sweeper", None) is None:
-            self._sweeper = CancelSweeper(
+            self._sweeper = TerminalSweeper(
                 self.engine,
                 owner,
                 self.settings.data_dir,
