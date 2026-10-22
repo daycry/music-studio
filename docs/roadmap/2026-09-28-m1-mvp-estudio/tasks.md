@@ -84,6 +84,8 @@ verificacion: obligatoria
 
 ### T-04 — Cola de un carril: reintentos, cancelación y recuperación
 - **Descripción**: **Recortado.** Un carril GPU y uno CPU, reintento `retryable` ×2, cancelar, e `interrupted` → reencolar al arrancar. Las dependencias entre jobs (análisis) quedan fuera.
+- **Deuda de la revisión de T-05 (gap 6)**: `reconcile_startup` vuelve a procesar en cada arranque las ejecuciones ya `interrupted`.
+- **Pendiente heredado de T-05**: reencolar el `post.audio` interrumpido tras un reinicio (hoy queda `interrupted`/`CPU_CUSTODY_UNKNOWN` sin camino de vuelta). Hay que decidir entre reutilizar `cpu_execution` y la intent o abrir el ordinal 2.
 - **Estado**: en-progreso
 - **Dependencias**: T-02
 - **Archivos**: `apps/server/app/queue/`
@@ -100,18 +102,40 @@ verificacion: obligatoria
 - **Estado**: en-progreso
 - **Tipo**: backend
 - **Dependencias**: T-04
-- **Archivos**: `apps/server/app/worker/publications.py`, `apps/server/app/worker/execution.py`, `apps/server/tests/test_worker_*.py`, `pyproject.toml` (marcador de pytest)
+- **Archivos**: `apps/server/app/worker/publications.py`, `apps/server/app/worker/execution.py`, `apps/server/tests/test_worker_*.py`, `apps/server/tests/conftest.py` y `pytest.ini` (marcadores de CA-4), `apps/server/tests/fixtures/creative/fixture-index.json` (hash LF del esquema, `406f259`)
 - **Verificación**:
   - Windows: `uv run pytest apps/server/tests -m "not gpu"` → **0 failed, 0 errors** (los tests Linux-only aparecen como `skipped` con motivo).
   - Docker: `docker compose run --rm server uv run pytest apps/server/tests -m "not gpu" -k "worker or publication"` en verde, incluidos los tests nativos Linux.
   - Punta a punta: `scripts/e2e_stack.py up` y una generación con `engine-mock` deja el take `ready` en `data/songs/` sobre el bind de Windows · `uv run scripts/verify_manifest.py data/songs/` en verde · `scripts/e2e_stack.py restart-server` a mitad del post-proceso no deja `.pending-*` huérfanos.
 
 **Criterios de aceptación**
-- [ ] CA-1: la publicación funciona donde `renameat2(NOREPLACE)` devuelve `EINVAL`/`ENOSYS`, con un fallback de comprobación de ausencia más `rename`. Un test simula `EINVAL` y comprueba que el take se publica.
+- [x] CA-1: la publicación funciona donde `renameat2(NOREPLACE)` devuelve `EINVAL`/`ENOSYS`, con un fallback de comprobación de ausencia más `rename`. Un test simula `EINVAL` y comprueba que el take se publica.
 - [ ] CA-2: se mantiene el no-clobber. Un destino ajeno existente (fichero, directorio o directorio vacío) se rechaza sin tocarlo, con y sin fallback, y el cross-device se rechaza antes del rename (los tests `test_native_noreplace_preserves_foreign_destination*` y `test_native_publication_rejects_cross_device_before_rename` pasan, adaptados si hace falta).
-- [ ] CA-3: al arrancar, los directorios `takes/.pending-<execution>/` de ejecuciones no confirmadas se eliminan y el `post.audio` interrumpido puede reintentarse (automático o con el reintento manual existente) hasta dejar el take en `ready`.
-- [ ] CA-4: los tests que exigen Linux real o el arnés de custodia Windows de Codex (`CUSTODY_SOURCE_SHA256`) se marcan con un marcador explícito y se saltan con motivo cuando no aplican, en lugar de fallar o dar error.
+- [x] CA-3: al arrancar, se eliminan los directorios `takes/.pending-<execution>/` de las ejecuciones no confirmadas. *(Reducido el 2026-10-22: reencolar un `post.audio` interrumpido exige cambiar la máquina de estados (`claim_job` solo acepta `queued`/`attempt=0`, más `UNIQUE(job_id, ordinal)` y `UNIQUE(take_id)` en la intent). Ese trabajo pasa a **T-04**, que ya cubre «interrupted → reencolar».)*
+- [x] CA-4: los tests que exigen Linux real o el arnés de custodia Windows de Codex (`CUSTODY_SOURCE_SHA256`) se marcan con un marcador explícito y se saltan con motivo cuando no aplican, en lugar de fallar o dar error.
 - [ ] CA-5: verificación de punta a punta en Docker con `engine-mock` (bloque **Verificación**).
+- **RED → GREEN** (2026-10-22, implementer):
+  - RED: `test_worker_publication_fallback.py` → 6 failed (`AttributeError: _native_noreplace`). GREEN: 6 passed.
+  - RED: `test_worker_startup_staging.py::test_startup_removes_orphan_pending_staging` falló porque `.pending-<exec>` seguía existiendo. GREEN: con `test_dispatcher_cpu_worker.py`, 7 passed.
+- **Verificación parcial** (Windows, 2026-10-22):
+  - `uv run pytest apps/server/tests -m "not gpu"` → `1 failed, 2526 passed, 73 skipped in 708s`. El fallo era el hash CRLF del índice de fixtures creativo, corregido en `406f259`: `test_creative_contract_compatibility.py` da 69 passed.
+  - Los 4 fallos y 68 errores del worker de la línea base pasan a `skipped` con motivo (`linux_real` / `custody_harness`).
+  - **Pendiente:** la parte en Docker (los tests nativos de Linux de CA-2 y el recorrido de punta a punta de CA-5). Docker Desktop está parado.
+- **Commits**: `65e8156` (publicación con fallback, limpieza de staging y marcadores), `406f259` (hash del fixture), `6045e79` (fix1 de la revisión, gaps 1–4).
+- **Fix1** (2026-10-22, 0,88 h IA medidas):
+  - Limpieza de arranque después del commit.
+  - Conserva el staging de intents `prepared`.
+  - Elimina el `.pending-*` sin ejecución o de ejecuciones terminales.
+  - Mueve a `data/trash/orphans/` los `takes/<id>` sin fila.
+  - Salta las ejecuciones vivas y registra en el log los errores por directorio.
+  - RED → GREEN por gap: 7 tests nuevos en `test_worker_startup_staging.py`; los focales dan 20 passed.
+  - **Suite completa del server en Windows: `2534 passed, 73 skipped` en 595 s, con 0 failed y 0 errors.**
+- **Fix2** (2026-10-22, 1,02 h IA medidas). Commits `a0856c2` y `ece84d1`:
+  - La limpieza ya no sigue symlinks ni junctions y comprueba que todo resuelve dentro de `data/` (N1).
+  - Eventos fijos `worker.*` en `SAFE_EVENTS`, que llegan a `server.log` sin rutas (N2).
+  - RED → GREEN con `mklink /J` real.
+  - Focales (verificado por el orquestador): 30 passed, 3 skipped. `ruff check` limpio.
+  - Suite completa del server sobre `a0856c2`: `2538 passed, 73 skipped` en 938 s, con 0 failed y 0 errors.
 - **Changelog**: Los takes se publican de forma fiable sobre la carpeta de datos de Docker Desktop, sin sobrescribir nada ajeno y limpiando restos tras un reinicio.
 
 ### T-06 — SSE de eventos
@@ -187,3 +211,38 @@ verificacion: obligatoria
 - **Estado**: en-progreso
 - **Dependencias**: T-15, M0/T-13
 - **Verificación**: take real `ready` con manifiesto válido, escuchado y aceptado por el propietario · README seguido desde cero.
+
+## Revisión de dos lentes — intento 1: Fase 2 (T-05) — dos Important pendientes
+
+Lentes: A, B y D. D se activó por la ruta `worker`; C no aplica. Diff `b72be24..65e8156+406f259`.
+
+**Veredicto de la Lente A por criterio:**
+- CA-1 ✓.
+- CA-2 pendiente declarado. El fallback está cubierto; la parte nativa queda para Docker.
+- CA-3 ✓ en su letra, con el gap 1.
+- CA-4 ✓.
+- CA-5 pendiente declarado.
+- Alcance ✓ y constitución ✓.
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| 1 | Important | La limpieza al arrancar no cubre lo que dice ADR-0089 §2 («directorio sin fila → huérfano»). Quedan sin limpiar el `.pending-*` de ejecuciones desconocidas o terminales y el `takes/<id>` final sin fila `ready` (rename hecho pero el commit no) | T-05 | pendiente | `execution.py:187-197`, `test_worker_startup_staging.py:100,113` (lente A) |
+| 2 | Important | Borra el staging de intents en `prepared`, que es la única copia del paquete, sin hacer transicionar la fila. Un reanudado posterior falla con `FileNotFoundError` en `publications.py:594`/`:309` y el take queda colgado | T-05 | pendiente | `execution.py:212,226`; `publications.py:546-568,583,594` (lente B) |
+| 3 | Minor | `rmtree` dentro de `session.begin()`, antes del commit, con `ignore_errors=True`. Si hay rollback ya se ha borrado y los fallos no dejan rastro | T-05 | pendiente (se corrige junto a 1–2) | `execution.py:187,226` (lente B) |
+| 4 | Minor | No consulta `self.owners` antes de borrar el staging de una ejecución viva en el mismo proceso | T-05 | pendiente (se corrige junto a 1–2) | `execution.py:207-212` (lente B) |
+| 5 | Minor | ADR-0089 encarga a T-05/T-07 decidir si el código creativo de M2 se queda; no consta la decisión | T-05 | anotado: se queda mientras lo importen `models` y las migraciones; decide T-07 | ADR-0089 §Consecuencias (lente A) |
+| 6 | Minor | `reconcile_startup` vuelve a procesar en cada arranque las ejecuciones que ya están `interrupted` (`revision += 1`). Es preexistente | T-04 | deuda anotada en T-04 | `execution.py:191-196` (lente D, fuera de su lente) |
+
+## Revisión de dos lentes — intento 2: Fase 2 (T-05) — sin gaps Important; dos Minor nuevos
+
+Lentes A y B en un revisor de contexto fresco, sobre el diff `406f259..6045e79`.
+
+**Gaps del intento 1:** 1 ✓ · 2 ✓ · 3 ✓ · 4 ✓ · 5 ✓ · 6 (deuda de T-04).
+
+- **Gap 2:** se revisaron todos los estados de la intent (`reserved`, `prepared`, `renamed`, `committed`, `failed`, `cancelled`, `quarantined`). Solo en `prepared` el staging es la única copia.
+- **Focales:** 20 passed.
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| N1 | Minor | El recorrido de limpieza solo filtra `is_symlink()` y sigue las junctions de Windows. Una junction dentro de `data/songs/*/takes` haría mover a la papelera contenido de fuera de `data/` (CWE-59). Lo mismo pasa si `data/trash` es una junction | T-05 | corregido (`a0856c2`) | Reproducido con `mklink /J`. `execution.py:229,255,258,287-289` |
+| N2 | Minor | El logger `app.worker.execution` no cuelga de `configure_logging`, así que los INFO/WARNING de la limpieza no llegan a `server.log`. Además, el `LOG.error` incluye la ruta absoluta | T-05 | corregido (`a0856c2`, `ece84d1`) | `execution.py:42,265,270-272,279`; `app/logging.py:50-52` |
