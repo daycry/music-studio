@@ -17,6 +17,14 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 manager = __import__("fetch_web_tools")
 CACHE = ".cache/web-runtime"
+SWC_CACHE = ".cache/swc"
+SWC_FALLBACK = ".cache/la"
+# Windows sin rutas largas: el lock de SWC es <cache>/swc-native-<SID>/v1/<128 hex>.lock.
+MAX_PATH = 260
+SWC_SID_BUDGET = 52
+SWC_LOCK_SUFFIX = (
+    len("/swc-native-") + SWC_SID_BUDGET + len("/v1/") + 128 + len(".lock")
+)
 E2E_CONTROL_ENV = {"E2E_ISOLATED", "E2E_RECOVERY", "MOCK_STAGE_DELAY_MS"}
 COMMANDS = {
     "install",
@@ -237,6 +245,19 @@ def _write_launcher(root: Path, path: Path, content: bytes) -> Path:
             temporary.unlink()
 
 
+def check_swc_path_budget(root: Path) -> None:
+    """Falla antes de que SWC rebote con 'path not found' por superar MAX_PATH."""
+    if os.name != "nt":
+        return
+    for relative in (SWC_CACHE, SWC_FALLBACK + "/swc"):
+        longest = len(str(root / relative)) + SWC_LOCK_SUFFIX
+        if longest >= MAX_PATH:
+            raise ValueError(
+                f"La ruta del proyecto es demasiado larga para la caché de SWC "
+                f"({longest} >= MAX_PATH {MAX_PATH}): mueve el proyecto a una ruta más corta"
+            )
+
+
 def native_cache(root: Path, path: Path) -> Path:
     """Refuse aliases before SWC can load or materialize native executable bytes."""
     path = manager.safe_path(path, root)
@@ -284,8 +305,14 @@ def environment(root: Path, tools: dict) -> dict:
         env[key] = str(path)
     # El carrier oficial Windows resuelve también el fallback antes de usar el root.
     # No heredar perfiles ni overrides de bindings del proceso llamador.
-    env["LOCALAPPDATA"] = str(native_cache(root, base / "local-appdata"))
-    env["SWC_NATIVE_BINDING_CACHE"] = str(native_cache(root, base / "swc-native"))
+    # Rutas cortas: SWC añade swc-native-<SID>/v1/<128 hex>.lock y el addon no usa rutas
+    # largas; bajo web-runtime la ruta medía 263 > MAX_PATH (ERR_SWC_NATIVE_CACHE).
+    swc_cache = manager.safe_path(root / SWC_CACHE, root)
+    swc_fallback = manager.safe_path(root / SWC_FALLBACK, root)
+    env["LOCALAPPDATA"] = str(native_cache(root, swc_fallback))
+    # El fallback del addon es <LOCALAPPDATA>/swc; se crea dentro de la caché validada.
+    native_cache(root, swc_fallback / "swc")
+    env["SWC_NATIVE_BINDING_CACHE"] = str(native_cache(root, swc_cache))
     settings = {
         "manage-package-manager-versions": "false",
         "package-manager-strict": "true",
@@ -343,6 +370,10 @@ def execute(argv: list[str], root: Path) -> int:
     tools = verified_tools(root)
     node = manager.safe_path(tools["node"]["dest"] / "node.exe", root)
     pnpm = manager.safe_path(tools["pnpm"]["dest"] / "bin/pnpm.cjs", root)
+    try:
+        check_swc_path_budget(root)
+    except ValueError as error:  # aviso: SWC fallará con un error críptico
+        print(f"AVISO: {error}", file=sys.stderr)
     env = environment(root, tools)
     return subprocess.run(
         [str(node), str(pnpm), *args], cwd=root, env=env, shell=False, check=False

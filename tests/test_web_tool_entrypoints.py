@@ -99,7 +99,7 @@ def test_native_swc_transform_with_isolated_environment(cli, tmp_path):
 
 @pytest.mark.parametrize("kind", ["hardlink", "directory-link", "ordinary"])
 def test_native_cache_rejects_aliases_before_child(cli, tmp_path, kind):
-    cache = tmp_path / ".cache/web-runtime/swc-native"
+    cache = tmp_path / ".cache/swc"
     cache.mkdir(parents=True)
     foreign = tmp_path / "foreign"
     foreign.mkdir()
@@ -122,9 +122,7 @@ def test_native_cache_rejects_aliases_before_child(cli, tmp_path, kind):
         if kind == "ordinary":
             env = cli.environment(tmp_path, tools)
             assert env["SWC_NATIVE_BINDING_CACHE"] == str(cache)
-            assert Path(env["LOCALAPPDATA"]).is_relative_to(
-                tmp_path / ".cache/web-runtime"
-            )
+            assert Path(env["LOCALAPPDATA"]).is_relative_to(tmp_path / ".cache/la")
         else:
             with pytest.raises(ValueError):
                 cli.environment(tmp_path, tools)
@@ -758,6 +756,43 @@ def test_stable_runtime_reuses_only_expected_launcher(cli, tmp_path):
     ):
         assert Path(first[key]).is_relative_to(tmp_path / ".cache/web-runtime")
         assert "dev-cycle" not in Path(first[key]).relative_to(tmp_path).parts
+
+
+# SWC añade swc-native-<SID>/v1/<128 hex>.lock a la caché; el addon no usa rutas largas
+# (MAX_PATH 260): con la caché bajo web-runtime la ruta medía 263 y el build fallaba.
+def _swc_lock_length(root, key):
+    path = Path(root) / ".cache" / key
+    # "\" + swc-native-<SID de 48>, "\" + v1, "\" + 128 hex + .lock
+    return (
+        len(str(path))
+        + 1
+        + len("swc-native-")
+        + 48
+        + 1
+        + len("v1")
+        + 1
+        + 128
+        + len(".lock")
+    )
+
+
+@pytest.mark.skipif(os.name != "nt", reason="MAX_PATH es una limitación de Windows")
+def test_swc_cache_lock_paths_fit_max_path(cli, tmp_path):
+    env = cli.environment(tmp_path, {"node": {"dest": tmp_path / "node"}})
+    assert Path(env["SWC_NATIVE_BINDING_CACHE"]) == tmp_path / ".cache/swc"
+    assert Path(env["LOCALAPPDATA"]) == tmp_path / ".cache/la"
+    assert _swc_lock_length(cli.ROOT, "swc") < 260
+    assert _swc_lock_length(cli.ROOT, "la/swc") < 260
+    cli.check_swc_path_budget(cli.ROOT)
+
+
+@pytest.mark.skipif(os.name != "nt", reason="MAX_PATH es una limitación de Windows")
+def test_swc_cache_refuses_root_too_long_for_max_path(cli, tmp_path):
+    deep = tmp_path / ("d" * 60) / ("e" * 60) / ("f" * 60)
+    deep.mkdir(parents=True)
+    with pytest.raises(ValueError, match="MAX_PATH"):
+        cli.check_swc_path_budget(deep)
+    cli.check_swc_path_budget(cli.ROOT)
 
 
 class NativeWindowsFS:
