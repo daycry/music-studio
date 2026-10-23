@@ -47,3 +47,11 @@ test('createGeneration, estimate y reintento validan la forma de la respuesta de
  expect(isFeatureVerified(task,'a')).toBe(false);
  expect(isFeatureVerified(task,'b')).toBeUndefined();
 });
+test('cancel y retry rechazan cuerpos con forma inválida',async()=>{
+ const reply=(body:unknown)=>vi.fn().mockImplementation(async(url:string)=>String(url).endsWith('/api/session/bootstrap')?new Response('{"session_token":"t","expires_in_s":60}'):new Response(JSON.stringify(body),{status:202}));
+ const {cancelJob,retryJob}=await import('./api');
+ vi.stubGlobal('fetch',reply({generation_job_id:'G',post_job_id:'P',take_ids:'x',beat_job_ids:[]}));
+ await expect(retryJob('J')).rejects.toThrow('invalidJobAction');
+ vi.stubGlobal('fetch',reply({job_id:'J'}));
+ await expect(cancelJob('J')).rejects.toThrow('invalidJobAction');
+});

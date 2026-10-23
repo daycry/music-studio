@@ -48,3 +48,20 @@ test('Detalle de canción traduce estado y tarea y tolera un asset sin url', asy
   expect(select.textContent).not.toMatch(/music\.song|ready/);
   select.click();
 });
+
+test('Sistema traduce el estado del engine y las tareas verificadas', async () => {
+  vi.stubGlobal('fetch', vi.fn().mockImplementation(async (url: string) => {
+    if (url.endsWith('/api/session/bootstrap')) return json({session_token: 's', expires_in_s: 60});
+    if (url.endsWith('/api/system')) return json({
+      queue: {queued: false, blocked: false, running: false}, gpu: null, ram: {}, disk: {},
+      engines: [{state: 'ready', engine_id: 'mock'}, {state: 'raro', engine_id: 'otro'}],
+      models: [{id: 'm', tasks: {'music.song': {verified: true}, 'x.y': {verified: true}}}],
+    });
+    return json({process: 'server', status: 'running'});
+  }));
+  const {container} = render(wrap(<SystemPage />));
+  await screen.findByText(messages.enums.engineState.ready);
+  expect(screen.getByText(messages.enums.unknown)).toBeTruthy();
+  expect(screen.getByText(`${messages.enums.task.music_song}${messages.system.separator}${messages.enums.unknown}`)).toBeTruthy();
+  expect(container.textContent).not.toMatch(/music\.song|\bready\b|raro/);
+});

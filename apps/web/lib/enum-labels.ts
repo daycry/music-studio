@@ -5,3 +5,5 @@ const TASKS = ['music.song', 'music.instrumental'];
 export const songStatusKey = (value: string) => SONG_STATUS.includes(value) ? `songStatus.${value}` : 'unknown';
 export const takeStatusKey = (value: string) => TAKE_STATUS.includes(value) ? `takeStatus.${value}` : 'unknown';
 export const taskKey = (value: string) => TASKS.includes(value) ? `task.${value.replace('.', '_')}` : 'unknown';
+const ENGINE_STATES = ['ready', 'loading', 'busy', 'idle', 'error', 'unavailable'];
+export const engineStateKey = (value: string) => ENGINE_STATES.includes(value) ? `engineState.${value}` : 'unknown';

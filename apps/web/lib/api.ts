@@ -124,7 +124,11 @@ async function jobAction<A extends 'cancel' | 'retry'>(jobId: string, action: A)
   if (response.status === 401) {sessionToken = undefined; throw new ApiError(response.status);}
   if (!response.ok) throw new ApiError(response.status);
   const body: unknown = await response.json();
-  if (!isObject(body)) throw new Error('invalidJobAction');
+  const strings = (value: unknown) => Array.isArray(value) && value.every(item => typeof item === 'string');
+  const valid = action === 'cancel'
+    ? isObject(body) && typeof body.job_id === 'string' && typeof body.cancel_requested === 'boolean'
+    : isObject(body) && typeof body.generation_job_id === 'string' && typeof body.post_job_id === 'string' && strings(body.take_ids) && strings(body.beat_job_ids);
+  if (!valid) throw new Error('invalidJobAction');
   return body as A extends 'cancel' ? JobCancelResponse : JobRetryResponse;
 }
 export function cancelJob(jobId: string) { return jobAction(jobId, 'cancel'); }

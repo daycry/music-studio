@@ -62,7 +62,7 @@
     "instrumentalLabel": "Generar instrumental (sin usar la letra)",
     "variantsLabel": "Variantes",
     "submit": "Generar",
-    "submitting": "Encolando?",
+    "submitting": "Encolando…",
     "queued": "Generación encolada",
     "queuedDetail": "Job: {jobId}",
     "invalidLyrics": "Revisa la letra: hay etiquetas desconocidas, incompletas o secciones vacías.",
@@ -250,6 +250,14 @@
     "task": {
       "music_song": "Canción con letra",
       "music_instrumental": "Instrumental"
+    },
+    "engineState": {
+      "ready": "Listo",
+      "loading": "Cargando",
+      "busy": "Ocupado",
+      "idle": "Inactivo",
+      "error": "Con error",
+      "unavailable": "No disponible"
     },
     "unknown": "Desconocido"
   },

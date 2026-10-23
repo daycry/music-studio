@@ -15,9 +15,9 @@ function sources(dir: string): string[] {
   });
 }
 /** Primer argumento (hasta la coma de nivel superior) de cada llamada `t(`. */
-function firstArguments(code: string): string[] {
+function firstArguments(code: string, name: string): string[] {
   const found: string[] = [];
-  for (const match of code.matchAll(/(?<![\w.])t\(/g)) {
+  for (const match of code.matchAll(new RegExp('(?<![\\w.])' + name + '\\(', 'g'))) {
     let depth = 0;
     let index = match.index! + match[0].length;
     const start = index;
@@ -40,14 +40,14 @@ test('toda clave estática t(...) existe en es.json bajo su namespace', () => {
   let checked = 0;
   for (const file of [...sources(join(root, 'app')), ...sources(join(root, 'components'))]) {
     const code = readFileSync(file, 'utf8');
-    const namespace = /const t = useTranslations\((?:'([^']+)')?\)/.exec(code);
-    if (!namespace) continue;
-    const prefix = namespace[1] ? namespace[1] + '.' : '';
-    for (const argument of firstArguments(code)) {
-      if (argument.includes('${') || argument.includes('+')) continue;
-      for (const key of argument.matchAll(/'([A-Za-z][\w.]*)'/g)) {
-        checked++;
-        if (typeof lookup(prefix + key[1]) !== 'string') missing.push(`${relative(root, file)}: ${prefix}${key[1]}`);
+    for (const declaration of code.matchAll(/const (\w+) = useTranslations\((?:'([^']+)')?\)/g)) {
+      const prefix = declaration[2] ? declaration[2] + '.' : '';
+      for (const argument of firstArguments(code, declaration[1]!)) {
+        if (argument.includes('${') || argument.includes('+') || argument.includes('(')) continue;
+        for (const key of argument.matchAll(/'([A-Za-z][\w.]*)'/g)) {
+          checked++;
+          if (typeof lookup(prefix + key[1]) !== 'string') missing.push(`${relative(root, file)}: ${prefix}${key[1]}`);
+        }
       }
     }
   }
