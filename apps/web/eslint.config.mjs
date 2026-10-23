@@ -2,6 +2,13 @@ import {defineConfig, globalIgnores} from 'eslint/config';
 import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTypescript from 'eslint-config-next/typescript';
 
+// Texto que llega a la UI como hijo de un elemento JSX (no atributos ni argumentos de t()).
+function isRenderedText(node) {
+  let current = node.parent;
+  while (current && (current.type === 'ConditionalExpression' || current.type === 'LogicalExpression' || current.type === 'TemplateLiteral')) current = current.parent;
+  return current?.type === 'JSXExpressionContainer' && (current.parent?.type === 'JSXElement' || current.parent?.type === 'JSXFragment');
+}
+const hasVisibleText = value => /[\p{L}—·…]/u.test(value);
 const noUiLiterals = {
   meta:{type:'problem',schema:[],messages:{literal:'El texto visible debe proceder de messages/es.json mediante next-intl.'}},
   create(context) {
@@ -10,6 +17,8 @@ const noUiLiterals = {
       JSXAttribute(node) {
         if (['aria-label','title','placeholder','alt'].includes(node.name.name) && node.value?.type === 'Literal' && node.value.value) context.report({node,messageId:'literal'});
       },
+      TemplateElement(node) { if (hasVisibleText(node.value.cooked ?? '') && isRenderedText(node.parent)) context.report({node,messageId:'literal'}); },
+      'ConditionalExpression > Literal, LogicalExpression > Literal'(node) { if (typeof node.value === 'string' && hasVisibleText(node.value) && isRenderedText(node)) context.report({node,messageId:'literal'}); },
       JSXExpressionContainer(node) {
         if (node.expression.type === 'Literal' && typeof node.expression.value === 'string' && node.expression.value.trim() && node.parent.type !== 'JSXAttribute') context.report({node,messageId:'literal'});
       }

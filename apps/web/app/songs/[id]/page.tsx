@@ -3,11 +3,18 @@ import Link from 'next/link';
 import {useParams} from 'next/navigation';
 import {useEffect, useMemo, useState} from 'react';
 import {useTranslations} from 'next-intl';
-import {API_ORIGIN, downloadTakeAsset, getSong, getTakeAnalysis, getTakePeaks, listLyrics, listSongTakes, patchTake, setSongMaster, type LyricsVersion, type Song, type Take} from '../../../lib/api';
+import {API_ORIGIN, downloadTakeAsset, getSong, getTakeAnalysis, getTakePeaks, listLyrics, listSongTakes, patchTake, setSongMaster, type LyricsVersion, type Song, type Take, type TakeAsset} from '../../../lib/api';
 import {ProvenancePanel} from '../../../components/ProvenancePanel';
 import {Waveform} from '../../../components/Waveform';
 import {usePlayer} from '../../../components/PlayerContext';
 import {findPairedTake} from '../../../lib/take-pairs';
+import {songStatusKey, takeStatusKey, taskKey} from '../../../lib/enum-labels';
+
+/** URL absoluta del asset; undefined si el server no publica ruta para ese rol. */
+function assetUrl(asset: TakeAsset): string | undefined {
+  if (!asset.url) return undefined;
+  return asset.url.startsWith('http') ? asset.url : API_ORIGIN + asset.url;
+}
 
 function lyricDiff(previous: string, current: string): string {
   const before = new Set(previous.split(/\r?\n/));
@@ -17,6 +24,8 @@ function lyricDiff(previous: string, current: string): string {
 
 export default function SongDetailPage() {
   const t = useTranslations('songDetail');
+  const te = useTranslations('enums');
+  const takeName = (item: Take) => item.label ?? te(taskKey(item.task) as never);
   const player = usePlayer();
   const params = useParams<{id:string}>();
   const [song, setSong] = useState<Song | null>(null);
@@ -42,14 +51,14 @@ export default function SongDetailPage() {
   function selectTake(item: Take) {
     setSelected(item.id);
     setPosition(0);
-    const asset = item.assets?.listen;
-    if (asset && song) {
+    const url = item.assets?.listen ? assetUrl(item.assets.listen) : undefined;
+    if (url && song) {
       const pair = findPairedTake(takes, item);
       const pairId = item.batch_id ?? item.root_id ?? undefined;
-      player.select({id: item.id, takeId: item.id, title: `${song.title} ${t('separator')} ${item.label ?? item.task}`, url: asset.url.startsWith('http') ? asset.url : API_ORIGIN + asset.url, duration_s: item.duration_s, songId: song.id, pairId, variantIndex: item.variant_index});
-      if (pair?.assets?.listen) {
-        const pairAsset = pair.assets.listen;
-        player.enqueue({id: pair.id, takeId: pair.id, title: `${song.title} ${t('separator')} ${pair.label ?? pair.task}`, url: pairAsset.url.startsWith('http') ? pairAsset.url : API_ORIGIN + pairAsset.url, duration_s: pair.duration_s, songId: song.id, pairId: pair.batch_id ?? pair.root_id ?? pairId, variantIndex: pair.variant_index});
+      player.select({id: item.id, takeId: item.id, title: `${song.title} ${t('separator')} ${takeName(item)}`, url, duration_s: item.duration_s, songId: song.id, pairId, variantIndex: item.variant_index});
+      const pairUrl = pair?.assets?.listen ? assetUrl(pair.assets.listen) : undefined;
+      if (pair && pairUrl) {
+        player.enqueue({id: pair.id, takeId: pair.id, title: `${song.title} ${t('separator')} ${takeName(pair)}`, url: pairUrl, duration_s: pair.duration_s, songId: song.id, pairId: pair.batch_id ?? pair.root_id ?? pairId, variantIndex: pair.variant_index});
       }
     }
   }
@@ -87,5 +96,5 @@ export default function SongDetailPage() {
   if (error) return <div className="page"><p role="alert">{t('error')}</p><Link href="/songs">{t('back')}</Link></div>;
   if (!song) return <div className="page"><p role="status">{t('loading')}</p></div>;
   const masterValue = song.master_take_id ? takes.find(item => item.id === song.master_take_id)?.label ?? song.master_take_id : t('noMaster');
-  return <div className="page song-detail"><Link href="/songs">{t('back')}</Link><header className="page-heading"><p className="eyebrow">{t('eyebrow')}</p><h1>{song.title}</h1><p>{song.artist ?? song.style_prompt}</p><p className="song-meta"><span>{t('statusLabel')} {song.status}</span>{bpm !== null && <span>{t('bpm')} {bpm}</span>}</p><p>{t('masterValue', {value: masterValue})}</p></header><nav className="song-tabs" aria-label={t('tabs')}><button type="button" aria-pressed={tab === 'audio'} onClick={() => setTab('audio')}>{t('audio')}</button><button type="button" aria-pressed={tab === 'lyrics'} onClick={() => setTab('lyrics')}>{t('lyrics')}</button><button type="button" disabled>{t('videoSoon')}</button></nav>{tab === 'audio' ? <section className="song-audio"><Waveform peaks={take ? peaks : []} beats={beats} duration_s={take?.duration_s ?? 0} value={position} onChange={value => { setPosition(value); window.dispatchEvent(new CustomEvent('studio:seek', {detail: value * (take?.duration_s ?? 0)})); }}/><h2>{t('takes')}</h2><ul className="take-list">{takes.map(item => { const pair = findPairedTake(takes, item); return <li key={item.id} className={item.id === selected ? 'selected' : ''}><button type="button" onClick={() => selectTake(item)}>{item.label ?? item.task} {t('separator')} {item.status}</button><div className="take-actions"><button type="button" aria-label={`${t('rating')} ${item.label ?? item.task}`} onClick={() => void rateTake(item, item.rating === 5 ? 0 : 5)}>{item.rating ? t('ratingValue', {value: item.rating}) : t('unrated')}</button><button type="button" onClick={() => void toggleFavorite(item)} aria-pressed={item.favorite}>{item.favorite ? t('favoriteOn') : t('favoriteOff')}</button><button type="button" onClick={() => void chooseMaster(item)} disabled={song.master_take_id === item.id}>{t('masterAction')}</button>{pair && <button type="button" onClick={() => selectTake(pair)}>{t('pairAction')}</button>}<button type="button" onClick={() => void download(item, 'listen')}>{t('downloadMp3')}</button><button type="button" onClick={() => void download(item, 'master')}>{t('downloadFlac')}</button></div></li>; })}</ul>{downloadError && <p role="alert">{t('downloadError')}</p>}</section> : <section className="lyrics-panel"><h2>{t('lyrics')}</h2>{lyrics.map((version, index) => { const previous = lyrics[index - 1]; const usedBy = takes.filter(item => item.lyrics_version_id === version.id); return <article key={version.id}><h3>{version.source} {t('separator')} {version.declaration}</h3><p>{t('usedBy')} {t('separator')} {usedBy.length ? usedBy.map(item => item.label ?? item.id).join(t('separator')) : t('noTake')}</p><pre>{version.text}</pre>{previous && <><h4>{t('difference')}</h4><pre className="lyrics-diff">{lyricDiff(previous.text, version.text)}</pre></>}</article>; })}</section>}<ProvenancePanel take={take}/></div>;
+  return <div className="page song-detail"><Link href="/songs">{t('back')}</Link><header className="page-heading"><p className="eyebrow">{t('eyebrow')}</p><h1>{song.title}</h1><p>{song.artist ?? song.style_prompt}</p><p className="song-meta"><span>{t('statusLabel')} {te(songStatusKey(song.status) as never)}</span>{bpm !== null && <span>{t('bpm')} {bpm}</span>}</p><p>{t('masterValue', {value: masterValue})}</p></header><nav className="song-tabs" aria-label={t('tabs')}><button type="button" aria-pressed={tab === 'audio'} onClick={() => setTab('audio')}>{t('audio')}</button><button type="button" aria-pressed={tab === 'lyrics'} onClick={() => setTab('lyrics')}>{t('lyrics')}</button><button type="button" disabled>{t('videoSoon')}</button></nav>{tab === 'audio' ? <section className="song-audio"><Waveform peaks={take ? peaks : []} beats={beats} duration_s={take?.duration_s ?? 0} value={position} onChange={value => { setPosition(value); window.dispatchEvent(new CustomEvent('studio:seek', {detail: value * (take?.duration_s ?? 0)})); }}/><h2>{t('takes')}</h2><ul className="take-list">{takes.map(item => { const pair = findPairedTake(takes, item); return <li key={item.id} className={item.id === selected ? 'selected' : ''}><button type="button" onClick={() => selectTake(item)}>{takeName(item)} {t('separator')} {te(takeStatusKey(item.status) as never)}</button><div className="take-actions"><button type="button" aria-label={`${t('rating')} ${takeName(item)}`} onClick={() => void rateTake(item, item.rating === 5 ? 0 : 5)}>{item.rating ? t('ratingValue', {value: item.rating}) : t('unrated')}</button><button type="button" onClick={() => void toggleFavorite(item)} aria-pressed={item.favorite}>{item.favorite ? t('favoriteOn') : t('favoriteOff')}</button><button type="button" onClick={() => void chooseMaster(item)} disabled={song.master_take_id === item.id}>{t('masterAction')}</button>{pair && <button type="button" onClick={() => selectTake(pair)}>{t('pairAction')}</button>}<button type="button" onClick={() => void download(item, 'listen')}>{t('downloadMp3')}</button><button type="button" onClick={() => void download(item, 'master')}>{t('downloadFlac')}</button></div></li>; })}</ul>{downloadError && <p role="alert">{t('downloadError')}</p>}</section> : <section className="lyrics-panel"><h2>{t('lyrics')}</h2>{lyrics.map((version, index) => { const previous = lyrics[index - 1]; const usedBy = takes.filter(item => item.lyrics_version_id === version.id); return <article key={version.id}><h3>{version.source} {t('separator')} {version.declaration}</h3><p>{t('usedBy')} {t('separator')} {usedBy.length ? usedBy.map(item => item.label ?? item.id).join(t('separator')) : t('noTake')}</p><pre>{version.text}</pre>{previous && <><h4>{t('difference')}</h4><pre className="lyrics-diff">{lyricDiff(previous.text, version.text)}</pre></>}</article>; })}</section>}<ProvenancePanel take={take}/></div>;
 }

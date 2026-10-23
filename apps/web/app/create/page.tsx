@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import {FormEvent, useEffect, useMemo, useRef, useState} from 'react';
 import {useTranslations} from 'next-intl';
-import {API_ORIGIN, ApiError, cancelJob, createGeneration, estimateGeneration, getSystemInfo, getTakePeaks, retryJob, type SystemInfo} from '../../lib/api';
+import {API_ORIGIN, ApiError, cancelJob, createGeneration, estimateGeneration, getSystemInfo, getTakePeaks, isFeatureVerified, retryJob, taskParamProperties, type SystemInfo} from '../../lib/api';
 import {LyricsEditor} from '../../components/LyricsEditor/LyricsEditor';
 import {parseLyrics} from '../../lib/lyrics';
 import {GenerationFeed, type FeedJob} from '../../components/GenerationFeed';
@@ -71,7 +71,7 @@ export default function CreatePage() {
     shift: {type: 'number', minimum: 1, maximum: 5},
     time_signature: {type: 'string', pattern: '^[1-9][0-9]?/(1|2|4|8|16|32)$'},
   };
-  const paramRule = (name: string) => selectedTask?.params_schema?.properties?.[name] as Record<string, unknown> | undefined ?? fallbackSchema[name];
+  const paramRule = (name: string) => taskParamProperties(selectedTask)?.[name] ?? fallbackSchema[name];
   const validParam = (name: string, value: string) => {
     if (!value) return true;
     const rule = paramRule(name);
@@ -84,10 +84,9 @@ export default function CreatePage() {
   };
   const supportsParam = (name: string) => {
     if (!selectedTask) return ACE_STEP_TURBO_PARAMS.has(name);
-    const properties = selectedTask.params_schema?.properties;
+    const properties = taskParamProperties(selectedTask);
     if (!properties || !(name in properties)) return false;
-    const feature = selectedTask.features?.[name];
-    return !feature || feature.verified === true;
+    return isFeatureVerified(selectedTask, name) !== false;
   };
   const invalidLyrics = !instrumental && (lyrics.trim().length === 0 || parsed.warnings.length > 0);
   const invalidStyle = stylePrompt.trim().length === 0;
@@ -245,7 +244,7 @@ export default function CreatePage() {
         <button type="submit" className="primary" disabled={!canSubmit}>{busy ? t('submitting') : t('submit')}</button>
       </form>
     </section>
-    <GenerationFeed jobs={feedJobs} onRetry={job => { void retryJob(job.job_id).then(result => setFeedJobs(current => [...current.filter(item => item.job_id !== job.job_id), ...createFeedJobs(result)])).catch(() => undefined); }} onCancel={job => { void cancelJob(job.job_id).then(() => setFeedJobs(current => current.map(item => item.job_id === job.job_id ? {...item, status: 'cancelled', stage: null} : item))).catch(() => undefined); }} />
+    <GenerationFeed jobs={feedJobs} onRetry={job => { void retryJob(job.job_id).then(result => setFeedJobs(current => [...current.filter(item => item.job_id !== job.job_id), ...createFeedJobs({...result, song_id: job.song_id})])).catch(() => undefined); }} onCancel={job => { void cancelJob(job.job_id).then(() => setFeedJobs(current => current.map(item => item.job_id === job.job_id ? {...item, status: 'cancelled', stage: null} : item))).catch(() => undefined); }} />
     <p><Link href="/system">{t('system')}</Link></p>
   </div>;
 }
