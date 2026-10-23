@@ -379,14 +379,16 @@ verificacion: obligatoria
     - dos hex fuera de tokens;
     - no hay test de contraste AA;
     - `'MiB'`/`'—'` en template strings y valores de estado (`ready`, `music.song`) mostrados sin traducir;
-    - **`build` falla** con `ERR_SWC_NATIVE_CACHE` (DACL de `.cache/web-runtime`).
+    - **`build` falla** con `ERR_SWC_NATIVE_CACHE`. La causa resultó ser doble:
+      1. dos ACE huérfanas en la raíz del proyecto, que se quitaron con autorización del propietario;
+      2. el lock de SWC medía 263 caracteres, por encima del MAX_PATH de 260, y se corrigió con cachés en rutas cortas (`f80382b`).
 
   **Decisión del propietario (2026-10-23):** las funciones web que quedan fuera del M1 recortado (colecciones, papelera y filtros, página Sistema completa, procedencia, diff de letra, beats y A/B, cola y atajos, chips de estilo, tema claro) **se dejan tal cual, sin ampliarlas**. T-08 a T-14 solo arreglan lo que esté roto.
 - **Pendiente detectado en la revisión de T-07**: `SystemInfo.gpu.limit_mb` frente a `cap_mb` → CA-1.
-- **Estado**: en-progreso
+- **Estado**: en-revision
 - **Tipo**: frontend
 - **Dependencias**: T-03, T-07
-- **Archivos**: `apps/web/lib/api.ts`, `apps/web/lib/api.test.ts`, `apps/web/lib/generated/api.d.ts`, `apps/web/app/**` (solo los usos de tipos y textos), `apps/web/components/**` (ídem), `apps/web/styles/*.css`, `apps/web/messages/es.json`, `apps/web/**/*.test.ts(x)` (nuevos: contraste, contrato, i18n), `apps/server/app/domain_routes.py` y `apps/server/app/api_models.py` (solo los DTO de respuesta de CA-2), `packages/contracts/openapi.json`, `scripts/fetch_web_tools.py`, `scripts/web_build_inputs.py` y `scripts/pnpm.*` (solo si CA-5 lo exige)
+- **Archivos**: `apps/web/lib/api.ts`, `apps/web/lib/api.test.ts`, `apps/web/lib/generated/api.d.ts`, `apps/web/app/**` (solo los usos de tipos y textos), `apps/web/components/**` (ídem), `apps/web/styles/*.css`, `apps/web/messages/es.json`, `apps/web/**/*.test.ts(x)` (nuevos: contraste, contrato, i18n), `apps/server/app/domain_routes.py` y `apps/server/app/api_models.py` (solo los DTO de respuesta de CA-2), `packages/contracts/openapi.json`, `scripts/fetch_web_tools.py`, `scripts/web_build_inputs.py` y `scripts/pnpm.*` (solo si CA-5 lo exige). Añadidos al revisar (2026-10-23, justificados): `apps/web/lib/enum-labels.ts` (i18n de estados, CA-4), `apps/web/lib/{contract,contrast,enum-labels,i18n-keys}.test.ts`, `apps/web/eslint.config.mjs` (regla de literales de UI, CA-4), `docs/producto/ux.md` (tokens AA), `tests/test_web_tool_entrypoints.py`, `.gitignore` y `.dockerignore` (raíz corta del test de SWC, CA-5)
 - **Verificación** (PowerShell; el wrapper de bash de `pnpm` rechaza Git Bash):
   - `. .\scripts\env.ps1; pnpm --filter ./apps/web lint` → 0 errores;
   - `… test` en verde;
@@ -396,28 +398,40 @@ verificacion: obligatoria
   - `uv run pytest apps/server/tests -k "routes or api or openapi" -m "not gpu"` en verde.
 
 **Criterios de aceptación**
-- [ ] CA-1 (cliente tipado):
+- [x] CA-1 (cliente tipado):
   - `lib/api.ts` deriva sus tipos de `components['schemas']`/`paths` de `lib/generated/api.d.ts` para todo endpoint con esquema, sin `as` sin validar donde haya tipo generado.
   - Quedan corregidos los desajustes: `cap_mb`, `asset.url` opcional (sin romper donde se usaba `asset.url.startsWith`), campos obligatorios u opcionales según el contrato y campos que faltaban.
   - La página Sistema muestra el tope real.
   - Hay un test que falla si `api.d.ts` no coincide con lo que genera `pnpm gen` sobre `openapi.json`.
-- [ ] CA-2 (contrato de las respuestas sin esquema):
+- [x] CA-2 (contrato de las respuestas sin esquema):
   - El server declara el modelo de respuesta de `POST /api/generations` (202), `POST /api/jobs/{id}/cancel`, `POST /api/jobs/{id}/retry` y `POST /api/system/unload`, reflejando lo que devuelven hoy, sin cambiar los datos.
   - `openapi.json` y `api.d.ts` están regenerados y el cliente los usa.
   - `GET /takes/{id}/analysis` queda fuera (beats está fuera del M1 recortado).
-- [ ] CA-3 (tokens y AA):
+- [x] CA-3 (tokens y AA):
   - Los dos hex sueltos de `globals.css` pasan a tokens.
   - Hay un test de contraste **WCAG AA** (≥ 4,5:1 en texto normal, ≥ 3:1 en texto grande y UI) sobre los pares texto/fondo del **tema oscuro** definidos en `tokens.css`.
   - Si algún par no llega, se ajusta el token **dentro de la paleta de `ux.md`**; si `ux.md` cambia, se actualiza en el mismo commit.
-- [ ] CA-4 (i18n):
+- [x] CA-4 (i18n):
   - Sin literales de UI en template strings (`'MiB'`, `'—'`).
   - Los estados y tareas que se muestran (`ready`, `failed`, `music.song`…) se traducen desde `messages/es.json`.
   - Un test comprueba que toda clave usada estáticamente existe en `es.json`.
-- [ ] CA-5 (`build`):
+- [x] CA-5 (`build`):
   - `pnpm --filter ./apps/web build` termina con exit 0.
   - La causa del `ERR_SWC_NATIVE_CACHE` se diagnostica con evidencia. Si es un permiso o caché local, se corrige el script de bootstrap o de herramientas que la crea, o se documenta el paso, **sin desactivar la comprobación de seguridad** que lo detecta.
-- [ ] CA-6: `lint`, `test` y `tsc` en verde; `export_contracts.py --check` en verde; tests de API del server en verde.
+- [x] CA-6: `lint`, `test` y `tsc` en verde; `export_contracts.py --check` en verde; tests de API del server en verde.
 - **Changelog**: La web usa el contrato generado de la API (la página Sistema muestra el tope de VRAM real), cumple el contraste AA en el tema oscuro, no muestra textos sin traducir y vuelve a compilar.
+- **Evidencia de la Verificación** (2026-10-23, orquestador, PowerShell, rama `m1/t-08-web` en `43f1d3f`):
+  - `lint` exit 0;
+  - `tsc --noEmit` exit 0;
+  - `test`: 29 ficheros, 312 passed;
+  - `build` exit 0 (rutas `/`, `/create`, `/songs`, `/songs/[id]` y `/system`);
+  - `export_contracts.py --check`: `openapi.json up to date`;
+  - pytest de API del server: 117 passed y 8 skipped;
+  - SWC, caché y Playwright: `tests/test_web_tool_entrypoints.py -k "native or cache or swc or playwright or environment"` dio 28 passed.
+- **QA** (2026-10-23, orquestador, modo sin UI acotado a T-08, el mismo criterio que en T-04, T-05 y T-07):
+  - la Verificación está en verde;
+  - **`qa-gate.py` sale con exit 1** («sin resultados»), porque las E2E de la web son de T-15;
+  - T-08 queda `en-revision`, se integra en `main` y pasa a `completado` cuando T-15 ejecute las E2E en verde.
 
 ### T-09 — Crear: letra, estilo, autoría y avanzado
 - **Descripción**: Editor de letra con validación en vivo, estilo, autoría obligatoria, instrumental y avanzado según el `params_schema`. Chips y estilos a excluir quedan fuera.
@@ -754,3 +768,45 @@ Lentes A, B y D sobre el fix2 (`7ba155e..9c147e3`).
 | # | Grado | Gap | Tarea | Corrección | Evidencia |
 |---|---|---|---|---|---|
 | 1 | Minor | Algunos jobs nunca se reintentarán y aun así quedan aparcados para siempre: VRAM en bf16 sin modo `offload` en el catálogo, engine o modelo retirado del catálogo, o `not_before` ilegible. Su `tmp/` no se limpia nunca. El coste está acotado (≤200 por pasada, sin bucle caliente). Es una decisión explícita y conservadora (docstring `cleanup.py:152-154`) | T-17 | deuda aceptada | `cleanup.py:146-155,243-245` |
+
+## Revisión de dos lentes — intento 1: Fase 4 (T-08) — dos Important pendientes
+
+Lentes A, B y C sobre `main..m1/t-08-web` (`6b4b466..46490f4`). La lente C se activó por la ruta de `.dockerignore` y de `tokens.css` (en este caso, tokens de diseño); no halló nada. La lente D no aplicó.
+
+- **Lente A, ✓:** CA-1, CA-2 (0 cambios rompedores de 12 según `openapi-lint --diff`), CA-3 y CA-4a. CA-5 y CA-6 quedan pendientes de pegar aquí su Verificación.
+- **Lente C, sin hallazgos:** `safe_path` y `native_cache` siguen rechazando enlaces y junctions bajo `.cache/swc` y `.cache/la`. Los DTO no exponen rutas del host.
+- **Tests de las lentes:**
+  - API, 117 passed y 8 skipped;
+  - 256 passed y 3 skipped (unload/cancel/retry/create/openapi);
+  - vitest de los ficheros nuevos, 53 passed;
+  - SWC/cache, 6 passed.
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| 1 | Important | CA-4b: la página Sistema muestra `engine.state` y los ids de tarea (`ready`, `music.song`) sin traducir | T-08 | corregido (`43f1d3f`) | `apps/web/app/system/page.tsx:53` |
+| 2 | Important | Regresión: al mover `LOCALAPPDATA` a `.cache/la`, Playwright ya no encuentra los navegadores instalados en `.cache/web-runtime/local-appdata/ms-playwright` y la Verificación E2E falla con «Executable doesn't exist» | T-08 | corregido (`840a227`) | `scripts/pnpm.py:312`; `chromium.executablePath()` da false con el nuevo `LOCALAPPDATA` y true con el antiguo |
+| 3 | Minor | `jobAction` hace un cast a `JobRetryResponse` validando solo que la respuesta sea un objeto: un 202 `{}` deja `take_ids` en undefined en `create/page.tsx:247` | T-08 | corregido (`43f1d3f`) | `apps/web/lib/api.ts:128` |
+| 4 | Minor | `es.json` todavía tiene `"submitting": "Encolando?"` | T-08 | corregido (`43f1d3f`) | `apps/web/messages/es.json:65` |
+| 5 | Minor | La raíz corta `.t/<1 carácter>` solo admite 16 valores; `mkdir` va sin `exist_ok` y `rmtree` usa `ignore_errors`, así que un resto de una ejecución anterior o dos ejecuciones en paralelo dan `FileExistsError` intermitente | T-08 | corregido (`840a227`) | `tests/test_web_tool_entrypoints.py:23-28` |
+| 6 | Minor | El test de claves i18n solo mira `t(` cuando viene de `useTranslations`: una clave que falte en `te(...)` o `tUnits(...)` no lo hace fallar | T-08 | corregido (`43f1d3f`) | `apps/web/lib/i18n-keys.test.ts:21,44` |
+| 7 | Minor | `authedGet`, `authedMutation` y `listSongs` devuelven `response.json()` sin validar (el cast implícito de antes) | T-08 | deuda aceptada: el contrato tipado lo cubre en compilación; la validación en runtime de todas las lecturas queda para cuando T-10 a T-12 toquen esas vistas | `apps/web/lib/api.ts:148,158,166,189-199` |
+| 8 | Minor | Quedan hex sueltos en `Waveform.tsx:25-27` y `GenerativeViz.tsx:56`; CA-3 solo pedía `globals.css` | T-08 | deuda aceptada: fuera de CA-3; se tratan en T-13 (reproductor) | `apps/web/components/Waveform.tsx:25-27` |
+
+## Revisión de dos lentes — intento 2: Fase 4 (T-08) — sin gaps Critical/Important
+
+Lentes A y B sobre `46490f4..43f1d3f` (commits `840a227` y `43f1d3f`). Las lentes C y D no aplican (`review-lens-select`). `scope-check` sale con exit 0.
+
+- **Gaps del intento 1:** 1 ✓ · 2 ✓ · 3 ✓ · 4 ✓ · 5 ✓ · 6 ✓.
+- **Estados del engine:** cubren el `Literal` del contrato (`idle|loading|busy|error`) y el `error` sintético del server. Sobran dos (`ready` y `unavailable`), lo que no es un fallo.
+- **`PLAYWRIGHT_BROWSERS_PATH`:** no rompe en un checkout limpio, porque `safe_path` no es estricto con los ancestros que no existen. Además, `chromium.executablePath()` existe.
+- **`jobAction`:** no rechaza ninguna respuesta real (`Cancellation.request` y `add_dependents`).
+- **Tests de las lentes:**
+  - server cancel/retry: 217 passed y 3 skipped;
+  - SWC/Playwright: 4 passed;
+  - vitest de los tres ficheros tocados: 10 passed.
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| 1 | Minor | En Sistema, toda tarea verificada distinta de `music.song` o `music.instrumental` sale como «Desconocido». Con el mock salen 19 iguales | T-08 | deuda aceptada: el propietario decidió no ampliar Sistema y el M1 recortado solo usa song e instrumental. Se etiquetan cuando M2 active esas tareas | `apps/web/lib/enum-labels.ts:4`; `apps/web/app/system/page.tsx:55` |
+| 2 | Minor | Ningún test comprueba que las claves `enums.engineState.*` existan en `es.json`, porque el test de alias salta las llamadas dinámicas `te(...)` | T-08 | deuda aceptada: se cubre al revisar T-09 a T-13, que añaden más etiquetas de estado | `apps/web/lib/i18n-keys.test.ts:56-61` |
+

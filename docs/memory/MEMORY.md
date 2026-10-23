@@ -9,3 +9,4 @@
 - [GPU sharing](gpu-sharing.md) — knowledge-graphs stack (Ollama ~8.9 GB) shares the 5070; free VRAM before GPU work
 - [Use custom-agents plugin](use-custom-agents-plugin.md) — all work goes through the custom-agents plugin (dev-cycle, quick-implement, agents, skills)
 - [Reencauce 2026-10-22](reencauce-2026-10-22.md) — post-Codex re-scope: one milestone, M1 trimmed, M2/M3 frozen, storage journal parked, lean ledgers
+- [Push authorized](push-authorized.md) — Claude pushes main to origin itself after each merge (no force-push)
