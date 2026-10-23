@@ -312,6 +312,10 @@ def environment(root: Path, tools: dict) -> dict:
     env["LOCALAPPDATA"] = str(native_cache(root, swc_fallback))
     # El fallback del addon es <LOCALAPPDATA>/swc; se crea dentro de la caché validada.
     native_cache(root, swc_fallback / "swc")
+    # Playwright resuelve %LOCALAPPDATA%/ms-playwright; al mover LOCALAPPDATA los
+    # navegadores ya instalados quedaron en web-runtime/local-appdata.
+    browsers = manager.safe_path(base / "local-appdata/ms-playwright", root)
+    env["PLAYWRIGHT_BROWSERS_PATH"] = str(browsers)
     env["SWC_NATIVE_BINDING_CACHE"] = str(native_cache(root, swc_cache))
     settings = {
         "manage-package-manager-versions": "false",

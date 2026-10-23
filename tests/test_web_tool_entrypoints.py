@@ -20,12 +20,24 @@ PS = (
 @pytest.mark.skipif(os.name != "nt", reason="SWC y Node oficiales Windows")
 def test_native_swc_transform_with_isolated_environment(cli, tmp_path):
     # Raíz corta (.t/, ignorada por git) dentro del proyecto: el lock de SWC no cabe en MAX_PATH bajo pytest-tmp.
-    short = ROOT / ".t" / tmp_path.name[:1]
-    short.mkdir(parents=True)
+    short = _short_root()
     try:
         _swc_transform(cli, tmp_path, short)
     finally:
-        shutil.rmtree(short, ignore_errors=True)
+        shutil.rmtree(short)  # un fallo al limpiar debe verse, no callarse
+
+
+def _short_root():
+    """Primer carácter libre de .t/: mkdir sin exist_ok evita chocar con otras ejecuciones."""
+    base = ROOT / ".t"
+    base.mkdir(exist_ok=True)
+    for candidate in "abcdefghijklmnopqrstuvwxyz0123456789":
+        try:
+            (base / candidate).mkdir()
+        except FileExistsError:
+            continue
+        return base / candidate
+    raise RuntimeError(".t/ está lleno de restos de ejecuciones anteriores; bórralo")
 
 
 def _swc_transform(cli, tmp_path, short):
@@ -783,6 +795,14 @@ def _swc_lock_length(root, key):
         + 128
         + len(".lock")
     )
+
+
+def test_environment_pins_playwright_browsers_to_existing_location(cli, tmp_path):
+    env = cli.environment(tmp_path, {"node": {"dest": tmp_path / "node"}})
+    expected = tmp_path / ".cache/web-runtime/local-appdata/ms-playwright"
+    assert Path(env["PLAYWRIGHT_BROWSERS_PATH"]) == expected
+    # LOCALAPPDATA ya no apunta a web-runtime: sin el pin Playwright no hallaría los navegadores.
+    assert not Path(env["LOCALAPPDATA"]).is_relative_to(tmp_path / ".cache/web-runtime")
 
 
 @pytest.mark.skipif(os.name != "nt", reason="MAX_PATH es una limitación de Windows")
