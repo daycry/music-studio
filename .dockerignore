@@ -13,4 +13,5 @@
 **/__pycache__/
 **/.venv/
 **/.cache/
+.t/
 **/node_modules/

@@ -5,6 +5,7 @@
 # Python (intérprete y venv gestionados por uv, dentro de la carpeta)
 .venv/
 .cache/
+/.t/
 __pycache__/
 *.pyc
 .pytest_cache/

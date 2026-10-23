@@ -19,11 +19,22 @@ PS = (
 
 @pytest.mark.skipif(os.name != "nt", reason="SWC y Node oficiales Windows")
 def test_native_swc_transform_with_isolated_environment(cli, tmp_path):
+    # Raíz corta (.t/, ignorada por git) dentro del proyecto: el lock de SWC no cabe en MAX_PATH bajo pytest-tmp.
+    short = ROOT / ".t" / tmp_path.name[:1]
+    short.mkdir(parents=True)
+    try:
+        _swc_transform(cli, tmp_path, short)
+    finally:
+        shutil.rmtree(short, ignore_errors=True)
+
+
+def _swc_transform(cli, tmp_path, short):
     """Transformación nativa real: no sustituye el wrapper canónico del build."""
     import hashlib
 
     tools = cli.verified_tools(ROOT)
-    env = cli.environment(tmp_path, tools)
+    env = cli.environment(short, tools)
+    cli.check_swc_path_budget(short)
     payload = (
         ROOT
         / "node_modules/.pnpm/@swc+core@1.16.13_@swc+helpers@0.5.23/node_modules/@swc/core"
@@ -33,7 +44,7 @@ def test_native_swc_transform_with_isolated_environment(cli, tmp_path):
         / "node_modules/.pnpm/@swc+core-win32-x64-msvc@1.16.13/node_modules/@swc/core-win32-x64-msvc/swc.win32-x64-msvc.node"
     )
     # Sólo bytes oficiales ya instalados; nunca descargar ni sustituir el binding.
-    script = tmp_path / "transform.cjs"
+    script = short / "transform.cjs"
     script.write_text(
         "const swc=require(" + json.dumps(str(payload)) + ");"
         "const result=swc.transformSync('const value: number = 42;',"
@@ -65,16 +76,14 @@ def test_native_swc_transform_with_isolated_environment(cli, tmp_path):
         encoding="utf-8",
     )
     with subprocess.Popen(
-        argv, cwd=tmp_path, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        argv, cwd=short, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     ) as child:
         stdout, stderr = child.communicate(timeout=60)
         (folder / "stdout-original.bin").write_bytes(stdout)
         (folder / "stderr-original.bin").write_bytes(stderr)
-        cache = tmp_path / ".cache/web-runtime"
+        cache = short / ".cache"
         writes = {
-            p.relative_to(tmp_path).as_posix(): hashlib.sha256(
-                p.read_bytes()
-            ).hexdigest()
+            p.relative_to(short).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
             for p in cache.rglob("*")
             if p.is_file()
         }
