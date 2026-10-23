@@ -364,10 +364,60 @@ verificacion: obligatoria
 
 ### T-08 — Web: esqueleto, tokens, tema oscuro, i18n, layout y cliente de API
 - **Descripción**: Next.js con `next-intl` (castellano), tokens de diseño, layout y cliente generado desde `openapi.json`. El tema claro queda fuera.
-- **Pendiente detectado en la revisión de T-07**: `apps/web/lib/api.ts` (`SystemInfo`) espera `gpu.limit_mb`, pero el server envía `cap_mb`. Conviene usar los tipos generados de `api.d.ts` en lugar de tipos a mano.
+
+  El mapa del 2026-10-23 dice qué está hecho y qué falta:
+  - **Ya funciona:**
+    - next-intl (`locale es`, 245 claves) y la regla ESLint `studio/no-ui-literals`;
+    - tokens (`styles/tokens.css`, copiados de `ux.md`);
+    - tema oscuro;
+    - layout con skip-link, nav y `PlayerDock`;
+    - `lint` y `tsc` en verde; `test` en verde (24 ficheros, 260 tests).
+  - **Huecos:**
+    - el cliente `lib/api.ts` está tipado **a mano**: solo `getHealth` usa `api.d.ts`;
+    - desajustes con el contrato: `gpu.limit_mb` frente a `cap_mb`, `asset.url` obligatoria en el cliente y opcional en el server, y campos que faltan o sobran en `SystemInfo`, `Estimate`, `GenerationInput`, `Song`, `Take`, `Peaks` y la sesión;
+    - las respuestas 202 de generations, cancel/retry y unload no tienen esquema en el server;
+    - dos hex fuera de tokens;
+    - no hay test de contraste AA;
+    - `'MiB'`/`'—'` en template strings y valores de estado (`ready`, `music.song`) mostrados sin traducir;
+    - **`build` falla** con `ERR_SWC_NATIVE_CACHE` (DACL de `.cache/web-runtime`).
+
+  **Decisión del propietario (2026-10-23):** las funciones web que quedan fuera del M1 recortado (colecciones, papelera y filtros, página Sistema completa, procedencia, diff de letra, beats y A/B, cola y atajos, chips de estilo, tema claro) **se dejan tal cual, sin ampliarlas**. T-08 a T-14 solo arreglan lo que esté roto.
+- **Pendiente detectado en la revisión de T-07**: `SystemInfo.gpu.limit_mb` frente a `cap_mb` → CA-1.
 - **Estado**: en-progreso
-- **Dependencias**: T-03
-- **Verificación**: `pnpm lint` y `pnpm test` en verde · `pnpm --filter web build` sin errores.
+- **Tipo**: frontend
+- **Dependencias**: T-03, T-07
+- **Archivos**: `apps/web/lib/api.ts`, `apps/web/lib/api.test.ts`, `apps/web/lib/generated/api.d.ts`, `apps/web/app/**` (solo los usos de tipos y textos), `apps/web/components/**` (ídem), `apps/web/styles/*.css`, `apps/web/messages/es.json`, `apps/web/**/*.test.ts(x)` (nuevos: contraste, contrato, i18n), `apps/server/app/domain_routes.py` y `apps/server/app/api_models.py` (solo los DTO de respuesta de CA-2), `packages/contracts/openapi.json`, `scripts/fetch_web_tools.py`, `scripts/web_build_inputs.py` y `scripts/pnpm.*` (solo si CA-5 lo exige)
+- **Verificación** (PowerShell; el wrapper de bash de `pnpm` rechaza Git Bash):
+  - `. .\scripts\env.ps1; pnpm --filter ./apps/web lint` → 0 errores;
+  - `… test` en verde;
+  - `… exec tsc --noEmit` → exit 0;
+  - `… build` → exit 0;
+  - `uv run scripts/export_contracts.py --check` → `up to date`;
+  - `uv run pytest apps/server/tests -k "routes or api or openapi" -m "not gpu"` en verde.
+
+**Criterios de aceptación**
+- [ ] CA-1 (cliente tipado):
+  - `lib/api.ts` deriva sus tipos de `components['schemas']`/`paths` de `lib/generated/api.d.ts` para todo endpoint con esquema, sin `as` sin validar donde haya tipo generado.
+  - Quedan corregidos los desajustes: `cap_mb`, `asset.url` opcional (sin romper donde se usaba `asset.url.startsWith`), campos obligatorios u opcionales según el contrato y campos que faltaban.
+  - La página Sistema muestra el tope real.
+  - Hay un test que falla si `api.d.ts` no coincide con lo que genera `pnpm gen` sobre `openapi.json`.
+- [ ] CA-2 (contrato de las respuestas sin esquema):
+  - El server declara el modelo de respuesta de `POST /api/generations` (202), `POST /api/jobs/{id}/cancel`, `POST /api/jobs/{id}/retry` y `POST /api/system/unload`, reflejando lo que devuelven hoy, sin cambiar los datos.
+  - `openapi.json` y `api.d.ts` están regenerados y el cliente los usa.
+  - `GET /takes/{id}/analysis` queda fuera (beats está fuera del M1 recortado).
+- [ ] CA-3 (tokens y AA):
+  - Los dos hex sueltos de `globals.css` pasan a tokens.
+  - Hay un test de contraste **WCAG AA** (≥ 4,5:1 en texto normal, ≥ 3:1 en texto grande y UI) sobre los pares texto/fondo del **tema oscuro** definidos en `tokens.css`.
+  - Si algún par no llega, se ajusta el token **dentro de la paleta de `ux.md`**; si `ux.md` cambia, se actualiza en el mismo commit.
+- [ ] CA-4 (i18n):
+  - Sin literales de UI en template strings (`'MiB'`, `'—'`).
+  - Los estados y tareas que se muestran (`ready`, `failed`, `music.song`…) se traducen desde `messages/es.json`.
+  - Un test comprueba que toda clave usada estáticamente existe en `es.json`.
+- [ ] CA-5 (`build`):
+  - `pnpm --filter ./apps/web build` termina con exit 0.
+  - La causa del `ERR_SWC_NATIVE_CACHE` se diagnostica con evidencia. Si es un permiso o caché local, se corrige el script de bootstrap o de herramientas que la crea, o se documenta el paso, **sin desactivar la comprobación de seguridad** que lo detecta.
+- [ ] CA-6: `lint`, `test` y `tsc` en verde; `export_contracts.py --check` en verde; tests de API del server en verde.
+- **Changelog**: La web usa el contrato generado de la API (la página Sistema muestra el tope de VRAM real), cumple el contraste AA en el tema oscuro, no muestra textos sin traducir y vuelve a compilar.
 
 ### T-09 — Crear: letra, estilo, autoría y avanzado
 - **Descripción**: Editor de letra con validación en vivo, estilo, autoría obligatoria, instrumental y avanzado según el `params_schema`. Chips y estilos a excluir quedan fuera.
