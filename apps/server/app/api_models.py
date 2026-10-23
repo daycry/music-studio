@@ -116,3 +116,27 @@ class SystemInfoDTO(BaseModel):
     models: list[SystemModelDTO]
     queue: SystemQueueDTO
     disk: SystemBytesDTO
+
+
+class GenerationQueuedDTO(BaseModel):
+    song_id: str
+    generation_job_id: str
+    post_job_id: str
+    take_ids: list[str]
+    beat_job_ids: list[str]
+
+
+class JobRetryDTO(BaseModel):
+    generation_job_id: str
+    post_job_id: str
+    take_ids: list[str]
+    beat_job_ids: list[str]
+
+
+class JobCancelDTO(BaseModel):
+    job_id: str
+    cancel_requested: bool
+
+
+class UnloadResultDTO(BaseModel):
+    freed_mb: float

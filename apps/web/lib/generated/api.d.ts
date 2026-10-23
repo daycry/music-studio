@@ -555,6 +555,19 @@ export interface components {
              */
             task: "music.song" | "music.instrumental";
         };
+        /** GenerationQueuedDTO */
+        GenerationQueuedDTO: {
+            /** Beat Job Ids */
+            beat_job_ids: string[];
+            /** Generation Job Id */
+            generation_job_id: string;
+            /** Post Job Id */
+            post_job_id: string;
+            /** Song Id */
+            song_id: string;
+            /** Take Ids */
+            take_ids: string[];
+        };
         /** HealthDTO */
         HealthDTO: {
             /**
@@ -567,6 +580,24 @@ export interface components {
              * @constant
              */
             status: "running";
+        };
+        /** JobCancelDTO */
+        JobCancelDTO: {
+            /** Cancel Requested */
+            cancel_requested: boolean;
+            /** Job Id */
+            job_id: string;
+        };
+        /** JobRetryDTO */
+        JobRetryDTO: {
+            /** Beat Job Ids */
+            beat_job_ids: string[];
+            /** Generation Job Id */
+            generation_job_id: string;
+            /** Post Job Id */
+            post_job_id: string;
+            /** Take Ids */
+            take_ids: string[];
         };
         /** LyricsCreateDTO */
         LyricsCreateDTO: {
@@ -829,6 +860,11 @@ export interface components {
             label?: string | null;
             /** Rating */
             rating?: number | null;
+        };
+        /** UnloadResultDTO */
+        UnloadResultDTO: {
+            /** Freed Mb */
+            freed_mb: number;
         };
     };
     responses: never;
@@ -1564,7 +1600,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["GenerationQueuedDTO"];
                 };
             };
             /** @description Session required */
@@ -1928,13 +1964,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description Cancellation requested */
             202: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["JobCancelDTO"];
                 };
             };
             /** @description Session required */
@@ -2112,13 +2148,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description Requeued */
             202: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["JobRetryDTO"];
                 };
             };
             /** @description Session required */
@@ -5295,13 +5331,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description Unloaded */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["UnloadResultDTO"];
                 };
             };
             /** @description Session required */

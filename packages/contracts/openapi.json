@@ -235,6 +235,45 @@
         "title": "GenerationCreateDTO",
         "type": "object"
       },
+      "GenerationQueuedDTO": {
+        "properties": {
+          "beat_job_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Beat Job Ids",
+            "type": "array"
+          },
+          "generation_job_id": {
+            "title": "Generation Job Id",
+            "type": "string"
+          },
+          "post_job_id": {
+            "title": "Post Job Id",
+            "type": "string"
+          },
+          "song_id": {
+            "title": "Song Id",
+            "type": "string"
+          },
+          "take_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Take Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "song_id",
+          "generation_job_id",
+          "post_job_id",
+          "take_ids",
+          "beat_job_ids"
+        ],
+        "title": "GenerationQueuedDTO",
+        "type": "object"
+      },
       "HealthDTO": {
         "properties": {
           "process": {
@@ -253,6 +292,58 @@
           "process"
         ],
         "title": "HealthDTO",
+        "type": "object"
+      },
+      "JobCancelDTO": {
+        "properties": {
+          "cancel_requested": {
+            "title": "Cancel Requested",
+            "type": "boolean"
+          },
+          "job_id": {
+            "title": "Job Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id",
+          "cancel_requested"
+        ],
+        "title": "JobCancelDTO",
+        "type": "object"
+      },
+      "JobRetryDTO": {
+        "properties": {
+          "beat_job_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Beat Job Ids",
+            "type": "array"
+          },
+          "generation_job_id": {
+            "title": "Generation Job Id",
+            "type": "string"
+          },
+          "post_job_id": {
+            "title": "Post Job Id",
+            "type": "string"
+          },
+          "take_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Take Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "generation_job_id",
+          "post_job_id",
+          "take_ids",
+          "beat_job_ids"
+        ],
+        "title": "JobRetryDTO",
         "type": "object"
       },
       "LyricsCreateDTO": {
@@ -1227,6 +1318,19 @@
           }
         },
         "title": "TakePatchDTO",
+        "type": "object"
+      },
+      "UnloadResultDTO": {
+        "properties": {
+          "freed_mb": {
+            "title": "Freed Mb",
+            "type": "number"
+          }
+        },
+        "required": [
+          "freed_mb"
+        ],
+        "title": "UnloadResultDTO",
         "type": "object"
       }
     }
@@ -2734,7 +2838,9 @@
           "202": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/GenerationQueuedDTO"
+                }
               }
             },
             "description": "Queued"
@@ -3485,10 +3591,12 @@
           "202": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/JobCancelDTO"
+                }
               }
             },
-            "description": "Successful Response"
+            "description": "Cancellation requested"
           },
           "401": {
             "content": {
@@ -3860,10 +3968,12 @@
           "202": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/JobRetryDTO"
+                }
               }
             },
-            "description": "Successful Response"
+            "description": "Requeued"
           },
           "401": {
             "content": {
@@ -10821,10 +10931,12 @@
           "200": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/UnloadResultDTO"
+                }
               }
             },
-            "description": "Successful Response"
+            "description": "Unloaded"
           },
           "401": {
             "content": {

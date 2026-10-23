@@ -23,10 +23,14 @@ from starlette.responses import JSONResponse, Response
 from . import models
 from .api_models import (
     EstimateResultDTO,
+    GenerationQueuedDTO,
+    JobCancelDTO,
+    JobRetryDTO,
     ModelsDTO,
     PeaksDTO,
     ProblemDTO,
     SystemInfoDTO,
+    UnloadResultDTO,
 )
 from .errors import problem
 from .event_routes import _credential
@@ -1819,7 +1823,10 @@ def register_domain_routes(application):
         _create_generation,
         methods=["POST"],
         operation_id="create_generation",
-        responses={202: {"description": "Queued"}, **_responses()},
+        responses={
+            202: _model_response(GenerationQueuedDTO, "Queued"),
+            **_responses(),
+        },
         status_code=202,
     )
     application.add_api_route(
@@ -1945,7 +1952,10 @@ def register_domain_routes(application):
         methods=["POST"],
         operation_id="cancel_job",
         status_code=202,
-        responses=_responses(),
+        responses={
+            202: _model_response(JobCancelDTO, "Cancellation requested"),
+            **_responses(),
+        },
     )
     application.add_api_route(
         "/api/jobs/{job_id}/retry",
@@ -1953,7 +1963,7 @@ def register_domain_routes(application):
         methods=["POST"],
         operation_id="retry_job",
         status_code=202,
-        responses=_responses(),
+        responses={202: _model_response(JobRetryDTO, "Requeued"), **_responses()},
     )
     application.add_api_route(
         "/api/models",
@@ -1977,7 +1987,10 @@ def register_domain_routes(application):
         _unload_system,
         methods=["POST"],
         operation_id="unload_system",
-        responses=_responses(),
+        responses={
+            200: _model_response(UnloadResultDTO, "Unloaded"),
+            **_responses(),
+        },
     )
     application.add_api_route(
         "/api/system",
