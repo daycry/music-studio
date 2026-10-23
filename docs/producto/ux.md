@@ -22,11 +22,11 @@ Herramienta de trabajo de audio, no web de marketing. Tema oscuro cálido por de
 ```css
 :root[data-theme="dark"] {
   --bg-0:#0E0C0A; --bg-1:#171412; --bg-2:#211D19; --bg-3:#2B2620;
-  --border-subtle:#2E2823; --border-strong:#453D34;
-  --text-primary:#F2EDE7; --text-secondary:#A89F94; --text-muted:#7A7166;
+  --border-subtle:#2E2823; --border-strong:#6E665B;
+  --text-primary:#F2EDE7; --text-secondary:#A89F94; --text-muted:#8F867B;
   --accent:#34D399; --accent-hover:#5CE0AE; --on-accent:#0E0C0A; --accent-muted:rgba(52,211,153,.14);
   --danger:#F87171; --warning:#E8C547; --info:#7FB8D8;
-  --wave-idle:#4A423A; --wave-played:var(--accent); --wave-generating:#6E675E;
+  --wave-idle:#6A6257; --wave-played:var(--accent); --wave-generating:#6E675E;
 }
 :root[data-theme="light"] {
   --bg-0:#FAF7F2; --bg-1:#F2EDE5; --bg-2:#EAE3D9; --bg-3:#FFFFFF;
