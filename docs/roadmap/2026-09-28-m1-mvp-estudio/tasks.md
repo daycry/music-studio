@@ -278,8 +278,15 @@ verificacion: obligatoria
 - **Descripción**: Etapas reales del job por SSE, con reconexión y estado inicial.
 - **Estado**: en-progreso
 - **Dependencias**: T-04
-- **Archivos**: `apps/server/app/sse.py`, `apps/server/app/event_routes.py`
-- **Verificación**: `uv run pytest apps/server/tests -k sse -m "not gpu"` en verde.
+- **Archivos**: `apps/server/app/sse.py`, `apps/server/app/event_routes.py`, `apps/server/app/queue/events.py` (sobre del evento y suscripción), `apps/server/tests/test_sse_*.py`, `apps/web/lib/events.ts` y su test (reinicio del contador de reintentos)
+- **Verificación**: `uv run pytest apps/server/tests -k "sse or event" -m "not gpu"` en verde · vitest de `lib/events` en verde.
+- **Revisión de cierre (2026-10-24, lente B sobre el código heredado):** tres defectos que rompen el progreso en vivo de la web → CA-1 a CA-3.
+
+**Criterios de aceptación**
+- [ ] CA-1 (Critical): los eventos `job.*` que publica `EventConsumer` llevan `song_id`, así que una suscripción con `?song_id=` (la que usa la web) los recibe en directo y en el replay. Un test HTTP se suscribe con `?song_id=` y recibe `job.stage`, `job.progress` y `job.done` publicados por el productor real, no por un sobre sintético.
+- [ ] CA-2 (Important): un heartbeat sin eventos no cierra la suscripción. Que venza el timeout de espera no cancela ni cierra `subscription.next()`. Un test con heartbeat corto recibe dos o más `: keep-alive` y después un evento. En la web, una conexión que termina bien reinicia el contador de reintentos (`lib/events.ts`).
+- [ ] CA-3 (Important): `/api/events` no da 422 cuando el dueño o la canción tienen más de 64 jobs. El ámbito incluye solo los jobs vivos (no terminales), o el límite deja de aplicarse a los terminales. Hay un test con 69 jobs (68 terminados).
+- [ ] CA-4: la Verificación está en verde, sin tocar el contrato de tipos ni de campos SSE que ya consume la web (`sse.py:13-25`).
 
 ## Fase 3 — API
 
@@ -437,31 +444,71 @@ verificacion: obligatoria
 - **Descripción**: Editor de letra con validación en vivo, estilo, autoría obligatoria, instrumental y avanzado según el `params_schema`. Chips y estilos a excluir quedan fuera.
 - **Estado**: en-progreso
 - **Dependencias**: T-08, T-07
-- **Verificación**: `pnpm test` en verde (unitarios del formulario) y E2E-crear de T-15.
+- **Archivos**: `apps/web/app/create/page.tsx` y su test, `apps/web/components/LyricsEditor/**`, `apps/web/lib/api.ts` (lectura del `code`), `apps/web/messages/es.json`
+- **Verificación** (PowerShell): `pnpm --filter ./apps/web lint`, `exec tsc --noEmit`, `test` y `build` en verde; E2E-crear de T-15.
+- **Mapa del 2026-10-24:** funcionan el parser compartido, la autoría obligatoria (botón deshabilitado y 422 traducido), el instrumental y el avanzado filtrado por `params_schema`. Fallan los puntos de CA-1 a CA-6.
+
+**Criterios de aceptación**
+- [ ] CA-1: la duración arranca vacía con el placeholder de 30. Vacía no envía `duration_s` y el server aplica 30 s. Nunca se envía `duration_s: 0`.
+- [ ] CA-2: las variantes arrancan en 1. El 2 solo se ofrece si la estimación (`vram_mb`) cabe en la VRAM libre de `/api/system`. Si no hay datos, solo 1.
+- [ ] CA-3: con el botón deshabilitado se ve un texto con cada motivo (letra vacía o inválida, estilo, autoría, idioma, avanzado inválido), enlazado con `aria-describedby`.
+- [ ] CA-4: un error de envío muestra el `code` del problem+json y su texto, no un mensaje genérico (CA-10 de la spec).
+- [ ] CA-5: el resaltado de etiquetas de `LyricsEditor` sale de `parseLyrics(...)`, sin una regex propia que contradiga la validación.
+- [ ] CA-6: si `/api/system` no responde, no se muestran parámetros avanzados inventados ni un `model_id` fijo: el formulario explica que el sistema no está disponible.
 
 ### T-10 — Tarjeta de generación en vivo
 - **Descripción**: La tarjeta muestra las etapas por SSE, los errores con `code`, `job_id` y reintentar, y la onda al terminar. El feed A/B queda fuera.
 - **Estado**: en-progreso
 - **Dependencias**: T-09, T-06
-- **Verificación**: E2E-generar de T-15 contra `engine-mock`.
+- **Archivos**: `apps/web/components/GenerationCard.tsx`, `apps/web/components/GenerationFeed.tsx`, `apps/web/lib/generation-feed.ts`, `apps/web/lib/event-reducer.ts`, `apps/web/app/create/page.tsx` (solo el feed), sus tests y `apps/web/messages/es.json`
+- **Verificación** (PowerShell): `pnpm --filter ./apps/web lint`, `exec tsc --noEmit`, `test` y `build` en verde; E2E-generar de T-15 contra `engine-mock`.
+- **Mapa del 2026-10-24:** el parser y el reducer SSE, el snapshot, y el `code` con `job_id` y Reintentar sin toast funcionan. Que no llegue ningún evento en vivo es culpa del server (T-06 CA-1).
+
+**Criterios de aceptación**
+- [ ] CA-1: el stepper refleja las etapas reales del engine (`loading_model`, `generating`, `decoding`) y la del post-proceso, con la misma correspondencia para el mock y para ACE-Step. Una etapa desconocida no deja el stepper sin marcar.
+- [ ] CA-2: la tarjeta pasa a «Lista» solo cuando el take está `ready` (siguiendo el `post_job_id` o el estado del take), no cuando acaba la generación.
+- [ ] CA-3: la onda final usa los pares [min,max] reales, sin recortar los negativos a 0.
+- [ ] CA-4: si Reintentar o Cancelar fallan (409 o 503), la tarjeta muestra el `code`, sin tragarse el error.
 
 ### T-11 — Biblioteca de canciones
 - **Descripción**: Lista con búsqueda FTS y preescucha del maestro. Grid, filtros avanzados y papelera en la UI quedan fuera.
 - **Estado**: en-progreso
 - **Dependencias**: T-07, T-08
-- **Verificación**: E2E-biblioteca de T-15.
+- **Archivos**: `apps/web/app/songs/page.tsx`, `apps/web/components/MasterPreview.tsx`, sus tests y `apps/web/messages/es.json`; en el server, la consulta FTS de `GET /api/songs` (`apps/server/app/domain_routes.py`) y su test
+- **Verificación**: `uv run pytest apps/server/tests -k "songs or fts" -m "not gpu"` en verde; web (PowerShell): `lint`, `tsc`, `test` y `build` en verde; E2E-biblioteca de T-15.
+- **Decisión (orquestador, 2026-10-24, reversible):** una canción sin maestro usa en la preescucha su último take `ready`, y la UI lo indica.
+
+**Criterios de aceptación**
+- [ ] CA-1 (server): las búsquedas `hip-hop`, `rock & roll`, `it's`, `AC/DC` y `amo` devuelven 200. Las cuatro primeras encuentran su canción y `amo` encuentra «amor» (por prefijo). Cada término se escapa antes de `MATCH` y una búsqueda nunca da 422 por la sintaxis de FTS5.
+- [ ] CA-2: Enter busca, y que se recarguen las dependencias no borra la búsqueda en curso.
+- [ ] CA-3: la preescucha funciona en canciones sin maestro, con su último take `ready`, y si no hay ninguno lo dice.
 
 ### T-12 — Vista de canción
 - **Descripción**: Takes con valoración y maestro, onda con seek, letra y descarga MP3/FLAC.
 - **Estado**: en-progreso
 - **Dependencias**: T-11
-- **Verificación**: E2E-cancion de T-15.
+- **Archivos**: `apps/web/app/songs/[id]/page.tsx` y su test nuevo, `apps/web/components/Waveform.tsx`, `apps/web/lib/api.ts` (descarga y PATCH), `apps/web/messages/es.json`; en el server, `PATCH /api/takes/{id}` (`domain_routes.py`: borrar la valoración con `null` y devolver `assets`) y su test
+- **Verificación**: `uv run pytest apps/server/tests -k "take" -m "not gpu"` en verde; web (PowerShell): `lint`, `tsc`, `test` y `build` en verde; E2E-cancion de T-15.
+
+**Criterios de aceptación**
+- [ ] CA-1: la onda usa todos los bins del canal 0 de los peaks, no solo el primero.
+- [ ] CA-2: la valoración se elige de 1 a 5 y volver a pulsar la misma la borra (`rating: null`, que el server acepta). Nunca se envía `0` y los errores se muestran.
+- [ ] CA-3: tras valorar o elegir maestro, el take conserva `assets` y sigue reproduciéndose. El PATCH devuelve el take con sus `assets`, o el cliente fusiona la respuesta.
+- [ ] CA-4: «Marcar maestro» solo se habilita en takes `ready` y su error se muestra.
+- [ ] CA-5: la descarga usa `?download=1` y el nombre que da el `Content-Disposition` del server.
+- [ ] CA-6: la página tiene test unitario (takes, valoración, maestro, onda y descarga).
 
 ### T-13 — Reproductor persistente
 - **Descripción**: El reproductor sobrevive a la navegación. La cola y los atajos quedan fuera.
 - **Estado**: en-progreso
 - **Dependencias**: T-08
-- **Verificación**: E2E-reproductor de T-15.
+- **Archivos**: `apps/web/components/PlayerContext.tsx`, `apps/web/components/PlayerDock.tsx` y sus tests; `apps/web/app/create/page.tsx` (solo la lectura de localStorage)
+- **Verificación** (PowerShell): `lint`, `tsc`, `test` y `build` en verde; E2E-reproductor de T-15.
+
+**Criterios de aceptación**
+- [ ] CA-1: no hay desajuste de hidratación: localStorage se lee en un efecto, no en el inicializador de `useState`.
+- [ ] CA-2: el `<audio>` nunca carga un `src` sin token. Play se habilita cuando el blob autenticado está listo.
+- [ ] CA-3: un test comprueba que la pista sigue al navegar entre `/songs` y `/create`.
 
 ### T-14 — Colecciones y página Sistema
 - **Descripción**: Aplazada (ADR-0089); el código parcial se conserva.
