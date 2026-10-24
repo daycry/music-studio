@@ -35,6 +35,14 @@ Cada hito es una iniciativa en `docs/roadmap/<YYYY-MM-DD>-<slug>/` con el format
 - **Plan y tareas** (lo exige `ledger-lint`): `borrador` · `en-progreso` · `en-revision` · `completado` · `cancelado`. Una tarea que espera a otra sigue en `borrador` (sus **Dependencias** lo indican); la opcional que no se haga pasa a `cancelado` con justificación.
 - **Prioridad:** `Baja` · `Media` · `Alta` · `Crítica`
 
+## Ideas sin especificar
+
+Las ideas de esta lista no tienen spec ni fecha. Cada una pasa por `/custom-agents:pm-cycle` cuando su hito se reactive. Mientras tanto no cambian el alcance de ningún hito.
+
+| Fecha | Idea | Hito candidato | Encaje y condiciones |
+|---|---|---|---|
+| 2026-10-24 | **Proveedores remotos opcionales con las cuentas del propietario**. Son dos: la API de NVIDIA (build.nvidia.com: LLM e imagen alojados, más NGC para imágenes base CUDA y NIM) y la API de OpenAI, que el propietario ya paga | M2 (letras, F-17) y M3 (portada, F-19); NGC como recurso si un engine da problemas de CUDA en la 5070 | **Condiciones:** <br>• Alternativa opcional y desactivada de fábrica (ADR-0014), con un adapter en el carril `remote` del server.<br>• La música queda **siempre local**: ninguno de los dos genera música comparable a ACE-Step.<br>• Claves solo en `.env` (`NVIDIA_API_KEY`, `OPENAI_API_KEY`), nunca en el repo ni en el chat.<br>• Necesita su fila en [`../legal/licencias.md`](../legal/licencias.md), con términos de uso, créditos o coste visibles y política de datos (qué se envía fuera).<br>• Los NIM en local no caben en 12 GB junto al Ollama compartido.<br>• La API de OpenAI se factura aparte de la suscripción de ChatGPT, así que hay que comprobar el coste por uso antes de activarla. |
+
 ## Histórico
 
 La iniciativa anterior `2026-07-27-plataforma-musical-ia` (planificación corporativa, 85 tareas, 2 completadas) está archivada en [`../archive/roadmap-2026-07-27/`](../archive/roadmap-2026-07-27/). No se continúa.
