@@ -3,7 +3,7 @@ type Schemas = components['schemas'];
 type JsonOf<Response> = Response extends {content: {'application/json': infer Body}} ? Body : never;
 type Ok<Op extends keyof operations, Status extends 200 | 202 = 200> = operations[Op]['responses'] extends Record<Status, infer Response> ? JsonOf<Response> : never;
 export type Health = Schemas['HealthDTO'];
-export class ApiError extends Error { constructor(public status: number, public code?: string) { super(code ?? String(status)); } }
+export class ApiError extends Error { constructor(public status: number, public code?: string, detail?: string) { super(detail ?? code ?? String(status)); } }
 export const API_ORIGIN = process.env.NEXT_PUBLIC_API_ORIGIN ?? 'http://127.0.0.1:8000';
 export async function getHealth(signal?: AbortSignal): Promise<Health> {
   const path: keyof paths = '/health';
@@ -75,10 +75,11 @@ export async function createGeneration(input: GenerationInput): Promise<Generati
     headers:{'Content-Type':'application/json', 'X-Studio-Session-Token':token},
     body:JSON.stringify(input),
   });
-  if (response.status === 401) {sessionToken = undefined; throw new ApiError(response.status);}
+  if (response.status === 401) sessionToken = undefined;
   if (!response.ok) {
-    const error: {code?:string} = await response.json().catch(() => ({}));
-    throw new ApiError(response.status, error.code);
+    const error: unknown = await response.json().catch(() => ({}));
+    throw new ApiError(response.status, isObject(error) && typeof error.code === 'string' ? error.code : undefined,
+      isObject(error) && typeof error.detail === 'string' ? error.detail : isObject(error) && typeof error.title === 'string' ? error.title : undefined);
   }
   return parseObject<GenerationResponse>(await response.json(), ['song_id', 'generation_job_id', 'post_job_id'], 'invalidGeneration');
 }
@@ -91,8 +92,8 @@ export async function estimateGeneration(input: Omit<EstimateInput, 'timeout_s' 
   });
   if (response.status === 401) {sessionToken = undefined; throw new ApiError(response.status);}
   if (!response.ok) {
-    const error: {code?:string} = await response.json().catch(() => ({}));
-    throw new ApiError(response.status, error.code);
+    const error: unknown = await response.json().catch(() => ({}));
+    throw new ApiError(response.status, isObject(error) && typeof error.code === 'string' ? error.code : undefined);
   }
   const body = await response.json();
   if (!isObject(body) || typeof body.eta_s !== 'number' || typeof body.vram_mb !== 'number') throw new Error('invalidEstimate');
@@ -122,7 +123,11 @@ async function jobAction<A extends 'cancel' | 'retry'>(jobId: string, action: A)
   const token = await getSessionToken();
   const response = await fetch(`${API_ORIGIN}/api/jobs/${encodeURIComponent(jobId)}/${action}`, {method:'POST', cache:'no-store', headers:{Accept:'application/json', 'X-Studio-Session-Token':token}});
   if (response.status === 401) {sessionToken = undefined; throw new ApiError(response.status);}
-  if (!response.ok) throw new ApiError(response.status);
+  if (!response.ok) {
+    const error: unknown = await response.json().catch(() => ({}));
+    throw new ApiError(response.status, isObject(error) && typeof error.code === 'string' ? error.code : undefined,
+      isObject(error) && typeof error.detail === 'string' ? error.detail : isObject(error) && typeof error.title === 'string' ? error.title : undefined);
+  }
   const body: unknown = await response.json();
   const strings = (value: unknown) => Array.isArray(value) && value.every(item => typeof item === 'string');
   const valid = action === 'cancel'
@@ -166,7 +171,11 @@ async function authedMutation(path: string, method: 'POST'|'PATCH', body: unknow
   const token = await getSessionToken();
   const response = await fetch(API_ORIGIN + path, {method, cache:'no-store', headers:{Accept:'application/json', 'Content-Type':'application/json', 'X-Studio-Session-Token':token}, body:JSON.stringify(body)});
   if (response.status === 401) { sessionToken = undefined; throw new ApiError(response.status); }
-  if (!response.ok) throw new ApiError(response.status);
+  if (!response.ok) {
+    const error: unknown = await response.json().catch(() => ({}));
+    throw new ApiError(response.status, isObject(error) && typeof error.code === 'string' ? error.code : undefined,
+      isObject(error) && typeof error.detail === 'string' ? error.detail : isObject(error) && typeof error.title === 'string' ? error.title : undefined);
+  }
   return await response.json();
 }
 export async function createCollection(name: string): Promise<Collection> { return await authedMutation('/api/collections', 'POST', {name}); }
@@ -186,8 +195,8 @@ export async function purgeSong(songId: string): Promise<void> {
   const response = await fetch(`${API_ORIGIN}/api/songs/${encodeURIComponent(songId)}/purge`, {method:'POST', cache:'no-store', headers:{'X-Studio-Session-Token':token}});
   if (response.status === 401) {sessionToken = undefined; throw new ApiError(response.status);}
   if (!response.ok) {
-    const error: {code?:string} = await response.json().catch(() => ({}));
-    throw new ApiError(response.status, error.code);
+    const error: unknown = await response.json().catch(() => ({}));
+    throw new ApiError(response.status, isObject(error) && typeof error.code === 'string' ? error.code : undefined);
   }
 }
 async function authedGet(path: string) {
@@ -203,22 +212,34 @@ export async function listLyrics(songId: string): Promise<LyricsList> { return a
 export async function getTakePeaks(takeId: string): Promise<Peaks> { return await authedGet(`/api/takes/${encodeURIComponent(takeId)}/peaks`); }
 // Sin esquema en el contrato (beats queda fuera del M1 recortado): tipo local explícito.
 export async function getTakeAnalysis(takeId: string): Promise<{items: TakeAnalysis[]}> { return await authedGet(`/api/takes/${encodeURIComponent(takeId)}/analysis`); }
-export async function getTakeAssetBlob(takeId: string, role: 'listen'|'master'): Promise<Blob> {
+async function fetchTakeAsset(takeId: string, role: 'listen'|'master', signal?: AbortSignal, download = false): Promise<Response> {
   const token = await getSessionToken();
   const path = role === 'master' ? 'master' : 'audio';
-  const response = await fetch(`${API_ORIGIN}/api/takes/${encodeURIComponent(takeId)}/${path}`, {cache:'no-store', headers:{Accept:role === 'master' ? 'audio/flac' : 'audio/mpeg', 'X-Studio-Session-Token':token}});
+  const response = await fetch(`${API_ORIGIN}/api/takes/${encodeURIComponent(takeId)}/${path}${download ? '?download=1' : ''}`, {signal, cache:'no-store', headers:{Accept:role === 'master' ? 'audio/flac' : 'audio/mpeg', 'X-Studio-Session-Token':token}});
   if (response.status === 401) { sessionToken = undefined; throw new ApiError(response.status); }
   if (!response.ok) throw new ApiError(response.status);
-  return response.blob();
+  return response;
 }
-export async function getTakeAudioBlob(takeId: string): Promise<Blob> { return getTakeAssetBlob(takeId, 'listen'); }
+export async function getTakeAssetBlob(takeId: string, role: 'listen'|'master', signal?: AbortSignal): Promise<Blob> {
+  return (await fetchTakeAsset(takeId, role, signal)).blob();
+}
+export async function getTakeAudioBlob(takeId: string, signal?: AbortSignal): Promise<Blob> { return getTakeAssetBlob(takeId, 'listen', signal); }
 export async function getTakeMasterBlob(takeId: string): Promise<Blob> { return getTakeAssetBlob(takeId, 'master'); }
 export async function downloadTakeAsset(takeId: string, role: 'listen'|'master'): Promise<void> {
-  const blob = await getTakeAssetBlob(takeId, role);
+  const response = await fetchTakeAsset(takeId, role, undefined, true);
+  const blob = await response.blob();
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
-  anchor.download = `${takeId}-${role}.${role === 'master' ? 'flac' : 'mp3'}`;
+  const disposition = response.headers.get('Content-Disposition') ?? '';
+  const extended = /filename\*=UTF-8'[^']*'([^;]+)/i.exec(disposition)?.[1];
+  const fallback = /filename\s*=\s*(?:"((?:\\.|[^"\\])*)"|([^;]+))/i.exec(disposition);
+  let filename = fallback?.[1]?.replace(/\\(.)/g, '$1') ?? fallback?.[2]?.trim();
+  if (extended) {
+    try { filename = decodeURIComponent(extended.trim()); } catch { /* Use the quoted fallback. */ }
+  }
+  filename = filename?.split(/[\\/]/).pop()?.replace(/[\x00-\x1f\x7f:]/g, '').trim();
+  anchor.download = filename && filename !== '.' && filename !== '..' ? filename : `${takeId}-${role}.${role === 'master' ? 'flac' : 'mp3'}`;
   anchor.click();
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
