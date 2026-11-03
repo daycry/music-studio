@@ -2,6 +2,7 @@
 
 import json
 import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -46,8 +47,9 @@ def retry_plan(engine, resolver, owner, chain, execution_id):
     return plan
 
 
+@pytest.mark.parametrize("detached_worker_namespace", [False, True])
 def test_retry_sparse_index_reserves_new_publication_without_overwriting_history(
-    engine, monkeypatch
+    engine, monkeypatch, detached_worker_namespace
 ):
     owner, song, _, resolver = services(engine)
     original = create(engine, owner, song, resolver)
@@ -71,15 +73,21 @@ def test_retry_sparse_index_reserves_new_publication_without_overwriting_history
         ffmpeg=resolver.data_dir / "synthetic-ffmpeg",
         owner_id=owner,
     )
+    if detached_worker_namespace:
+        # Other tests can replace the parent package without evicting its modules.
+        monkeypatch.delattr(sys.modules["app"], "worker", raising=False)
     # Explicit seam: no executable runs. Real pin, context, SQL, CAS and
     # Publisher.authority remain active; only binary verification is replaced.
-    monkeypatch.setattr("app.worker.execution.tool", lambda *_: None)
+    execution_globals = CpuAudioService._prepare.__globals__
+    monkeypatch.setitem(execution_globals, "tool", lambda *_: None)
     # Windows cannot open directories for fsync. This test proves logical
     # identity/reservation, not Linux filesystem durability or audio completion.
     flushes = []
     if os.name == "nt":
-        monkeypatch.setattr(
-            "app.worker.packages.fsync_directory", lambda path: flushes.append(path)
+        monkeypatch.setitem(
+            execution_globals["write_once"].__globals__,
+            "fsync_directory",
+            lambda path: flushes.append(path),
         )
     stored, run = service._prepare(plan, execution_id)
     assert stored["state"] == "prepared" and run.is_dir()

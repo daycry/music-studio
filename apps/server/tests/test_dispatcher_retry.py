@@ -933,10 +933,14 @@ def test_two_independent_sqlite_writers_reserve_only_one_next_ordinal(engine):
         assert session.get(Job, jid).attempt == 2
 
 
-def test_retry_preserves_frozen_owned_input_despite_changed_domain(engine):
+@pytest.mark.parametrize("submission_delay", [0.0, 0.8])
+def test_retry_preserves_frozen_owned_input_despite_changed_domain(
+    engine, submission_delay
+):
     import hashlib
 
     from app.models import new_id
+    from app.queue.inputs import stage_inputs
     from test_dispatcher_admission import add
     from test_queue_resolver import descriptor
 
@@ -944,15 +948,18 @@ def test_retry_preserves_frozen_owned_input_despite_changed_domain(engine):
         engine, status="running", attempt=1, engine_id="mock", model_id="mock"
     )
     aid = new_id()
-    path = settings().data_dir / "tmp" / "_server_inputs" / aid / "0"
-    path.parent.mkdir(parents=True)
-    path.write_bytes(b"actual frozen synthetic input")
-    wire = {
+    source = settings().data_dir / "uploads" / aid
+    source.parent.mkdir(parents=True, exist_ok=True)
+    source.write_bytes(b"actual frozen synthetic input")
+    original_input = {
         "role": "reference",
-        "path": path.relative_to(settings().data_dir).as_posix(),
+        "path": source.relative_to(settings().data_dir).as_posix(),
         "media_type": "audio/wav",
-        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
     }
+    staged = stage_inputs(settings().data_dir, [original_input])
+    wire = staged.wires[0]
+    path = settings().data_dir / wire["path"]
     body = {
         "job_id": aid,
         "task": "music.instrumental",
@@ -1002,6 +1009,17 @@ def test_retry_preserves_frozen_owned_input_despite_changed_domain(engine):
     ]
 
     async def run():
+        submitted = asyncio.Event()
+        original_submit = backend.submit
+
+        async def observed_submit(request):
+            # Acknowledgement can legitimately take longer than a scheduler tick.
+            await asyncio.sleep(submission_delay)
+            response = await original_submit(request)
+            submitted.set()
+            return response
+
+        backend.submit = observed_submit
         runtime = QueueRuntime(
             engine,
             settings(),
@@ -1010,7 +1028,8 @@ def test_retry_preserves_frozen_owned_input_despite_changed_domain(engine):
         )
         await runtime.start()
         try:
-            await asyncio.sleep(0.6)
+            assert path.is_file(), "Startup removed a frozen admission input"
+            await asyncio.wait_for(submitted.wait(), timeout=5)
             assert len(backend.posts) == 1, (
                 "Retry reread domain references instead of frozen inputs"
             )
