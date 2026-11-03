@@ -574,7 +574,14 @@ def _list_songs(request: Request):
                             text(
                                 "SELECT song_id FROM song_fts WHERE song_fts MATCH :query LIMIT 1000"
                             ),
-                            {"query": query_text},
+                            {
+                                "query": " AND ".join(
+                                    '"' + term.replace('"', '""') + '"*'
+                                    for term in query_text.split()
+                                    if any(char.isalnum() for char in term)
+                                )
+                                or '""'
+                            },
                         ).scalars()
                     )
                 except Exception:  # noqa: BLE001 - FTS parser boundary
@@ -1169,7 +1176,11 @@ def _list_song_takes(request: Request, song_id: str):
 def _patch_take(request: Request, take_id: str, payload: TakePatchDTO):
     try:
         binding, engine = _auth(request)
-        changes = payload.model_dump(exclude_none=True)
+        changes = {
+            key: value
+            for key, value in payload.model_dump(exclude_unset=True).items()
+            if value is not None or key == "rating"
+        }
         if not changes:
             raise ValueError("INVALID_PARAMS")
         with Session(engine) as session, session.begin():
@@ -1178,7 +1189,16 @@ def _patch_take(request: Request, take_id: str, payload: TakePatchDTO):
             for key, value in changes.items():
                 setattr(take, key, value)
             session.flush()
-            return _take_dict(take)
+            return _take_dict(
+                take,
+                assets=session.scalars(
+                    select(models.Asset).where(
+                        models.Asset.subject_type == "take",
+                        models.Asset.subject_id == take.id,
+                        models.Asset.owner_id == binding.owner_id,
+                    )
+                ).all(),
+            )
     except SessionError as error:
         return problem(error.code)
     except ValueError as error:

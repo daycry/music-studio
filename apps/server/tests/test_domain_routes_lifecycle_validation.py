@@ -389,12 +389,16 @@ def test_library_rejects_invalid_filters_without_mutating_data(tmp_path):
                     422,
                     "INVALID_PARAMS",
                 )
-        for params in ({"favorite": "yes"}, {"status": "unknown"}, {"q": '"'}):
+        for params in ({"favorite": "yes"}, {"status": "unknown"}):
             assert_problem(
                 client.get("/api/songs", params=params, headers=headers(token)),
                 422,
                 "INVALID_PARAMS",
             )
+        # La búsqueda es texto literal (T-11), no sintaxis FTS del cliente.
+        quoted = client.get("/api/songs", params={"q": '"'}, headers=headers(token))
+        assert quoted.status_code == 200, quoted.text
+        assert quoted.json() == {"items": [], "next": None}
         assert (
             client.get(f"/api/songs/{identifier}", headers=headers(token)).json()[
                 "title"

@@ -727,3 +727,66 @@ def test_openapi_audio_and_take_shapes(tmp_path):
         )
         collection_post = spec["paths"]["/api/collections"]["post"]["responses"]
         assert "201" in collection_post and "200" not in collection_post
+
+
+def test_songs_fts_literal_terms_and_prefix(tmp_path):
+    with connection(tmp_path) as client:
+        token = issue(client)
+        for query, title in [
+            ("hip-hop", "hip-hop"),
+            ("rock & roll", "rock & roll"),
+            ("it's", "it's"),
+            ("AC/DC", "AC/DC"),
+            ("amo", "amor"),
+            ('" OR title:*', '" OR title:*'),
+        ]:
+            created = client.post(
+                "/api/songs", headers=headers(token), json={"title": title}
+            )
+            assert created.status_code == 201, created.text
+            response = client.get(
+                "/api/songs", headers=headers(token), params={"q": query}
+            )
+            assert response.status_code == 200, (query, response.text)
+            assert created.json()["id"] in {
+                song["id"] for song in response.json()["items"]
+            }, query
+        for query in ['"', "*", "()", "   ", "AND NOT", "title:"]:
+            response = client.get(
+                "/api/songs", headers=headers(token), params={"q": query}
+            )
+            assert response.status_code == 200, (query, response.text)
+
+
+def test_take_patch_clears_rating_and_preserves_assets(tmp_path):
+    with connection(tmp_path) as client:
+        token = issue(client)
+        _, take_id, _ = ready_take(client, token, tmp_path)
+        url = f"/api/takes/{take_id}"
+        rated = client.patch(url, headers=headers(token), json={"rating": 3})
+        assert rated.status_code == 200
+        assert rated.json()["assets"]["listen"]["url"].endswith("/audio")
+        cleared = client.patch(url, headers=headers(token), json={"rating": None})
+        assert cleared.status_code == 200, cleared.text
+        assert cleared.json()["rating"] is None
+        assert cleared.json()["assets"] == rated.json()["assets"]
+        assert (
+            client.patch(url, headers=headers(token), json={"rating": 0}).status_code
+            == 422
+        )
+
+
+def test_take_patch_null_favorite_and_empty_are_not_server_errors(tmp_path):
+    with connection(tmp_path) as client:
+        token = issue(client)
+        _, take_id, _ = ready_take(client, token, tmp_path)
+        url = f"/api/takes/{take_id}"
+        for payload in ({}, {"favorite": None}):
+            response = client.patch(url, headers=headers(token), json=payload)
+            assert response.status_code == 422, response.text
+        response = client.patch(
+            url, headers=headers(token), json={"rating": None, "favorite": True}
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["rating"] is None
+        assert response.json()["favorite"] is True
