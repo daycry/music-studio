@@ -4,6 +4,10 @@ import type {JobState} from './event-reducer';
 export type FeedJob = JobState & {
   /** Take represented by this card. A generation job can own several takes. */
   take_id?: string;
+  post_job_id?: string;
+  take_status?: string;
+  take_error_code?: string | null;
+  action_error?: string | null;
   group_id?: string;
   variant_index?: number;
   peaks?: number[] | null;
@@ -20,6 +24,7 @@ export function createFeedJobs(result: GenerationResponse): FeedJob[] {
   const takeIds = result.take_ids.length ? result.take_ids : [undefined];
   return takeIds.map((take_id, variant_index) => ({
     job_id: result.generation_job_id,
+    post_job_id: result.post_job_id,
     song_id: result.song_id,
     status: 'queued',
     attempt_id: null,
@@ -35,7 +40,7 @@ export function createFeedJobs(result: GenerationResponse): FeedJob[] {
 
 function numbers(value: unknown): number[] {
   if (Array.isArray(value)) return value.flatMap(numbers);
-  return typeof value === 'number' && Number.isFinite(value) ? [Math.max(0, Math.min(1, value))] : [];
+  return typeof value === 'number' && Number.isFinite(value) ? [Math.max(-1, Math.min(1, value))] : [];
 }
 
 /** Accepts the published peaks envelope, including the legacy nested shape. */

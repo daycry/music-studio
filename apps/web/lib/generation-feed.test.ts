@@ -22,6 +22,10 @@ test('mantiene una tarjeta para respuestas antiguas sin take_ids', () => {
 
 test('normaliza los peaks publicados por el endpoint de takes', () => {
   expect(normalizePeaks({data: [[[.1, .8, .3]]]})).toEqual([.1, .8, .3]);
-  expect(normalizePeaks({data: [[.1, 1.2, -.2, Number.NaN]]})).toEqual([.1, 1, 0]);
+  expect(normalizePeaks({data: [[.1, 1.2, -.2, Number.NaN]]})).toEqual([.1, 1, -.2]);
   expect(normalizePeaks({data: []})).toBeNull();
+});
+
+test('CA-3 conserva pares min max negativos publicados', () => {
+  expect(normalizePeaks({data: [[[-.8, .3], [-.2, .9]]]})).toEqual([-.8, .3, -.2, .9]);
 });

@@ -47,11 +47,20 @@ export function GenerativeViz({progress, peaks = null, reducedMotion = false, co
       const width = canvas.width;
       const height = canvas.height;
       context.clearRect(0, 0, width, height);
-      const values = peaks && peaks.length > 0 && value >= 1 ? peaks : Array.from({length: columns}, (_, index) => level(index));
+      const hasPeaks = peaks !== null && peaks.length >= 2;
+      const values = hasPeaks ? peaks : Array.from({length: columns}, (_, index) => level(index));
       const barWidth = width / columns;
       const condensed = Math.floor(value * columns);
       for (let index = 0; index < columns; index += 1) {
-        const sample = peaks && peaks.length > 0 && value >= 1 ? clamp(values[index % values.length] ?? 0) : (index < condensed ? level(index) : values[index]);
+        if (hasPeaks) {
+          const pair = Math.min(Math.floor(index * Math.floor(values.length / 2) / columns), Math.floor(values.length / 2) - 1) * 2;
+          const min = Math.max(-1, Math.min(1, values[pair]));
+          const max = Math.max(-1, Math.min(1, values[pair + 1]));
+          context.fillStyle = '#34d399';
+          context.fillRect(index * barWidth, (1 - max) * height / 2, Math.max(1, barWidth - 1), Math.max(1, (max - min) * height / 2));
+          continue;
+        }
+        const sample = index < condensed ? level(index) : values[index];
         const barHeight = Math.max(2, sample * height);
         context.fillStyle = index < condensed || value >= 1 ? '#34d399' : '#52605e';
         context.fillRect(index * barWidth, (height - barHeight) / 2, Math.max(1, barWidth - 1), barHeight);
