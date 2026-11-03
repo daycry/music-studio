@@ -3,10 +3,19 @@
 import asyncio
 from copy import deepcopy
 
-from sqlalchemy import select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 
-from app.models import Job, JobAttempt, JobDependency, Take, new_id
+from app.models import (
+    Job,
+    JobAttempt,
+    JobDependency,
+    LineageEdge,
+    PublicationIntent,
+    PublicationIntentRevision,
+    Take,
+    new_id,
+)
 
 from .admission import writer
 from .chains import add_dependents, live_song, validate_lyrics, validate_request
@@ -17,6 +26,21 @@ from .resolver import snapshot
 class ManualRetry:
     def __init__(self, engine, owner_id, resolver):
         self.engine, self.owner_id, self.resolver = engine, owner_id, resolver
+
+    def _claimed_parents(self, old):
+        return (
+            select(LineageEdge.parent_id)
+            .join(Take, Take.id == LineageEdge.child_id)
+            .where(
+                LineageEdge.owner_id == self.owner_id,
+                LineageEdge.parent_type == "take",
+                LineageEdge.child_type == "take",
+                LineageEdge.role == "retry",
+                LineageEdge.deleted_at.is_(None),
+                Take.owner_id == self.owner_id,
+                Take.song_id == old.song_id,
+            )
+        )
 
     async def retry(self, job_id, *, take_ids=None):
         if take_ids is not None and (
@@ -49,10 +73,12 @@ class ManualRetry:
                     Job.task == "post.audio",
                     Job.owner_id == self.owner_id,
                     Job.song_id == old.song_id,
-                    Job.status == "failed",
+                    or_(
+                        and_(Job.status == "failed", Job.error_code.is_not(None)),
+                        and_(Job.status == "succeeded", Job.error_code.is_(None)),
+                    ),
                     Job.deleted_at.is_(None),
                     Job.cancel_requested_at.is_(None),
-                    Job.error_code.is_not(None),
                     Job.finished_at.is_not(None),
                 )
             )
@@ -72,7 +98,8 @@ class ManualRetry:
             if (
                 len(edges) != 1
                 or edges[0].owner_id != self.owner_id
-                or not post.error_code
+                or post.status == "failed"
+                and not post.error_code
             ):
                 continue
             items = post.request.get("inputs", [])
@@ -92,6 +119,57 @@ class ManualRetry:
                 bound.append(item["output_index"])
             else:
                 if len(set(bound)) == len(bound):
+                    if post.status == "succeeded":
+                        # A completed batch can contain TakeFailure. Authenticate
+                        # its active durable revision, never caller-supplied DTOs
+                        # or an obsolete failure from an earlier GPU attempt.
+                        bound = session.scalars(
+                            select(PublicationIntent.output_index)
+                            .join(
+                                PublicationIntentRevision,
+                                PublicationIntentRevision.id
+                                == PublicationIntent.active_revision_id,
+                            )
+                            .join(Take, Take.id == PublicationIntent.take_id)
+                            .join(
+                                JobAttempt,
+                                JobAttempt.id
+                                == PublicationIntentRevision.winning_attempt_id,
+                            )
+                            .where(
+                                PublicationIntent.owner_id == self.owner_id,
+                                PublicationIntent.song_id == old.song_id,
+                                PublicationIntent.deleted_at.is_(None),
+                                PublicationIntent.state == "failed",
+                                PublicationIntent.error_code.is_not(None),
+                                PublicationIntent.error_code != "",
+                                PublicationIntentRevision.intent_id
+                                == PublicationIntent.id,
+                                PublicationIntentRevision.owner_id == self.owner_id,
+                                PublicationIntentRevision.song_id == old.song_id,
+                                PublicationIntentRevision.deleted_at.is_(None),
+                                PublicationIntentRevision.post_job_id == post.id,
+                                PublicationIntentRevision.generation_job_id == old.id,
+                                PublicationIntentRevision.winning_ordinal
+                                == old.attempt,
+                                PublicationIntentRevision.take_id == Take.id,
+                                PublicationIntentRevision.output_index
+                                == Take.variant_index,
+                                PublicationIntentRevision.output_index
+                                == PublicationIntent.output_index,
+                                PublicationIntentRevision.error_code
+                                == PublicationIntent.error_code,
+                                JobAttempt.job_id == old.id,
+                                JobAttempt.ordinal == old.attempt,
+                                Take.job_id == old.id,
+                                Take.status == "failed",
+                                Take.owner_id == self.owner_id,
+                                Take.song_id == old.song_id,
+                                Take.deleted_at.is_(None),
+                                Take.error_code == PublicationIntent.error_code,
+                                Take.variant_index.in_(bound),
+                            )
+                        )
                     indices.update(bound)
         return indices
 
@@ -138,6 +216,7 @@ class ManualRetry:
             Take.song_id == old.song_id,
             Take.status == "failed",
             Take.deleted_at.is_(None),
+            Take.id.not_in(self._claimed_parents(old)),
         )
         if take_ids is not None:
             query = query.where(Take.id.in_(take_ids))
@@ -200,6 +279,7 @@ class ManualRetry:
                         Take.owner_id == self.owner_id,
                         Take.song_id == current.song_id,
                         Take.deleted_at.is_(None),
+                        Take.id.not_in(self._claimed_parents(current)),
                     )
                 )
             )
@@ -225,7 +305,52 @@ class ManualRetry:
             )
             session.add(job)
             session.flush()
+            retry_takes = []
+            batch_id = new_id()
             for take in takes:
-                take.status, take.job_id = "queued", job.id
+                if session.scalar(
+                    select(PublicationIntent.id).where(
+                        PublicationIntent.take_id == take.id
+                    )
+                ):
+                    child_id = new_id()
+                    child = Take(
+                        id=child_id,
+                        owner_id=self.owner_id,
+                        song_id=take.song_id,
+                        job_id=job.id,
+                        lyrics_version_id=take.lyrics_version_id,
+                        status="queued",
+                        batch_id=batch_id,
+                        variant_index=take.variant_index,
+                        root_id=child_id,
+                        derivation="variant",
+                        task=take.task,
+                        model_id=take.model_id,
+                        model_version=take.model_version,
+                        seed=take.seed,
+                        params=deepcopy(take.params),
+                        commercial_use=take.commercial_use,
+                    )
+                    session.add(child)
+                    session.flush()
+                    session.add(
+                        LineageEdge(
+                            owner_id=self.owner_id,
+                            child_type="take",
+                            child_id=child.id,
+                            parent_type="take",
+                            parent_id=take.id,
+                            role="retry",
+                        )
+                    )
+                    # The canonical-root trigger assigns the inherited root
+                    # once the edge exists; a bare new take must root at itself.
+                    session.flush()
+                    session.refresh(child)
+                    retry_takes.append(child)
+                else:
+                    take.status, take.job_id = "queued", job.id
+                    retry_takes.append(take)
             session.flush()
-            return add_dependents(session, job, takes)
+            return add_dependents(session, job, retry_takes)

@@ -17,7 +17,7 @@ def _artifact_map(artifacts):
     for artifact in artifacts:
         item = _dump(artifact)
         index = item.get("output_index")
-        if type(index) is not int or index in result:
+        if type(index) is not int or index < 0 or index in result:
             raise ValueError("PROVENANCE_MISMATCH")
         result[index] = item
     return result
@@ -51,7 +51,18 @@ def compose_post_plan(
     inputs = post.request.get("inputs")
     if not isinstance(inputs, list) or not inputs:
         raise ValueError("POST_INPUTS_INVALID")
-    by_index = {take.variant_index: take for take in takes}
+    by_index = {}
+    for take in takes:
+        index = take.variant_index
+        if (
+            type(index) is not int
+            or index < 0
+            or index in by_index
+            or take.owner_id != post.owner_id
+            or take.song_id != post.song_id
+        ):
+            raise ValueError("PROVENANCE_MISMATCH")
+        by_index[index] = take
     entries = []
     pin_sha = hashlib.sha256(canonical_bytes(tool_pin)).hexdigest()
     provenance_sha = hashlib.sha256(canonical_bytes(provenance)).hexdigest()
@@ -60,19 +71,23 @@ def compose_post_plan(
         generation.request if isinstance(generation.request, dict) else {}
     )
     default_duration = generation_request.get("params", {}).get("duration_s")
-    for output_index, item in enumerate(inputs):
+    seen = set()
+    for item in inputs:
         if not isinstance(item, dict):
             raise TypeError("POST_INPUTS_INVALID")
         ref = item.get("ref")
-        index = item.get("output_index", 0)
+        index = item.get("output_index")
         if (
             not isinstance(ref, dict)
             or ref.get("type") != "job"
             or ref.get("id") != generation.id
+            or item.get("role") != "source"
             or type(index) is not int
-            or index != output_index
+            or index < 0
+            or index in seen
         ):
             raise ValueError("POST_INPUTS_INVALID")
+        seen.add(index)
         take = by_index.get(index)
         artifact = terminal_artifacts.get(index)
         if take is None or take.job_id != generation.id or artifact is None:

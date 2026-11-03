@@ -72,10 +72,14 @@ def test_queue_manual_retry_new_job_only_failed_original_index(engine):
     assert retry(engine, owner, resolver, chain.generation_job_id) is None
 
 
-def test_queue_manual_retry_two_connections_one_claim(engine):
+@pytest.mark.parametrize("published", [False, True])
+def test_queue_manual_retry_two_connections_one_claim(engine, published):
     owner, song, _, resolver = services(engine)
     chain = create(engine, owner, song, resolver)
-    failed(engine, chain)
+    if published:
+        completed_post_with_take_failures(engine, chain, resolver, owner)
+    else:
+        failed(engine, chain)
     from app.db import create_db_engine
 
     other = create_db_engine(engine.url.database)
@@ -150,10 +154,14 @@ def test_queue_manual_retry_reject_selection_atomic(engine, bad):
         )
 
 
-def test_queue_manual_retry_rollback_midchain(engine, monkeypatch):
+@pytest.mark.parametrize("published", [False, True])
+def test_queue_manual_retry_rollback_midchain(engine, monkeypatch, published):
     owner, song, _, resolver = services(engine)
     chain = create(engine, owner, song, resolver)
-    failed(engine, chain)
+    if published:
+        completed_post_with_take_failures(engine, chain, resolver, owner)
+    else:
+        failed(engine, chain)
     from app.queue import manual_retry
 
     real = manual_retry.add_dependents
@@ -509,13 +517,19 @@ def test_queue_manual_retry_filters_only_authenticated_failed_bindings(engine):
         )
 
 
-def test_queue_manual_retry_revalidates_post_failure_under_writer(engine):
+@pytest.mark.parametrize("post_completed", [False, True])
+def test_queue_manual_retry_revalidates_post_failure_under_writer(
+    engine, post_completed
+):
     from test_queue_references import accepted
 
     owner, song, _, resolver = services(engine)
     chain = create(engine, owner, song, resolver)
-    accepted(engine, chain, resolver, owner)
-    own_post_failure(engine, chain)
+    if post_completed:
+        completed_post_with_take_failures(engine, chain, resolver, owner)
+    else:
+        accepted(engine, chain, resolver, owner)
+        own_post_failure(engine, chain)
     real = resolver.resolve
 
     async def revoke(*args, **kwargs):
@@ -550,3 +564,343 @@ def test_queue_manual_retry_failed_logical_done_cannot_skip_post_authentication(
         assert s.get(JobAttempt, claim.attempt_id).terminal.type == "done"
         assert s.get(Take, chain.take_ids[2]).job_id == chain.generation_job_id
         assert s.scalar(select(func.count()).select_from(Job)) == 5
+
+
+def completed_post_with_take_failures(engine, chain, resolver, owner):
+    """Real producer completion and durable per-take failure rows, without a child."""
+    from app.migrations.cpu_publication_invariants import cas
+    from app.models import (
+        CpuExecution,
+        JobAttempt,
+        PublicationIntent,
+        PublicationIntentRevision,
+    )
+    from app.worker.contracts import TakeFailure, canonical_sha256
+    from app.worker.planning import compose_post_plan
+    from app.worker.publications import Publisher
+    from test_queue_references import accepted
+
+    def seeds(artifacts):
+        for artifact in artifacts:
+            artifact["meta"] = {"seed": 17 + artifact["output_index"]}
+
+    claim, artifacts = accepted(engine, chain, resolver, owner, artifact_mutator=seeds)
+    execution_id = new_id()
+    with Session(engine) as s:
+        post = s.get(Job, chain.post_job_id)
+        post.status = "running"
+        plan = compose_post_plan(
+            post=post,
+            generation=s.get(Job, chain.generation_job_id),
+            attempt=s.get(JobAttempt, claim.attempt_id),
+            takes=[s.get(Take, tid) for tid in chain.take_ids],
+            artifacts=artifacts,
+            root=resolver.data_dir.parent,
+            execution_id=execution_id,
+            tool_pin={},
+        )
+        s.commit()
+    # Use the runtime's SQL insert/CAS contracts, including active revision.
+    with engine.begin() as c:
+        c.execute(
+            CpuExecution.__table__.insert().values(
+                id=execution_id,
+                owner_id=owner,
+                job_id=chain.post_job_id,
+                ordinal=1,
+                handler="post.audio",
+                handler_version=1,
+                contract_version=1,
+                state="prepared",
+                revision=1,
+                plan=plan,
+                plan_sha256=canonical_sha256(plan),
+                cleanup_state="unknown",
+            )
+        )
+        for entry in plan.takes:
+            a = entry.authority
+            intent_id, revision_id = new_id(), new_id()
+            c.execute(
+                PublicationIntent.__table__.insert().values(
+                    id=intent_id,
+                    owner_id=owner,
+                    song_id=a.song_id,
+                    take_id=a.take_id,
+                    output_index=a.output_index,
+                    seed=a.seed,
+                    state="reserved",
+                    revision=1,
+                )
+            )
+            c.execute(
+                PublicationIntentRevision.__table__.insert().values(
+                    id=revision_id,
+                    **a.model_dump(),
+                    intent_id=intent_id,
+                    cpu_execution_id=execution_id,
+                    source_sha256=entry.source.sha256,
+                    stage_path=f"songs/{a.song_id}/takes/.pending-{execution_id}/{a.take_id}",
+                    final_path=f"songs/{a.song_id}/takes/{a.take_id}",
+                    error_code="AUDIO_INVALID",
+                )
+            )
+            revision = cas(
+                c,
+                "publication_intent",
+                intent_id,
+                1,
+                "reserved",
+                active_revision_id=revision_id,
+            )
+            c.execute(
+                Take.__table__.update()
+                .where(Take.id == a.take_id)
+                .values(
+                    status="failed",
+                    error_code="AUDIO_INVALID",
+                )
+            )
+            cas(
+                c,
+                "publication_intent",
+                intent_id,
+                revision,
+                "failed",
+                error_code="AUDIO_INVALID",
+            )
+        results = tuple(
+            TakeFailure(
+                status="failure",
+                take_id=entry.authority.take_id,
+                output_index=entry.authority.output_index,
+                code="AUDIO_INVALID",
+            )
+            for entry in plan.takes
+        )
+        Publisher(engine, resolver.data_dir.parent, None, None)._complete_post(
+            c, plan, results
+        )
+    return claim
+
+
+def test_queue_manual_retry_completed_post_take_failure(engine):
+    owner, song, _, resolver = services(engine)
+    chain = create(engine, owner, song, resolver)
+    claim = completed_post_with_take_failures(engine, chain, resolver, owner)
+    with Session(engine) as s:
+        from app.models import JobAttempt
+
+        post = s.get(Job, chain.post_job_id)
+        assert (post.status, post.error_code) == ("succeeded", None)
+        before = s.get(JobAttempt, claim.attempt_id).terminal.model_dump(mode="json")
+    new = retry(engine, owner, resolver, chain.generation_job_id)
+    assert not set(new.take_ids) & set(chain.take_ids)
+    with Session(engine) as s:
+        assert s.get(Job, chain.generation_job_id).status == "succeeded"
+        assert (
+            s.get(JobAttempt, claim.attempt_id).terminal.model_dump(mode="json")
+            == before
+        )
+        assert s.get(Job, new.generation_job_id).request == request()
+        for index, tid in enumerate(new.take_ids):
+            take = s.get(Take, tid)
+            assert (take.status, take.job_id, take.seed, take.variant_index) == (
+                "queued",
+                new.generation_job_id,
+                17 + index,
+                index,
+            )
+        assert retry(engine, owner, resolver, chain.generation_job_id) is None
+
+
+@pytest.mark.parametrize("selected", [False, True])
+def test_queue_manual_retry_completed_post_only_failed_variants(engine, selected):
+    owner, song, _, resolver = services(engine)
+    chain = create(engine, owner, song, resolver)
+    completed_post_with_take_failures(engine, chain, resolver, owner)
+    with Session(engine) as s:
+        s.get(Take, chain.take_ids[0]).status = "ready"
+        s.get(Take, chain.take_ids[1]).status = "cancelled"
+        original = {
+            tid: {
+                c.name: copy.deepcopy(getattr(s.get(Take, tid), c.name))
+                for c in Take.__table__.columns
+            }
+            for tid in chain.take_ids[:2]
+        }
+        s.commit()
+    kwargs = {"take_ids": [chain.take_ids[2]]} if selected else {}
+    new = retry(engine, owner, resolver, chain.generation_job_id, **kwargs)
+    assert len(new.take_ids) == 1 and new.take_ids[0] not in chain.take_ids
+    with Session(engine) as s:
+        assert [
+            i["output_index"] for i in s.get(Job, new.post_job_id).request["inputs"]
+        ] == [2]
+        for tid, before in original.items():
+            assert {
+                c.name: getattr(s.get(Take, tid), c.name)
+                for c in Take.__table__.columns
+            } == before
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        "running",
+        "interrupted",
+        "cancelled",
+        "cancel_requested",
+        "deleted",
+        "unfinished",
+        "foreign_owner",
+        "ready_selection",
+        "mixed_selection",
+        "no_intent",
+        "deleted_intent",
+    ],
+)
+def test_queue_manual_retry_completed_post_guards(engine, bad):
+    from app.models import PublicationIntent
+    from test_queue_references import accepted
+
+    owner, song, _, resolver = services(engine)
+    chain = create(engine, owner, song, resolver)
+    if bad == "no_intent":
+        accepted(engine, chain, resolver, owner)
+        own_post_failure(engine, chain)
+    else:
+        completed_post_with_take_failures(engine, chain, resolver, owner)
+    selection = [chain.take_ids[2]]
+    with Session(engine) as s:
+        post = s.get(Job, chain.post_job_id)
+        if bad in {"running", "interrupted", "cancelled"}:
+            post.status = bad
+        if bad == "cancel_requested":
+            post.cancel_requested_at = "2026-11-03T00:00:00Z"
+        if bad == "deleted":
+            post.deleted_at = "2026-11-03T00:00:00Z"
+        if bad == "unfinished":
+            post.finished_at = None
+        if bad == "foreign_owner":
+            owner = new_id()
+        if bad in {"ready_selection", "mixed_selection"}:
+            s.get(Take, chain.take_ids[0]).status = "ready"
+            selection = [chain.take_ids[0]]
+            if bad == "mixed_selection":
+                selection.append(chain.take_ids[2])
+        if bad == "no_intent":
+            post.status, post.error_code = "succeeded", None
+            s.get(Take, chain.take_ids[2]).error_code = "AUDIO_INVALID"
+        if bad == "deleted_intent":
+            s.scalar(
+                select(PublicationIntent).where(
+                    PublicationIntent.take_id == chain.take_ids[2]
+                )
+            ).deleted_at = "2026-11-03T00:00:00Z"
+        s.commit()
+    with pytest.raises(ValueError):
+        retry(engine, owner, resolver, chain.generation_job_id, take_ids=selection)
+    with Session(engine) as s:
+        assert s.get(Take, chain.take_ids[2]).job_id == chain.generation_job_id
+        assert s.scalar(select(func.count()).select_from(Job)) == 5
+
+
+def test_queue_manual_retry_child_preserves_history_and_can_retry_child(engine):
+    from app.models import (
+        JobAttempt,
+        LineageEdge,
+        PublicationIntent,
+        PublicationIntentRevision,
+    )
+
+    owner, song, _, resolver = services(engine)
+    chain = create(engine, owner, song, resolver)
+    completed_post_with_take_failures(engine, chain, resolver, owner)
+    with Session(engine) as s:
+        originals = {
+            model: list(s.execute(select(model.__table__)))
+            for model in (
+                Job,
+                JobAttempt,
+                Take,
+                PublicationIntent,
+                PublicationIntentRevision,
+            )
+        }
+    child = retry(
+        engine, owner, resolver, chain.generation_job_id, take_ids=[chain.take_ids[2]]
+    )
+    with Session(engine) as s:
+        for model, rows in originals.items():
+            for row in rows:
+                assert (
+                    s.execute(select(model.__table__).where(model.id == row.id)).one()
+                    == row
+                )
+        take = s.get(Take, child.take_ids[0])
+        assert (
+            take.root_id,
+            take.derivation,
+            take.seed,
+            take.error_code,
+            take.duration_s,
+        ) == (
+            chain.take_ids[2],
+            "variant",
+            19,
+            None,
+            None,
+        )
+        edge = s.scalar(select(LineageEdge).where(LineageEdge.child_id == take.id))
+        assert (edge.role, edge.parent_id, edge.owner_id) == (
+            "retry",
+            chain.take_ids[2],
+            owner,
+        )
+    with pytest.raises(ValueError):
+        retry(
+            engine,
+            owner,
+            resolver,
+            chain.generation_job_id,
+            take_ids=[chain.take_ids[2]],
+        )
+    completed_post_with_take_failures(engine, child, resolver, owner)
+    grandchild = retry(engine, owner, resolver, child.generation_job_id)
+    with Session(engine) as s:
+        take = s.get(Take, grandchild.take_ids[0])
+        assert take.id not in (*chain.take_ids, *child.take_ids)
+        assert (take.root_id, take.seed, take.variant_index) == (
+            chain.take_ids[2],
+            19,
+            2,
+        )
+
+
+def test_queue_manual_retry_child_partial_concurrent_claim_is_atomic(engine):
+    owner, song, _, resolver = services(engine)
+    chain = create(engine, owner, song, resolver)
+    completed_post_with_take_failures(engine, chain, resolver, owner)
+    from app.queue.manual_retry import ManualRetry
+    from app.queue.resolver import snapshot
+
+    service = ManualRetry(engine, owner, resolver)
+    old, takes = service._read(
+        chain.generation_job_id, [chain.take_ids[1], chain.take_ids[2]]
+    )
+    retry(
+        engine, owner, resolver, chain.generation_job_id, take_ids=[chain.take_ids[2]]
+    )
+    with pytest.raises(ValueError, match="Concurrent partial"):
+        service._claim(old, snapshot(old), tuple(t.id for t in takes))
+    with Session(engine) as s:
+        assert (
+            s.scalar(
+                select(func.count())
+                .select_from(Job)
+                .where(Job.task == "music.instrumental")
+            )
+            == 2
+        )
+        assert s.get(Take, chain.take_ids[1]).status == "failed"
