@@ -9,6 +9,7 @@ export default defineConfig({
   workers: process.env.E2E_RECOVERY === '1' ? 1 : undefined,
   reporter: [['list']],
   use: {
+    launchOptions: {args: ['--disable-gpu']},
     baseURL: 'http://127.0.0.1:3000',
     trace: 'retain-on-failure',
     ...devices['Desktop Chrome'],

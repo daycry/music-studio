@@ -1,4 +1,4 @@
-import {expect, test} from '@playwright/test';
+import {expect, test} from './fixtures';
 
 test('abre el estudio y navega a Sistema', async ({page}) => {
   await page.goto('/create');
