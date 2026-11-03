@@ -1,5 +1,5 @@
 'use client';
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useId, useRef, useState} from 'react';
 import {useTranslations} from 'next-intl';
 import {getTakeAudioBlob, listSongTakes, type Song} from '../lib/api';
 
@@ -14,6 +14,8 @@ export function MasterPreview({song, enabled}: {song: Pick<Song, 'id'|'title'|'m
   const activeRef = useRef(true);
   const requestRef = useRef(0);
   const [state, setState] = useState<PreviewState>('idle');
+  const [notice, setNotice] = useState<'previewLatestReady' | 'previewNoReady' | 'previewUnavailable' | null>(null);
+  const noticeId = useId();
 
   const stop = useCallback(() => {
     requestRef.current += 1;
@@ -29,14 +31,20 @@ export function MasterPreview({song, enabled}: {song: Pick<Song, 'id'|'title'|'m
   }, []);
 
   const play = useCallback(async () => {
-    if (!enabled || !song.master_take_id || !activeRef.current) return;
+    if (!enabled || !activeRef.current) return;
+    if (timerRef.current) clearTimeout(timerRef.current);
     const request = ++requestRef.current;
     setState('loading');
+    setNotice(null);
     try {
       const result = await listSongTakes(song.id);
       if (!activeRef.current || request !== requestRef.current) return;
-      const take = result.items.find(item => item.id === song.master_take_id && item.status === 'ready');
-      if (!take || !activeRef.current || request !== requestRef.current) { setState('idle'); return; }
+      const ready = result.items.filter(item => item.status === 'ready');
+      const take = song.master_take_id
+        ? ready.find(item => item.id === song.master_take_id)
+        : ready.sort((a, b) => b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id))[0];
+      if (!take) { setNotice('previewNoReady'); setState('idle'); return; }
+      if (!song.master_take_id) setNotice('previewLatestReady');
       const blob = await getTakeAudioBlob(take.id);
       if (!activeRef.current || request !== requestRef.current) return;
       const url = URL.createObjectURL(blob);
@@ -49,15 +57,15 @@ export function MasterPreview({song, enabled}: {song: Pick<Song, 'id'|'title'|'m
       setState('playing');
       stopRef.current = setTimeout(stop, 10000);
     } catch {
-      if (activeRef.current) stop();
+      if (activeRef.current && request === requestRef.current) { stop(); setNotice('previewUnavailable'); }
     }
   }, [enabled, song.id, song.master_take_id, stop]);
 
   const schedule = useCallback(() => {
-    if (!enabled || !song.master_take_id) return;
+    if (!enabled) return;
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => { timerRef.current = null; void play(); }, 400);
-  }, [enabled, play, song.master_take_id]);
+  }, [enabled, play]);
 
   useEffect(() => {
     activeRef.current = true;
@@ -74,9 +82,10 @@ export function MasterPreview({song, enabled}: {song: Pick<Song, 'id'|'title'|'m
   useEffect(() => { if (!enabled) stop(); }, [enabled, stop]);
 
   return <>
-    <button type="button" aria-label={t('preview')} disabled={!enabled || !song.master_take_id} data-state={state} onMouseEnter={schedule} onFocus={schedule} onMouseLeave={stop} onBlur={stop} onClick={() => { if (state === 'playing') stop(); else void play(); }}>
+    <button type="button" aria-label={t('preview')} aria-describedby={notice ? noticeId : undefined} disabled={!enabled} data-state={state} onMouseEnter={schedule} onFocus={schedule} onMouseLeave={stop} onBlur={stop} onClick={() => { if (state === 'playing') stop(); else void play(); }}>
       {state === 'loading' ? t('previewLoading') : state === 'playing' ? t('previewStop') : t('preview')}
     </button>
+    {notice && <small id={noticeId} role="status">{t(notice)}</small>}
     <audio ref={audioRef} preload="none" aria-hidden="true" onEnded={stop} />
   </>;
 }
