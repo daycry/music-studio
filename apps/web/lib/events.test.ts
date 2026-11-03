@@ -210,3 +210,14 @@ test.each([true,false])('CLIENT05 último401 tras cuatro500 halt observable sin 
  if(withError)expect(error).toHaveBeenCalledExactlyOnceWith('EVENT_RETRY_LIMIT');else expect(error).not.toHaveBeenCalled();
  expect(()=>close.changeScope(`${urlForTest()}?song_id=${job}`)).toThrow('EVENT_SUBSCRIPTION_HALTED');
 });
+test('una conexión que terminó bien reinicia el contador de reintentos',async()=>{
+ vi.useFakeTimers();const error=vi.fn();let gets=0;
+ const f=vi.fn().mockImplementation((url:string,init:Init)=>{
+  if(url.endsWith('bootstrap'))return Promise.resolve(new Response(JSON.stringify({session_token:'ok',expires_in_s:100})));
+  if(init.method==='DELETE')return Promise.resolve(new Response(null,{status:204}));
+  gets++;return Promise.resolve(new Response(encoder.encode(': keep-alive\n\n'),{headers:{'Content-Type':'text/event-stream'}}));
+ });vi.stubGlobal('fetch',f);
+ const close=subscribeEvents('http://127.0.0.1:8000/api/events',vi.fn(),{snapshot:vi.fn(),error});stops.push(close);
+ await vi.advanceTimersByTimeAsync(20000);
+ expect(gets).toBeGreaterThan(5);expect(error).not.toHaveBeenCalled();expect(close.state).not.toBe('halted');
+});

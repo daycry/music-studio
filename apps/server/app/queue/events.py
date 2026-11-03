@@ -454,6 +454,7 @@ class EventConsumer:
         envelope = {
             "job_id": job.id,
             "attempt_id": attempt.id,
+            "song_id": song.id,
             "type": "job." + notification,
             "ts": stamp,
             "data": {"status": job.status, **event.data},

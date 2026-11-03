@@ -88,6 +88,7 @@ export function subscribeEvents(url:string, receive:(event:ServerEvent)=>void, o
         state = 'streaming';
         await session.read(response, bytes => parser.push(bytes));
         parser.finish();
+        attempt = -1; // conexión que terminó bien: reinicia el contador de reintentos
       } catch {
         if (session.cleanupState === 'unknown') {halt('EVENT_CANCEL_UNCONFIRMED'); break;}
         if (session.revocationState === 'unknown') {halt('EVENT_REVOKE_UNCONFIRMED'); break;}
@@ -97,7 +98,7 @@ export function subscribeEvents(url:string, receive:(event:ServerEvent)=>void, o
       if (stopped || halted || version !== generation) break;
       if (attempt === 4) {halt('EVENT_RETRY_LIMIT'); break;}
       state = 'connecting';
-      await session.wait(250 * 2 ** attempt);
+      await session.wait(250 * 2 ** Math.max(0, attempt));
     }
   }
   let running = run(target, generation).catch(() => halt('EVENT_CANCEL_UNCONFIRMED'));

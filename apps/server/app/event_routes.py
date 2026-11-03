@@ -138,6 +138,7 @@ def _scope_filter(request):
 
 
 def _job_ids(engine, owner_id, song_id):
+    """Incluye terminales propios para autorizar también su replay."""
     with Session(engine) as session:
         query = select(Job.id).where(
             Job.owner_id == owner_id,
@@ -278,19 +279,24 @@ async def public_events(request: Request):
         return problem("SERVICE_UNAVAILABLE")
 
     async def stream():
+        pending = None
         try:
             for frame in initial:
                 yield frame
             while True:
                 if await request.is_disconnected():
                     break
-                try:
-                    record = await asyncio.wait_for(
-                        subscription.next(), timeout=HEARTBEAT_SECONDS
-                    )
-                except asyncio.TimeoutError:
+                # asyncio.wait no cancela la lectura al vencer el plazo:
+                # cancelar next() cerraría la suscripción.
+                if pending is None:
+                    pending = asyncio.ensure_future(subscription.next())
+                done, _ = await asyncio.wait({pending}, timeout=HEARTBEAT_SECONDS)
+                if not done:
                     yield heartbeat()
                     continue
+                task, pending = pending, None
+                try:
+                    record = task.result()
                 except StreamClosed:
                     break
                 frame = encode_frame(record, scope)
@@ -298,6 +304,13 @@ async def public_events(request: Request):
                     yield frame
         finally:
             subscription.close()
+            if pending is not None:
+                # Sin await: bajo cancelación del servidor un await aquí puede
+                # colgar el cierre. El callback recoge el resultado.
+                pending.cancel()
+                pending.add_done_callback(
+                    lambda task: task.cancelled() or task.exception()
+                )
 
     return StreamingResponse(
         stream(),

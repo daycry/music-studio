@@ -83,7 +83,6 @@ class TrustedScope:
             or not self.owner_id
             or len(self.owner_id) > 64
             or type(self.job_ids) is not frozenset
-            or len(self.job_ids) > 64
             or type(self.entity_ids) is not frozenset
             or len(self.entity_ids) > 64
             or any(
