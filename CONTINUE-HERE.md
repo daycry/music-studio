@@ -1,50 +1,27 @@
 # Continuar aquí
 
-> Una pantalla como máximo (ADR-0089). El estado vive en los `tasks.md` y esto solo apunta.
+> Estado canónico: [M1/tasks.md](docs/roadmap/2026-09-28-m1-mvp-estudio/tasks.md). M2/M3 congelados por ADR-0089.
 
-**Actualizado:** 2026-10-23, T-08 integrada.
+**Actualizado:** 2026-11-04. Alcance CPU solicitado implementado y verificado.
 
-## Dónde estamos
+## Restricciones vigentes
 
-| Hito | Estado | Ledger |
-|---|---|---|
-| M0 · Entorno y motor | 13/18 vigentes. Falta: revisar T-08, T-16 y T-20, el benchmark básico (T-09) y **la escucha del propietario (T-13)** | [tasks.md](docs/roadmap/2026-09-28-m0-entorno-y-motor/tasks.md) |
-| M1 · MVP web (recortado) | 1/16 completadas (T-17, fuga de temporales). T-04, T-05, T-07 y T-08 están integradas en `main`, en `en-revision` (cierran con T-15). El resto del código está escrito, pero sin revisar | [tasks.md](docs/roadmap/2026-09-28-m1-mvp-estudio/tasks.md) |
-| M2 y M3 | **Congelados** y archivados en [`docs/archive/codex-2026-10/`](docs/archive/codex-2026-10/README.md) | — |
+- No usar WSL, Docker, GPU ni Ollama: están ocupados. El producto sigue desplegándose en Docker.
+- No abrir la BD del usuario ni tocar cambios ajenos de journal y restos M2/almacenamiento sin seguimiento.
 
-## Siguiente paso
+## Entrega CPU
 
-**T-08 (base de la web)** está integrada en `main` (2026-10-23) y en `en-revision`.
-- **Qué incluye:**
-  - el cliente tipado desde `api.d.ts`, con el tope de VRAM real (`cap_mb`);
-  - contraste AA en el tema oscuro;
-  - estados traducidos;
-  - DTO de las respuestas 202 y 200;
-  - `build` en verde, con las cachés de SWC en `.cache/swc` y `.cache/la` (MAX_PATH);
-  - `PLAYWRIGHT_BROWSERS_PATH` fijado.
-- **Deuda aceptada** (ver el ledger):
-  - lecturas de `api.ts` sin validar en runtime;
-  - hex en `Waveform` y `GenerativeViz`;
-  - tareas no-M1 que aparecen como «Desconocido» en Sistema;
-  - sin test de las claves `engineState`.
+- Crear, feed, biblioteca, canción y reproductor implementados; SSE, reintentos con hijo/linaje, búsquedas, valoraciones y descargas corregidos.
+- Servidor: 2067 pass, 77 skip, 0 fallos; wrapper: 79 pass; web: 413 pass/32 archivos. Build, ESLint, TypeScript, Ruff, formato y contratos: exit 0.
+- Cobertura por archivo >=80 % en seis módulos del servidor, wrapper y 12 módulos web. Fuentes y 74 archivos de tests conservan SHA durante V6.
+- Revisiones A/B/C/D del código conformes; delta final de dos arneses revisado por A/B/D, sin gaps. QA CPU: tres corridas 21/21 (19 UI interceptada + 2 HTTP aislados).
+- Rama de entrega: m1/t-15-cpu-verificacion. Main conserva su estado anterior; integración pendiente de las puertas de producto.
+- Servicios temporales propios detenidos. Evidencia local: .cache/dev-cycle/20261103-cpu-m1/final-validation.json.
 
-1. **T-09 (Crear)**, después T-10 a T-13: revisar el código heredado y arreglar solo lo roto. Un ejemplo es `rating: 0`, que da 422.
-2. **T-15**: E2E con Playwright y el mock. Al pasar, cierra T-04, T-05, T-07 y T-08 y la web.
-3. Cerrar T-01 a T-03 y T-06: revisión de dos lentes y su Verificación.
-4. Con el propietario y la GPU: M0/T-09 básico, la escucha de M0/T-13 y después M1/T-16.
+## Qué queda cuando se autorice usar los recursos
 
-`pnpm` solo desde PowerShell (`. .\scripts\env.ps1; pnpm --filter ./apps/web <script>`).
+1. Recompilar el despliegue Docker y ejecutar T-15 con engine-mock real: recuperación, FFmpeg, persistencia y medios/SSE/Range; no sustituirlo por fixtures UI.
+2. Completar los manuales y M0 escucha/decisión de modelo; T-16 exige ACE-Step real y aceptación musical del propietario.
+3. Cerrar tareas e integrar ramas según el ledger; M2/M3 continúan congelados.
 
-> **No abras `data/db/studio.sqlite` desde Windows con el stack en marcha** (GOT-002).
-
-## Reglas que no se olvidan
-
-- Un hito activo a la vez.
-- Ledger = estado, criterios y verificación; nada de diario.
-- ADR solo para decisiones reales.
-- Antes de usar la GPU, libera el Ollama compartido (AGENTS.md §4.8).
-
-## Historial
-
-- Etapa Codex completa: rama `rescue/2026-10-22-codex`, commit `36d4e99`. Es solo local hasta que el propietario la suba.
-- Resumen en [`docs/archive/codex-2026-10/README.md`](docs/archive/codex-2026-10/README.md).
+Guía: [pruebas CPU](docs/calidad/pruebas.md). Informe histórico: [QA UI](docs/roadmap/2026-09-28-m1-mvp-estudio/testing/cpu-ui-2026-11-03.md).

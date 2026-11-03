@@ -8,6 +8,25 @@
 
 Regla general: se validan contratos observables (estados, duración, formatos, manifiesto, linaje). La calidad musical queda fuera de estas pruebas ([calidad/pruebas.md](../../calidad/pruebas.md)).
 
+## Ejecución en Windows sin WSL ni GPU (2026-11-03)
+
+La suite `playwright.cpu.config.ts` usa Chromium real con `--disable-gpu`, sin arrancar servicios ni ejecutar recuperación de Docker. Su comando, desde PowerShell con el entorno cargado, es `pnpm --filter ./apps/web exec playwright '--' test --config=playwright.cpu.config.ts`.
+
+Las pruebas de interfaz interceptan la API con fixtures sintéticos identificados. Comprueban el comportamiento del navegador; no prueban el dispatcher, el post-proceso ni la persistencia. API-01 y API-02 no interceptan peticiones: necesitan un server HTTP aislado en `127.0.0.1:8000`, sin engines y con datos temporales dentro de `.cache/`. La web de desarrollo escucha en `127.0.0.1:3000`. Nunca se utiliza la base de datos del usuario para esta suite.
+
+| Área CPU | Comprobaciones | Tareas |
+|---|---|---|
+| Crear | Autoría, instrumental, duración vacía, sistema no disponible y variantes condicionadas por la estimación del fixture | T-09 |
+| Generación | Etapas SSE sintéticas, espera del take `ready`, cancelación confirmada por evento y errores de acciones | T-06, T-10 |
+| Biblioteca | Enter, búsqueda conservada y preescucha de la última toma lista si falta maestro | T-11 |
+| Canción | Valoración y borrado con `null`, maestro solo listo, onda y descarga | T-12 |
+| Reproductor | Blob autenticado y conservación de la pista al navegar | T-13 |
+| API HTTP | Rechazo de Origin ajeno y publicación del OpenAPI | T-01, T-03 |
+
+Los informes HTML, JSON, trazas y capturas se guardan en `.cache/playwright-ui/`. La suite CPU excluye `recovery.spec.ts`, `analysis.spec.ts` y `collections.spec.ts`: la recuperación necesita el despliegue real y beats/colecciones están aplazados por ADR-0089. Sus escenarios históricos se conservan debajo para el despliegue; no forman parte del camino mínimo actual.
+
+**Pendiente del despliegue:** E2E de producto con engine-mock real, tres corridas consecutivas, recuperación tras reiniciar el server, persistencia SQLite, SSE/Range reales y FFmpeg Linux dentro de Compose. El verde de la suite CPU no cierra T-04, T-05, T-07, T-15 completa ni M1. M-01, M-02 y M-03 conservan su validación separada. No se ejecutan WSL, Docker, Ollama ni inferencia GPU durante esta fase.
+
 ## Automáticos (E2E — los ejecuta `qa` con Playwright)
 
 ### Despliegue — CA-01
@@ -203,6 +222,8 @@ Este bloque valida el despliegue de M1 sin inferencia GPU. La conexión a Ollama
 - **Cubre tareas**: T-02, T-16
 
 ## Cobertura (tarea → escenarios)
+
+Esta tabla conserva el mapa histórico. Para el alcance recortado mandan los campos «Cubre (tests)» del ledger: E2E-09 (beats) y E2E-10 (Sistema) están aplazados y no bloquean M1. Declarar cobertura no significa haber ejecutado o aprobado el escenario de despliegue.
 
 | Tarea | Escenarios |
 |---|---|

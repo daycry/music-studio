@@ -31,16 +31,26 @@ verificacion: obligatoria
 
 ---
 
+### Verificación CPU del 2026-11-04
+
+- Servidor M1, 74 archivos: **2067 passed, 77 skipped, 0 failed, 0 errors** (V6, exit 0). SHA de seis módulos y de los 74 archivos de tests idénticos antes/después; omisiones de plataforma conservadas.
+- Herramientas web: **79 passed**, sin omitidos; verificados por separado en el JUnit V4d, con fuente y tests sin cambios posteriores.
+- Web: **413 passed / 32 archivos**; build, ESLint, TypeScript, Ruff, formato Python y contratos exportados: exit 0.
+- Cobertura: seis módulos completos del servidor, wrapper y 12 módulos web superan el 80 % por archivo; Python con líneas/ramas, V8 con sus cuatro métricas. Sin exclusiones de líneas cambiadas.
+- QA UI independiente: tres corridas de **21/21**, cada gate exit 0; 19 escenarios interceptados y dos smokes HTTP reales aislados por corrida. No son 63 escenarios distintos.
+- Evidencia local de este lote: `.cache/dev-cycle/20261103-cpu-m1/`; las referencias cortas siguientes parten de ahí. Recibo consolidado: `final-validation.json`.
+- Alcance Windows CPU: sin WSL, Docker, GPU, Ollama ni datos del usuario. Quedan E2E del despliegue, recuperación/FFmpeg/SSE/Range reales, manuales y aceptación musical; M1 sigue abierto y M2/M3 congelados.
+
 ## Resumen de progreso
 
-| Fase | Completadas | Total | Progreso | Canceladas |
-|------|------------|-------|----------|-----------|
-| Fase 1 — Server base | 0 | 4 | 0% | 1 (T-00) |
-| Fase 2 — Cola y post-proceso | 0 | 3 | 0% | 0 |
-| Fase 3 — API | 0 | 1 | 0% | 0 |
-| Fase 4 — Web | 0 | 7 | 0% | 1 (T-14) |
-| Fase 5 — Pruebas y cierre | 1 | 3 | 33% | 0 |
-| **TOTAL** | **1** | **18** | **6%** | **2** |
+| Fase | Completadas | Total | Progreso de cierre | Canceladas | En revisión |
+|------|------------|-------|--------------------|-----------|-------------|
+| Fase 1 — Server base | 0 | 4 | 0% | 1 (T-00) | 3 |
+| Fase 2 — Cola y post-proceso | 0 | 3 | 0% | 0 | 3 |
+| Fase 3 — API | 0 | 1 | 0% | 0 | 1 |
+| Fase 4 — Web | 0 | 7 | 0% | 1 (T-14) | 6 |
+| Fase 5 — Pruebas y cierre | 1 | 3 | 33% | 0 | 0 |
+| **TOTAL** | **1** | **18** | **6%** | **2** | **13** |
 
 **Orden recomendado:**
 
@@ -61,6 +71,7 @@ verificacion: obligatoria
 - **Verificación**: n/a (sustituida por ADR-0089).
 
 ### T-01 — Esqueleto del server: configuración, seguridad local y logs
+- **Cubre (tests)**: API-01
 - **Descripción**: FastAPI sin torch, `Settings`, validación de `Host`/`Origin`, `problem+json` y logs estructurados.
 - **Estado**: en-revision
 - **Dependencias**: ninguna
@@ -68,6 +79,7 @@ verificacion: obligatoria
 - **Verificación**: `uv run pytest apps/server/tests -k "security or settings or errors or health" -m "not gpu"` en verde · `curl -H "Host: evil" http://127.0.0.1:8000/health` → 403.
 
 ### T-02 — Esquema completo, migración inicial y FTS
+- **Cubre (tests)**: M-03
 - **Descripción**: Primera migración Alembic con el esquema de datos.md y FTS de canciones. El backup diario existe en el código, pero no bloquea el cierre.
 - **Estado**: en-revision
 - **Dependencias**: T-01
@@ -75,6 +87,7 @@ verificacion: obligatoria
 - **Verificación**: `uv run pytest apps/server/tests -k "migration or schema or fts" -m "not gpu"` en verde.
 
 ### T-03 — Contratos exportados y parser de letras compartido
+- **Cubre (tests)**: E2E-03, API-02
 - **Descripción**: `openapi.json` y `engine-v1.json` exportados y comprobados en CI, y el parser de letras compartido server/web con `lyrics-cases.json`.
 - **Estado**: en-revision
 - **Dependencias**: T-01
@@ -83,6 +96,7 @@ verificacion: obligatoria
 ## Fase 2 — Cola y post-proceso
 
 ### T-04 — Cola de un carril: reintentos, cancelación y recuperación
+- **Cubre (tests)**: E2E-01, E2E-04, E2E-05, E2E-06, M-01
 - **Descripción**: **Recortado.** Un carril GPU y uno CPU, reintento `retryable` ×2, cancelación y recuperación al arrancar. Las dependencias entre jobs (análisis) quedan fuera.
 
   El mapa del 2026-10-22 dice qué está hecho y qué falta:
@@ -101,13 +115,18 @@ verificacion: obligatoria
 - **Estado**: en-revision
 - **Tipo**: backend
 - **Dependencias**: T-02, T-05
-- **Archivos**: `apps/server/app/queue/`, `apps/server/app/worker/execution.py`, `apps/server/app/worker/publications.py`, `apps/server/app/worker/audio_child.py` (salta las takes ya empaquetadas al reanudar: `resume-skip.json`), `apps/server/tests/test_dispatcher_*.py`, `apps/server/tests/test_queue_*.py`, `apps/server/tests/test_worker_*.py`
+- **Archivos**: `apps/server/app/queue/`, `apps/server/app/worker/planning.py` (índices originales de variantes en reintentos parciales), `apps/server/app/worker/execution.py`, `apps/server/app/worker/publications.py`, `apps/server/app/worker/audio_child.py` (salta las takes ya empaquetadas al reanudar: `resume-skip.json`), `apps/server/tests/test_dispatcher_*.py`, `apps/server/tests/test_queue_*.py`, `apps/server/tests/test_worker_*.py`
 - **Verificación**:
   - Windows: `uv run pytest apps/server/tests -m "not gpu"` → 0 failed, 0 errors. Antes hay que cargar el entorno con `source scripts/env.sh`.
   - Docker (orquestador):
     - `server` + `engine-mock` sobre `.cache/`; SIGKILL del server con el post a mitad y arranque de nuevo → el **mismo take llega a `ready`** sin intervención y `verify_manifest.py` da `all valid`.
     - Cancelar un post interrumpido → `cancelled` y sin `data/tmp/<attempt>`.
     - Tests de Linux real del worker en verde.
+
+- **Delta CPU (2026-11-03)**: un fallo por take tras un post `succeeded` admite reintento; con intent previa crea hijo y linaje `retry`, conserva historia, semilla e índice. Reclamación atómica y variantes dispersas verificadas.
+- **RED**: `test_queue_manual_retry_completed_post_take_failure` rechazaba el fallo real de publicación; la reserva del mismo take chocaba con la intent previa y el índice 2 no se podía planificar · 2026-11-03.
+- **Verificación CPU del delta**: `retry-final/results.xml` → `72 passed`, 0 fallos; productor, SQL y reserva reales, sin FFmpeg ni durabilidad Linux. Global final V6: `2067 passed, 77 skipped`, 0 fallos/errores; no sustituye Docker.
+- **Arnés CPU (2026-11-04)**: V5 detectó un fixture con ULID reservado a copias CPU y un monkeypatch sobre un paquete sustituido. Ahora usa `stage_inputs` real y las referencias cargadas, conservando todos los asserts y exactamente dos seams. RED controlados guardados; GREEN: 4 focales y 131 casos de ambos archivos. Espera por evento comprobada también con demora de 0,8 s; sin cambios de producto.
 
 **Criterios de aceptación**
 - [x] CA-1 (reanudar, opción A):
@@ -183,6 +202,7 @@ verificacion: obligatoria
 - **Changelog**: Si el server se reinicia a mitad de una canción, el post-proceso se reanuda solo hasta dejar el take listo. Los trabajos se pueden cancelar sin dejar restos, y la cola no se queda bloqueada.
 
 ### T-05 — Post-proceso y publicación sencilla de takes
+- **Cubre (tests)**: E2E-01, M-01
 - **Descripción**: **Rediseño (ADR-0089 §2).** Hoy la publicación final (`publications.py::rename_noreplace`) exige `renameat2(RENAME_NOREPLACE)`, que devuelve `EINVAL` sobre el bind 9p de Docker Desktop, y por eso ningún take llega a `ready` en el despliegue real. Se sustituye por una publicación sencilla:
   - el destino `data/songs/<song>/takes/<take_ulid>` es único por construcción;
   - se usa `renameat2` si el filesystem lo soporta y, si devuelve `EINVAL`/`ENOSYS`, comprobación de ausencia más `os.rename`;
@@ -275,22 +295,27 @@ verificacion: obligatoria
 - **Changelog**: Los takes se publican de forma fiable sobre la carpeta de datos de Docker Desktop, sin sobrescribir nada ajeno y limpiando restos tras un reinicio.
 
 ### T-06 — SSE de eventos
+- **Cubre (tests)**: E2E-01, E2E-06
 - **Descripción**: Etapas reales del job por SSE, con reconexión y estado inicial.
-- **Estado**: en-progreso
+- **Estado**: en-revision
 - **Dependencias**: T-04
-- **Archivos**: `apps/server/app/sse.py`, `apps/server/app/event_routes.py`, `apps/server/app/queue/events.py` (sobre del evento y suscripción), `apps/server/tests/test_sse_*.py`, `apps/web/lib/events.ts` y su test (reinicio del contador de reintentos)
+- **Archivos**: `apps/server/app/sse.py`, `apps/server/app/event_routes.py`, `apps/server/app/queue/events.py` (sobre del evento y suscripción), `apps/server/tests/test_sse_*.py`, `apps/web/lib/events.ts`, `apps/web/lib/events.test.ts` (reinicio del contador de reintentos)
 - **Verificación**: `uv run pytest apps/server/tests -k "sse or event" -m "not gpu"` en verde · vitest de `lib/events` en verde.
 - **Revisión de cierre (2026-10-24, lente B sobre el código heredado):** tres defectos que rompen el progreso en vivo de la web → CA-1 a CA-3.
 
+- **RED**: `test_events_song_filter_all_real_producer_events[replay]` no recibía `job.stage`; los casos de heartbeat y ámbito cubren los otros dos defectos · 2026-11-03.
+- **Verificación CPU (2026-11-03)**: el JUnit V4d contiene 225 casos SSE/eventos: 221 pass, 4 skip, 0 fallos; `lib/events.test.ts`: 28 pass. Tipos y campos SSE conservados.
+
 **Criterios de aceptación**
-- [ ] CA-1 (Critical): los eventos `job.*` que publica `EventConsumer` llevan `song_id`, así que una suscripción con `?song_id=` (la que usa la web) los recibe en directo y en el replay. Un test HTTP se suscribe con `?song_id=` y recibe `job.stage`, `job.progress` y `job.done` publicados por el productor real, no por un sobre sintético.
-- [ ] CA-2 (Important): un heartbeat sin eventos no cierra la suscripción. Que venza el timeout de espera no cancela ni cierra `subscription.next()`. Un test con heartbeat corto recibe dos o más `: keep-alive` y después un evento. En la web, una conexión que termina bien reinicia el contador de reintentos (`lib/events.ts`).
-- [ ] CA-3 (Important): `/api/events` no da 422 cuando el dueño o la canción tienen más de 64 jobs. El ámbito incluye solo los jobs vivos (no terminales), o el límite deja de aplicarse a los terminales. Hay un test con 69 jobs (68 terminados).
-- [ ] CA-4: la Verificación está en verde, sin tocar el contrato de tipos ni de campos SSE que ya consume la web (`sse.py:13-25`).
+- [x] CA-1 (Critical): los eventos `job.*` que publica `EventConsumer` llevan `song_id`, así que una suscripción con `?song_id=` (la que usa la web) los recibe en directo y en el replay. Un test HTTP se suscribe con `?song_id=` y recibe `job.stage`, `job.progress` y `job.done` publicados por el productor real, no por un sobre sintético.
+- [x] CA-2 (Important): un heartbeat sin eventos no cierra la suscripción. Que venza el timeout de espera no cancela ni cierra `subscription.next()`. Un test con heartbeat corto recibe dos o más `: keep-alive` y después un evento. En la web, una conexión que termina bien reinicia el contador de reintentos (`lib/events.ts`).
+- [x] CA-3 (Important): `/api/events` no da 422 cuando el dueño o la canción tienen más de 64 jobs. El ámbito incluye solo los jobs vivos (no terminales), o el límite deja de aplicarse a los terminales. Hay un test con 69 jobs (68 terminados).
+- [x] CA-4: la Verificación está en verde, sin tocar el contrato de tipos ni de campos SSE que ya consume la web (`sse.py:13-25`).
 
 ## Fase 3 — API
 
 ### T-07 — API mínima: canciones, letras, generaciones, takes y sistema
+- **Cubre (tests)**: E2E-01, E2E-02, E2E-07, E2E-08, E2E-11
 - **Descripción**: **Recortado.** CRUD de canciones con papelera simple, versiones de letra, `POST` de generaciones, takes (valorar y marcar maestro), descargas MP3/FLAC y `GET /system` mínimo. Las colecciones quedan fuera: el código existente se conserva, pero no se amplía.
 
   El mapa del 2026-10-22 dice qué está hecho y qué falta:
@@ -314,6 +339,8 @@ verificacion: obligatoria
 - **Verificación**:
   - Windows: `uv run pytest apps/server/tests -m "not gpu"` → 0 failed, 0 errors · `uv run scripts/export_contracts.py --check` → `up to date`.
   - Docker (orquestador): `server` + `engine-mock`; `POST /api/generations` **sin** `params.duration_s` → take `ready`. Descargar MP3 y FLAC con `?download=1` → `attachment`, y el hash coincide con el manifiesto.
+
+- **Delta CPU (2026-11-03)**: búsquedas FTS literales con prefijo; PATCH distingue campos omitidos de `rating: null`, rechaza `favorite: null` y conserva assets. Cliente conserva código/detalle de errores y autentica blobs/descargas cancelables. Contratos exportados: ambos `up to date`.
 
 **Criterios de aceptación**
 - [x] CA-1 (H1):
@@ -370,6 +397,7 @@ verificacion: obligatoria
 ## Fase 4 — Web
 
 ### T-08 — Web: esqueleto, tokens, tema oscuro, i18n, layout y cliente de API
+- **Cubre (tests)**: M-02
 - **Descripción**: Next.js con `next-intl` (castellano), tokens de diseño, layout y cliente generado desde `openapi.json`. El tema claro queda fuera.
 
   El mapa del 2026-10-23 dice qué está hecho y qué falta:
@@ -395,7 +423,7 @@ verificacion: obligatoria
 - **Estado**: en-revision
 - **Tipo**: frontend
 - **Dependencias**: T-03, T-07
-- **Archivos**: `apps/web/lib/api.ts`, `apps/web/lib/api.test.ts`, `apps/web/lib/generated/api.d.ts`, `apps/web/app/**` (solo los usos de tipos y textos), `apps/web/components/**` (ídem), `apps/web/styles/*.css`, `apps/web/messages/es.json`, `apps/web/**/*.test.ts(x)` (nuevos: contraste, contrato, i18n), `apps/server/app/domain_routes.py` y `apps/server/app/api_models.py` (solo los DTO de respuesta de CA-2), `packages/contracts/openapi.json`, `scripts/fetch_web_tools.py`, `scripts/web_build_inputs.py` y `scripts/pnpm.*` (solo si CA-5 lo exige). Añadidos al revisar (2026-10-23, justificados): `apps/web/lib/enum-labels.ts` (i18n de estados, CA-4), `apps/web/lib/{contract,contrast,enum-labels,i18n-keys}.test.ts`, `apps/web/eslint.config.mjs` (regla de literales de UI, CA-4), `docs/producto/ux.md` (tokens AA), `tests/test_web_tool_entrypoints.py`, `.gitignore` y `.dockerignore` (raíz corta del test de SWC, CA-5)
+- **Archivos**: `apps/web/package.json`, `apps/web/next-env.d.ts`, `apps/web/lib/api.ts`, `apps/web/lib/api.test.ts`, `apps/web/lib/generated/api.d.ts`, `apps/web/app/**` (solo los usos de tipos y textos), `apps/web/components/**` (ídem), `apps/web/styles/*.css`, `apps/web/messages/es.json`, `apps/web/**/*.test.ts(x)` (nuevos: contraste, contrato, i18n), `apps/server/app/domain_routes.py` y `apps/server/app/api_models.py` (solo los DTO de respuesta de CA-2), `packages/contracts/openapi.json`, `scripts/fetch_web_tools.py`, `scripts/web_build_inputs.py` y `scripts/pnpm.*` (solo si CA-5 lo exige). Añadidos al revisar (2026-10-23, justificados): `apps/web/lib/enum-labels.ts` (i18n de estados, CA-4), `apps/web/lib/{contract,contrast,enum-labels,i18n-keys}.test.ts`, `apps/web/eslint.config.mjs` (regla de literales de UI, CA-4), `docs/producto/ux.md` (tokens AA), `tests/test_web_tool_entrypoints.py`, `.gitignore` y `.dockerignore` (raíz corta del test de SWC, CA-5)
 - **Verificación** (PowerShell; el wrapper de bash de `pnpm` rechaza Git Bash):
   - `. .\scripts\env.ps1; pnpm --filter ./apps/web lint` → 0 errores;
   - `… test` en verde;
@@ -403,6 +431,9 @@ verificacion: obligatoria
   - `… build` → exit 0;
   - `uv run scripts/export_contracts.py --check` → `up to date`;
   - `uv run pytest apps/server/tests -k "routes or api or openapi" -m "not gpu"` en verde.
+
+- **RED**: `test_web_tool_entrypoints.py` conservaba el separador de transporte antes de los argumentos de Vitest; el argv esperado no coincidía · 2026-11-03. GREEN: los 79 tests del módulo pasan en V4d, sin omitidos.
+- **TDD n/a: configuración**: desarrollo Next usa Webpack, como build; se conserva el fallo real de resolución de Turbopack en la evidencia local. ESLint, TypeScript y build finales: exit 0.
 
 **Criterios de aceptación**
 - [x] CA-1 (cliente tipado):
@@ -441,74 +472,94 @@ verificacion: obligatoria
   - T-08 queda `en-revision`, se integra en `main` y pasa a `completado` cuando T-15 ejecute las E2E en verde.
 
 ### T-09 — Crear: letra, estilo, autoría y avanzado
+- **Cubre (tests)**: E2E-01, E2E-02, E2E-03, E2E-11
 - **Descripción**: Editor de letra con validación en vivo, estilo, autoría obligatoria, instrumental y avanzado según el `params_schema`. Chips y estilos a excluir quedan fuera.
-- **Estado**: en-progreso
+- **Estado**: en-revision
 - **Dependencias**: T-08, T-07
 - **Archivos**: `apps/web/app/create/page.tsx` y su test, `apps/web/components/LyricsEditor/**`, `apps/web/lib/api.ts` (lectura del `code`), `apps/web/messages/es.json`
 - **Verificación** (PowerShell): `pnpm --filter ./apps/web lint`, `exec tsc --noEmit`, `test` y `build` en verde; E2E-crear de T-15.
 - **Mapa del 2026-10-24:** funcionan el parser compartido, la autoría obligatoria (botón deshabilitado y 422 traducido), el instrumental y el avanzado filtrado por `params_schema`. Fallan los puntos de CA-1 a CA-6.
 
+- **RED**: `app/create/page.test.tsx` falló por duración `180` frente a vacía, variantes `2` frente a `1`, falta de descripción accesible y avanzado inventado; `LyricsEditor` discrepaba del parser · 2026-11-03.
+- **Verificación CPU (2026-11-03)**: formulario 44 pass, editor 4 pass; suite web completa 413 pass/32 ficheros. V8 supera 80 % por archivo en los 12 módulos medidos. Build, ESLint y TypeScript: exit 0. CA funcionales comprobados en CPU; E2E de despliegue pendiente de T-15.
+
 **Criterios de aceptación**
-- [ ] CA-1: la duración arranca vacía con el placeholder de 30. Vacía no envía `duration_s` y el server aplica 30 s. Nunca se envía `duration_s: 0`.
-- [ ] CA-2: las variantes arrancan en 1. El 2 solo se ofrece si la estimación (`vram_mb`) cabe en la VRAM libre de `/api/system`. Si no hay datos, solo 1.
-- [ ] CA-3: con el botón deshabilitado se ve un texto con cada motivo (letra vacía o inválida, estilo, autoría, idioma, avanzado inválido), enlazado con `aria-describedby`.
-- [ ] CA-4: un error de envío muestra el `code` del problem+json y su texto, no un mensaje genérico (CA-10 de la spec).
-- [ ] CA-5: el resaltado de etiquetas de `LyricsEditor` sale de `parseLyrics(...)`, sin una regex propia que contradiga la validación.
-- [ ] CA-6: si `/api/system` no responde, no se muestran parámetros avanzados inventados ni un `model_id` fijo: el formulario explica que el sistema no está disponible.
+- [x] CA-1: la duración arranca vacía con el placeholder de 30. Vacía no envía `duration_s` y el server aplica 30 s. Nunca se envía `duration_s: 0`.
+- [x] CA-2: las variantes arrancan en 1. El 2 solo se ofrece si la estimación (`vram_mb`) cabe en la VRAM libre de `/api/system`. Si no hay datos, solo 1.
+- [x] CA-3: con el botón deshabilitado se ve un texto con cada motivo (letra vacía o inválida, estilo, autoría, idioma, avanzado inválido), enlazado con `aria-describedby`.
+- [x] CA-4: un error de envío muestra el `code` del problem+json y su texto, no un mensaje genérico (CA-10 de la spec).
+- [x] CA-5: el resaltado de etiquetas de `LyricsEditor` sale de `parseLyrics(...)`, sin una regex propia que contradiga la validación.
+- [x] CA-6: si `/api/system` no responde, no se muestran parámetros avanzados inventados ni un `model_id` fijo: el formulario explica que el sistema no está disponible.
 
 ### T-10 — Tarjeta de generación en vivo
+- **Cubre (tests)**: E2E-01, E2E-04, E2E-05
 - **Descripción**: La tarjeta muestra las etapas por SSE, los errores con `code`, `job_id` y reintentar, y la onda al terminar. El feed A/B queda fuera.
-- **Estado**: en-progreso
+- **Estado**: en-revision
 - **Dependencias**: T-09, T-06
-- **Archivos**: `apps/web/components/GenerationCard.tsx`, `apps/web/components/GenerationFeed.tsx`, `apps/web/lib/generation-feed.ts`, `apps/web/lib/event-reducer.ts`, `apps/web/app/create/page.tsx` (solo el feed), sus tests y `apps/web/messages/es.json`
+- **Archivos**: `apps/web/components/GenerationCard.tsx`, `apps/web/components/GenerationFeed.tsx`, `apps/web/components/GenerativeViz.tsx` (pares min/max de la onda), `apps/web/lib/generation-feed.ts`, `apps/web/lib/generation-feed.test.ts`, `apps/web/lib/event-reducer.ts`, `apps/web/lib/event-reducer.test.ts`, `apps/web/lib/api.ts`, `apps/web/lib/api.test.ts` (códigos de cancelar/reintentar), `apps/web/app/create/page.tsx` (solo el feed), sus tests y `apps/web/messages/es.json`
 - **Verificación** (PowerShell): `pnpm --filter ./apps/web lint`, `exec tsc --noEmit`, `test` y `build` en verde; E2E-generar de T-15 contra `engine-mock`.
 - **Mapa del 2026-10-24:** el parser y el reducer SSE, el snapshot, y el `code` con `job_id` y Reintentar sin toast funcionan. Que no llegue ningún evento en vivo es culpa del server (T-06 CA-1).
 
+- **RED**: las pruebas de tarjeta/onda detectaron etapa sin marcar, final prematuro, negativos recortados y error de acción perdido; regresiones del feed: 110 lecturas frente a 20 y 6 peaks frente a 3 · 2026-11-03.
+- **Verificación CPU (2026-11-03)**: corrige respuestas antiguas de Sistema, estado terminal por take, callbacks por canción y caché de peaks; 44 tests del compositor verdes. `t10-fanout/result.json` conserva RED/GREEN y SHA. No hay progreso inventado ni reintento automático de la UI; E2E con engine-mock pendiente.
+
 **Criterios de aceptación**
-- [ ] CA-1: el stepper refleja las etapas reales del engine (`loading_model`, `generating`, `decoding`) y la del post-proceso, con la misma correspondencia para el mock y para ACE-Step. Una etapa desconocida no deja el stepper sin marcar.
-- [ ] CA-2: la tarjeta pasa a «Lista» solo cuando el take está `ready` (siguiendo el `post_job_id` o el estado del take), no cuando acaba la generación.
-- [ ] CA-3: la onda final usa los pares [min,max] reales, sin recortar los negativos a 0.
-- [ ] CA-4: si Reintentar o Cancelar fallan (409 o 503), la tarjeta muestra el `code`, sin tragarse el error.
+- [x] CA-1: el stepper refleja las etapas reales del engine (`loading_model`, `generating`, `decoding`) y la del post-proceso, con la misma correspondencia para el mock y para ACE-Step. Una etapa desconocida no deja el stepper sin marcar.
+- [x] CA-2: la tarjeta pasa a «Lista» solo cuando el take está `ready` (siguiendo el `post_job_id` o el estado del take), no cuando acaba la generación.
+- [x] CA-3: la onda final usa los pares [min,max] reales, sin recortar los negativos a 0.
+- [x] CA-4: si Reintentar o Cancelar fallan (409 o 503), la tarjeta muestra el `code`, sin tragarse el error.
 
 ### T-11 — Biblioteca de canciones
+- **Cubre (tests)**: E2E-08
 - **Descripción**: Lista con búsqueda FTS y preescucha del maestro. Grid, filtros avanzados y papelera en la UI quedan fuera.
-- **Estado**: en-progreso
+- **Estado**: en-revision
 - **Dependencias**: T-07, T-08
 - **Archivos**: `apps/web/app/songs/page.tsx`, `apps/web/components/MasterPreview.tsx`, sus tests y `apps/web/messages/es.json`; en el server, la consulta FTS de `GET /api/songs` (`apps/server/app/domain_routes.py`) y su test
 - **Verificación**: `uv run pytest apps/server/tests -k "songs or fts" -m "not gpu"` en verde; web (PowerShell): `lint`, `tsc`, `test` y `build` en verde; E2E-biblioteca de T-15.
 - **Decisión (orquestador, 2026-10-24, reversible):** una canción sin maestro usa en la preescucha su último take `ready`, y la UI lo indica.
 
+- **RED**: búsquedas con puntuación devolvían error FTS; la preescucha sin maestro no elegía la última toma lista · 2026-11-03.
+- **Verificación CPU (2026-11-03)**: biblioteca 9 pass y preescucha 7 pass; FTS literal cubierto en server. Alineada la expectativa antigua de comillas: 200 vacío, sin relajar los demás filtros. E2E de despliegue pendiente.
+
 **Criterios de aceptación**
-- [ ] CA-1 (server): las búsquedas `hip-hop`, `rock & roll`, `it's`, `AC/DC` y `amo` devuelven 200. Las cuatro primeras encuentran su canción y `amo` encuentra «amor» (por prefijo). Cada término se escapa antes de `MATCH` y una búsqueda nunca da 422 por la sintaxis de FTS5.
-- [ ] CA-2: Enter busca, y que se recarguen las dependencias no borra la búsqueda en curso.
-- [ ] CA-3: la preescucha funciona en canciones sin maestro, con su último take `ready`, y si no hay ninguno lo dice.
+- [x] CA-1 (server): las búsquedas `hip-hop`, `rock & roll`, `it's`, `AC/DC` y `amo` devuelven 200. Las cuatro primeras encuentran su canción y `amo` encuentra «amor» (por prefijo). Cada término se escapa antes de `MATCH` y una búsqueda nunca da 422 por la sintaxis de FTS5.
+- [x] CA-2: Enter busca, y que se recarguen las dependencias no borra la búsqueda en curso.
+- [x] CA-3: la preescucha funciona en canciones sin maestro, con su último take `ready`, y si no hay ninguno lo dice.
 
 ### T-12 — Vista de canción
+- **Cubre (tests)**: E2E-07
 - **Descripción**: Takes con valoración y maestro, onda con seek, letra y descarga MP3/FLAC.
-- **Estado**: en-progreso
+- **Estado**: en-revision
 - **Dependencias**: T-11
 - **Archivos**: `apps/web/app/songs/[id]/page.tsx` y su test nuevo, `apps/web/components/Waveform.tsx`, `apps/web/lib/api.ts` (descarga y PATCH), `apps/web/messages/es.json`; en el server, `PATCH /api/takes/{id}` (`domain_routes.py`: borrar la valoración con `null` y devolver `assets`) y su test
 - **Verificación**: `uv run pytest apps/server/tests -k "take" -m "not gpu"` en verde; web (PowerShell): `lint`, `tsc`, `test` y `build` en verde; E2E-cancion de T-15.
 
+- **RED**: `app/songs/[id]/page.test.tsx` esperaba todos los bins y recibió solo `[0.1,0.2]`; `download-red.log` esperaba el nombre del server y recibió `T-master.flac`; PATCH perdía código/detalle · 2026-11-03.
+- **Verificación CPU (2026-11-03)**: página 9 pass; valoración 1–5/borrado, maestro ready, assets y descargas autenticadas cubiertos. La suite web completa y los umbrales V8 pasan; E2E de despliegue pendiente.
+
 **Criterios de aceptación**
-- [ ] CA-1: la onda usa todos los bins del canal 0 de los peaks, no solo el primero.
-- [ ] CA-2: la valoración se elige de 1 a 5 y volver a pulsar la misma la borra (`rating: null`, que el server acepta). Nunca se envía `0` y los errores se muestran.
-- [ ] CA-3: tras valorar o elegir maestro, el take conserva `assets` y sigue reproduciéndose. El PATCH devuelve el take con sus `assets`, o el cliente fusiona la respuesta.
-- [ ] CA-4: «Marcar maestro» solo se habilita en takes `ready` y su error se muestra.
-- [ ] CA-5: la descarga usa `?download=1` y el nombre que da el `Content-Disposition` del server.
-- [ ] CA-6: la página tiene test unitario (takes, valoración, maestro, onda y descarga).
+- [x] CA-1: la onda usa todos los bins del canal 0 de los peaks, no solo el primero.
+- [x] CA-2: la valoración se elige de 1 a 5 y volver a pulsar la misma la borra (`rating: null`, que el server acepta). Nunca se envía `0` y los errores se muestran.
+- [x] CA-3: tras valorar o elegir maestro, el take conserva `assets` y sigue reproduciéndose. El PATCH devuelve el take con sus `assets`, o el cliente fusiona la respuesta.
+- [x] CA-4: «Marcar maestro» solo se habilita en takes `ready` y su error se muestra.
+- [x] CA-5: la descarga usa `?download=1` y el nombre que da el `Content-Disposition` del server.
+- [x] CA-6: la página tiene test unitario (takes, valoración, maestro, onda y descarga).
 
 ### T-13 — Reproductor persistente
+- **Cubre (tests)**: E2E-01, M-02
 - **Descripción**: El reproductor sobrevive a la navegación. La cola y los atajos quedan fuera.
-- **Estado**: en-progreso
+- **Estado**: en-revision
 - **Dependencias**: T-08
-- **Archivos**: `apps/web/components/PlayerContext.tsx`, `apps/web/components/PlayerDock.tsx` y sus tests; `apps/web/app/create/page.tsx` (solo la lectura de localStorage)
+- **Archivos**: `apps/web/components/PlayerContext.tsx`, `apps/web/components/PlayerDock.tsx` y sus tests; `apps/web/app/create/page.tsx` (solo la lectura de localStorage), `apps/web/lib/api.ts`, `apps/web/lib/api.test.ts` (cancelación de la descarga de audio), `apps/web/messages/es.json`
 - **Verificación** (PowerShell): `lint`, `tsc`, `test` y `build` en verde; E2E-reproductor de T-15.
 
+- **RED**: `PlayerContext.test.tsx` detectó lectura de storage durante render; `PlayerDock.test.tsx` detectó Play antes del blob autenticado y carga antigua sin cancelar · 2026-11-03.
+- **Verificación CPU (2026-11-03)**: contexto+dock 19 pass; conserva el mismo audio al navegar, aborta respuestas antiguas y revoca blobs. Cobertura por archivo >80 % en las cuatro métricas; E2E de despliegue pendiente.
+
 **Criterios de aceptación**
-- [ ] CA-1: no hay desajuste de hidratación: localStorage se lee en un efecto, no en el inicializador de `useState`.
-- [ ] CA-2: el `<audio>` nunca carga un `src` sin token. Play se habilita cuando el blob autenticado está listo.
-- [ ] CA-3: un test comprueba que la pista sigue al navegar entre `/songs` y `/create`.
+- [x] CA-1: no hay desajuste de hidratación: localStorage se lee en un efecto, no en el inicializador de `useState`.
+- [x] CA-2: el `<audio>` nunca carga un `src` sin token. Play se habilita cuando el blob autenticado está listo.
+- [x] CA-3: un test comprueba que la pista sigue al navegar entre `/songs` y `/create`.
 
 ### T-14 — Colecciones y página Sistema
 - **Descripción**: Aplazada (ADR-0089); el código parcial se conserva.
@@ -519,13 +570,20 @@ verificacion: obligatoria
 ## Fase 5 — Pruebas y cierre
 
 ### T-15 — Suite E2E del camino mínimo (Playwright + engine-mock)
+- **Cubre (tests)**: E2E-01, E2E-02, E2E-03, E2E-04, E2E-05, E2E-06, E2E-07, E2E-08, E2E-11, API-01, API-02, M-02
 - **Descripción**: E2E de crear, generar, biblioteca, canción, reproductor y errores contra `engine-mock` (actualizar `test-plan.md` al recorte).
-- **Cierra también T-04, T-05 y T-07**: cuando E2E-01 y E2E-09 (T-05), E2E-04, E2E-05 y E2E-06 (T-04) y E2E-01, E2E-02, E2E-07, E2E-08, E2E-10 y E2E-11 (T-07) pasen con `qa-gate` en verde, esas tareas pasan a `completado`.
+- **Cierra también T-04, T-05 y T-07**: cuando E2E-01 (T-05), E2E-04, E2E-05 y E2E-06 (T-04) y E2E-01, E2E-02, E2E-07, E2E-08 y E2E-11 (T-07) pasen contra el despliegue real con `qa-gate` en verde. Beats (E2E-09) y la página Sistema (E2E-10) están aplazados por el recorte; los fixtures CPU no sustituyen esta puerta.
 - **Estado**: en-progreso
 - **Dependencias**: T-09 a T-13
+- **Archivos**: `apps/web/e2e/`, `apps/web/playwright.config.ts`, `apps/web/playwright.cpu.config.ts`, `docs/roadmap/2026-09-28-m1-mvp-estudio/test-plan.md`, `docs/roadmap/2026-09-28-m1-mvp-estudio/testing/cpu-ui-2026-11-03.md`, `docs/roadmap/2026-09-28-m1-mvp-estudio/testing/cpu-ui-2026-11-03.pdf`, `docs/calidad/pruebas.md`, `docs/README.md`, `docs/knowledge/README.md`, `docs/knowledge/approved/gotchas/music-studio.GOT-003-cobertura-submodulos-numpy-windows.md`, `CONTINUE-HERE.md`
 - **Verificación**: `pnpm --filter web exec playwright test` en verde; informe de `qa` con 0 fallos.
+- **QA CPU (2026-11-03)**: revisión 2, tres corridas consecutivas de 21/21, cada `qa-gate` exit 0: 19 UI con API interceptada y 2 HTTP reales aislados. Informe enlazado en `testing/cpu-ui-2026-11-03.md`; no son 63 escenarios distintos.
+- **Límites**: fixtures WAV/VRAM/eventos sintéticos; sin engines, BD del usuario, WSL, Docker, Ollama ni GPU. No acredita recuperación, FFmpeg Linux, SSE/Range de producto ni cierre de M1. PDF comprobado estructuralmente e inspeccionado en sus siete páginas por el orquestador el 04/11 con Chromium sin GPU (`qa-ui/pdf-visual/inspection.json`); conserva los títulos literales del reporter y los pendientes históricos de QA.
+- **Trazabilidad**: «Cubre (tests)» añadido después de QA; coverage-check exit 0. Avisos triados: T-00/T-14 cancelados, T-17 backend; E2E-09/10 aplazados. Sin equivalencia entre declarar cobertura y ejecutar escenarios.
+
 
 ### T-16 — Prueba real con ACE-Step, README y cierre
+- **Cubre (tests)**: M-01, M-03
 - **Descripción**: Canción real generada desde la web con ACE-Step (modelo de M0/T-13), escuchada por el propietario, y README de puesta en marcha.
 - **Estado**: en-progreso
 - **Dependencias**: T-15, M0/T-13
@@ -856,4 +914,13 @@ Lentes A y B sobre `46490f4..43f1d3f` (commits `840a227` y `43f1d3f`). Las lente
 |---|---|---|---|---|---|
 | 1 | Minor | En Sistema, toda tarea verificada distinta de `music.song` o `music.instrumental` sale como «Desconocido». Con el mock salen 19 iguales | T-08 | deuda aceptada: el propietario decidió no ampliar Sistema y el M1 recortado solo usa song e instrumental. Se etiquetan cuando M2 active esas tareas | `apps/web/lib/enum-labels.ts:4`; `apps/web/app/system/page.tsx:55` |
 | 2 | Minor | Ningún test comprueba que las claves `enums.engineState.*` existan en `es.json`, porque el test de alias salta las llamadas dinámicas `te(...)` | T-08 | deuda aceptada: se cubre al revisar T-09 a T-13, que añaden más etiquetas de estado | `apps/web/lib/i18n-keys.test.ts:56-61` |
+
+## Revisión de dos lentes — intento 3: lote CPU, 2026-11-04
+
+- Intentos 1–3: A/B/C/D conformes sobre el código revisado; se conservan veredictos y deudas heredados.
+- Resueltos B1/B2: una respuesta antigua de Sistema no pisa la actual y el estado fallido/cancelado de cada take prevalece sobre el post.
+- Resuelto B3: fallo de publicación autenticado, hijo con linaje, reclamación atómica e índice original disperso; historia intacta.
+- Resueltos D1/D2: lecturas por canción y peaks ya completados sin redescargas.
+- Delta final de dos tests, intento 1: A/B/D sin gaps; C no aplica según selector. Conserva los 3 asserts de retry y los 10 de publicación, con staging real y dos seams delimitados.
+- Evidencia: `.cache/dev-cycle/20261103-cpu-m1/review{1,2,3}-verdicts.json` y `harness-final/review/`; scope exit 0 y SHA coincidentes. Revisión de código, sin aceptación implícita de Docker o M1.
 
