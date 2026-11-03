@@ -15,6 +15,9 @@ vi.mock('next/navigation',()=>({redirect:vi.fn(()=>{throw Error('redirect');})})
 import {redirect} from 'next/navigation';
 afterEach(()=>{cleanup();localStorage.clear();vi.unstubAllGlobals();vi.clearAllMocks();});
 function wrap(children:React.ReactNode){return <NextIntlClientProvider locale="es" messages={messages}>{children}</NextIntlClientProvider>;}
+function createSystem(task = 'music.song', properties: Record<string, unknown> = {}) {
+ return {queue:{queued:false,running:false,blocked:false},engines:[],gpu:{free_mb:8000},ram:{},disk:{},models:[{id:'verified-test-model',provider:{type:'local'},commercial_use:true,license:'MIT',tasks:{[task]:{verified:true,features:{},params_schema:{properties}}}}]};
+}
 test('la entrada dirige a Crear',()=>{
  expect(()=>HomePage()).toThrow('redirect');
  expect(redirect).toHaveBeenCalledWith('/create');
@@ -24,7 +27,8 @@ test('Crear muestra el compositor y Canciones conserva su estado vacio',async()=
  const view=render(wrap(<CreatePage/>));
  expect(screen.getByRole('heading',{level:1}).textContent).toBe(messages.create.title);
  expect(screen.getByLabelText(messages.create.lyricsLabel)).toBeTruthy();
-  expect((screen.getByLabelText(messages.create.variantsLabel) as HTMLSelectElement).value).toBe('2');
+ expect((screen.getByLabelText(messages.create.variantsLabel) as HTMLSelectElement).value).toBe('1');
+ expect([...screen.getByLabelText<HTMLSelectElement>(messages.create.variantsLabel).options].map(option => option.value)).toEqual(['1']);
  fireEvent.click(screen.getByRole('button',{name:'[Verse]'}));
  expect((screen.getByLabelText(messages.create.lyricsLabel) as HTMLTextAreaElement).value).toContain('[Verse]');
  expect((screen.getByRole('button',{name:messages.create.submit}) as HTMLButtonElement).disabled).toBe(true);
@@ -81,48 +85,67 @@ test('Crear envia letra, declaracion y variantes, y muestra el job',async()=>{
  const fetcher=vi.fn().mockImplementation(async(url:string)=> url.endsWith('/api/session/bootstrap')
    ? new Response('{"session_token":"session-1"}',{status:200})
    : url.endsWith('/api/system')
-     ? new Response('{"queue":{},"engines":[],"gpu":null,"ram":null,"disk":null,"models":[{"id":"mock","provider":{"type":"local"},"commercial_use":true,"license":"MIT","tasks":{"music.song":{"verified":true}}}]}')
+     ? new Response(JSON.stringify(createSystem()))
+     : url.endsWith('/api/generations/estimate')
+       ? new Response('{"eta_s":12,"vram_mb":7000}')
      : new Response('{"song_id":"song-1","generation_job_id":"job-1","post_job_id":"post-1","take_ids":[],"beat_job_ids":[]}',{status:202}));
  vi.stubGlobal('fetch',fetcher);
  render(wrap(<CreatePage/>));
  fireEvent.change(screen.getByLabelText(messages.create.lyricsLabel),{target:{value:'[Verse]\nUna letra propia'}});
  fireEvent.change(screen.getByLabelText(messages.create.styleLabel),{target:{value:'hip hop luminoso'}});
  fireEvent.click(screen.getByLabelText(messages.create.declarationOwn));
- fireEvent.change(screen.getByLabelText(messages.create.variantsLabel),{target:{value:'2'}});
- await waitFor(()=>expect(fetcher.mock.calls.some(([url])=>String(url).endsWith('/api/system'))).toBe(true));
+ const variants = screen.getByLabelText<HTMLSelectElement>(messages.create.variantsLabel);
+ expect(variants.value).toBe('1');
+ await waitFor(()=>expect([...variants.options].map(option => option.value)).toEqual(['1','2']));
+ fireEvent.change(variants,{target:{value:'2'}});
  fireEvent.click(screen.getByRole('button',{name:messages.create.submit}));
  await screen.findByText(messages.create.queued);
  const generationCall=fetcher.mock.calls.find(([url])=>String(url).endsWith('/api/generations'));
  expect(generationCall).toBeTruthy();
  if (!generationCall) throw new Error('generation request missing');
  const body=JSON.parse(generationCall[1].body as string);
- expect(body).toMatchObject({task:'music.song',model_id:'mock',lyrics:'[Verse]\nUna letra propia',lyrics_declaration:'own',n_outputs:2});
+ expect(body).toMatchObject({task:'music.song',model_id:'verified-test-model',lyrics:'[Verse]\nUna letra propia',lyrics_declaration:'own',n_outputs:2});
+ expect(body.params).not.toHaveProperty('duration_s');
+ const estimateCall = fetcher.mock.calls.find(([url]) => String(url).endsWith('/api/generations/estimate'));
+ expect(JSON.parse(estimateCall![1].body as string)).toMatchObject({model_id:'verified-test-model',n_outputs:2});
  expect(screen.getByRole('status').textContent).toContain('job-1');
  expect(JSON.parse(localStorage.getItem('music-studio:generation-feed') ?? '[]')[0].job_id).toBe('job-1');
 });
 test('Crear instrumental conserva la letra visible pero la omite en la peticion',async()=>{
  const fetcher=vi.fn().mockImplementation(async(url:string)=> String(url).endsWith('/api/session/bootstrap')
    ? new Response('{"session_token":"session-2"}',{status:200})
-   : new Response('{"song_id":"song-2","generation_job_id":"job-2","post_job_id":"post-2","take_ids":[],"beat_job_ids":[]}',{status:202}));
+   : String(url).endsWith('/api/system')
+     ? new Response(JSON.stringify(createSystem('music.instrumental')))
+     : String(url).endsWith('/api/generations/estimate')
+       ? new Response('{"eta_s":12,"vram_mb":7000}')
+       : new Response('{"song_id":"song-2","generation_job_id":"job-2","post_job_id":"post-2","take_ids":[],"beat_job_ids":[]}',{status:202}));
  vi.stubGlobal('fetch',fetcher);
  render(wrap(<CreatePage/>));
  const lyrics=screen.getByLabelText(messages.create.lyricsLabel);
  fireEvent.change(lyrics,{target:{value:'Borrador que conservo'}});
  fireEvent.change(screen.getByLabelText(messages.create.styleLabel),{target:{value:'hip hop luminoso'}});
  fireEvent.click(screen.getByLabelText(messages.create.instrumentalLabel));
+ await waitFor(()=>expect((screen.getByRole('button',{name:messages.create.submit}) as HTMLButtonElement).disabled).toBe(false));
  fireEvent.click(screen.getByRole('button',{name:messages.create.submit}));
  await screen.findByText(messages.create.queued);
  const generationCall=fetcher.mock.calls.find(([url])=>String(url).endsWith('/api/generations'));
  if (!generationCall) throw new Error('generation request missing');
  const body=JSON.parse(generationCall[1].body as string);
  expect(body.task).toBe('music.instrumental');
+ expect(body).toMatchObject({model_id:'verified-test-model',n_outputs:1});
  expect(body).not.toHaveProperty('lyrics');
+ expect(body.params).not.toHaveProperty('lyrics');
+ expect(body.params).not.toHaveProperty('duration_s');
  expect((lyrics as HTMLTextAreaElement).value).toBe('Borrador que conservo');
 });
-test('Crear envia los controles avanzados declarados por ACE-Step',async()=>{
+test('Crear envia los controles avanzados declarados por el descriptor verificado',async()=>{
  const fetcher=vi.fn().mockImplementation(async(url:string)=> {
    if(String(url).endsWith('/api/session/bootstrap')) return new Response('{"session_token":"session-advanced"}');
-   if(String(url).endsWith('/api/generations/estimate')) return new Response('{"eta_s":12}');
+   if(String(url).endsWith('/api/system')) return new Response(JSON.stringify(createSystem('music.song', {
+     vocal_language:{type:'string'}, shift:{type:'number',minimum:1,maximum:5},
+     inference_steps:{type:'integer',minimum:1,maximum:8}, duration_s:{type:'number',minimum:10,maximum:600},
+   })));
+   if(String(url).endsWith('/api/generations/estimate')) return new Response('{"eta_s":12,"vram_mb":7000}');
    return new Response('{"song_id":"song-advanced","generation_job_id":"job-advanced","post_job_id":"post-advanced","take_ids":[],"beat_job_ids":[]}',{status:202});
  });
  vi.stubGlobal('fetch',fetcher);
@@ -130,30 +153,31 @@ test('Crear envia los controles avanzados declarados por ACE-Step',async()=>{
  fireEvent.change(screen.getByLabelText(messages.create.lyricsLabel),{target:{value:'[Verse]\nUna letra'}});
  fireEvent.change(screen.getByLabelText(messages.create.styleLabel),{target:{value:'hip hop luminoso'}});
  fireEvent.click(screen.getByLabelText(messages.create.declarationOwn));
- fireEvent.click(screen.getByText(messages.create.advancedLabel));
+ fireEvent.click(await screen.findByText(messages.create.advancedLabel));
  fireEvent.change(screen.getByLabelText(messages.create.languageLabel),{target:{value:'en'}});
  fireEvent.change(screen.getByLabelText(messages.create.vocalLanguageLabel),{target:{value:'es'}});
  fireEvent.change(screen.getByLabelText(messages.create.shiftLabel),{target:{value:'2'}});
  expect(screen.queryByLabelText(messages.create.guidanceScaleLabel)).toBeNull();
  fireEvent.click(screen.getByRole('button',{name:messages.create.submit}));
  await screen.findByText(messages.create.queued);
- const estimateCall=fetcher.mock.calls.find(([url])=>String(url).endsWith('/api/generations/estimate'));
+ const estimateCall=fetcher.mock.calls.find(([url, options])=>String(url).endsWith('/api/generations/estimate') && JSON.parse(options.body as string).params.language === 'en' && JSON.parse(options.body as string).params.shift === 2);
  const generationCall=fetcher.mock.calls.find(([url])=>String(url).endsWith('/api/generations'));
  expect(estimateCall).toBeTruthy();
  expect(generationCall).toBeTruthy();
  if (!estimateCall || !generationCall) throw new Error('generation calls missing');
- expect(JSON.parse(estimateCall[1].body as string)).toMatchObject({model_id:'ace-step-1.5-turbo'});
+ expect(JSON.parse(estimateCall[1].body as string)).toMatchObject({model_id:'verified-test-model'});
  expect(JSON.parse(estimateCall[1].body as string).params).toMatchObject({lyrics:'[Verse]\nUna letra',language:'en',vocal_language:'es',shift:2});
  expect('guidance_scale' in JSON.parse(estimateCall[1].body as string).params).toBe(false);
- expect(JSON.parse(generationCall[1].body as string)).toMatchObject({model_id:'ace-step-1.5-turbo'});
+ expect(JSON.parse(generationCall[1].body as string)).toMatchObject({model_id:'verified-test-model'});
  expect(JSON.parse(generationCall[1].body as string).params).toMatchObject({language:'en',vocal_language:'es',shift:2});
  expect('guidance_scale' in JSON.parse(generationCall[1].body as string).params).toBe(false);
+ expect(JSON.parse(generationCall[1].body as string).params).not.toHaveProperty('duration_s');
 });
 test('Crear respeta el esquema y las features verificadas del modelo seleccionado',async()=>{
  const fetcher=vi.fn().mockImplementation(async(url:string)=> {
    if(String(url).endsWith('/api/session/bootstrap')) return new Response('{"session_token":"session-schema"}');
    if(String(url).endsWith('/api/system')) return new Response(JSON.stringify({queue:{},engines:[],gpu:null,ram:null,disk:null,models:[{id:'mock',provider:{type:'local'},commercial_use:true,license:'MIT',tasks:{'music.song':{verified:true,params_schema:{properties:{style:{},duration_s:{},lyrics:{},language:{},inference_steps:{type:'integer',minimum:1,maximum:8}}},features:{}}}}]}));
-   if(String(url).endsWith('/api/generations/estimate')) return new Response('{"eta_s":3}');
+   if(String(url).endsWith('/api/generations/estimate')) return new Response('{"eta_s":3,"vram_mb":7000}');
    return new Response('{"song_id":"song-schema","generation_job_id":"job-schema","post_job_id":"post-schema","take_ids":[],"beat_job_ids":[]}',{status:202});
  });
  vi.stubGlobal('fetch',fetcher);
@@ -162,19 +186,22 @@ test('Crear respeta el esquema y las features verificadas del modelo seleccionad
  fireEvent.change(screen.getByLabelText(messages.create.styleLabel),{target:{value:'hip hop'}});
  fireEvent.click(screen.getByLabelText(messages.create.declarationOwn));
  await waitFor(()=>expect(fetcher.mock.calls.some(([url])=>String(url).endsWith('/api/system'))).toBe(true));
- fireEvent.click(screen.getByText(messages.create.advancedLabel));
+ fireEvent.click(await screen.findByText(messages.create.advancedLabel));
  expect(screen.queryByLabelText(messages.create.guidanceScaleLabel)).toBeNull();
  expect(screen.queryByLabelText(messages.create.bpmLabel)).toBeNull();
  fireEvent.change(screen.getByLabelText(messages.create.stepsLabel),{target:{value:'99'}});
  expect((screen.getByRole('button',{name:messages.create.submit}) as HTMLButtonElement).disabled).toBe(true);
- expect(screen.getByText(messages.create.advancedInvalid)).toBeTruthy();
+ expect(screen.getByRole('status').textContent).toBe(messages.create.advancedInvalid);
+ const disabledReasonId = screen.getByRole('button',{name:messages.create.submit}).getAttribute('aria-describedby');
+ expect(document.getElementById(disabledReasonId!)?.textContent).toContain(messages.create.advancedInvalid);
  fireEvent.change(screen.getByLabelText(messages.create.stepsLabel),{target:{value:'8'}});
  fireEvent.click(screen.getByRole('button',{name:messages.create.submit}));
  await screen.findByText(messages.create.queued);
  const generationCall=fetcher.mock.calls.find(([url])=>String(url).endsWith('/api/generations'));
  if (!generationCall) throw new Error('generation request missing');
  const params=JSON.parse(generationCall[1].body as string).params;
- expect(params).toMatchObject({style:'hip hop',duration_s:180,lyrics:'[Verse]\nUna letra',language:'es'});
+ expect(params).toMatchObject({style:'hip hop',lyrics:'[Verse]\nUna letra',language:'es',inference_steps:8});
+ expect(params).not.toHaveProperty('duration_s');
  expect('guidance_scale' in params).toBe(false);
  expect('bpm' in params).toBe(false);
 });

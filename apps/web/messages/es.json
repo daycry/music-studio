@@ -22,6 +22,8 @@
     "light": "Claro"
   },
   "player": {
+    "loadingAudio": "Cargando audio…",
+    "audioError": "No se pudo cargar el audio. Vuelve a seleccionar la toma para reintentar.",
     "title": "Reproductor",
     "empty": "Todavía no hay una toma seleccionada",
     "reason": "Selecciona una toma disponible para escucharla.",
@@ -40,6 +42,10 @@
     "remove": "Quitar"
   },
   "create": {
+    "systemUnavailable": "El sistema no está disponible para esta generación. Consulta el estado del estudio.",
+    "lyricsRequired": "Escribe una letra para poder generar.",
+    "durationPlaceholder": "30",
+    "languageRequired": "Escribe el idioma principal para poder generar.",
     "title": "Crear",
     "eyebrow": "De una idea a una canción",
     "description": "Tu música empieza con una letra y un estilo.",
@@ -119,6 +125,10 @@
     },
     "stage": {
       "model": "Modelo",
+      "loading_model": "Modelo",
+      "generating": "Generando",
+      "decoding": "Decodificando",
+      "unknown": "Etapa desconocida",
       "queued": "En cola",
       "starting": "Preparando",
       "generate": "Generando",
@@ -126,6 +136,9 @@
     }
   },
   "songs": {
+    "previewLatestReady": "Preescucha de la última toma disponible; todavía no hay maestro.",
+    "previewNoReady": "Todavía no hay ninguna toma disponible para preescuchar.",
+    "previewUnavailable": "No se pudo cargar la preescucha. Vuelve a intentarlo.",
     "title": "Canciones",
     "eyebrow": "Tu biblioteca",
     "description": "Un lugar para reunir tus canciones y sus versiones.",
@@ -197,6 +210,10 @@
     "noTake": "Selecciona una toma para ver su procedencia.",
     "takeId": "ID de toma",
     "model": "Modelo",
+      "loading_model": "Modelo",
+      "generating": "Generando",
+      "decoding": "Decodificando",
+      "unknown": "Etapa desconocida",
     "seed": "Semilla",
     "exportProvenance": "Exportar procedencia JSON",
     "separator": "·",
@@ -219,6 +236,7 @@
     "waveform": "Forma de onda",
     "beatsCount": "{value} marcas de beat",
     "downloadError": "No se pudo descargar el audio.",
+    "actionError": "No se pudo actualizar la toma.",
     "pairAction": "Ir a la pareja"
   },
   "collections": {

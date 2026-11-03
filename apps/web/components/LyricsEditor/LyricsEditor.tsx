@@ -12,11 +12,13 @@ export function LyricsEditor({value, onChange, disabled = false, id}:{value:stri
   const t = useTranslations('create');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const parsed = parseLyrics(value);
-  const knownTags = /^(intro|introducci[oó]n|verse|verses|verso|versos|estrofa|estrofas|pre-chorus|pre chorus|precoro|pre-coro|preestribillo|chorus|choruses|coro|coros|estribillo|estribillos|post-chorus|post chorus|postcoro|post-coro|postestribillo|bridge|puente|hook|gancho|break|pausa|instrumental|solo|outro|salida)(?: (?:final|[1-9][0-9]*))?(?: - .*)?$/i;
-  const highlighted = value.split(/(\*?\[[^\]\n]+\]\*?)/g).map((part, index) => {
-    const tag = part.match(/^\*?\[([^\]\n]+)\]\*?$/)?.[1].trim() ?? '';
-    return tag ? <mark className={knownTags.test(tag) ? undefined : 'invalid-tag'} key={index}>{part}</mark> : <span key={index}>{part}</span>;
+  const ranges = [...parsed.sections.map(section => ({...section.headerRange, invalid: false})),
+    ...parsed.annotations.map(annotation => ({...annotation.range, invalid: true}))].sort((left, right) => left.start - right.start);
+  const highlighted = ranges.flatMap((range, index) => {
+    const prefix = value.slice(ranges[index - 1]?.end ?? 0, range.start);
+    return [<span key={`text-${index}`}>{prefix}</span>, <mark className={range.invalid ? 'invalid-tag' : undefined} key={`tag-${index}`}>{value.slice(range.start, range.end)}</mark>];
   });
+  highlighted.push(<span key="tail">{value.slice(ranges.at(-1)?.end ?? 0)}</span>);
   const sections = parsed.sections.map(section => ({
     name: section.alias,
     lines: value.slice(section.bodyRange.start, section.bodyRange.end).split(/\r?\n/).filter(Boolean).length,

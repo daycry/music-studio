@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import {FormEvent, useEffect, useMemo, useRef, useState} from 'react';
 import {useTranslations} from 'next-intl';
-import {API_ORIGIN, ApiError, cancelJob, createGeneration, estimateGeneration, getSystemInfo, getTakePeaks, isFeatureVerified, retryJob, taskParamProperties, type SystemInfo} from '../../lib/api';
+import {API_ORIGIN, ApiError, cancelJob, createGeneration, estimateGeneration, getSystemInfo, getTakePeaks, listSongTakes, isFeatureVerified, retryJob, taskParamProperties, type SystemInfo} from '../../lib/api';
 import {LyricsEditor} from '../../components/LyricsEditor/LyricsEditor';
 import {parseLyrics} from '../../lib/lyrics';
 import {GenerationFeed, type FeedJob} from '../../components/GenerationFeed';
@@ -11,7 +11,6 @@ import {createFeedJobs, normalizePeaks} from '../../lib/generation-feed';
 
 type Declaration = 'own' | 'assistant' | 'public_domain' | 'licensed';
 const FEED_STORAGE_KEY = 'music-studio:generation-feed';
-const ACE_STEP_TURBO_PARAMS = new Set(['vocal_language', 'shift', 'time_signature', 'inference_steps']);
 
 export default function CreatePage() {
   const t = useTranslations('create');
@@ -19,9 +18,9 @@ export default function CreatePage() {
   const [stylePrompt, setStylePrompt] = useState('');
   const [declaration, setDeclaration] = useState<Declaration | ''>('');
   const [instrumental, setInstrumental] = useState(false);
-  const [variants, setVariants] = useState('2');
+  const [variants, setVariants] = useState('1');
   const [advanced, setAdvanced] = useState(false);
-  const [duration, setDuration] = useState('180');
+  const [duration, setDuration] = useState('');
   const [language, setLanguage] = useState('es');
   const [bpm, setBpm] = useState('');
   const [key, setKey] = useState('');
@@ -37,18 +36,14 @@ export default function CreatePage() {
   const [queuedJob, setQueuedJob] = useState<string | null>(null);
   const [estimate, setEstimate] = useState<number | null>(null);
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
-  const [feedJobs, setFeedJobs] = useState<FeedJob[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const stored = JSON.parse(window.localStorage.getItem(FEED_STORAGE_KEY) ?? '[]') as unknown;
-      return Array.isArray(stored) ? stored as FeedJob[] : [];
-    } catch { return []; }
-  });
-  const feedHydrated = useRef(true);
+  const [batchEstimate, setBatchEstimate] = useState<{key: string; vram: number} | null>(null);
+  const [feedJobs, setFeedJobs] = useState<FeedJob[]>([]);
+  const [feedHydrated, setFeedHydrated] = useState(false);
   const peakRequests = useRef(new Set<string>());
+  const readyTakeKey = JSON.stringify(feedJobs.filter(job => job.take_id && job.take_status === 'ready').map(job => job.take_id).sort());
   const feedSubscriptionKey = useMemo(() => JSON.stringify(feedJobs
     .filter(job => /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/.test(job.song_id))
-    .map(job => [job.song_id, /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/.test(job.job_id) ? job.job_id : null])
+    .flatMap(job => [job.job_id, job.post_job_id].filter(Boolean).map(jobId => [job.song_id, /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/.test(jobId!) ? jobId! : null]))
     .sort(([leftSong, leftJob], [rightSong, rightJob]) => `${leftSong}:${leftJob ?? ''}`.localeCompare(`${rightSong}:${rightJob ?? ''}`))), [feedJobs]);
   const feedSubscriptions = useMemo(() => {
     const bySong = new Map<string, Set<string>>();
@@ -65,104 +60,154 @@ export default function CreatePage() {
   const task = instrumental ? 'music.instrumental' : 'music.song';
   const modelId = useMemo(() => systemInfo?.models?.find(model => model.tasks?.[task]?.verified && model.provider?.type === 'local' && model.commercial_use === true && Boolean(model.license))?.id, [systemInfo, task]);
   const selectedTask = useMemo(() => systemInfo?.models?.find(model => model.id === modelId)?.tasks?.[task], [modelId, systemInfo, task]);
-  const fallbackSchema: Record<string, Record<string, unknown>> = {
-    duration_s: {type: 'number', minimum: 10, maximum: 600},
-    inference_steps: {type: 'integer', minimum: 1, maximum: 8},
-    shift: {type: 'number', minimum: 1, maximum: 5},
-    time_signature: {type: 'string', pattern: '^[1-9][0-9]?/(1|2|4|8|16|32)$'},
-  };
-  const paramRule = (name: string) => taskParamProperties(selectedTask)?.[name] ?? fallbackSchema[name];
+  const paramRule = (name: string) => taskParamProperties(selectedTask)?.[name];
   const validParam = (name: string, value: string) => {
     if (!value) return true;
     const rule = paramRule(name);
     if (!rule) return true;
     if ((rule.type === 'number' || rule.type === 'integer') && !Number.isFinite(Number(value))) return false;
+    if (rule.type === 'integer' && !Number.isInteger(Number(value))) return false;
+    if (Array.isArray(rule.enum) && !rule.enum.includes(rule.type === 'number' || rule.type === 'integer' ? Number(value) : value)) return false;
     if (typeof rule.minimum === 'number' && Number(value) < rule.minimum) return false;
     if (typeof rule.maximum === 'number' && Number(value) > rule.maximum) return false;
-    if (typeof rule.pattern === 'string' && !(new RegExp(rule.pattern)).test(value)) return false;
+    if (typeof rule.pattern === 'string') {
+      try { if (!(new RegExp(rule.pattern)).test(value)) return false; } catch { return false; }
+    }
     return true;
   };
   const supportsParam = (name: string) => {
-    if (!selectedTask) return ACE_STEP_TURBO_PARAMS.has(name);
+    if (!selectedTask) return false;
     const properties = taskParamProperties(selectedTask);
     if (!properties || !(name in properties)) return false;
     return isFeatureVerified(selectedTask, name) !== false;
   };
   const invalidLyrics = !instrumental && (lyrics.trim().length === 0 || parsed.warnings.length > 0);
   const invalidStyle = stylePrompt.trim().length === 0;
-  const invalidAdvanced = !validParam('duration_s', duration)
-    || !validParam('bpm', bpm)
-    || !validParam('key', key)
-    || !validParam('time_signature', timeSignature)
-    || !validParam('inference_steps', inferenceSteps)
-    || !validParam('shift', shift)
-    || !validParam('guidance_scale', guidanceScale);
+  const invalidAdvanced = Object.entries({duration_s: duration, bpm, key, time_signature: timeSignature, inference_steps: inferenceSteps, shift, guidance_scale: guidanceScale, vocal_language: instrumental ? '' : vocalLanguage, negative_prompt: negativePrompt})
+    .some(([name, value]) => supportsParam(name) && !validParam(name, value))
+    || (seed !== '' && (!Number.isSafeInteger(Number(seed)) || Number(seed) < 0));
   const invalidLanguage = !instrumental && language.trim().length === 0;
-  const canSubmit = !busy && !invalidLyrics && !invalidStyle && !invalidAdvanced && !invalidLanguage && (instrumental || declaration !== '');
+  const disabledReasons = [
+    ...(!modelId ? [t('systemUnavailable')] : []),
+    ...(invalidLyrics ? [lyrics.trim() ? t('invalidLyrics') : t('lyricsRequired')] : []),
+    ...(invalidStyle ? [t('styleRequired')] : []),
+    ...(!instrumental && !declaration ? [t('declarationHelp')] : []),
+    ...(invalidLanguage ? [t('languageRequired')] : []),
+    ...(invalidAdvanced ? [t('advancedInvalid')] : []),
+    ...(busy ? [t('submitting')] : []),
+  ];
+  const canSubmit = disabledReasons.length === 0;
   useEffect(() => {
-    if (!feedHydrated.current) return;
+    let stored: unknown = [];
+    try { stored = JSON.parse(window.localStorage.getItem(FEED_STORAGE_KEY) ?? '[]'); } catch { /* almacenamiento local no disponible */ }
+    // El primer render coincide con SSR; sólo se restaura el almacenamiento al montar.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFeedJobs(Array.isArray(stored) ? stored as FeedJob[] : []);
+    setFeedHydrated(true);
+  }, []);
+  useEffect(() => {
+    if (!feedHydrated) return;
     try { window.localStorage.setItem(FEED_STORAGE_KEY, JSON.stringify(feedJobs)); } catch { /* almacenamiento local no disponible */ }
-  }, [feedJobs]);
+  }, [feedJobs, feedHydrated]);
   useEffect(() => {
     let active = true;
     let controller: AbortController | undefined;
     const refresh = () => {
       controller?.abort();
-      controller = new AbortController();
-      getSystemInfo(controller.signal).then(info => { if (active) setSystemInfo(info); }).catch(() => undefined);
+      const request = new AbortController();
+      controller = request;
+      getSystemInfo(request.signal).then(info => { if (active && controller === request && !request.signal.aborted) setSystemInfo(info); }).catch(() => { if (active && controller === request && !request.signal.aborted) setSystemInfo(null); });
     };
     refresh();
     const interval = window.setInterval(refresh, 5000);
     return () => { active = false; window.clearInterval(interval); controller?.abort(); };
   }, []);
   useEffect(() => {
-    const update = (event: ServerEvent) => {
+    let active = true;
+    const revisions = new Map<string, number>();
+    const refreshTakes = (songId: string) => {
+      const revision = (revisions.get(songId) ?? 0) + 1;
+      revisions.set(songId, revision);
+      void listSongTakes(songId).then(({items}) => {
+      if (!active || revisions.get(songId) !== revision) return;
+      setFeedJobs(current => current.map(job => {
+        if (job.song_id !== songId) return job;
+        const take = items.find(take => take.id === job.take_id);
+        return take ? {...job, take_status: take.status, take_error_code: take.error_code} : job;
+      }));
+    }).catch(() => { /* Una lectura fallida nunca declara listo el take. El siguiente evento/snapshot revalida. */ });
+    };
+    const update = (songId: string, event: ServerEvent) => {
       const data = event.data;
+      if (event.type === 'entity.updated' && data.type === 'take') {
+        refreshTakes(songId);
+        return;
+      }
       const jobId = typeof data.job_id === 'string' ? data.job_id : undefined;
       if (!jobId) return;
-      setFeedJobs(current => current.map(job => job.job_id !== jobId ? job : {
-        ...job,
-        status: typeof data.status === 'string' ? data.status : event.type === 'job.done' ? 'succeeded' : event.type === 'job.failed' ? 'failed' : event.type === 'job.cancelled' ? 'cancelled' : job.status,
-        stage: typeof data.stage === 'string' ? data.stage : job.stage,
-        progress: typeof data.fraction === 'number' ? data.fraction : job.progress,
-        error_code: typeof data.code === 'string' ? data.code : job.error_code,
+      setFeedJobs(current => current.map(job => {
+        if (job.song_id !== songId || (job.job_id !== jobId && job.post_job_id !== jobId)) return job;
+        const post = job.post_job_id === jobId;
+        const status = typeof data.status === 'string' ? data.status : event.type === 'job.done' ? 'succeeded' : event.type === 'job.failed' ? 'failed' : event.type === 'job.cancelled' ? 'cancelled' : job.status;
+        return {...job,
+          status: status === 'succeeded' ? 'running' : status,
+          stage: post || status === 'succeeded' ? 'post' : typeof data.stage === 'string' ? data.stage : job.stage,
+          progress: status === 'succeeded' ? null : typeof data.fraction === 'number' ? data.fraction : job.progress,
+          error_code: typeof data.code === 'string' ? data.code : job.error_code,
+        };
       }));
+      if (event.type === 'job.done') refreshTakes(songId);
     };
-    const snapshot = (jobs: JobState[]) => setFeedJobs(current => {
+    const snapshot = (songId: string, jobs: JobState[]) => {
       const states = new Map(jobs.map(job => [job.job_id, job]));
-      // El snapshot del servidor incluye dependencias post.audio/audio.beats;
-      // el feed sólo conserva los jobs de generación que ya conoce el navegador.
-      return current.map(job => {
+      setFeedJobs(current => current.map(job => {
+        if (job.song_id !== songId) return job;
         const state = states.get(job.job_id);
-        return state ? {...job, ...state, group_id: job.group_id} : job;
-      });
-    });
+        const post = job.post_job_id ? states.get(job.post_job_id) : undefined;
+        if (post && post.status !== 'blocked' && post.status !== 'queued') return {...job, status: post.status === 'succeeded' ? 'running' : post.status, stage: 'post', progress: post.progress, error_code: post.error_code};
+        return state ? {...job, ...state, status: state.status === 'succeeded' ? 'running' : state.status, stage: state.status === 'succeeded' ? 'post' : state.stage} : job;
+      }));
+      refreshTakes(songId);
+    };
     const closes = feedSubscriptions.map(({songId, knownJobIds}) => {
-      const suffix = knownJobIds.map(jobId => `&known_job_id=${encodeURIComponent(jobId)}`).join('');
-      return subscribeEvents(`${API_ORIGIN}/api/events?song_id=${encodeURIComponent(songId)}${suffix}`, update, {snapshot});
+      refreshTakes(songId);
+      const suffix = knownJobIds.slice(-64).map(jobId => `&known_job_id=${encodeURIComponent(jobId)}`).join('');
+      return subscribeEvents(`${API_ORIGIN}/api/events?song_id=${encodeURIComponent(songId)}${suffix}`, event => update(songId, event), {snapshot: jobs => snapshot(songId, jobs)});
     });
-    return () => closes.forEach(close => close());
+    return () => { active = false; closes.forEach(close => close()); };
   }, [feedSubscriptions]);
   useEffect(() => {
-    const ready = feedJobs.filter(job => job.take_id && job.status === 'succeeded' && !peakRequests.current.has(job.take_id));
-    for (const job of ready) {
-      const takeId = job.take_id as string;
-      peakRequests.current.add(takeId);
+    let active = true;
+    const requests = peakRequests.current;
+    const pending = new Set<string>();
+    const timers = new Set<number>();
+    const schedule = (callback: () => void) => { const timer = window.setTimeout(callback, 1000); timers.add(timer); };
+    const ready = (JSON.parse(readyTakeKey) as string[]).filter(id => !requests.has(id));
+    for (const takeId of ready) {
+      requests.add(takeId);
+      pending.add(takeId);
       const poll = (attempt: number) => void getTakePeaks(takeId).then(value => {
+        if (!active) return;
         const peaks = normalizePeaks(value);
-        if (peaks) setFeedJobs(current => current.map(item => item.take_id === takeId ? {...item, peaks} : item));
-        else if (attempt < 15) window.setTimeout(() => poll(attempt + 1), 1000);
+        if (peaks) {
+          pending.delete(takeId);
+          setFeedJobs(current => current.map(item => item.take_id === takeId ? {...item, peaks} : item));
+        }
+        else if (attempt < 15) schedule(() => poll(attempt + 1));
+        else { pending.delete(takeId); requests.delete(takeId); }
       }).catch(() => {
         // El audio puede estar listo antes que su análisis de peaks.
-        if (attempt < 15) window.setTimeout(() => poll(attempt + 1), 1000);
+        if (active && attempt < 15) schedule(() => poll(attempt + 1));
+        else if (active) { pending.delete(takeId); requests.delete(takeId); }
       });
       poll(0);
     }
-  }, [feedJobs]);
+    return () => { active = false; timers.forEach(timer => window.clearTimeout(timer)); pending.forEach(id => requests.delete(id)); };
+  }, [readyTakeKey]);
 
   const params: Record<string, unknown> = {
     style: stylePrompt,
-    duration_s: Number(duration),
+    ...(duration && supportsParam('duration_s') ? {duration_s: Number(duration)} : {}),
     ...(!instrumental ? {lyrics, language} : {}),
     ...(bpm && supportsParam('bpm') ? {bpm: Number(bpm)} : {}),
     ...(key && supportsParam('key') ? {key} : {}),
@@ -173,29 +218,43 @@ export default function CreatePage() {
     ...(shift && supportsParam('shift') ? {shift: Number(shift)} : {}),
     ...(guidanceScale && supportsParam('guidance_scale') ? {guidance_scale: Number(guidanceScale)} : {}),
   };
+  const estimateKey = modelId && !invalidLyrics && !invalidStyle && !invalidAdvanced && !invalidLanguage
+    ? JSON.stringify({task, model_id: modelId, params, ...(seed ? {seed: Number(seed)} : {}), n_outputs: 2}) : null;
+  const freeVram = systemInfo?.gpu?.free_mb;
+  const allowsTwoVariants = Boolean(estimateKey && batchEstimate?.key === estimateKey
+    && typeof freeVram === 'number' && Number.isFinite(freeVram) && freeVram > 0
+    && Number.isFinite(batchEstimate.vram) && batchEstimate.vram > 0 && batchEstimate.vram <= freeVram);
+  const effectiveVariants = allowsTwoVariants ? Number(variants) : 1;
+  useEffect(() => {
+    if (!estimateKey || typeof freeVram !== 'number' || !Number.isFinite(freeVram) || freeVram <= 0) return;
+    let active = true;
+    void estimateGeneration(JSON.parse(estimateKey)).then(preview => {
+      if (active) setBatchEstimate({key: estimateKey, vram: preview.vram_mb});
+    }).catch(() => { if (active) setBatchEstimate(null); });
+    return () => { active = false; };
+  }, [estimateKey, freeVram]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!canSubmit) return;
+    if (!canSubmit || !modelId) return;
     setBusy(true); setError(null); setQueuedJob(null);
     try {
       try {
         const estimateParams = instrumental ? params : {...params, lyrics, language};
-        const effectiveModelId = modelId ?? 'ace-step-1.5-turbo';
-        const preview = await estimateGeneration({task, model_id: effectiveModelId, params: estimateParams, ...(seed ? {seed: Number(seed)} : {}), n_outputs: Number(variants)});
+        const preview = await estimateGeneration({task, model_id: modelId, params: estimateParams, ...(seed ? {seed: Number(seed)} : {}), n_outputs: effectiveVariants});
         setEstimate(typeof preview.eta_s === 'number' ? preview.eta_s : null);
       } catch { setEstimate(null); }
       const result = await createGeneration({
         task,
-        model_id: modelId ?? 'ace-step-1.5-turbo',
+        model_id: modelId,
         ...(instrumental ? {} : {lyrics, lyrics_declaration: declaration as Declaration}),
         style_prompt: stylePrompt, language, params,
-        ...(seed ? {seed: Number(seed)} : {}), n_outputs: Number(variants),
+        ...(seed ? {seed: Number(seed)} : {}), n_outputs: effectiveVariants,
       });
       setQueuedJob(result.generation_job_id);
       setFeedJobs(current => [...current, ...createFeedJobs(result)]);
     } catch (cause) {
-      setError(cause instanceof ApiError && cause.code === 'LYRICS_DECLARATION_REQUIRED' ? t('declarationHelp') : t('reason'));
+      setError(cause instanceof ApiError ? `${cause.code ?? cause.status}: ${cause.message}` : cause instanceof Error ? cause.message : t('reason'));
     } finally { setBusy(false); }
   }
 
@@ -219,11 +278,11 @@ export default function CreatePage() {
           {([['own', 'declarationOwn'], ['assistant', 'declarationAssistant'], ['public_domain', 'declarationPublicDomain'], ['licensed', 'declarationLicensed']] as const).map(([value, label]) => <label className="choice" key={value}><input type="radio" name="declaration" value={value} checked={declaration === value} onChange={() => setDeclaration(value)} />{t(label)}</label>)}
         </fieldset>
         <label className="choice checkbox"><input type="checkbox" checked={instrumental} onChange={event => setInstrumental(event.target.checked)} />{t('instrumentalLabel')}</label>
-        <div className="field compact-field"><label htmlFor="variants">{t('variantsLabel')}</label><select id="variants" value={variants} onChange={event => setVariants(event.target.value)}>{[1, 2, 3, 4].map(value => <option key={value} value={value}>{value}</option>)}</select></div>
-        <details open={advanced} onToggle={event => setAdvanced(event.currentTarget.open)} className="advanced">
+        <div className="field compact-field"><label htmlFor="variants">{t('variantsLabel')}</label><select id="variants" value={effectiveVariants} onChange={event => setVariants(event.target.value)}>{(allowsTwoVariants ? [1, 2] : [1]).map(value => <option key={value} value={value}>{value}</option>)}</select></div>
+        {selectedTask && <details open={advanced} onToggle={event => setAdvanced(event.currentTarget.open)} className="advanced">
           <summary>{t('advancedLabel')}</summary>
           <div className="advanced-grid">
-            <label className="field"><span>{t('durationLabel')}</span><input type="number" min="10" max="600" value={duration} onChange={event => setDuration(event.target.value)} /></label>
+            {supportsParam('duration_s') && <label className="field"><span>{t('durationLabel')}</span><input type="number" min={paramRule('duration_s')?.minimum as number | undefined} max={paramRule('duration_s')?.maximum as number | undefined} placeholder={t('durationPlaceholder')} value={duration} onChange={event => setDuration(event.target.value)} /></label>}
             {!instrumental && <label className="field"><span>{t('languageLabel')}</span><input value={language} onChange={event => setLanguage(event.target.value)} /></label>}
             {supportsParam('bpm') && <label className="field"><span>{t('bpmLabel')}</span><input type="number" min="30" max="300" value={bpm} onChange={event => setBpm(event.target.value)} placeholder={t('bpmPlaceholder')} /></label>}
             {supportsParam('key') && <label className="field"><span>{t('keyLabel')}</span><input value={key} onChange={event => setKey(event.target.value)} placeholder={t('keyPlaceholder')} /></label>}
@@ -235,16 +294,17 @@ export default function CreatePage() {
             {supportsParam('guidance_scale') && <label className="field"><span>{t('guidanceScaleLabel')}</span><input type="number" min="1" max="20" step="0.1" value={guidanceScale} onChange={event => setGuidanceScale(event.target.value)} /></label>}
             <label className="field"><span>{t('seedLabel')}</span><input type="number" min="0" value={seed} onChange={event => setSeed(event.target.value)} /></label>
           </div>
-        </details>
+        </details>}
         {error && <p role="alert">{error}</p>}
         {invalidAdvanced && <p className="field-warning" role="status">{t('advancedInvalid')}</p>}
         {estimate !== null && <p className="field-help">{t('estimateLabel', {seconds: Math.ceil(estimate)})}</p>}
         {systemInfo && <p className="field-help">{t('queueStatus', {queued: systemInfo.queue?.queued ? 1 : 0, running: systemInfo.queue?.running ? 1 : 0, gpu: systemInfo.gpu ? t('gpuAvailable') : t('gpuUnavailable')})}</p>}
         {queuedJob && <p role="status"><strong>{t('queued')}</strong> {t('queuedDetail', {jobId: queuedJob})}</p>}
-        <button type="submit" className="primary" disabled={!canSubmit}>{busy ? t('submitting') : t('submit')}</button>
+        {disabledReasons.length > 0 && <ul id="create-disabled-reasons" className="field-warning">{disabledReasons.map(reason => <li key={reason}>{reason}</li>)}</ul>}
+        <button type="submit" className="primary" disabled={!canSubmit} aria-describedby={canSubmit ? undefined : 'create-disabled-reasons'}>{busy ? t('submitting') : t('submit')}</button>
       </form>
     </section>
-    <GenerationFeed jobs={feedJobs} onRetry={job => { void retryJob(job.job_id).then(result => setFeedJobs(current => [...current.filter(item => item.job_id !== job.job_id), ...createFeedJobs({...result, song_id: job.song_id})])).catch(() => undefined); }} onCancel={job => { void cancelJob(job.job_id).then(() => setFeedJobs(current => current.map(item => item.job_id === job.job_id ? {...item, status: 'cancelled', stage: null} : item))).catch(() => undefined); }} />
+    <GenerationFeed jobs={feedJobs} onRetry={job => { void retryJob(job.job_id).then(result => setFeedJobs(current => [...current.filter(item => item.job_id !== job.job_id), ...createFeedJobs({...result, song_id: job.song_id})])).catch(cause => setFeedJobs(current => current.map(item => item.job_id === job.job_id ? {...item, action_error: cause instanceof ApiError ? cause.code ?? String(cause.status) : cause instanceof Error ? cause.message : 'UNKNOWN'} : item))); }} onCancel={job => { void cancelJob(job.stage === 'post' && job.post_job_id ? job.post_job_id : job.job_id).then(() => setFeedJobs(current => current.map(item => item.job_id === job.job_id ? {...item, action_error: null} : item))).catch(cause => setFeedJobs(current => current.map(item => item.job_id === job.job_id ? {...item, action_error: cause instanceof ApiError ? cause.code ?? String(cause.status) : cause instanceof Error ? cause.message : 'UNKNOWN'} : item))); }} />
     <p><Link href="/system">{t('system')}</Link></p>
   </div>;
 }
