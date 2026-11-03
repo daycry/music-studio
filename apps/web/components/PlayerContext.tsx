@@ -45,13 +45,23 @@ function readQueue(): PlayerTrack[] {
 }
 
 export function PlayerProvider({children}:{children:ReactNode}) {
-  const [queue, setQueue] = useState<PlayerTrack[]>(readQueue);
-  const [currentIndex, setCurrentIndex] = useState(() => readQueue().length ? 0 : -1);
+  const [queue, setQueue] = useState<PlayerTrack[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(-1);
+  const [hydrated, setHydrated] = useState(false);
   const [isPlaying, setPlaying] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') window.localStorage.setItem(STORAGE_KEY, JSON.stringify(queue));
-  }, [queue]);
+    const saved = readQueue();
+    // El primer render coincide con SSR; la lectura del almacenamiento externo ocurre al montar.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setQueue(saved);
+    setCurrentIndex(saved.length ? 0 : -1);
+    setHydrated(true);
+  }, []);
+  useEffect(() => {
+    if (!hydrated) return;
+    try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(queue)); } catch { /* Storage puede estar bloqueado o lleno. */ }
+  }, [hydrated, queue]);
 
   const select = useCallback((track: PlayerTrack) => {
     setQueue(previous => {
