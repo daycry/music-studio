@@ -8,5 +8,6 @@ conocimiento aprobado. La promoción a `approved/` corresponde al
 |---|---|---|
 | [GOT-001 · FDs sobre bind Windows después de rename](gotchas/GOT-001-fd-9p-tras-rename.md) | Almacenamiento | propuesta |
 | [GOT-002 · Copia de pesos y persistencia de observaciones](approved/gotchas/GOT-002-copia-de-pesos-y-persistencia-de-observaciones.md) | Almacenamiento | aprobado; caso CPU/Docker |
+| [music-studio.GOT-003 · Coverage con submódulos y NumPy](approved/gotchas/music-studio.GOT-003-cobertura-submodulos-numpy-windows.md) | Pruebas | aprobado; colección aislada Windows |
 
 [Journal de sesiones](journal/README.md): registro histórico, sin promoción implícita.
