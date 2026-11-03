@@ -362,6 +362,12 @@ def environment(root: Path, tools: dict) -> dict:
 
 def execute(argv: list[str], root: Path) -> int:
     args = validate_args(argv)
+    position = 2 if args[:1] == ["--filter"] else 0
+    if args[position : position + 1] == ["exec"] and "--" in args[position + 2 :]:
+        # La frontera del wrapper no es un argumento del ejecutable de pnpm exec.
+        # Validar antes de retirarla; conservar cualquier separador posterior.
+        separator = args.index("--", position + 2)
+        args = args[:separator] + args[separator + 1 :]
     for relative in (
         ".npmrc",
         ".pnpmfile.cjs",

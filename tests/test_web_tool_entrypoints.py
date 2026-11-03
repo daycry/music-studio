@@ -352,6 +352,79 @@ def test_main_error_is_readable_and_nonzero(cli, capsys, monkeypatch):
     assert "pnpm NO LISTO: control sin secretos" in capsys.readouterr().err
 
 
+@pytest.mark.parametrize(
+    "prefix,tool,arguments",
+    [
+        (
+            ["--filter", "./apps/web"],
+            "vitest",
+            ["run", "components/PlayerDock.test.tsx", "-t", "CA-2"],
+        ),
+        (
+            [],
+            "vitest",
+            [
+                "run",
+                "--coverage",
+                "--coverage.include=components/PlayerDock.tsx",
+                "--config",
+                "two words/vitest.config.ts",
+            ],
+        ),
+        (
+            ["--filter", "web"],
+            "playwright",
+            ["test", "--config", "two words/playwright.config.ts"],
+        ),
+        ([], "tsc", ["--project", "two words/tsconfig.json", "--noEmit"]),
+        ([], "vitest", ["run", "--", "literal", "--"]),
+    ],
+)
+def test_exec_consumes_only_transport_separator(
+    cli, tmp_path, monkeypatch, prefix, tool, arguments
+):
+    tools = {name: {"dest": tmp_path / name} for name in ("node", "pnpm")}
+    monkeypatch.setattr(cli, "verified_tools", lambda root: tools)
+    received = []
+
+    def run(argv, **options):
+        received.append(argv)
+        assert options["shell"] is False
+        return subprocess.CompletedProcess(argv, 37)
+
+    monkeypatch.setattr(cli.subprocess, "run", run)
+    original = [*prefix, "exec", tool, "--", *arguments]
+    assert cli.execute(original, tmp_path) == 37
+    assert received == [
+        [
+            str(tmp_path / "node/node.exe"),
+            str(tmp_path / "pnpm/bin/pnpm.cjs"),
+            *prefix,
+            "exec",
+            tool,
+            *arguments,
+        ]
+    ]
+    assert original == [*prefix, "exec", tool, "--", *arguments]
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        ["exec", "vitest", "--config=outside", "--", "run"],
+        ["exec", "vitest", "--store-dir=outside", "--", "run"],
+        ["exec", "node", "--", "--config=outside"],
+        ["exec", "--", "vitest", "run"],
+    ],
+)
+def test_exec_transport_keeps_pnpm_guards(cli, tmp_path, monkeypatch, args):
+    monkeypatch.setattr(
+        cli, "verified_tools", lambda root: pytest.fail("must not execute")
+    )
+    with pytest.raises(ValueError):
+        cli.execute(args, tmp_path)
+
+
 def test_exec_environment_argv_and_exit_mock_boundary(cli, tmp_path, monkeypatch):
     tools = {name: {"dest": tmp_path / name} for name in ("node", "pnpm")}
     monkeypatch.setattr(cli, "verified_tools", lambda root: tools)

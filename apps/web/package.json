@@ -4,7 +4,7 @@
   "private": true,
   "description": "Estudio local: Next.js App Router con una base accesible de componentes nativos.",
   "scripts": {
-    "dev": "node -e \"process.env.NEXT_TELEMETRY_DISABLED='1';process.execArgv=[];process.argv=['node','next','dev','--hostname','127.0.0.1'];import('next/dist/bin/next')\"",
+    "dev": "node -e \"process.env.NEXT_TELEMETRY_DISABLED='1';process.execArgv=[];process.argv=['node','next','dev','--webpack','--hostname','127.0.0.1'];import('next/dist/bin/next')\"",
     "start": "next start --hostname 0.0.0.0",
     "build": "node -e \"process.env.NEXT_TELEMETRY_DISABLED='1';process.execArgv=[];process.argv=['node','next','build','--webpack'];import('next/dist/bin/next')\"",
     "lint": "eslint .",
