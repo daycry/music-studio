@@ -3,8 +3,8 @@ documento: entorno
 titulo: Entorno de desarrollo y ejecución
 estado: vigente
 fecha: 2026-09-28
-actualizado: 2026-10-06
-fuentes-verificadas: 2026-09-28
+actualizado: 2026-11-06
+fuentes-verificadas: 2026-11-06
 ---
 
 # Entorno
@@ -29,19 +29,19 @@ fuentes-verificadas: 2026-09-28
 |---|---|---|
 | **engine-acestep** | Base `nvidia/cuda:12.8.1-runtime-ubuntu22.04`, Python **3.11** instalado con `uv python install`, repo de ACE-Step 1.5 **fijado a un tag o commit** e instalado con `uv sync --frozen --no-dev` → `torch==2.10.0+cu128`, `torchaudio==2.10.0+cu128`, `transformers>=4.51,<4.58`, `torchao>=0.16,<0.17`, `torchcodec>=0.9.1` | Es lo que fija upstream para Linux x86_64. Ubuntu 24.04 no trae Python 3.11 en apt. La variante cudnn sobra porque torch ya incluye cuDNN |
 | Imagen oficial `ghcr.io/ace-step/ace-step-1.5:0.1.8` | **Solo como referencia**, no se usa | Carga por defecto el LM 4B (OOM en 12 GB) y trae el ffmpeg GPL de apt |
-| **engine-analysis** | `pytorch/pytorch:2.14.0-cuda13.0-cudnn9-runtime` + dependencias fijadas con uv | PyTorch 2.14.0 (2 de septiembre de 2026) es la versión estable actual. Desde la 2.12 no hay ruedas cu128; las cu126 no traen sm_120 |
-| **engine-comfy** | ComfyUI fijado por commit sobre `pytorch/pytorch:2.14.0-cuda13.0-cudnn9-runtime` (cu130), con `--disable-pinned-memory` | NVFP4 solo rinde con cu130; la memoria *pinned* da problemas en WSL2 ([ADR-0016](../decisiones/ADR-0016-comfyui-como-motor-de-imagen-y-video.md)) |
+| **engine-analysis** | `pytorch/pytorch:2.14.0-cuda13.0-cudnn9-runtime` + dependencias fijadas con uv | Base fijada por digest en [su Dockerfile](../../apps/engines/analysis/Dockerfile); no expresa cuál es la última versión disponible |
+| **engine-comfy** | Objetivo: ComfyUI fijado por commit, CUDA y `--disable-pinned-memory`; no implementado en el Compose actual | Integración futura según [ADR-0016](../decisiones/ADR-0016-comfyui-como-motor-de-imagen-y-video.md); M2/M3 congelados por [ADR-0089](../decisiones/ADR-0089-reencauce-tras-codex.md). Base, kernels y VRAM pendientes de validar |
 | **engine-llm** | Adaptador Docker `/v1`, sin inferencia propia, hacia Ollama compartido en Ubuntu WSL2; implementación M2 pendiente | Modelo y conectividad privada a validar ([ADR-0035](../decisiones/ADR-0035-despliegue-docker-y-ollama-wsl.md)) |
 | **NGC `nvcr.io/nvidia/pytorch`** | No se usa | Su `/etc/pip/constraint.txt` choca con los repos que fijan versión de torch |
-| **server** | Python 3.12, uv; despliegue Docker Compose pendiente en M1 | Sin torch; incluye worker CPU |
-| **web** | Node 22 LTS, pnpm | |
-| **ffmpeg (server)** | Contenedor: build BtbN `linux64-lgpl` o `linux64-lgpl-shared` compatible, fijada por revisión y SHA-256 en `tools/tools.lock.json`; adopción y validación M1 pendientes. `win64-lgpl` queda para utilidades nativas | Post-proceso, render y exportaciones; verificar LGPL y carga real en Linux ([ADR-0017](../decisiones/ADR-0017-postproceso-y-manifiesto-en-el-server.md), [ADR-0035](../decisiones/ADR-0035-despliegue-docker-y-ollama-wsl.md)) |
+| **server / engine-mock** | Python **3.12.14**, uv **0.12.19**, bases fijadas por digest en [apps/server/Dockerfile](../../apps/server/Dockerfile); perfil `studio` de Compose | Sin torch ni GPU; server con worker CPU, mock con audio simulado |
+| **web** | Node **22.23.2**, pnpm fijado por el proyecto; [apps/web/Dockerfile](../../apps/web/Dockerfile) | Despliegue Docker del perfil `studio` |
+| **ffmpeg (server)** | BtbN `linux64-lgpl` **n9.0.2-17-g2a571b6068**, revisión y SHA-256 en [tools/ffmpeg-linux.lock.json](../../tools/ffmpeg-linux.lock.json); preparación con `scripts/fetch_ffmpeg_linux.py --download` y copia/verificación en el Dockerfile del server. `win64-lgpl` queda para utilidades nativas | FFmpeg Linux y medios reales probados en la [QA Docker T-15](../roadmap/2026-09-28-m1-mvp-estudio/testing/docker-ui-2026-11-05.md). El lock conserva metadatos históricos de candidato (`runtime_verified: false`); la evidencia de ejecución está en los informes |
 | **ffmpeg (engines)** | BtbN `linux64-lgpl-shared` (7.x) con sus `.so` en `LD_LIBRARY_PATH` | torchcodec necesita las **librerías compartidas** de FFmpeg 4–8. El ffmpeg de apt y las builds estáticas de johnvansickle son GPL |
 
-**Comprobaciones obligatorias al construir cada imagen:**
+**Comprobaciones por tipo de imagen:**
 
-- `python -c "import torch; assert 'sm_120' in torch.cuda.get_arch_list()"`, más una multiplicación de matrices en BF16 en la GPU.
-- `ffmpeg -buildconf`:
+- Solo en imágenes GPU que incluyen torch: `python -c "import torch; assert 'sm_120' in torch.cuda.get_arch_list()"`, más una multiplicación de matrices en BF16 en la GPU durante su validación. No corresponde a web, server ni mock; estos últimos no deben incorporar torch para superar una comprobación GPU.
+- En imágenes que incorporan FFmpeg, `ffmpeg -buildconf`:
   - **incluye** `--enable-libmp3lame`, `--enable-libsoxr` y `--enable-libopus`;
   - **no incluye** `--enable-gpl` ni `--enable-nonfree`.
 
@@ -85,27 +85,32 @@ La carpeta está sincronizada con Synology Drive. **Antes de crear `.venv`, `nod
 | `.venv/` (paquetes Python) | `pyproject.toml` + `uv.lock` (versión y hash de cada paquete) | `uv sync --frozen` |
 | `node_modules/` | `package.json` + `pnpm-lock.yaml` | `pnpm install --frozen-lockfile` |
 | `models/` | `models/models.lock.json` (repo, revisión, SHA-256) | `uv run scripts/fetch_models.py` |
-| `tools/` (ffmpeg) | `tools/tools.lock.json` | `uv run scripts/fetch_tools.py` |
+| `tools/` (FFmpeg nativo) | `tools/tools.lock.json` | `uv run scripts/fetch_tools.py` |
+| `tools/ffmpeg-linux/` (server Docker) | `tools/ffmpeg-linux.lock.json` | `uv run --frozen --no-sync scripts/fetch_ffmpeg_linux.py --download`, antes del build |
 | `.cache/uv`, `.cache/pnpm` | — (son cachés de descarga) | Se rellenan solas |
 | `data/db/` | `data/backups/` (copia diaria) | Restaurar el último `.backup` |
 
-Los tres primeros los rehace de una vez `.\scripts\bootstrap.ps1` (o `source scripts/bootstrap.sh`). `.venv/` tampoco se sincronizaría aunque se pudiera: guarda rutas absolutas y binarios de esta máquina, así que no es portable, y cada `uv sync` reescribe miles de ficheros.
+Los tres primeros los rehace de una vez `.\scripts\bootstrap.ps1` en Windows, incluida la preparación de Node/pnpm portátiles. El launcher Linux sigue bloqueado hasta disponer de un pin de Node Linux verificado; `bootstrap.sh` no ofrece actualmente el bootstrap web en WSL/Linux. `.venv/` tampoco se sincronizaría aunque se pudiera: guarda rutas absolutas y binarios de esta máquina, así que no es portable, y cada `uv sync` reescribe miles de ficheros.
 
-## 5. Puesta en marcha (objetivo al final de M0 y M1)
+## 5. Puesta en marcha de M1 y laboratorio M0
 
-El bloque siguiente conserva las herramientas de preparación y laboratorio de M0. El arranque del producto en M1 pasa a Docker Compose según [ADR-0035](../decisiones/ADR-0035-despliegue-docker-y-ollama-wsl.md); todavía debe implementarse y validarse.
+El perfil `studio` de [docker-compose.yml](../../docker-compose.yml) arranca web, server y mock CPU, sin GPU ni Ollama. Sigue el [primer arranque del README](../../README.md#primer-arranque) y la [receta de ámbito privado](../calidad/pruebas.md#preparar-el-ámbito-privado-y-ejecutar-la-suite): bootstrap Windows, inicialización del token, preparación de FFmpeg Linux y selección explícita de proyecto Compose, entorno y datos bajo `.cache/`, antes de `scripts/e2e_stack.py up`. No ejecutes una segunda QA sobre los mismos puertos ni abras SQLite viva desde Windows.
+
+La [QA Docker T-15](../roadmap/2026-09-28-m1-mvp-estudio/testing/docker-ui-2026-11-05.md) obtuvo 14/14 en tres corridas, con HTTP/SSE, persistencia, recuperación, FFmpeg, `Range` y descargas. El [arranque T-16 del 2026-11-06](../roadmap/2026-09-28-m1-mvp-estudio/testing/readme-arranque-2026-11-06.md) verificó un clon nuevo sin copiar herramientas ni cachés, una corrida integrada 14/14 y 103/103 pruebas host separadas; Docker reutilizó capas normales. Este recorrido usa audio simulado y no cierra la aceptación de M1 con ACE-Step real y escucha del propietario.
+
+El siguiente bloque es solo el laboratorio GPU de M0. Requiere pesos preparados y cumplir previamente la política de GPU/Ollama de §3; no es la receta CPU/mock anterior. Inicializa el token antes de resolver o arrancar Compose:
 
 ```powershell
-# Requisitos (M0 T-00): Docker Desktop (WSL2), Node 22, pnpm, uv, git; .wslconfig; filtro de Synology
+# Requisitos: Docker Desktop (WSL2), uv, git; entorno gestionado preparado; GPU disponible según §3
 . .\scripts\env.ps1                               # intérprete, cachés y .venv dentro de la carpeta
-uv run scripts/fetch_tools.py                       # ffmpeg LGPL del server en tools/
+uv run scripts/init_env.py                          # .env + STUDIO_ENGINE_TOKEN (una vez)
+uv run scripts/fetch_tools.py                       # ffmpeg LGPL para utilidades nativas
 uv run scripts/fetch_models.py --model ace-step-1.5 # descarga fijada por revisión, verificada y convertida
 docker compose --profile engines up -d engine-acestep engine-analysis
-uv run scripts/init_env.py                          # .env + STUDIO_ENGINE_TOKEN (una vez)
 uv run scripts/generate.py --brief B-02              # M0: primera canción
 ```
 
-Objetivo M1: arrancar web, server y engines necesarios con Compose; ejecutar migraciones dentro del server y validar persistencia, nombres internos, hosts permitidos y FFmpeg LGPL Linux. Los comandos exactos se concretan al implementar. Ollama no es requisito del MVP M1; los comandos nativos siguen disponibles para desarrollo.
+El Compose actual no incluye `engine-llm` ni `engine-comfy`. Ollama no es requisito del MVP M1; la conectividad privada y convivencia del adaptador se validarán en M2, actualmente congelado junto con M3 por ADR-0089. Los comandos nativos siguen disponibles para desarrollo.
 
 ## Almacenamiento operativo
 

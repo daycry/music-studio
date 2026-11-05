@@ -1,11 +1,11 @@
 # ADR-0035 · Despliegue Docker Compose y Ollama compartido en WSL2
 
-- **Estado:** aceptada por el propietario · **Fecha:** 2026-10-06 · **Implementación:** pendiente
+- **Estado:** aceptada por el propietario · **Fecha:** 2026-10-06 · **Implementación:** parcial, actualizada el 2026-11-06 (M1 Docker CPU/mock probado; aceptación GPU de M1 y adaptador Ollama pendientes)
 - **Validez:** sustituye la ejecución nativa de web/server de [ADR-0003](ADR-0003-stack.md) y el backend llama.cpp propio de [ADR-0012](ADR-0012-llm-de-letras.md). Conserva sus contratos y el alcance funcional de los hitos.
 
 ## Contexto
 
-El propietario elige que el producto se despliegue en Docker, con una excepción: Ollama permanece en Ubuntu WSL2 porque también sirve a otras aplicaciones. music-studio es cliente de ese servicio compartido y no su propietario. Esta decisión registra el despliegue objetivo; no acredita contenedores, conectividad ni ejecución GPU completados.
+El propietario elige que el producto se despliegue en Docker, con una excepción: Ollama permanece en Ubuntu WSL2 porque también sirve a otras aplicaciones. music-studio es cliente de ese servicio compartido y no su propietario. Esta decisión registra el despliegue objetivo; la evidencia CPU/mock de M1 se recoge abajo y no acredita conectividad con Ollama ni ejecución GPU.
 
 Docker Desktop utiliza su backend WSL2: ComfyUI en un contenedor Linux también corre sobre WSL2 y puede acceder a la RTX mediante CUDA. No requiere instalar otro ComfyUI nativo en Ubuntu. [Documentación oficial de Docker](https://docs.docker.com/desktop/features/gpu/).
 
@@ -28,12 +28,12 @@ Docker Desktop utiliza su backend WSL2: ComfyUI en un contenedor Linux también 
 | Dockerizar otro Ollama o ejecutar llama.cpp dentro de `engine-llm` | Duplica la inferencia y no conserva el servicio compartido elegido. |
 | Kafka o Redis para la cola | La cola local existente cubre carriles, dependencias y recuperación sin nueva infraestructura. |
 
-## Consecuencias y validación pendiente
+## Implementación y validación pendiente (2026-11-06)
 
-- M1 debe empaquetar web/server, ejecutar migraciones y persistir SQLite en Compose; incorporar FFmpeg LGPL Linux fijado y resolver nombres internos, hosts permitidos, CORS, SSE y `Range`.
-- Los E2E de M1 usan `engine-mock` en Docker y no requieren GPU ni Ollama. El navegador conserva URLs de host en `127.0.0.1`; el server usa direcciones internas de Compose.
-- M2 debe validar conectividad privada a Ollama, `text.generate`, cancelación, eventos, descarga y convivencia real sin gestionar el servicio ajeno.
-- M3–M4 validan ComfyUI CUDA y sus workflows. La decisión no acredita calidad, rendimiento ni capacidad de VRAM.
+- [Compose](../../docker-compose.yml) implementa el perfil `studio` con web, server y `engine-mock`, sin solicitud de GPU. El [Dockerfile del server](../../apps/server/Dockerfile) fija Python 3.12.14 y FFmpeg Linux mediante [su lock](../../tools/ffmpeg-linux.lock.json), sin torch; el [de la web](../../apps/web/Dockerfile) usa Node 22.23.2. El server monta datos persistentes, usa `http://engine-mock:8199` y conserva migraciones, SQLite y post-proceso bajo su autoridad.
+- La [QA Docker T-15](../roadmap/2026-09-28-m1-mvp-estudio/testing/docker-ui-2026-11-05.md) acredita 14/14 casos en tres corridas: HTTP/SSE, persistencia, recuperación, FFmpeg, `Range` y descargas con audio simulado CPU. El [arranque T-16 desde un clon nuevo](../roadmap/2026-09-28-m1-mvp-estudio/testing/readme-arranque-2026-11-06.md) verificó bootstrap Windows, preparación de FFmpeg Linux y una corrida integrada 14/14, sin copiar herramientas ni cachés; Docker reutilizó capas normales. Son evidencias distintas y no cierran M1: faltan ACE-Step real y escucha del propietario.
+- El navegador conserva URLs de host en `127.0.0.1`; el server usa direcciones internas de Compose. Las recetas vigentes están en el [README](../../README.md#primer-arranque) y la [guía de pruebas](../calidad/pruebas.md#preparar-el-ámbito-privado-y-ejecutar-la-suite).
+- El perfil `engines` contiene ACE-Step y análisis; su presencia no equivale a aceptación GPU del producto. `engine-llm` y `engine-comfy` no están implementados en este Compose. El objetivo M2 conserva la validación de conectividad privada a Ollama, `text.generate`, cancelación, eventos, descarga y convivencia real sin gestionar el servicio ajeno; ComfyUI CUDA y sus workflows conservan su validación futura. M2/M3 siguen congelados por [ADR-0089](ADR-0089-reencauce-tras-codex.md). Esta actualización no acredita calidad, rendimiento ni capacidad de VRAM.
 - Los comandos nativos pueden seguir como herramientas de desarrollo; ya no constituyen el criterio de despliegue del producto.
 
 ## Documentos afectados

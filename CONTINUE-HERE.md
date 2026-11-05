@@ -4,6 +4,8 @@
 
 **Actualizado:** 2026-11-06. M1: **15 tareas completadas, 2 canceladas y T-16 en-progreso**. La parte README de T-16 ya pasó; falta la aceptación con ACE-Step real.
 
+**M0:** 14 tareas completadas, 3 canceladas; abiertas T-08/T-09/T-13/T-16. T-20 documental cerrada con revisión A/B, Compose validado en cuatro perfiles y QA sin UI (`.cache/dev-cycle/20261106-m0-t20/`). No acredita ejecución GPU ni conectividad Ollama.
+
 ## Restricciones
 
 - Docker/WSL disponibles; **GPU/Ollama fuera de las pruebas actuales**. No cargar modelos ni alterar servicios ajenos.
@@ -26,7 +28,8 @@
 
 ## Siguiente puerta
 
-1. Cerrar M0/T-09/T-13 cuando se pueda usar GPU: benchmark recortado y escucha/decisión de modelo/modo del propietario. No sustituir esa decisión por los resultados mock.
-2. T-16: generar desde la web con ACE-Step/GPU reales, manifiesto y telemetría válidos (spilled:false), escucha y aceptación del propietario; conservar M-03 y el ritual final de dev-cycle (docs/changelog/retro). M1 sigue abierto.
-3. **Petición del propietario:** una vez cerrado M1, ejecutar Claude CLI para buscar hallazgos en lo implementado y guardar su informe. CLI instalado; aún NO invocado. No enviar secretos ni datos del usuario.
-4. M2/M3 continúan congelados hasta cerrar M1; no reactivar restos del árbol como si estuvieran aprobados.
+1. Revisar M0/T-16 sin GPU: sus tests de controles son CPU y existen seis carpetas de escucha en `data/eval/libre-sft/01M47Q4EJZK09RBPA0ECWC57D4/`. Comprobar integridad/procedencia antes de dar por preparadas las tomas; no ejecutar helpers históricos de `.cache/dev-cycle/t16/` que pueden arrancar GPU. La escucha/elección sigue siendo T-13.
+2. Cerrar M0/T-08/T-09/T-13 cuando se pueda usar GPU: validación del engine de análisis, benchmark recortado y escucha/decisión de modelo/modo del propietario. No sustituir esa decisión por los resultados mock.
+3. M1/T-16: generar desde la web con ACE-Step/GPU reales, manifiesto y telemetría válidos (spilled:false), escucha y aceptación del propietario; conservar M-03 y el ritual final de dev-cycle (docs/changelog/retro). M1 sigue abierto.
+4. **Petición del propietario:** una vez cerrado M1, ejecutar Claude CLI para buscar hallazgos en lo implementado y guardar su informe. CLI instalado; aún NO invocado. No enviar secretos ni datos del usuario.
+5. M2/M3 continúan congelados hasta cerrar M1; no reactivar restos del árbol como si estuvieran aprobados.

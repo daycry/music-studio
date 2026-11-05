@@ -24,12 +24,12 @@ verificacion: obligatoria
 | Fase 1 — Preparación | 2 | 2 | 100% | 0 |
 | Fase 2 — Cimientos compartidos | 3 | 3 | 100% | 0 |
 | Fase 3 — Motor musical | 3 | 3 | 100% | 0 |
-| Fase 4 — Medición y elección | 5 | 13 | 38% (5 de 10 vigentes) | 3 |
-| **TOTAL** | **13** | **21** | **72% de lo vigente (13/18)** | **3** |
+| Fase 4 — Medición y elección | 6 | 13 | 46% (6 de 10 vigentes) | 3 |
+| **TOTAL** | **14** | **21** | **78% de lo vigente (14/18)** | **3** |
 
 **Para cerrar M0 falta:**
 
-1. Cerrar la revisión de T-08, T-16 y T-20.
+1. Cerrar la revisión de T-08 y T-16. T-20 documental cerrada el 2026-11-06.
 2. Hacer el benchmark básico de T-09.
 3. La escucha y la decisión del propietario (T-13).
 
@@ -181,7 +181,15 @@ verificacion: obligatoria
 
 ### T-20 — Arquitectura de despliegue Docker y Ollama compartido
 - **Descripción**: Registrar la arquitectura de despliegue (producto en Docker sobre WSL2, Ollama compartido) en `docs/arquitectura/`.
-- **Estado**: en-revision
+- **Estado**: completado
 - **Dependencias**: T-00
+- **Archivos**: `docs/decisiones/ADR-0035-despliegue-docker-y-ollama-wsl.md`, `docs/arquitectura/entorno.md`, `CONTINUE-HERE.md`. `docker-compose.yml` y los Dockerfiles sólo se cotejan; no cambia la arquitectura ni se arrancan engines GPU.
+- **TDD n/a: prosa**. Se corrigen referencias de implementación pendientes que ya contradicen los recibos Docker de M1; sin cambios de código, modelos ni decisiones.
 - **Verificación**: ADR-0035 y `docs/arquitectura/entorno.md` coherentes con `docker-compose.yml`; `docker compose config -q` sin errores.
+- **Verificación ejecutada (2026-11-06)**: `docker compose --project-directory <repo> --project-name music-studio-m0-t20-verificacion --env-file <privado> --file docker-compose.yml config -q` → exit 0; también `--profile studio`, `--profile engines` y `--profile '*'` → exit 0. La resolución por defecto no activa servicios, por eso se cotejan además los perfiles explícitos. JSON completo: cinco servicios, puertos sólo loopback, server→mock interno; sólo los dos engines del perfil `engines` declaran GPU. Sin servicio Ollama/ComfyUI implementado ni contenedores arrancados. Recibo privado: `.cache/dev-cycle/20261106-m0-t20/compose-verification.json`. TDD n/a: prosa; no se acredita conectividad Ollama ni ejecución GPU.
+- **QA documental**: PASS_DOCUMENTARY; ledger-lint exit 0 (0 incoherencias/25 avisos históricos), coverage-check exit 0 con `applies:false` por plan sin UI, sin porcentaje medido. Aviso de diff degradado conservado: el delta propio congelado sí contiene sólo tres Markdown. Dos SHA documentales y seis de configuración iguales; 50 destinos/4 anclas, ninguno roto; diff-check exit 0. Sin qa-gate/Playwright ni runtime. Informe y recibos en `.cache/dev-cycle/20261106-m0-t20/qa/`; aceptación del orquestador limitada a T-20.
 - **Changelog**: Documenta el despliegue en Docker sobre WSL2 y el uso compartido de la GPU con Ollama.
+
+## Revisión de dos lentes — intento 1: T-20, arquitectura documentada — sin gaps
+
+Lentes A/B sobre tres archivos propios congelados desde `6ac6920`; scope exit 0, sin avisos ni exclusiones nuevas. C/D no aplican al delta documental. Ambas leen el diff completo y no encuentran Critical/Important/Minor: fuentes, comandos y separación CPU/mock frente a GPU/Ollama coherentes. A verifica ledger, tres SHA propios y seis de configuración; B repite `config -q` con default/studio/engines/* (exit 0) y comprueba 52 destinos locales, ninguno roto. Raw en `.cache/dev-cycle/20261106-m0-t20/review-1/`; QA documental posterior aprobada y T-20 cerrada. No se cierra M0/M1 ni se aprueba conectividad o inferencia por estos checks.
