@@ -32,6 +32,7 @@ from .recovery import Recovery
 from .resolver import Resolver
 from .retry import FrozenRetryResolver, Retry
 from .synthetic_registry import SyntheticRegistry, packaged_mock_registry
+from .terminal_takes import retry_mode
 
 
 class QueueRuntime:
@@ -156,8 +157,18 @@ class QueueRuntime:
             coordinator=self.publication_coordinator,
         )
         self.recovery = Recovery(self.engine, self.owner_id, self.settings.data_dir)
-        self.cancellation = Cancellation(self.engine, self.owner_id)
-        self.retry = Retry(self.engine, self.owner_id)
+        self.cancellation = Cancellation(
+            self.engine,
+            self.owner_id,
+            coordinator=self.publication_coordinator,
+            bus=self.bus,
+        )
+        self.retry = Retry(
+            self.engine,
+            self.owner_id,
+            coordinator=self.publication_coordinator,
+            bus=self.bus,
+        )
         if self.cpu_service is None:
             self.cpu_service = self._default_cpu_service()
         if self.cpu_service is not None and hasattr(
@@ -648,6 +659,9 @@ class QueueRuntime:
             screening = {}
         for job, previous in page:
             claim = None
+            if retry_mode(previous) is None:
+                await self.dbcall(self.retry.close_impossible_vram, job, previous)
+                continue
             if (
                 previous.engine_id in rejected
                 or any(engine_id == previous.engine_id for _, engine_id, _ in occupancy)
@@ -688,16 +702,18 @@ class QueueRuntime:
                 if health.state != "idle" or health.job_id is not None:
                     rejected.add(previous.engine_id)
                     continue
-                mode = previous.mode
-                if previous.terminal.data["code"] == "VRAM_EXCEEDED":
+                mode = retry_mode(previous)
+                if mode is None:
+                    continue
+                if mode != previous.mode:
                     model = next((m for m in models if m.id == previous.model_id), None)
-                    if (
-                        not model
-                        or not any(m.id == "offload" for m in model.modes)
-                        or mode == "offload"
-                    ):
+                    if not model:
                         continue
-                    mode = "offload"
+                    if not any(m.id == "offload" for m in model.modes):
+                        await self.dbcall(
+                            self.retry.close_impossible_vram, job, previous
+                        )
+                        continue
                 frozen = self.retry.frozen_job(job, previous, mode)
                 fresh_observations = dict(observations)
                 fresh_observations[backend.origin] = (health, models)

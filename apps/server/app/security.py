@@ -74,6 +74,7 @@ class LocalSecurity:
                             b"access-control-allow-origin",
                             self.settings.web_origin.encode("ascii"),
                         ),
+                        (b"access-control-expose-headers", b"Content-Disposition"),
                         (b"vary", b"Origin"),
                     ],
                 }

@@ -2,6 +2,7 @@
 
 import asyncio
 import re
+from contextlib import nullcontext
 from datetime import datetime, timezone
 from uuid import uuid4
 
@@ -17,6 +18,7 @@ from .event_dtos import JobStateDTO, SessionCredentialDTO
 from .event_snapshot import build_snapshot
 from .local_sessions import SessionError
 from .models import Job, JobAttempt, Song, User
+from .publication import PublicationTimeout
 from .sse import (
     HEARTBEAT_SECONDS,
     PublicPayloadError,
@@ -137,66 +139,132 @@ def _scope_filter(request):
     return song_values[0] if song_values else None, frozenset(known_values)
 
 
-def _job_ids(engine, owner_id, song_id):
+def _job_ids(session, owner_id, song_id):
     """Incluye terminales propios para autorizar también su replay."""
-    with Session(engine) as session:
-        query = select(Job.id).where(
-            Job.owner_id == owner_id,
-            Job.deleted_at.is_(None),
-        )
-        if song_id is not None:
-            query = query.where(Job.song_id == song_id)
-        return frozenset(session.scalars(query).all())
+    query = select(Job.id).where(
+        Job.owner_id == owner_id,
+        Job.deleted_at.is_(None),
+    )
+    if song_id is not None:
+        query = query.where(Job.song_id == song_id)
+    return frozenset(session.scalars(query).all())
 
 
-def _job_states(engine, owner_id, song_id, known_ids):
-    with Session(engine) as session:
-        query = select(Job).where(
-            Job.owner_id == owner_id,
-            Job.deleted_at.is_(None),
+def _job_states(session, owner_id, song_id, known_ids):
+    query = select(Job).where(
+        Job.owner_id == owner_id,
+        Job.deleted_at.is_(None),
+    )
+    if song_id is not None:
+        query = query.where(Job.song_id == song_id)
+    jobs = list(session.scalars(query).all())
+    selected = [
+        job
+        for job in jobs
+        if job.status in {"queued", "blocked", "running", "interrupted"}
+        or job.id in known_ids
+    ]
+    selected.sort(key=lambda job: job.id)
+    if len(selected) > 1064:
+        raise ValueError("SNAPSHOT_LIMIT")
+    attempts = {}
+    if selected:
+        rows = session.scalars(
+            select(JobAttempt).where(
+                JobAttempt.job_id.in_([job.id for job in selected]),
+                JobAttempt.ordinal.in_([job.attempt for job in selected]),
+                JobAttempt.deleted_at.is_(None),
+            )
         )
-        if song_id is not None:
-            query = query.where(Job.song_id == song_id)
-        jobs = list(session.scalars(query).all())
-        by_id = {job.id: job for job in jobs}
-        for job_id in known_ids:
-            if job_id not in by_id:
-                continue
-        selected = [
-            job
-            for job in jobs
-            if job.status in {"queued", "blocked", "running", "interrupted"}
-            or job.id in known_ids
-        ]
-        selected.sort(key=lambda job: job.id)
-        if len(selected) > 1064:
-            raise ValueError("SNAPSHOT_LIMIT")
-        attempts = {}
-        if selected:
-            rows = session.scalars(
-                select(JobAttempt).where(
-                    JobAttempt.job_id.in_([job.id for job in selected]),
-                    JobAttempt.ordinal.in_([job.attempt for job in selected]),
-                    JobAttempt.deleted_at.is_(None),
+        attempts = {(row.job_id, row.ordinal): row for row in rows}
+    return [
+        JobStateDTO(
+            job_id=job.id,
+            song_id=job.song_id,
+            status=job.status,
+            attempt_id=(
+                attempt.id if (attempt := attempts.get((job.id, job.attempt))) else None
+            ),
+            stage=job.stage,
+            progress=job.progress,
+            error_code=job.error_code,
+        )
+        for job in selected
+    ]
+
+
+def _capture_events(
+    engine, owner_id, song_id, known_ids, bus, cursor, loop, coordinator
+):
+    """Lectura WAL, H y alta atómicos frente a los escritores participantes.
+
+    Sólo SQL y memoria bajo la barrera: se ejecuta fuera del event loop, sin
+    awaits. El transporte empieza después de liberar la barrera y la lectura.
+    """
+    subscription = None
+    try:
+        with coordinator.barrier() if coordinator is not None else nullcontext():
+            # create_db_engine inicia BEGIN al primer SELECT. Cerrar sin commit
+            # conserva la vista WAL y evita los hooks after_commit de ficheros.
+            with Session(engine) as session:
+                if song_id is not None:
+                    exists = session.scalar(
+                        select(Song.id)
+                        .where(
+                            Song.id == song_id,
+                            Song.owner_id == owner_id,
+                            Song.deleted_at.is_(None),
+                        )
+                        .limit(1)
+                    )
+                    if exists is None:
+                        raise SessionError("FORBIDDEN_SCOPE")
+                job_ids = _job_ids(session, owner_id, song_id)
+                if not known_ids <= job_ids:
+                    raise SessionError("FORBIDDEN_SCOPE")
+                scope = TrustedScope(
+                    owner_id, job_ids=job_ids, song_id=song_id, allow_system=True
                 )
-            )
-            attempts = {(row.job_id, row.ordinal): row for row in rows}
-        return [
-            JobStateDTO(
-                job_id=job.id,
-                song_id=job.song_id,
-                status=job.status,
-                attempt_id=(
-                    attempt.id
-                    if (attempt := attempts.get((job.id, job.attempt)))
-                    else None
-                ),
-                stage=job.stage,
-                progress=job.progress,
-                error_code=job.error_code,
-            )
-            for job in selected
-        ]
+                subscription = bus.subscribe(scope, cursor, loop=loop)
+                initial = ()
+                if subscription.reset is not None:
+                    parsed = parse_cursor(subscription.reset.cursor)
+                    states = _job_states(session, owner_id, song_id, known_ids)
+                    active = [
+                        value
+                        for value in states
+                        if value.status
+                        in {"queued", "blocked", "running", "interrupted"}
+                    ]
+                    known = [value for value in states if value.job_id in known_ids]
+                    stamp = (
+                        datetime.now(timezone.utc)
+                        .isoformat(timespec="milliseconds")
+                        .replace("+00:00", "Z")
+                    )
+                    initial = build_snapshot(
+                        active=active,
+                        known=known,
+                        epoch=parsed.epoch,
+                        high_water=parsed.seq,
+                        ts=stamp,
+                        snapshot_id=uuid4().hex,
+                        reason=subscription.reset.reason,
+                    )
+            return subscription, scope, initial
+    except BaseException:
+        if subscription is not None:
+            subscription.close()
+        raise
+
+
+def _close_capture(task):
+    # asyncio.to_thread continúa si el cliente cancela durante el bootstrap.
+    # Recoger su resultado evita dejar un lector sin transporte ni propietario.
+    if task.cancelled() or task.exception() is not None:
+        return
+    subscription, _scope, _initial = task.result()
+    subscription.close()
 
 
 async def public_events(request: Request):
@@ -211,60 +279,26 @@ async def public_events(request: Request):
             raise SessionError("SERVICE_UNAVAILABLE")
         binding = registry.validate(token)
         song_id, known_ids = _scope_filter(request)
-        if song_id is not None:
-            with Session(engine) as session:
-                # Membership is resolved by the jobs query below; no client
-                # supplied owner id is ever trusted.
-                exists = session.scalar(
-                    select(Song.id)
-                    .where(
-                        Song.id == song_id,
-                        Song.owner_id == binding.owner_id,
-                        Song.deleted_at.is_(None),
-                    )
-                    .limit(1)
-                )
-            if exists is None:
-                raise SessionError("FORBIDDEN_SCOPE")
-        job_ids = await asyncio.to_thread(_job_ids, engine, binding.owner_id, song_id)
-        if not known_ids <= job_ids:
-            raise SessionError("FORBIDDEN_SCOPE")
-        scope = TrustedScope(
-            binding.owner_id,
-            job_ids=job_ids,
-            song_id=song_id,
-            allow_system=True,
-        )
         cursor = _header(request, b"last-event-id")
-        subscription = bus.subscribe(scope, cursor)
-        initial = ()
-        if subscription.reset is not None:
-            parsed = parse_cursor(subscription.reset.cursor)
-            active = await asyncio.to_thread(
-                _job_states, engine, binding.owner_id, song_id, frozenset()
+        coordinator = getattr(runtime, "publication_coordinator", None)
+        capture = asyncio.create_task(
+            asyncio.to_thread(
+                _capture_events,
+                engine,
+                binding.owner_id,
+                song_id,
+                known_ids,
+                bus,
+                cursor,
+                asyncio.get_running_loop(),
+                coordinator,
             )
-            known = await asyncio.to_thread(
-                _job_states, engine, binding.owner_id, song_id, known_ids
-            )
-            stamp = (
-                datetime.now(timezone.utc)
-                .isoformat(timespec="milliseconds")
-                .replace("+00:00", "Z")
-            )
-            active = [
-                value
-                for value in active
-                if value.status in {"queued", "blocked", "running", "interrupted"}
-            ]
-            initial = build_snapshot(
-                active=active,
-                known=known,
-                epoch=parsed.epoch,
-                high_water=parsed.seq,
-                ts=stamp,
-                snapshot_id=uuid4().hex,
-                reason=subscription.reset.reason,
-            )
+        )
+        try:
+            subscription, scope, initial = await asyncio.shield(capture)
+        except BaseException:
+            capture.add_done_callback(_close_capture)
+            raise
     except SessionError as error:
         return problem(error.code)
     except PublicPayloadError:
@@ -275,7 +309,7 @@ async def public_events(request: Request):
             if str(error) in {"SNAPSHOT_LIMIT", "FRAME_TOO_LARGE"}
             else "INVALID_PARAMS"
         )
-    except (RuntimeError, SQLAlchemyError):
+    except (RuntimeError, SQLAlchemyError, PublicationTimeout):
         return problem("SERVICE_UNAVAILABLE")
 
     async def stream():

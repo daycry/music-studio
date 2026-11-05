@@ -1417,14 +1417,25 @@ def _set_master(request: Request, song_id: str, payload: MasterDTO):
 
 
 def _cancel_job(request: Request, job_id: str):
+    from .publication import PublicationTimeout
+
     try:
         binding, engine = _auth(request)
-        changed = Cancellation(engine, binding.owner_id).request(job_id)
+        runtime = getattr(request.app.state, "queue", None)
+        coordinator = getattr(runtime, "publication_coordinator", None)
+        changed = Cancellation(
+            engine,
+            binding.owner_id,
+            coordinator=coordinator,
+            bus=getattr(runtime, "bus", None) if coordinator is not None else None,
+        ).request(job_id)
         return JSONResponse(
             {"job_id": job_id, "cancel_requested": changed}, status_code=202
         )
     except SessionError as error:
         return problem(error.code)
+    except PublicationTimeout:
+        return problem("SERVICE_UNAVAILABLE")
     except ValueError:
         return problem("FORBIDDEN_SCOPE")
 

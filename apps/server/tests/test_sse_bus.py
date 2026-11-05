@@ -6,9 +6,38 @@ from threading import Barrier
 
 import pytest
 from app.queue.events import EventBus
-from app.sse import StreamClosed, TrustedScope
+from app.sse import PublicPayloadError, StreamClosed, TrustedScope
 
 SCOPE = TrustedScope(owner_id="local", job_ids=frozenset({"job"}))
+
+
+def test_subscribe_from_worker_binds_running_reader_loop():
+    async def run():
+        bus = EventBus()
+        loop = asyncio.get_running_loop()
+        cursor = bus.cursor
+        sub = await asyncio.to_thread(bus.subscribe, SCOPE, cursor, loop=loop)
+        waiting = asyncio.create_task(sub.next())
+        await asyncio.sleep(0)
+        await asyncio.to_thread(bus.publish, message(4))
+        assert (await asyncio.wait_for(waiting, 1)).envelope["data"][
+            "fraction"
+        ] == 0.004
+        sub.close()
+        replay = await asyncio.to_thread(bus.subscribe, SCOPE, cursor, loop=loop)
+        assert (await replay.next()).envelope["data"]["fraction"] == 0.004
+        replay.close()
+        assert bus.subscriber_count == 0
+
+    asyncio.run(run())
+
+
+def test_subscribe_rejects_invalid_or_closed_injected_loop():
+    loop = asyncio.new_event_loop()
+    loop.close()
+    for invalid in (object(), loop):
+        with pytest.raises(PublicPayloadError, match="INVALID_EVENT_LOOP"):
+            EventBus().subscribe(SCOPE, loop=invalid)
 
 
 def message(n=0):

@@ -7,11 +7,17 @@ from sqlalchemy import case, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.models import Job, JobAttempt, new_id, utc_now
+from app.publication import (
+    CommitPublication,
+    PublicationCoordinator,
+    _confirmed_rollback,
+)
 
 from .admission import Claim, occupancy_filters, writer
 from .cancellation import local_jobs
 from .inputs import verified_file
 from .resolver import Resolver
+from .terminal_takes import retry_mode, terminalize_placeholders
 
 
 class FrozenRetryResolver(Resolver):
@@ -25,11 +31,73 @@ class FrozenRetryResolver(Resolver):
 
 
 class Retry:
-    def __init__(self, engine, owner):
+    def __init__(self, engine, owner, *, coordinator=None, bus=None):
         self.engine, self.owner = engine, owner
+        if (coordinator is None) != (bus is None) or (
+            coordinator is not None and type(coordinator) is not PublicationCoordinator
+        ):
+            raise TypeError("Explicit shared coordinator and bus required")
+        self.coordinator, self.bus = coordinator, bus
+
+    def close_impossible_vram(self, source, previous):
+        """Tras catálogo estable sin offload: cerrar el tope operativo, no la historia.
+
+        max_attempts deja de permitir reservas; attempt sigue contando sólo intentos
+        ejecutados. El terminal retryable y la petición originales quedan intactos.
+        """
+
+        def commit():
+            rejected = None
+            try:
+                with Session(self.engine) as session, session.begin():
+                    try:
+                        writer(session)
+                        job = session.scalar(
+                            local_jobs(self.owner).where(Job.id == source.id)
+                        )
+                        attempt = session.get(JobAttempt, previous.id)
+                        changed = bool(
+                            job
+                            and attempt
+                            and self.eligible(job, attempt, for_cleanup=True)
+                            and attempt.owner_id == self.owner
+                            and not attempt.deleted_at
+                            and attempt.job_id == job.id
+                            and job.engine_id == attempt.engine_id == previous.engine_id
+                            and job.model_id == attempt.model_id == previous.model_id
+                            and job.attempt == source.attempt == attempt.ordinal
+                            and job.max_attempts == source.max_attempts
+                            and job.request == source.request
+                            and attempt.terminal == previous.terminal
+                            and attempt.mode == previous.mode
+                            and attempt.terminal.data["code"] == "VRAM_EXCEEDED"
+                        )
+                        if changed:
+                            job.max_attempts = job.attempt
+                            job.updated_at = utc_now()
+                            terminalize_placeholders(
+                                session, job, job.updated_at, attempt
+                            )
+                    except BaseException as primary:
+                        rejected = primary
+                        raise
+            except BaseException as primary:
+                if primary is rejected:
+                    return _confirmed_rollback(primary, primary.__traceback__)
+                raise
+            return CommitPublication(changed, (), invalidate=changed)
+
+        if self.coordinator is not None:
+            return self.coordinator.commit_and_publish(commit, self.bus).value
+        from app.publication import _ConfirmedRollback
+
+        result = commit()
+        if type(result) is _ConfirmedRollback:
+            raise result.primary.with_traceback(result.traceback)
+        return result.value
 
     @staticmethod
-    def eligible(job, attempt):
+    def eligible(job, attempt, *, for_cleanup=False):
         try:
             due = job.not_before is None or (
                 isinstance(job.not_before, str)
@@ -49,6 +117,7 @@ class Retry:
             and attempt.terminal is not None
             and attempt.terminal.type == "error"
             and attempt.terminal.data["retryable"] is True
+            and (for_cleanup or retry_mode(attempt) is not None)
         )
 
     def candidates(self):
@@ -122,7 +191,9 @@ class Retry:
                 for page in rows.partitions(size):
                     chosen = []
                     for job, attempt in page:
-                        if self.eligible(job, attempt):
+                        # Incluye VRAM ya offload sólo para cerrar su tope durable;
+                        # eligible/reserve siguen prohibiendo enviarlo de nuevo.
+                        if self.eligible(job, attempt, for_cleanup=True):
                             chosen.append((job, attempt))
                         session.expunge(job)
                         session.expunge(attempt)

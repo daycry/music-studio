@@ -16,6 +16,7 @@ from app.worker.contracts import CapturedProvenance, canonical_sha256
 from .inputs import ResolutionError, stage_inputs
 from .provenance import MUSIC_TASKS, SelectedProvenance, reported_digest
 from .resolver import snapshot, snapshot_values
+from .terminal_takes import automatic_retry_pending, terminalize_placeholders
 
 
 def writer(session):
@@ -127,8 +128,18 @@ class Admission:
                     Job.deleted_at,
                     Job.song_id,
                     JobDependency.owner_id.label("edge_owner"),
+                    Job.id,
+                    Job.attempt,
+                    Job.max_attempts,
+                    Job.engine_id,
+                    Job.cancel_requested_at,
+                    JobAttempt,
                 )
                 .join(Job, Job.id == JobDependency.depends_on_job_id)
+                .outerjoin(
+                    JobAttempt,
+                    (JobAttempt.job_id == Job.id) & (JobAttempt.ordinal == Job.attempt),
+                )
                 .where(
                     JobDependency.job_id.in_(ids[start : start + 400]),
                     JobDependency.deleted_at.is_(None),
@@ -146,10 +157,16 @@ class Admission:
             and not p.deleted_at
             for p in parents
         )
-        if owned and any(p.status in {"failed", "cancelled"} for p in parents):
+        if owned and any(
+            p.status in {"failed", "cancelled"}
+            and not automatic_retry_pending(p, p.JobAttempt)
+            for p in parents
+        ):
             job.status, job.error_code = "failed", "DEPENDENCY_FAILED"
             job.error = "Una dependencia ha terminado sin éxito"
             job.finished_at = now.isoformat().replace("+00:00", "Z")
+            if session is not None:
+                terminalize_placeholders(session, job, job.finished_at)
         elif not owned or any(p.status != "succeeded" for p in parents):
             job.status = "blocked"
         elif (

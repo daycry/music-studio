@@ -36,6 +36,7 @@ from app.sse import (
 )
 
 from .admission import writer
+from .terminal_takes import terminalize_placeholders
 
 
 class EventBus:
@@ -67,12 +68,23 @@ class EventBus:
             return len(self._subscribers)
 
     def subscribe(
-        self, scope: TrustedScope | TrustedFeedScope, cursor: str | None = None
+        self,
+        scope: TrustedScope | TrustedFeedScope,
+        cursor: str | None = None,
+        *,
+        loop: asyncio.AbstractEventLoop | None = None,
     ) -> "Subscription":
         if not isinstance(scope, TrustedScope) and type(scope) is not TrustedFeedScope:
             raise PublicPayloadError("INVALID_SCOPE")
         parsed = parse_cursor(cursor) if cursor is not None else None
-        loop = asyncio.get_running_loop()
+        if loop is None:
+            loop = asyncio.get_running_loop()
+        elif (
+            not isinstance(loop, asyncio.AbstractEventLoop)
+            or loop.is_closed()
+            or not loop.is_running()
+        ):
+            raise PublicPayloadError("INVALID_EVENT_LOOP")
         with self._lock:
             if self._shutdown:
                 raise StreamClosed("shutdown")
@@ -445,6 +457,7 @@ class EventConsumer:
                 job.telemetry = event.data["telemetry"]
         attempt.last_seq, attempt.updated_at = event.seq, stamp
         job.updated_at = stamp
+        terminalize_placeholders(session, job, stamp, attempt)
         self._persist_analysis(session, job, event)
         notification = (
             "cancelled"

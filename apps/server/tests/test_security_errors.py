@@ -64,6 +64,59 @@ def test_security_cors_preflight_allows_session_token_for_api(tmp_path):
     }
 
 
+@pytest.mark.parametrize("status_code", [200, 206])
+def test_security_cors_exposes_download_filename_only(tmp_path, status_code):
+    from starlette.responses import Response
+
+    connection = client(tmp_path)
+    disposition = "attachment; filename=audio.mp3; filename*=UTF-8''Canci%C3%B3n.mp3"
+
+    @connection.app.get("/test-download")
+    def download():
+        return Response(
+            b"audio",
+            status_code=status_code,
+            headers={
+                "Content-Disposition": disposition,
+                "X-Studio-Session-Token": "synthetic-private",
+                "X-Studio-Engine-Token": "synthetic-private",
+                "Authorization": "synthetic-private",
+                "Set-Cookie": "synthetic-private=1",
+                "X-Private": "synthetic-private",
+            },
+        )
+
+    response = connection.get(
+        "/test-download", headers={"Origin": "http://127.0.0.1:3000"}
+    )
+    assert response.status_code == status_code
+    assert response.headers["content-disposition"] == disposition
+    assert response.headers["access-control-allow-origin"] == "http://127.0.0.1:3000"
+    assert (
+        response.headers.get("access-control-expose-headers") == "Content-Disposition"
+    )
+    assert "access-control-allow-credentials" not in response.headers
+
+
+@pytest.mark.parametrize("origin", [None, "http://evil.test", "http://127.0.0.1:3000/"])
+def test_security_download_exposure_requires_exact_origin(tmp_path, origin):
+    from starlette.responses import Response
+
+    connection = client(tmp_path)
+
+    @connection.app.get("/test-download")
+    def download():
+        return Response(b"audio", headers={"Content-Disposition": "attachment"})
+
+    response = connection.get(
+        "/test-download", headers={} if origin is None else {"Origin": origin}
+    )
+    assert response.status_code == (200 if origin is None else 403)
+    assert "access-control-allow-origin" not in response.headers
+    assert "access-control-expose-headers" not in response.headers
+    assert "access-control-allow-credentials" not in response.headers
+
+
 def test_errors_not_found(tmp_path):
     response = client(tmp_path).get("/missing?secret=synthetic-private")
     assert response.status_code == 404

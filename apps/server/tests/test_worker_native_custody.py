@@ -14,6 +14,9 @@ from pathlib import Path
 
 import pytest
 
+if sys.platform != "win32":
+    pytest.skip("Custodia nativa de procesos Windows", allow_module_level=True)
+
 ROOT = Path(__file__).resolve().parents[3]
 # Aísla el paquete: app.__init__ arranca imports ajenos a esta unidad.
 package = types.ModuleType("app")
