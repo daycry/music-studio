@@ -235,6 +235,16 @@ exit $LASTEXITCODE
 @pytest.mark.skipif(os.name != "nt", reason="PowerShell Windows nativo")
 def test_bootstrap_rejects_missing_tools_after_benign_uv(tmp_path):
     clone_scripts(tmp_path)
+    # Sólo simula el CLI preparador; conserva prepare(check=True) del launcher real.
+    (tmp_path / "scripts/fetch_web_tools.py").write_text(
+        (ROOT / "scripts/fetch_web_tools.py")
+        .read_text(encoding="utf-8")
+        .replace(
+            "raise SystemExit(main())",
+            'print("MOCK_WEB_PREPARATION"); raise SystemExit(0)',
+        ),
+        encoding="utf-8",
+    )
     result = native_ps(
         tmp_path,
         """
@@ -244,9 +254,60 @@ function pnpm { 'FOREIGN_MANAGER_EXECUTED'; $global:LASTEXITCODE = 0 }
 """,
     )
     assert result.stdout.count("BENIGN_PRIVATE_UV") == 2
+    assert result.stdout.count("MOCK_WEB_PREPARATION") == 1
     assert "FOREIGN_MANAGER_EXECUTED" not in result.stdout
     assert "bootstrap completo" not in result.stdout
     assert result.returncode != 0
+    assert "Falta archivo oficial" in result.stderr
+
+
+@pytest.mark.skipif(os.name != "nt", reason="PowerShell Windows nativo")
+@pytest.mark.parametrize("prepare_exit", [0, 23])
+def test_bootstrap_prepares_web_tools_before_install_and_stops_on_failure(
+    tmp_path, prepare_exit
+):
+    clone_scripts(tmp_path)
+    # Dobles sólo en los límites Python: sin red, Node global ni init_env.
+    (tmp_path / "scripts/fetch_web_tools.py").write_text(
+        "import pathlib, sys\n"
+        "root = pathlib.Path(__file__).resolve().parent.parent\n"
+        "with (root / 'events.txt').open('a') as stream:\n"
+        "    stream.write('prepare\\n')\n"
+        "assert pathlib.Path(sys.executable).resolve() == root / '.venv/Scripts/python.exe'\n"
+        "assert sys.argv[1:] == []\n"
+        f"sys.exit({prepare_exit})\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "scripts/pnpm.py").write_text(
+        "import pathlib\n"
+        "root = pathlib.Path(__file__).resolve().parent.parent\n"
+        "with (root / 'events.txt').open('a') as stream:\n"
+        "    stream.write('install\\n')\n",
+        encoding="utf-8",
+    )
+    result = native_ps(
+        tmp_path,
+        """
+function uv {
+  ($args -join ' ') | Add-Content -LiteralPath "$PSScriptRoot/events.txt"
+  $global:LASTEXITCODE = 0
+}
+function pnpm { 'FOREIGN_MANAGER_EXECUTED'; $global:LASTEXITCODE = 0 }
+& "$PSScriptRoot/scripts/bootstrap.ps1"
+""",
+    )
+    events = (tmp_path / "events.txt").read_text().splitlines()
+    expected = ["python install", "sync --frozen", "prepare"]
+    if prepare_exit == 0:
+        assert result.returncode == 0, result.stderr
+        assert "bootstrap completo" in result.stdout
+        expected.append("install")
+    else:
+        assert result.returncode != 0
+        assert "exit 23" in result.stderr
+        assert "bootstrap completo" not in result.stdout
+    assert events == expected
+    assert "FOREIGN_MANAGER_EXECUTED" not in result.stdout
 
 
 @pytest.mark.skipif(os.name != "nt", reason="PowerShell Windows nativo")
@@ -740,6 +801,9 @@ exit $LASTEXITCODE
 @pytest.mark.skipif(os.name != "nt", reason="PowerShell Windows nativo")
 def test_bootstrap_frozen_ignore_scripts_mock_python_boundary(tmp_path):
     clone_scripts(tmp_path)
+    (tmp_path / "scripts/fetch_web_tools.py").write_text(
+        'print("MOCK_WEB_PREPARATION")\n', encoding="utf-8"
+    )
     (tmp_path / "scripts/pnpm.py").write_text(
         'import json,sys,base64,pathlib\npathlib.Path(__file__).with_name("received.json").write_text(base64.b64decode(sys.argv[2]).decode())\n'
     )
@@ -752,6 +816,7 @@ function uv { 'BENIGN_PRIVATE_UV'; $global:LASTEXITCODE = 0 }
     )
     assert result.returncode == 0
     assert result.stdout.count("BENIGN_PRIVATE_UV") == 2
+    assert result.stdout.count("MOCK_WEB_PREPARATION") == 1
     assert json.loads((tmp_path / "scripts/received.json").read_text()) == [
         "install",
         "--frozen-lockfile",

@@ -5,7 +5,7 @@ Estudio local de generacion musical con IA, con flujo de cancion a videoclip. La
 ## Requisitos
 
 - Windows 11, Docker Desktop con backend WSL2.
-- Git, `uv`, Node 22 y `pnpm` (se puede activar con `corepack enable`).
+- Git, `uv` y Windows PowerShell. El bootstrap descarga Node y pnpm portátiles con versiones y SHA-256 fijados, dentro del proyecto; no requiere Node/pnpm globales.
 - RTX NVIDIA para ACE-Step y ComfyUI. El recorrido mock no necesita GPU.
 - WSL2 con la distribucion Ubuntu. Ollama se instala y mantiene en WSL2, nunca dentro de este Compose.
 
@@ -19,11 +19,11 @@ cd music-studio
 .venv\Scripts\python.exe scripts\init_env.py
 ```
 
-`bootstrap.ps1` instala el interprete fijado por `.python-version`, sincroniza las dependencias Python y prepara `node_modules` con el lockfile. No instala paquetes en el Python global.
+`bootstrap.ps1` instala el interprete fijado por `.python-version`, sincroniza las dependencias Python, descarga y verifica las herramientas web con `scripts/fetch_web_tools.py` y prepara `node_modules` con el lockfile. Necesita acceso a las fuentes de descarga en esta preparación. No instala paquetes en el Python global. Tener Node/pnpm globales no prepara los archivos que exige el launcher verificado del proyecto.
 
 Las herramientas de arranque son `scripts/bootstrap.ps1`, `scripts/init_env.py` y `scripts/e2e_stack.py`. La guía de pruebas explica cómo preparar el ámbito privado antes de ejecutar `up` y `down`.
 
-En bash/WSL se puede usar `source scripts/env.sh` y `bash scripts/bootstrap.sh`.
+El arranque web gestionado se realiza desde Windows con PowerShell. El launcher Linux está bloqueado hasta disponer de un pin de Node Linux verificado; `bootstrap.sh` no ofrece actualmente un bootstrap web en WSL/Linux.
 
 ## MVP reproducible con datos mock
 
@@ -31,13 +31,31 @@ El recorrido técnico levanta solo `web`, `server` y `engine-mock`, publica en l
 
 Sigue primero la [receta de preparación del ámbito privado](docs/calidad/pruebas.md#preparar-el-ámbito-privado-y-ejecutar-la-suite). Genera un token de prueba y un Compose resuelto bajo `.cache/`, con contextos y montajes absolutos. Configura las siete variables obligatorias: `E2E_PROJECT_NAME`, `E2E_COMPOSE_FILE`, `E2E_ENV_FILE`, `STUDIO_DATA_ROOT`, `E2E_ARTIFACT_ROOT`, `E2E_API_ORIGIN` y `E2E_WEB_ORIGIN`.
 
-Conserva la terminal de esa receta. Con los puertos 3000/8000 libres y sin otra QA sobre el stack, ejecuta:
+Antes de construir el server, prepara FFmpeg Linux fijado y verificado por SHA-256. Su archivo se copia durante el build de Docker; este paso descarga una herramienta, sin pesos ni GPU:
+
+```powershell
+. .\scripts\env.ps1
+uv run --frozen --no-sync scripts/fetch_ffmpeg_linux.py --download
+```
+
+Conserva la terminal de la receta privada. Con los puertos 3000/8000 libres y sin otra QA sobre el stack, ejecuta:
 
 ```powershell
 . .\scripts\env.ps1
 uv run --frozen --no-sync scripts/e2e_stack.py up
 # abrir http://127.0.0.1:3000/create
+```
+
+Para ejecutar además la suite E2E, instala primero Chromium mediante el wrapper. El navegador y sus cachés quedan dentro del proyecto; esta instalación es un requisito de pruebas, separado del uso de la aplicación:
+
+```powershell
+& ./scripts/pnpm.ps1 --filter ./apps/web exec playwright '--' install chromium
 & ./scripts/pnpm.ps1 --filter ./apps/web exec playwright '--' test --config=playwright.integration.config.ts
+```
+
+Al terminar:
+
+```powershell
 uv run --frozen --no-sync scripts/e2e_stack.py down
 ```
 

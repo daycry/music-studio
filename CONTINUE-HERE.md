@@ -4,6 +4,8 @@
 
 **Actualizado:** 2026-11-05. T-15 y las tareas técnicas T-01 a T-13 cerradas tras QA Docker. **M1 sigue en-progreso: T-16 pendiente.**
 
+**En curso:** QA de primer arranque T-16 sobre un clon público limpio `a8b2824`, dentro de `.cache/r16/repo`; artefactos en `.cache/dev-cycle/20261105-t16-readme/`. Rama de trabajo `m1/t-16-arranque-documentado`. No activar servicios en 3000/8000 mientras ese agente conserva el control de la prueba.
+
 ## Restricciones vigentes
 
 - Docker y WSL disponibles; GPU/Ollama fuera de las pruebas actuales. No cargar modelos ni cambiar servicios ajenos sin nueva indicación que levante esa restricción.
@@ -22,11 +24,11 @@
 
 ## Despliegue privado para pruebas
 
-- Proyecto `music-studio-e2e-t15-20261105`: web/server/engine-mock CPU; web `http://127.0.0.1:3000`, API `http://127.0.0.1:8000`. **Genera audio simulado**, no usa ACE-Step/GPU.
+- Proyecto `music-studio-e2e-t15-20261105`: web/server/engine-mock CPU, **detenido y retirado por el orquestador para liberar 3000/8000 durante el primer arranque de T-16**; sus datos se conservan. La demostración genera audio simulado, no usa ACE-Step/GPU.
 - Datos, Compose resuelto y env privados en `.cache/dev-cycle/20261105-m1-docker/`; no resetearlos. Contexto limpio desde 5541902 con 29 overlays explícitos, sin restos M2/almacenamiento.
 - Imágenes finales: server `music-studio/server:m1-t15-20261105-fix1` (`69e939e7…`), web `music-studio/web:m1-t15-20261105-visual` (`68da3894…`). Nueve módulos server verificados dentro de Linux.
 - QA ha liberado el control; no quedan navegadores ni procesos de QA activos. No detener Docker/WSL/Ollama globalmente.
-- Retirados los siete contenedores auxiliares inactivos de QA; evidencias conservadas y tres servicios de demostración activos. Los 71 archivos de cambios ajenos conservan su hash.
+- Retirados los siete contenedores auxiliares inactivos de QA; evidencias conservadas. Los 71 archivos de cambios ajenos conservan su hash.
 
 ## Siguiente trabajo
 

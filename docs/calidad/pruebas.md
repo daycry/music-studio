@@ -27,7 +27,12 @@ Ver [`../arquitectura/contrato-engines.md`](../arquitectura/contrato-engines.md)
 
 ## Desarrollar y probar la web en Windows sin WSL ni GPU
 
-Este perfil comprueba la UI con datos sintéticos. El producto conserva el despliegue Docker de la [constitución](../CONSTITUTION.md#2-arquitectura-fijada--vetada). No necesita arrancar Docker, Ollama ni engines. Presupone dependencias y navegador de pruebas ya instalados dentro del proyecto; estos comandos no incluyen instalación.
+Este perfil comprueba la UI con datos sintéticos. El producto conserva el despliegue Docker de la [constitución](../CONSTITUTION.md#2-arquitectura-fijada--vetada). No necesita arrancar Docker, Ollama ni engines. Prepara las dependencias con `scripts/bootstrap.ps1`: incluye la descarga y verificación de Node/pnpm portátiles mediante `fetch_web_tools.py`, sin recurrir a versiones globales. Para las pruebas de navegador, instala después Chromium dentro de las cachés del proyecto:
+
+```powershell
+. ./scripts/env.ps1
+& ./scripts/pnpm.ps1 --filter ./apps/web exec playwright '--' install chromium
+```
 
 Desde la raíz, carga el entorno en cada terminal. Usa el wrapper [scripts/pnpm.ps1](../../scripts/pnpm.ps1), que ejecuta el Node gestionado y valida argumentos mediante [pnpm.py](../../scripts/pnpm.py):
 
@@ -114,7 +119,14 @@ La configuración valida confinamiento de rutas y orígenes locales. Si se adapt
 
 ### Preparar el ámbito privado y ejecutar la suite
 
-La receta presupone Docker Desktop disponible y las herramientas gestionadas instaladas. Reserva los puertos 3000/8000 antes de usarla. Si hay otro stack o una QA en curso, espera a que termine; estos comandos no identifican ni detienen servicios ajenos.
+La receta presupone Docker Desktop disponible y las herramientas gestionadas instaladas mediante `scripts/bootstrap.ps1` en Windows. Antes de `up`, prepara FFmpeg Linux con el descargador fijado: el Dockerfile del server necesita el archivo `tools/ffmpeg-linux/.../.archive.tar.xz` para su `COPY`. No requiere descargar pesos ni usar GPU:
+
+```powershell
+. ./scripts/env.ps1
+uv run --frozen --no-sync scripts/fetch_ffmpeg_linux.py --download
+```
+
+Reserva los puertos 3000/8000 antes de usar la receta. Si hay otro stack o una QA en curso, espera a que termine; estos comandos no identifican ni detienen servicios ajenos.
 
 Desde la raíz del repositorio, crea un ámbito nuevo y un token exclusivo de prueba. El comando `config` resuelve rutas con la raíz como directorio del proyecto. Guarda el resultado JSON, válido como entrada de Compose, dentro del ámbito privado:
 
@@ -164,6 +176,12 @@ Conserva esta terminal y sus variables para el arranque y las pruebas:
 
 ```powershell
 uv run --frozen --no-sync scripts/e2e_stack.py up
+```
+
+Con la aplicación arrancada, prepara el navegador antes de la suite. Esta descarga sólo se necesita para las pruebas: el wrapper fija `PLAYWRIGHT_BROWSERS_PATH` y el entorno de caché dentro del proyecto.
+
+```powershell
+& ./scripts/pnpm.ps1 --filter ./apps/web exec playwright '--' install chromium
 & ./scripts/pnpm.ps1 --filter ./apps/web exec playwright '--' test --config=playwright.integration.config.ts
 ```
 
@@ -171,7 +189,7 @@ El helper arranca sólo `web`, `server` y `engine-mock`, del perfil `studio`. Su
 
 Para otra corrida, cambia `E2E_ARTIFACT_ROOT` a `Join-Path $scope 'run-2'` y vuelve a ejecutar Playwright. Al terminar, `uv run --frozen --no-sync scripts/e2e_stack.py down` detiene sólo el proyecto seleccionado y conserva los archivos de prueba. No uses `--reset-data` sobre evidencia que quieras conservar.
 
-La prueba de recuperación exige que el mock arranque con `MOCK_STAGE_DELAY_MS=5000`, como en la receta. El Compose general tiene otro valor por defecto. Sin `E2E_RECOVERY=1`, Playwright omite recuperación: una corrida con ese skip no acredita los 11 casos. Los flags E2E no sustituyen la selección explícita de proyecto, archivos y datos.
+La prueba de recuperación exige que el mock arranque con `MOCK_STAGE_DELAY_MS=5000`, como en la receta. El Compose general tiene otro valor por defecto. Sin `E2E_RECOVERY=1`, Playwright omite recuperación: una corrida con ese skip no acredita los 14 casos. Los flags E2E no sustituyen la selección explícita de proyecto, archivos y datos.
 
 El [wrapper pnpm](../../scripts/pnpm.py) transporta sólo los controles E2E validados. Para recuperación resuelve el ejecutable Compose autónomo y un endpoint Docker exclusivamente local. Si no están en la ubicación esperada, admite `E2E_COMPOSE_CLI`, `E2E_DOCKER_CLI` y `E2E_DOCKER_HOST` explícitos y validados. Conserva el HOME aislado del proceso de pruebas sin copiar credenciales del usuario.
 
@@ -183,6 +201,7 @@ El [wrapper pnpm](../../scripts/pnpm.py) transporta sólo los controles E2E vali
 | `core.spec.ts`: errores y cancelación | Fallos persistentes, reintento explícito, cancelación terminal y liberación de cola ante `VRAM_EXCEEDED` imposible en CPU |
 | [recovery.spec.ts](../../apps/web/e2e/integration/recovery.spec.ts) | SIGKILL y arranque del server dedicado; reconexión SSE, mismo take/canción/semilla y una sola tarjeta hasta `ready` |
 | [api-smoke.spec.ts](../../apps/web/e2e/integration/api-smoke.spec.ts) | Rechazo de Host/Origin ajenos y contrato OpenAPI por HTTP real |
+| [layout.spec.ts](../../apps/web/e2e/integration/layout.spec.ts) | Biblioteca en cuadrícula y lista a 1440, 768 y 390 px |
 
 Una capacidad CPU verificada puede declarar VRAM cero. Esto permite probar dos outputs del mock; no acredita que dos variantes de ACE-Step quepan en la GPU.
 

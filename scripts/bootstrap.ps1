@@ -17,6 +17,9 @@ uv sync --frozen
 if ($LASTEXITCODE -ne 0) { throw "uv sync --frozen falló (exit $LASTEXITCODE)" }
 
 if (-not (Test-Path -LiteralPath (Join-Path $root 'pnpm-lock.yaml'))) { throw 'Bootstrap incompleto: falta pnpm-lock.yaml revisado.' }
+Write-Host '== Preparar Node y pnpm fijados y verificados =='
+& (Join-Path $root '.venv\Scripts\python.exe') -I -B (Join-Path $PSScriptRoot 'fetch_web_tools.py')
+if ($LASTEXITCODE -ne 0) { throw "Bootstrap incompleto: preparación de herramientas web falló (exit $LASTEXITCODE)." }
 Write-Host '== pnpm install --frozen-lockfile --ignore-scripts =='
 & (Join-Path $PSScriptRoot 'pnpm.ps1') install --frozen-lockfile --ignore-scripts
 if ($LASTEXITCODE -ne 0) { throw "Bootstrap incompleto: pnpm falló (exit $LASTEXITCODE)." }

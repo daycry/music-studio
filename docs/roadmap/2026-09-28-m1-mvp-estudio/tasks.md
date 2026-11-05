@@ -623,7 +623,11 @@ verificacion: obligatoria
 - **Descripción**: Canción real generada desde la web con ACE-Step (modelo de M0/T-13), escuchada por el propietario, y README de puesta en marcha.
 - **Estado**: en-progreso
 - **Dependencias**: T-15, M0/T-13
+- **Archivos**: `README.md`, `scripts/bootstrap.ps1`, `tests/test_web_tool_entrypoints.py`, `docs/calidad/pruebas.md`, `CONTINUE-HERE.md`; el ajuste de bootstrap corrige el primer arranque exigido por esta tarea, sin cambiar pins ni el contrato del launcher.
 - **Verificación**: take real `ready` con manifiesto válido, escuchado y aceptado por el propietario · README seguido desde cero.
+- **Primer arranque (2026-11-05)**: clon público limpio `a8b2824`; bootstrap instala Python y 70 dependencias, pero sale 1 porque pnpm exige el ZIP verificado ausente en una caché histórica. QA lo reproduce sin copiar herramientas y se detiene antes de init_env/Compose; diagnóstico y logs en `.cache/dev-cycle/20261105-t16-readme/report.md`. Corrección y regresión en curso; no se acredita aún el README completo.
+- **RED**: `tests/test_web_tool_entrypoints.py::test_bootstrap_prepares_web_tools_before_install_and_stops_on_failure[0/23]` falló porque faltaba el evento de preparación y el fallo de preparación no detenía la instalación (2 failed) · 2026-11-05. GREEN: 2 pass; cuatro focales bootstrap finales en verde (`fix1/red.log`, `green.log`, `bootstrap-neighbors.log`).
+- **TDD n/a: prosa** de README/guía/candidato. El código PowerShell se verifica con ejecución nativa de éxito/fallo; pytest-cov no instrumenta `.ps1`, no se inventa un porcentaje de cobertura.
 - **Revisión posterior solicitada (2026-11-05)**: una vez cerrado M1, ejecutar Claude CLI sobre lo implementado para buscar hallazgos y conservar su informe. No sustituye las revisiones ni las pruebas que condicionan el cierre de M1.
 
 
@@ -994,4 +998,8 @@ Lentes A/B/D frescas sobre los trece archivos nuevos/corregidos (cuarenta propio
 | QA-V01 | Important | Biblioteca oculta títulos y desborda controles en grid/lista móvil | T-11 | corregido: sólo presentación responsiva, acciones envueltas y placeholder accesible; handlers sin cambios | 3 RED→3 GREEN; seis geometrías/24 tarjetas con cero violaciones recalculadas por A/B; 16 unitarias/lint/tipos en verde |
 
 A comprueba los catorce bloques PowerShell y las ocho páginas del PDF NO-VERDE anterior; B verifica lógica pre-JSX y seis geometrías; D descarta regresión de carga y mide sólo el predicado aislado de test (200 tarjetas, 19.900 pares, mediana 0,243 ms), sin atribuirlo a rendimiento del navegador. Raw: `review-3-source.json`, `review-3-delta.diff`, `review-{1,2}-verdicts.md`, `library-visual-fix/`. QA independiente posterior aprobada: 14/14 ×3 y M-02 sobre web `68da3894…` y server `69e939e7…`; el cierre de M1 sigue condicionado por T-16.
+
+## Revisión de dos lentes — intento 1: T-16, primer arranque — sin gaps
+
+Lentes A/B sobre siete archivos propios congelados desde `a8b2824`; scope exit 0 sin avisos ni exclusiones añadidas. C/D no aplican según selector. Ambas leen el delta completo y no encuentran Critical/Important/Minor: preparación explícita antes de pnpm, fallo que detiene el bootstrap, launcher/pins intactos y documentación coherente. A coteja siete SHA y los recibos RED/GREEN; B ejecuta parser PowerShell y diff-check, exit 0. Root analiza quince bloques PowerShell documentales, cero errores. Raw en `.cache/dev-cycle/20261105-t16-readme/review-1/`; no se declara verde la corrida vecina obsoleta interrumpida. Falta QA independiente del candidato y README en clon limpio; T-16/M1 siguen abiertos y el candidato de conocimiento sigue pendiente de curación.
 
