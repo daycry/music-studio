@@ -21,29 +21,33 @@ cd music-studio
 
 `bootstrap.ps1` instala el interprete fijado por `.python-version`, sincroniza las dependencias Python y prepara `node_modules` con el lockfile. No instala paquetes en el Python global.
 
-Las rutas reproducibles equivalentes son `scripts/bootstrap.ps1`, `scripts/init_env.py`, `scripts/e2e_stack.py up` y `scripts/e2e_stack.py down`; en los bloques PowerShell se escriben con barra inversa.
+Las herramientas de arranque son `scripts/bootstrap.ps1`, `scripts/init_env.py` y `scripts/e2e_stack.py`. La guía de pruebas explica cómo preparar el ámbito privado antes de ejecutar `up` y `down`.
 
 En bash/WSL se puede usar `source scripts/env.sh` y `bash scripts/bootstrap.sh`.
 
 ## MVP reproducible con datos mock
 
-Este es el camino diario para desarrollar la UI y el API. Levanta solo `web`, `server` y `engine-mock`, publica en localhost y no necesita ACE-Step, Ollama ni una GPU libre.
+El recorrido técnico levanta solo `web`, `server` y `engine-mock`, publica en localhost y no necesita ACE-Step, Ollama ni una GPU libre. Comprueba integración y medios reales con audio sintético; la aceptación de M1 conserva ACE-Step real y escucha del propietario.
+
+Sigue primero la [receta de preparación del ámbito privado](docs/calidad/pruebas.md#preparar-el-ámbito-privado-y-ejecutar-la-suite). Genera un token de prueba y un Compose resuelto bajo `.cache/`, con contextos y montajes absolutos. Configura las siete variables obligatorias: `E2E_PROJECT_NAME`, `E2E_COMPOSE_FILE`, `E2E_ENV_FILE`, `STUDIO_DATA_ROOT`, `E2E_ARTIFACT_ROOT`, `E2E_API_ORIGIN` y `E2E_WEB_ORIGIN`.
+
+Conserva la terminal de esa receta. Con los puertos 3000/8000 libres y sin otra QA sobre el stack, ejecuta:
 
 ```powershell
 . .\scripts\env.ps1
-.venv\Scripts\python.exe scripts\e2e_stack.py up
+uv run --frozen --no-sync scripts/e2e_stack.py up
 # abrir http://127.0.0.1:3000/create
-pnpm --filter ./apps/web exec playwright -- test
-.venv\Scripts\python.exe scripts\e2e_stack.py down
+& ./scripts/pnpm.ps1 --filter ./apps/web exec playwright '--' test --config=playwright.integration.config.ts
+uv run --frozen --no-sync scripts/e2e_stack.py down
 ```
 
 Para reiniciar unicamente el server durante una prueba de recuperacion:
 
 ```powershell
-.venv\Scripts\python.exe scripts\e2e_stack.py restart-server
+uv run --frozen --no-sync scripts/e2e_stack.py restart-server
 ```
 
-`E2E_ISOLATED=1` o `E2E_RECOVERY=1` hace que la prueba use `.cache/e2e-data` y no toque los datos persistentes del proyecto.
+La receta activa `E2E_RECOVERY=1` y arranca el mock con `MOCK_STAGE_DELAY_MS=5000`. Sin esa coordinación, recuperación se omite. El aislamiento depende de los destinos privados explícitos y del proyecto Compose exclusivo; los flags E2E no los sustituyen. Playwright guarda los informes bajo `E2E_ARTIFACT_ROOT`.
 
 ## Datos
 

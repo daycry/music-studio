@@ -25,13 +25,21 @@ Las pruebas de interfaz interceptan la API con fixtures sintéticos identificado
 
 Los informes HTML, JSON, trazas y capturas se guardan en `.cache/playwright-ui/`. La suite CPU excluye `recovery.spec.ts`, `analysis.spec.ts` y `collections.spec.ts`: la recuperación necesita el despliegue real y beats/colecciones están aplazados por ADR-0089. Sus escenarios históricos se conservan debajo para el despliegue; no forman parte del camino mínimo actual.
 
-**Pendiente del despliegue:** E2E de producto con engine-mock real, tres corridas consecutivas, recuperación tras reiniciar el server, persistencia SQLite, SSE/Range reales y FFmpeg Linux dentro de Compose. El verde de la suite CPU no cierra T-04, T-05, T-07, T-15 completa ni M1. M-01, M-02 y M-03 conservan su validación separada. No se ejecutan WSL, Docker, Ollama ni inferencia GPU durante esta fase.
+El verde de la suite CPU no cierra T-04, T-05, T-07, T-15 completa ni M1. M-01, M-02 y M-03 conservan su validación separada. La fase CPU anterior no ejecutó WSL, Docker, Ollama ni inferencia GPU.
+
+## Ejecución integrada en Docker (2026-11-05)
+
+`playwright.integration.config.ts` descubre sólo `e2e/integration/`: navegador, HTTP, SSE, SQLite y FFmpeg reales sobre web/server/engine-mock CPU. No importa los fixtures que interceptan la API. El orquestador levanta un proyecto Compose dedicado y datos privados bajo `.cache/`; no se resetean datos del usuario. Cada corrida exige `E2E_PROJECT_NAME`, `E2E_COMPOSE_FILE`, `E2E_ENV_FILE`, `STUDIO_DATA_ROOT`, `E2E_ARTIFACT_ROOT`, `E2E_API_ORIGIN` y `E2E_WEB_ORIGIN` explícitos. Proyecto, rutas privadas y orígenes HTTP loopback se validan antes de descubrir las pruebas. Comando: `pnpm --filter ./apps/web exec playwright '--' test --config=playwright.integration.config.ts`.
+
+`E2E_RECOVERY=1` habilita la caída del servidor de pruebas; requiere el mock con `MOCK_STAGE_DELAY_MS=5000`. Sin esa variable el caso queda omitido explícitamente y la corrida no acredita recuperación. El helper de Compose espera cada operación y restaura el server de pruebas incluso si el escenario falla. Deben conservarse recibos de identidad y estado antes/después, además de las trazas del navegador.
+
+Pendientes: tres corridas integradas consecutivas verdes, pruebas de caída durante generación y post-proceso, revisión independiente y `qa-gate`. Los resultados de desarrollo y las correcciones se registran en el ledger; no se marcan las casillas de aceptación antes de QA. La música del mock es sintética: no acredita ACE-Step ni calidad musical.
 
 ## Automáticos (E2E — los ejecuta `qa` con Playwright)
 
 ### Despliegue — CA-01
 
-Entorno objetivo: web, server y `engine-mock` en Docker Compose, sin GPU ni Ollama. El nombre interno `engine-mock` debe coincidir con el servicio real al implementar. Comandos de arranque y pruebas todavía pendientes ([ADR-0035](../../decisiones/ADR-0035-despliegue-docker-y-ollama-wsl.md)).
+Entorno objetivo: web, server y `engine-mock` en Docker Compose, sin GPU ni Ollama. El nombre interno `engine-mock` coincide con el servicio del despliegue privado ([ADR-0035](../../decisiones/ADR-0035-despliegue-docker-y-ollama-wsl.md)).
 
 - [ ] Arrancar web/server/mock con Compose y ejecutar migraciones dentro del server; abrir web/API por puertos del host en `127.0.0.1`.
 - [ ] Confirmar resolución server→mock por nombre de servicio, sin usar localhost entre contenedores.
@@ -44,18 +52,20 @@ Este bloque valida el despliegue de M1 sin inferencia GPU. La conexión a Ollama
 
 ### E2E-01 — Crear canción con dos variantes y escucharla
 - **Objetivo**: comprobar el flujo principal completo, desde crear hasta descargar.
-- **Precondiciones**: app levantada con `engine-mock` (`MOCK_STAGE_DELAY_MS=300`); BD vacía.
+- **Precondiciones**: app levantada con `engine-mock` (`MOCK_STAGE_DELAY_MS=300`); datos privados. Cada escenario crea su canción y un marcador de búsqueda único.
 - **Pasos**:
   1. Abrir Crear, escribir una letra con `[verse]` y `[chorus]`, un estilo y la autoría «Propia».
   2. Elegir 2 variantes y pulsar Crear.
   3. Esperar a que terminen las dos tarjetas.
-  4. Pulsar ▶ en la variante A y luego `⏭`.
+  4. Abrir la canción, seleccionar una toma y reproducirla; desplazar la posición del audio.
   5. Descargar el MP3 y el FLAC.
 - **Aserciones**:
-  - [ ] Aparece una canción borrador con 2 takes agrupados (A/B).
+  - [ ] Aparece una canción borrador con 2 takes independientes. La agrupación A/B y el salto de par quedan aplazados por ADR-0089.
   - [ ] Las etapas se muestran en orden: cola → generando → post-proceso → listo.
-  - [ ] El reproductor salta de A a B con `⏭`.
-  - [ ] Las descargas tienen el content-type y el nombre esperados (`<titulo>-A.mp3`).
+  - [ ] El reproductor avanza, permite seek y conserva el blob autenticado al navegar a la biblioteca.
+  - [ ] Las descargas tienen el content-type, los bytes y el nombre esperados (`<titulo>-<take_id>.mp3` y `.flac`). `Content-Disposition` es visible por CORS al navegador.
+  - [ ] HTTP Range devuelve 206 y los bytes solicitados desde Node y desde el navegador.
+  - [ ] Hay eventos SSE reales de generación. Tras EOF/invalidez de epoch, el observador reconecta con el cursor confirmado y acepta el terminal del post sólo en un snapshot completo begin/chunk/end (ADR-0056).
 - **Capturas esperadas**: tarjeta generando; par A/B listo.
 - **Cubre tareas**: T-04, T-05, T-06, T-07, T-09, T-10, T-13
 
@@ -87,11 +97,13 @@ Este bloque valida el despliegue de M1 sin inferencia GPU. La conexión a Ollama
 - **Objetivo**: los errores se muestran en la tarjeta y se pueden reintentar.
 - **Precondiciones**: app levantada.
 - **Pasos**:
-  1. Crear con el estilo `synthwave @mock:fail_once=INTERNAL` (directiva del mock, contrato §7).
+  1. Crear con el estilo `synthwave <marcador> @mock:fail_once=PROVIDER_ERROR`, sin la directiva `retryable`.
   2. Pulsar Reintentar.
 - **Aserciones**:
-  - [ ] La tarjeta muestra el `code` `INTERNAL` y el `job_id`; no aparece un toast; no hubo reintento automático (no es `retryable`).
-  - [ ] Reintentar (`POST /api/jobs/{id}/retry`) crea un job nuevo que reutiliza el take y termina `ready`.
+  - [ ] La tarjeta muestra el `code` `PROVIDER_ERROR` y el `job_id`; no aparece un toast; no hubo reintento automático (no es `retryable`).
+  - [ ] Reintentar (`POST /api/jobs/{id}/retry`) crea un job nuevo que reutiliza el take sin publicar y termina `ready`; conserva su semilla e índice.
+  - [ ] Un escenario independiente con `@mock:fail=INTERNAL` confirma tarjeta y toma fallidas, sin assets ni recuperación inventada. `INTERNAL` descarga el proceso y reinicia el estado en memoria del mock: `fail_once=INTERNAL` no simula un fallo transitorio entre cargas.
+  - [ ] `@mock:fail=VRAM_EXCEEDED @mock:retryable` con el mock CPU sin offload termina en error visible y toma fallida sin assets; la cola deja de tener jobs bloqueados, en espera o en ejecución. La falta temporal de recursos conserva su espera; el rechazo estructural cierra sólo el presupuesto operativo, sin inventar attempts ni cambiar historia.
 - **Capturas esperadas**: tarjeta en error.
 - **Cubre tareas**: T-04, T-10
 
@@ -115,41 +127,41 @@ Este bloque valida el despliegue de M1 sin inferencia GPU. La conexión a Ollama
   2. Reiniciar el server a mitad de la generación (lo hace `scripts/e2e_stack.py restart-server`).
   3. Recargar la web.
 - **Aserciones**:
-  - [ ] El job pasa a `interrupted`, se reencola y termina `ready`.
-  - [ ] La UI se reconecta al SSE (`Last-Event-ID`).
+  - [ ] El job termina `ready` conservando canción, toma y semilla. Se conserva evidencia del estado realmente observado; no se deduce una transición `interrupted` sólo del éxito final.
+  - [ ] El recibo del servidor distingue continuar el mismo attempt de reintentar con ordinal nuevo; conserva solicitudes congeladas y cursores sin regresión.
+  - [ ] La UI restablece SSE; se verifica por separado recuperación con `Last-Event-ID` sin sustituirla por una recarga sin cursor.
 - **Capturas esperadas**: tarjeta completada tras el reinicio.
 - **Cubre tareas**: T-04, T-06
 
-### E2E-07 — Vista de canción: take maestro, valoración y versiones de letra
+### E2E-07 — Vista de canción: take maestro, valoración y letra
 - **Objetivo**: trabajar la canción como proyecto.
 - **Precondiciones**: una canción con 2 takes (seed).
 - **Pasos**:
   1. Abrir la canción.
   2. Valorar B con ★★★★ y marcarla como maestro.
-  3. Editar la letra y guardar una versión nueva.
-  4. Generar otra vez.
+  3. Quitar la valoración y abrir la letra de la toma.
 - **Aserciones**:
   - [ ] La canción apunta a B como maestro y la biblioteca previsualiza B.
-  - [ ] Existen 2 versiones de letra; el take nuevo referencia la v2 y los anteriores la v1.
-  - [ ] El panel de procedencia muestra el modelo, la licencia, el hash, la semilla y la autoría.
+  - [ ] Quitar la valoración guarda `null` y la letra de la toma permanece visible.
+  - La edición de versiones y el panel de procedencia quedan aplazados por ADR-0089.
 - **Capturas esperadas**: vista de canción con el maestro marcado.
 - **Cubre tareas**: T-07, T-12
 
-### E2E-08 — Biblioteca: búsqueda, filtros y papelera
-- **Objetivo**: encontrar y recuperar canciones.
-- **Precondiciones**: 3 canciones con títulos, letras y colecciones distintos (seed).
+### E2E-08 — Biblioteca: búsqueda y preescucha
+- **Objetivo**: encontrar y escuchar canciones.
+- **Precondiciones**: canción creada en el escenario con un marcador único en su estilo.
 - **Pasos**:
-  1. Buscar una palabra de la letra.
-  2. Filtrar por colección.
-  3. Borrar una canción, abrir la papelera y restaurarla.
+  1. Buscar el marcador con Enter.
+  2. Preescuchar el maestro marcado en E2E-07.
 - **Aserciones**:
   - [ ] La búsqueda FTS devuelve solo la canción esperada.
-  - [ ] El filtro de colección funciona.
-  - [ ] La canción restaurada conserva sus takes.
-- **Capturas esperadas**: resultados de búsqueda; papelera.
-- **Cubre tareas**: T-07, T-11, T-14
+  - [ ] La preescucha reproduce el audio del maestro.
+  - Colecciones, filtros y papelera quedan aplazados por ADR-0089.
+- **Capturas esperadas**: resultados de búsqueda y preescucha.
+- **Cubre tareas**: T-07, T-11
 
 ### E2E-09 — Beats en la onda (análisis dependiente)
+**Aplazado por ADR-0089.** El bloque siguiente conserva la intención histórica y no es una puerta del M1 recortado.
 - **Objetivo**: el análisis se ejecuta después del take y se muestra en la onda.
 - **Precondiciones**: app levantada; `engine-mock` con `audio.beats`.
 - **Pasos**:
@@ -162,6 +174,7 @@ Este bloque valida el despliegue de M1 sin inferencia GPU. La conexión a Ollama
 - **Cubre tareas**: T-04, T-05, T-12
 
 ### E2E-10 — Página Sistema
+**Aplazado por ADR-0089.** El bloque siguiente conserva la intención histórica y no es una puerta del M1 recortado.
 - **Objetivo**: el estado del sistema es visible.
 - **Precondiciones**: app levantada.
 - **Pasos**:
@@ -208,15 +221,15 @@ Este bloque valida el despliegue de M1 sin inferencia GPU. La conexión a Ollama
 - **Cubre tareas**: T-04, T-05, T-16
 
 ### M-02 — Revisión visual y de accesibilidad básica
-- **Qué revisar**: los temas oscuro y claro, el contraste, el foco visible, el reproductor manejado solo con teclado y `prefers-reduced-motion`.
+- **Qué revisar**: tema oscuro, contraste, foco visible, reproductor manejado sólo con teclado y `prefers-reduced-motion`. El tema claro está aplazado por ADR-0089.
 - **Por qué no se automatiza**: requiere juicio visual.
 - **Criterio de aceptación**:
   - [ ] No hay texto ilegible y el reproductor se puede usar solo con el teclado.
 - **Cubre tareas**: T-08, T-13
 
 ### M-03 — Backup y restauración
-- **Qué revisar**: forzar el backup diario, borrar `studio.sqlite` y restaurar desde `data/backups/`.
-- **Por qué no se automatiza**: es destructivo sobre datos reales.
+- **Qué revisar**: copiar el conjunto privado de pruebas, forzar el backup diario y restaurarlo en otro directorio privado; nunca borrar ni abrir desde Windows la BD del usuario. La copia SQLite no incluye ficheros: conservar también `songs/` y los recibos inmutables de `private-contexts/`; sin éstos la validación devuelve `PRIVATE_CONTEXT_INVALID` aunque estén presentes los medios.
+- **Por qué se revisa por separado**: requiere comprobar que la restauración contiene todos los assets y manifiestos, además de las filas de SQLite.
 - **Criterio de aceptación**:
   - [ ] La biblioteca vuelve completa y `verify_manifest.py data/songs/` pasa en verde.
 - **Cubre tareas**: T-02, T-16

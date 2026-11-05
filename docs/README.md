@@ -12,6 +12,8 @@ La [guía del server y los contratos](./desarrollo/server-y-contratos.md) explic
 
 Para trabajar sin ocupar WSL ni GPU, consulta el [perfil Windows CPU de la web](./calidad/pruebas.md#desarrollar-y-probar-la-web-en-windows-sin-wsl-ni-gpu): herramientas gestionadas, API temporal aislada, Playwright y límites de los datos sintéticos. La [QA CPU de la UI](./roadmap/2026-09-28-m1-mvp-estudio/testing/cpu-ui-2026-11-03.md) conserva evidencia independiente; no acredita el despliegue Docker completo.
 
+La [integración Docker](./calidad/pruebas.md#integración-docker-con-http-sse-y-medios-reales) explica el ámbito privado de T-15, sus siete variables obligatorias y las pruebas con HTTP, SSE, medios y recuperación reales. La [guía de restauración](./desarrollo/server-y-contratos.md#qué-conservar-junto-con-la-copia-sqlite) aclara qué guardar junto a SQLite. Estos procedimientos usan mock CPU; la aceptación de M1 exige ACE-Step real y escucha, según [ADR-0089](./decisiones/ADR-0089-reencauce-tras-codex.md).
+
 Desde la raíz, con el entorno local instalado:
 
 ```powershell
@@ -46,4 +48,4 @@ Fuentes de estos comandos: [export_contracts.py](../scripts/export_contracts.py)
 4. **Todo vive dentro de esta carpeta**: código, modelos, datos y memoria ([ADR-0005](./decisiones/ADR-0005-todo-en-la-carpeta.md)).
 5. **Documentación breve.** Si un documento pasa de ~300 líneas, probablemente mezcla dos temas.
 
-Última actualización: 2026-11-03.
+Última actualización: 2026-11-05.

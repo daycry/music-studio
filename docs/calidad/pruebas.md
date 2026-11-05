@@ -3,7 +3,7 @@ documento: pruebas
 titulo: Estrategia de pruebas
 estado: vigente
 fecha: 2026-09-28
-actualizado: 2026-11-03
+actualizado: 2026-11-05
 ---
 
 # Estrategia de pruebas
@@ -91,3 +91,105 @@ Con ambos procesos anteriores disponibles:
 | Unitarias y build | Comportamiento de módulos y compilación | Calidad musical, integración Docker y aceptación manual |
 
 El [informe QA CPU de M1](../roadmap/2026-09-28-m1-mvp-estudio/testing/cpu-ui-2026-11-03.md) conserva los resultados observados y sus límites. Los E2E con engine-mock, FFmpeg, recuperación y medios reales siguen siendo una verificación distinta en el [plan canónico](../roadmap/2026-09-28-m1-mvp-estudio/test-plan.md). No se sustituyen por este perfil ni por repetirlo tres veces.
+
+## Integración Docker con HTTP, SSE y medios reales
+
+El perfil [playwright.integration.config.ts](../../apps/web/playwright.integration.config.ts) ejecuta los casos de [e2e/integration](../../apps/web/e2e/integration/) contra servicios ya levantados. Usa un worker, sin reintentos de Playwright ni interceptación HTTP. Chromium lleva `--disable-gpu`; el audio procede del mock CPU y pasa por el postproceso real del server.
+
+El ámbito debe quedar preparado antes de ejecutar o descubrir pruebas. Estas siete variables son obligatorias:
+
+| Variable | Valor requerido |
+|---|---|
+| `E2E_PROJECT_NAME` | Proyecto Compose exclusivo `music-studio-e2e` o `music-studio-e2e-<nombre>` |
+| `E2E_COMPOSE_FILE` | Archivo Compose existente dentro de `.cache/` del repositorio |
+| `E2E_ENV_FILE` | Archivo de entorno privado existente dentro de `.cache/` |
+| `STUDIO_DATA_ROOT` | Directorio de datos de prueba dentro de `.cache/`, separado de la biblioteca habitual |
+| `E2E_ARTIFACT_ROOT` | Directorio de resultados dentro de `.cache/`; usa uno distinto por corrida |
+| `E2E_API_ORIGIN` | Origen HTTP local del API; en este stack, `http://127.0.0.1:8000` |
+| `E2E_WEB_ORIGIN` | Origen HTTP local de la web; en este stack, `http://127.0.0.1:3000` |
+
+La configuración valida confinamiento de rutas y orígenes locales. Si se adapta [docker-compose.yml](../../docker-compose.yml) a una ubicación bajo `.cache/`, hay que resolver sus contextos de build y montajes relativos. Copiarlo sin más cambia la resolución de esas rutas.
+
+[e2e_stack.py](../../scripts/e2e_stack.py) acepta el proyecto, Compose, entorno y datos seleccionados. `up` levanta web/server/mock y siembra por API; `smoke` levanta sin sembrar; `down` detiene ese proyecto. El helper usa los puertos 8000/3000. No ejecutes dos suites sobre ese stack ni sustituyas sus datos durante una corrida.
+
+### Preparar el ámbito privado y ejecutar la suite
+
+La receta presupone Docker Desktop disponible y las herramientas gestionadas instaladas. Reserva los puertos 3000/8000 antes de usarla. Si hay otro stack o una QA en curso, espera a que termine; estos comandos no identifican ni detienen servicios ajenos.
+
+Desde la raíz del repositorio, crea un ámbito nuevo y un token exclusivo de prueba. El comando `config` resuelve rutas con la raíz como directorio del proyecto. Guarda el resultado JSON, válido como entrada de Compose, dentro del ámbito privado:
+
+```powershell
+. ./scripts/env.ps1
+$repo = (Get-Location).Path
+$suffix = [Guid]::NewGuid().ToString('N').Substring(0, 12)
+$scope = Join-Path $repo ".cache/e2e-runs/$suffix"
+New-Item -ItemType Directory -Path $scope | Out-Null
+
+$env:E2E_PROJECT_NAME = "music-studio-e2e-$suffix"
+$env:E2E_COMPOSE_FILE = Join-Path $scope 'compose.resolved.json'
+$env:E2E_ENV_FILE = Join-Path $scope 'stack.env'
+$env:STUDIO_DATA_ROOT = Join-Path $scope 'data'
+$env:E2E_ARTIFACT_ROOT = Join-Path $scope 'run-1'
+$env:E2E_API_ORIGIN = 'http://127.0.0.1:8000'
+$env:E2E_WEB_ORIGIN = 'http://127.0.0.1:3000'
+$env:MOCK_STAGE_DELAY_MS = '5000'
+$env:E2E_RECOVERY = '1'
+
+$bytes = New-Object byte[] 32
+$rng = [Security.Cryptography.RandomNumberGenerator]::Create()
+try { $rng.GetBytes($bytes) } finally { $rng.Dispose() }
+$token = [Convert]::ToBase64String($bytes)
+$utf8 = [Text.UTF8Encoding]::new($false)
+[IO.File]::WriteAllText($env:E2E_ENV_FILE, "STUDIO_ENGINE_TOKEN=$token`n", $utf8)
+
+$previousToken = [Environment]::GetEnvironmentVariable('STUDIO_ENGINE_TOKEN', 'Process')
+try {
+  $env:STUDIO_ENGINE_TOKEN = $token
+  $resolved = & docker compose --project-directory $repo `
+    --project-name $env:E2E_PROJECT_NAME --profile studio `
+    --env-file $env:E2E_ENV_FILE --file docker-compose.yml config --format json
+  if ($LASTEXITCODE -ne 0) { throw 'No se pudo resolver el Compose de pruebas' }
+} finally {
+  [Environment]::SetEnvironmentVariable('STUDIO_ENGINE_TOKEN', $previousToken, 'Process')
+  $token = $null
+  $previousToken = $null
+}
+[IO.File]::WriteAllText($env:E2E_COMPOSE_FILE, ($resolved -join "`n"), $utf8)
+$resolved = $null
+```
+
+`stack.env` y `compose.resolved.json` contienen el token. Mantén ambos en `.cache/`; no imprimas su contenido ni los publiques. La receta no modifica `.env`. La resolución del Compose verifica configuración; todavía no arranca servicios ni demuestra un arranque desde cero.
+
+Conserva esta terminal y sus variables para el arranque y las pruebas:
+
+```powershell
+uv run --frozen --no-sync scripts/e2e_stack.py up
+& ./scripts/pnpm.ps1 --filter ./apps/web exec playwright '--' test --config=playwright.integration.config.ts
+```
+
+El helper arranca sólo `web`, `server` y `engine-mock`, del perfil `studio`. Sus dependencias quedan entre esos tres servicios; no solicitan GPU. La resolución técnica de este Compose se comprobó sin arrancarlo. Una ejecución satisfactoria requiere además que build, health, siembra y suite terminen correctamente.
+
+Para otra corrida, cambia `E2E_ARTIFACT_ROOT` a `Join-Path $scope 'run-2'` y vuelve a ejecutar Playwright. Al terminar, `uv run --frozen --no-sync scripts/e2e_stack.py down` detiene sólo el proyecto seleccionado y conserva los archivos de prueba. No uses `--reset-data` sobre evidencia que quieras conservar.
+
+La prueba de recuperación exige que el mock arranque con `MOCK_STAGE_DELAY_MS=5000`, como en la receta. El Compose general tiene otro valor por defecto. Sin `E2E_RECOVERY=1`, Playwright omite recuperación: una corrida con ese skip no acredita los 11 casos. Los flags E2E no sustituyen la selección explícita de proyecto, archivos y datos.
+
+El [wrapper pnpm](../../scripts/pnpm.py) transporta sólo los controles E2E validados. Para recuperación resuelve el ejecutable Compose autónomo y un endpoint Docker exclusivamente local. Si no están en la ubicación esperada, admite `E2E_COMPOSE_CLI`, `E2E_DOCKER_CLI` y `E2E_DOCKER_HOST` explícitos y validados. Conserva el HOME aislado del proceso de pruebas sin copiar credenciales del usuario.
+
+### Qué acredita cada prueba integrada
+
+| Fuente | Contrato observable |
+|---|---|
+| [core.spec.ts](../../apps/web/e2e/integration/core.spec.ts) | Letra y autoría; uno por defecto y dos outputs con capacidad CPU verificada y estimación válida; estados reales, publicación, onda, reproducción, Range, descargas MP3/FLAC, maestro, búsqueda y preescucha |
+| `core.spec.ts`: errores y cancelación | Fallos persistentes, reintento explícito, cancelación terminal y liberación de cola ante `VRAM_EXCEEDED` imposible en CPU |
+| [recovery.spec.ts](../../apps/web/e2e/integration/recovery.spec.ts) | SIGKILL y arranque del server dedicado; reconexión SSE, mismo take/canción/semilla y una sola tarjeta hasta `ready` |
+| [api-smoke.spec.ts](../../apps/web/e2e/integration/api-smoke.spec.ts) | Rechazo de Host/Origin ajenos y contrato OpenAPI por HTTP real |
+
+Una capacidad CPU verificada puede declarar VRAM cero. Esto permite probar dos outputs del mock; no acredita que dos variantes de ACE-Step quepan en la GPU.
+
+Las sondas privadas de recuperación runtime distinguen caída durante generación, reinicio del engine y caída durante FFmpeg. Comprueban, respectivamente, continuidad del attempt y cursor; nuevo attempt del engine; y misma ejecución/plan CPU con nueva lease hasta publicar. Se ejecutaron sobre una imagen anterior al fix final. Complementan la prueba del navegador; no sustituyen las tres corridas independientes de QA ni verifican por sí solas la imagen final.
+
+JSON, HTML, trazas y capturas quedan bajo `E2E_ARTIFACT_ROOT`. Para evaluar un resultado, conserva también la identidad de las imágenes y fuentes desplegadas. Una suite sobre una imagen anterior no valida automáticamente un fix posterior. Los resultados y las puertas de aceptación pertenecen al [ledger M1](../roadmap/2026-09-28-m1-mvp-estudio/tasks.md) y sus informes de testing.
+
+La revisión documental describe el procedimiento; no certifica un arranque desde cero ni da por terminada una QA en curso. M1 conserva la aceptación con ACE-Step real y escucha del propietario, según el [recorte aprobado](../roadmap/2026-09-28-m1-mvp-estudio/spec.md#recorte-del-2026-10-22-adr-0089). T-15/T-16 siguen sujetos a sus verificaciones; M2/M3 permanecen congelados por [ADR-0089](../decisiones/ADR-0089-reencauce-tras-codex.md).
+
+Última actualización: 2026-11-05.

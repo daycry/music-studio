@@ -41,24 +41,27 @@ verificacion: obligatoria
 - Evidencia local de este lote: `.cache/dev-cycle/20261103-cpu-m1/`; las referencias cortas siguientes parten de ahí. Recibo consolidado: `final-validation.json`.
 - Alcance Windows CPU: sin WSL, Docker, GPU, Ollama ni datos del usuario. Quedan E2E del despliegue, recuperación/FFmpeg/SSE/Range reales, manuales y aceptación musical; M1 sigue abierto y M2/M3 congelados.
 
+### Verificación Docker final del 2026-11-05
+
+- Servidor Linux real: `python -m pytest apps/server/tests -m "not gpu" -ra --cov=apps/server/app --cov-branch` (con salida JUnit/cobertura, entorno y tmpfs fijados en `linux-server-fix1-final/context/run_final.py`) → **2214 pass, 17 skip de Windows, 0 fallos/errores**; 70 fuentes y 81 tests/soportes sin cambios de SHA. Incluye migraciones, FTS, API, cola, custodia y FFmpeg reales.
+- Web final: **419 pass/32 archivos**; herramientas host **138 pass/0 skip**; build, Ruff/formato, ESLint, TypeScript y `export_contracts.py --check`: exit 0. Cobertura fix1 cambiada frente a review1: 58/59 = 98,31 %; runtime completo conserva 79,31 % de ramas, sin afirmar que todas las métricas superen 80 %.
+- Con siete variables explícitas de ámbito/origen y `E2E_RECOVERY=1`, `.\scripts\pnpm.ps1 --filter ./apps/web exec playwright '--' test --config=playwright.integration.config.ts` → **14/14 × tres corridas independientes**, cada test/gate exit 0; sin fallos, flaky, skips ni retries. Son 14 casos únicos; despliegue real web/server/engine-mock CPU, sin interceptores.
+- **M-02 aprobado:** oscuro, teclado y movimiento reducido; cuadrícula/lista en 1440/768/390 px, cero colisiones/desbordes en 24 tarjetas por estado. QA-V01 corregido y revisado por A/B/D; C no aplica al lote según selector. Informe [MD](testing/docker-ui-2026-11-05.md) / [PDF](testing/docker-ui-2026-11-05.pdf), ocho páginas inspeccionadas también por el orquestador.
+- Recuperación nativa adicional: SIGKILL durante generación y FFmpeg, reinicio exclusivo del mock; identidad/semilla y manifiestos comprobados. Backup privado restaurado con medios y `private-contexts/`: 18 canciones, 22 takes, 60 assets, 15 manifiestos válidos. No es aceptación de la BD del propietario.
+- Recibo local consolidado: `.cache/dev-cycle/20261105-m1-docker/final-validation.json`; fuentes 29/29 e imágenes server `69e939e7…` / web `68da3894…` verificadas. Sin GPU/Ollama ni datos del usuario. Cierra T-01 a T-13 y T-15, **no T-16 ni M1**: faltan ACE-Step/escucha, README desde cero y ritual final.
+
 ## Resumen de progreso
 
 | Fase | Completadas | Total | Progreso de cierre | Canceladas | En revisión |
 |------|------------|-------|--------------------|-----------|-------------|
-| Fase 1 — Server base | 0 | 4 | 0% | 1 (T-00) | 3 |
-| Fase 2 — Cola y post-proceso | 0 | 3 | 0% | 0 | 3 |
-| Fase 3 — API | 0 | 1 | 0% | 0 | 1 |
-| Fase 4 — Web | 0 | 7 | 0% | 1 (T-14) | 6 |
-| Fase 5 — Pruebas y cierre | 1 | 3 | 33% | 0 | 0 |
-| **TOTAL** | **1** | **18** | **6%** | **2** | **13** |
+| Fase 1 — Server base | 3 | 4 | 75% | 1 (T-00) | 0 |
+| Fase 2 — Cola y post-proceso | 3 | 3 | 100% | 0 | 0 |
+| Fase 3 — API | 1 | 1 | 100% | 0 | 0 |
+| Fase 4 — Web | 6 | 7 | 86% | 1 (T-14) | 0 |
+| Fase 5 — Pruebas y cierre | 2 | 3 | 67% | 0 | 0 |
+| **TOTAL** | **15** | **18** | **83%** | **2** | **0** |
 
-**Orden recomendado:**
-
-1. T-05 (desbloquea el camino de punta a punta).
-2. T-04, T-06 y T-07 con el mock.
-3. T-08 a T-13 en la web.
-4. T-15 en E2E.
-5. T-16 con ACE-Step real, cuando M0/T-13 esté cerrado.
+**Siguiente puerta:** T-16, cuando se cierre M0/T-13 y se pueda usar la GPU. M1 sigue en-progreso; M2/M3 congelados. Los estados históricos siguientes describen sus fechas, no revierten el cierre técnico del 05/11.
 
 ---
 
@@ -73,25 +76,32 @@ verificacion: obligatoria
 ### T-01 — Esqueleto del server: configuración, seguridad local y logs
 - **Cubre (tests)**: API-01
 - **Descripción**: FastAPI sin torch, `Settings`, validación de `Host`/`Origin`, `problem+json` y logs estructurados.
-- **Estado**: en-revision
+- **Estado**: completado
 - **Dependencias**: ninguna
-- **Archivos**: `apps/server/app/{main,settings,security,errors,logging}.py`
+- **Archivos**: `apps/server/app/{main,settings,security,errors,logging}.py`, `apps/server/tests/test_security_errors.py`
 - **Verificación**: `uv run pytest apps/server/tests -k "security or settings or errors or health" -m "not gpu"` en verde · `curl -H "Host: evil" http://127.0.0.1:8000/health` → 403.
+- **Integración Docker (2026-11-05)**: RED de descargas por `Content-Disposition` oculto al navegador; se expone sólo ese header al origen permitido. Seguridad 67 pass, vecinos 204 pass; líneas 100 %/ramas 96,15 %. MP3/FLAC y rechazos HTTP Host/Origin comprobados en la corrida integrada 9/9 (`core-coherent-final.log`).
+- **Cierre técnico (2026-11-05)**: Host/Origin reales rechazados y descargas MP3/FLAC con nombre visible: QA API-01 y E2E-01/07; suite Linux de seguridad/settings/logs en verde. Verificación consolidada Docker arriba; recibos e informe final de T-15.
+- **Changelog**: El servidor valida el acceso local y permite descargar audio con el nombre correcto desde el navegador.
 
 ### T-02 — Esquema completo, migración inicial y FTS
 - **Cubre (tests)**: M-03
 - **Descripción**: Primera migración Alembic con el esquema de datos.md y FTS de canciones. El backup diario existe en el código, pero no bloquea el cierre.
-- **Estado**: en-revision
+- **Estado**: completado
 - **Dependencias**: T-01
 - **Archivos**: `apps/server/app/models/`, `apps/server/app/migrations/`, `apps/server/app/db.py`
 - **Verificación**: `uv run pytest apps/server/tests -k "migration or schema or fts" -m "not gpu"` en verde.
+- **Cierre técnico (2026-11-05)**: Migraciones/esquema/FTS incluidos en 2214 pass Linux; búsqueda real E2E-08 y backup/restauración privados verificados. M-03 del propietario sigue en T-16. Verificación consolidada Docker arriba; recibos e informe final de T-15.
+- **Changelog**: El estudio conserva canciones y takes en SQLite con migraciones, búsqueda de texto y copias de seguridad.
 
 ### T-03 — Contratos exportados y parser de letras compartido
 - **Cubre (tests)**: E2E-03, API-02
 - **Descripción**: `openapi.json` y `engine-v1.json` exportados y comprobados en CI, y el parser de letras compartido server/web con `lyrics-cases.json`.
-- **Estado**: en-revision
+- **Estado**: completado
 - **Dependencias**: T-01
 - **Verificación**: `uv run scripts/export_contracts.py --check` sin diferencias · `uv run pytest apps/server/tests -k lyrics` y `pnpm --filter web test lyrics` en verde.
+- **Cierre técnico (2026-11-05)**: Contratos exportados sin diferencias; parser server/web y validación de etiquetas/autoría cubiertos por suite completa y E2E-02/03/API-02. Verificación consolidada Docker arriba; recibos e informe final de T-15.
+- **Changelog**: La web y el servidor comparten los contratos de API y las reglas de validación de letras.
 
 ## Fase 2 — Cola y post-proceso
 
@@ -112,7 +122,7 @@ verificacion: obligatoria
   **Decisiones del propietario (2026-10-22):**
   - El post interrumpido se **reanuda** sobre la misma `cpu_execution`, sin migración (opción A, frente a B «ordinal 2 + migración» y C «fallar y regenerar la GPU»).
   - Un job GPU dudoso usa **reintento acotado**: si el engine confirma que no lo tiene, pasa a `failed` retryable y lo recoge el retry ×2.
-- **Estado**: en-revision
+- **Estado**: completado
 - **Tipo**: backend
 - **Dependencias**: T-02, T-05
 - **Archivos**: `apps/server/app/queue/`, `apps/server/app/worker/planning.py` (índices originales de variantes en reintentos parciales), `apps/server/app/worker/execution.py`, `apps/server/app/worker/publications.py`, `apps/server/app/worker/audio_child.py` (salta las takes ya empaquetadas al reanudar: `resume-skip.json`), `apps/server/tests/test_dispatcher_*.py`, `apps/server/tests/test_queue_*.py`, `apps/server/tests/test_worker_*.py`
@@ -143,7 +153,7 @@ verificacion: obligatoria
   - si el engine confirma que no lo tiene → `failed` con `retryable` y lo recoge el retry ×2 existente (attempt nuevo, misma semilla, respetando `max_attempts`);
   - si el engine no responde → sigue esperando como ahora.
 - [x] CA-5 (gap 6): `reconcile_startup` es idempotente. Un segundo arranque sin cambios no incrementa `revision` ni reescribe filas ya `interrupted`.
-- [x] CA-6: la suite de cola (`-k "queue or dispatcher or retry or recovery or cancel"`) y la del server completa siguen en verde.
+- [x] CA-6: la suite de cola (`-k "queue or dispatcher or retry or recovery or cancel"`) y la del server completa siguen en verde. Fix1 Linux: 2214 pass/17 skip, 0 fallos/errores, fuentes y tests idénticos antes/después (`linux-server-fix1-final/summary.json`).
 - **Implementación** (2026-10-22, 3,05 h IA medidas). Commits `2917030` (GPU dudoso y borrado de `data/tmp` al cancelar) y `b613714` (reanudar `post.audio`).
   - **RED → GREEN por CA** (implementer):
     - CA-2: `test_ca2_*`, `assert False is True`.
@@ -200,6 +210,7 @@ verificacion: obligatoria
   - T-04 queda `en-revision`, se integra en `main` y pasa a `completado` cuando T-15 las ejecute con `qa-gate` en verde.
   - Deuda abierta: N6 (`.pending` residual en 1 de 6 reanudaciones; lo elimina el siguiente arranque), N7 y B5 (con H5).
 - **Changelog**: Si el server se reinicia a mitad de una canción, el post-proceso se reanuda solo hasta dejar el take listo. Los trabajos se pueden cancelar sin dejar restos, y la cola no se queda bloqueada.
+- **Cierre técnico (2026-11-05)**: E2E-04/05/06 y recuperaciones nativas en verde; servidor2214 pass. La política VRAM imposible libera la cola y el timeout de cancelación devuelve503 controlado. Verificación consolidada Docker arriba; recibos e informe final de T-15.
 
 ### T-05 — Post-proceso y publicación sencilla de takes
 - **Cubre (tests)**: E2E-01, M-01
@@ -210,7 +221,7 @@ verificacion: obligatoria
   - al arrancar se limpian los staging huérfanos.
 
   Fuera de alcance: simplificar la custodia de procesos (`custody_*`, `pipe_protocol`), que funciona y no bloquea. `packages/storage-guard` se mantiene opcional (solo con `STUDIO_STORAGE_UUID`).
-- **Estado**: en-revision
+- **Estado**: completado
 - **Tipo**: backend
 - **Dependencias**: T-04
 - **Archivos**: `apps/server/app/worker/publications.py`, `apps/server/app/worker/execution.py`, `apps/server/tests/test_worker_*.py`, `apps/server/tests/conftest.py` y `pytest.ini` (marcadores de CA-4), `apps/server/tests/fixtures/creative/fixture-index.json` (hash LF del esquema, `406f259`), `apps/server/app/logging.py` y `apps/server/app/queue/runtime.py` (eventos `worker.*` y logger del worker, fix2), `scripts/verify_manifest.py` y `packages/audio-post/tests/test_manifest_errors.py` (H2), `README.md` (aviso de WAL, H4)
@@ -293,11 +304,12 @@ verificacion: obligatoria
   - Focales (verificado por el orquestador): 30 passed, 3 skipped. `ruff check` limpio.
   - Suite completa del server sobre `a0856c2`: `2538 passed, 73 skipped` en 938 s, con 0 failed y 0 errors.
 - **Changelog**: Los takes se publican de forma fiable sobre la carpeta de datos de Docker Desktop, sin sobrescribir nada ajeno y limpiando restos tras un reinicio.
+- **Cierre técnico (2026-11-05)**: E2E-01 publica dos takes con FFmpeg fijado, Range y MP3/FLAC reales; manifiestos válidos y recuperación del post sobre la misma ejecución. Beats/E2E-09 sigue aplazado por el recorte. Verificación consolidada Docker arriba; recibos e informe final de T-15.
 
 ### T-06 — SSE de eventos
 - **Cubre (tests)**: E2E-01, E2E-06
 - **Descripción**: Etapas reales del job por SSE, con reconexión y estado inicial.
-- **Estado**: en-revision
+- **Estado**: completado
 - **Dependencias**: T-04
 - **Archivos**: `apps/server/app/sse.py`, `apps/server/app/event_routes.py`, `apps/server/app/queue/events.py` (sobre del evento y suscripción), `apps/server/tests/test_sse_*.py`, `apps/web/lib/events.ts`, `apps/web/lib/events.test.ts` (reinicio del contador de reintentos)
 - **Verificación**: `uv run pytest apps/server/tests -k "sse or event" -m "not gpu"` en verde · vitest de `lib/events` en verde.
@@ -305,12 +317,16 @@ verificacion: obligatoria
 
 - **RED**: `test_events_song_filter_all_real_producer_events[replay]` no recibía `job.stage`; los casos de heartbeat y ámbito cubren los otros dos defectos · 2026-11-03.
 - **Verificación CPU (2026-11-03)**: el JUnit V4d contiene 225 casos SSE/eventos: 221 pass, 4 skip, 0 fallos; `lib/events.test.ts`: 28 pass. Tipos y campos SSE conservados.
+- **Integración Docker (2026-11-05)**: RED con SQLite/productor real por dos lecturas contradictorias, lector residual y commit de lectura que disparaba reconciliación. Bootstrap con vista WAL/cursor coherentes bajo barrera y fuera del event loop; cierre sin commit y cleanup de errores/cancelación. Verificación final 237 pass/5 skip; web 28 pass; vecinos 397 pass más handoff nativo. Cobertura completa rutas 95,09 %/89,47 % y bus 94,31 %/89 %, sin exclusiones. Docker 9/9 confirma reconexión, snapshot terminal y tarjetas listas; revisión/QA formal final aprobadas en T-15 (`sse-snapshot-fix/`, `core-coherent-final.log`).
 
 **Criterios de aceptación**
 - [x] CA-1 (Critical): los eventos `job.*` que publica `EventConsumer` llevan `song_id`, así que una suscripción con `?song_id=` (la que usa la web) los recibe en directo y en el replay. Un test HTTP se suscribe con `?song_id=` y recibe `job.stage`, `job.progress` y `job.done` publicados por el productor real, no por un sobre sintético.
 - [x] CA-2 (Important): un heartbeat sin eventos no cierra la suscripción. Que venza el timeout de espera no cancela ni cierra `subscription.next()`. Un test con heartbeat corto recibe dos o más `: keep-alive` y después un evento. En la web, una conexión que termina bien reinicia el contador de reintentos (`lib/events.ts`).
 - [x] CA-3 (Important): `/api/events` no da 422 cuando el dueño o la canción tienen más de 64 jobs. El ámbito incluye solo los jobs vivos (no terminales), o el límite deja de aplicarse a los terminales. Hay un test con 69 jobs (68 terminados).
-- [x] CA-4: la Verificación está en verde, sin tocar el contrato de tipos ni de campos SSE que ya consume la web (`sse.py:13-25`).
+- [x] CA-4: la Verificación está en verde, sin tocar el contrato de tipos ni de campos SSE que ya consume la web (`sse.py:13-25`). Reabierta por el rechazo HTTP 422 de una reconexión real en Docker el 05/11 y verificada tras la corrección; el cuerpo del 422 original no quedó conservado en la traza.
+- [x] CA-5: bootstrap y reconexión capturan jobs activos, terminales conocidos, attempts y cursor en una vista coherente. Un cambio de estado concurrente no construye `CONFLICTING_SNAPSHOT_JOB`; un fallo al preparar el stream libera la suscripción. La transición entre las dos lecturas anteriores reproduce ese rechazo en el constructor; las regresiones y la corrida Docker pasan con el fix.
+- **Cierre técnico (2026-11-05)**: Snapshot/cursor SSE coherentes y cleanup de lectores incluidos en suite Linux; generación y reconexión E2E-01/06 reales pasan en las tres corridas. Verificación consolidada Docker arriba; recibos e informe final de T-15.
+- **Changelog**: El progreso de generación se actualiza y recupera con eventos reales y un estado inicial coherente.
 
 ## Fase 3 — API
 
@@ -332,7 +348,7 @@ verificacion: obligatoria
   - **Duración por defecto: 30 s** si no viene; 422 si viene fuera de (0, 600].
   - **Se elimina el código creativo de M2 del server** (`apps/server/app/creative/` y sus 4 tests). Sigue en `36d4e99` y en el archivo de M2. Con esto se cierra la consecuencia de ADR-0089 que delegaba esa decisión en T-07.
 - **Hallazgo H1 de T-05**: el post falla con `AUDIO_DURATION_MISSING` si la petición no trae `params.duration_s`.
-- **Estado**: en-revision
+- **Estado**: completado
 - **Tipo**: backend
 - **Dependencias**: T-04, T-05
 - **Archivos**: `apps/server/app/domain_routes.py`, `apps/server/app/api_models.py`, `apps/server/app/creative/` (se elimina), `apps/server/tests/test_domain_routes*.py`, `apps/server/tests/test_openapi_t03.py`, `apps/server/tests/test_creative_*.py` (se eliminan), `apps/server/tests/test_api_*.py` (nuevos), `packages/contracts/openapi.json`, `docs/arquitectura/iteracion-creativa.md` (nota de retirada), `apps/web/lib/generated/api.d.ts` (cliente regenerado con `pnpm gen`), `apps/server/tests/fixtures/creative/` y `packages/contracts/creative-recipe-v1.schema.json` (eliminados: solo los usaban los tests de M2)
@@ -359,7 +375,7 @@ verificacion: obligatoria
   - `/api/system` mínimo: GPU/VRAM, engines, modelos y cola **filtrada por owner**.
   - `openapi.json` regenerado, `--check` en verde y `test_openapi_t03.py` en verde.
 - [x] CA-5: eliminados `apps/server/app/creative/` y los tests `test_creative_{composition,recipes,contract_compatibility,persistence}.py`, sin romper modelos ni migraciones. `docs/arquitectura/iteracion-creativa.md` lleva una nota de que el código se retiró de `main` (ADR-0089) y dónde recuperarlo.
-- [x] CA-6: la suite del server completa en verde y `-k "routes or api"` en verde.
+- [x] CA-6: la suite del server completa en verde y `-k "routes or api"` en verde. Fix1 Linux: 2214 pass/17 skip, 0 fallos/errores; rutas incluidas sin exclusiones de Linux ni mutaciones de fuentes/tests (`linux-server-fix1-final/`).
 - **Implementación** (2026-10-22). Commit `511c9e7`; borra unas 11.700 líneas, casi todas del código de M2:
   - **RED → GREEN** (implementer):
     - CA-1: `KeyError: 'duration_s'`.
@@ -393,6 +409,7 @@ verificacion: obligatoria
   - **`qa-gate.py`: exit 1** («sin resultados»). Las E2E que cubren T-07 (E2E-01, E2E-02, E2E-07, E2E-08, E2E-10, E2E-11) son de T-15.
   - T-07 queda `en-revision`, se integra y pasa a `completado` cuando T-15 las ejecute en verde.
 - **Changelog**: Las generaciones sin duración usan 30 s en lugar de fallar. Los MP3/FLAC se pueden descargar como fichero y la API publica un contrato tipado para la web.
+- **Cierre técnico (2026-11-05)**: API, autoría, instrumental, descargas y maestro verificadas por HTTP/navegador reales y suite Linux completa; Sistema completo/E2E-10 sigue aplazado. Verificación consolidada Docker arriba; recibos e informe final de T-15.
 
 ## Fase 4 — Web
 
@@ -420,7 +437,7 @@ verificacion: obligatoria
 
   **Decisión del propietario (2026-10-23):** las funciones web que quedan fuera del M1 recortado (colecciones, papelera y filtros, página Sistema completa, procedencia, diff de letra, beats y A/B, cola y atajos, chips de estilo, tema claro) **se dejan tal cual, sin ampliarlas**. T-08 a T-14 solo arreglan lo que esté roto.
 - **Pendiente detectado en la revisión de T-07**: `SystemInfo.gpu.limit_mb` frente a `cap_mb` → CA-1.
-- **Estado**: en-revision
+- **Estado**: completado
 - **Tipo**: frontend
 - **Dependencias**: T-03, T-07
 - **Archivos**: `apps/web/package.json`, `apps/web/next-env.d.ts`, `apps/web/lib/api.ts`, `apps/web/lib/api.test.ts`, `apps/web/lib/generated/api.d.ts`, `apps/web/app/**` (solo los usos de tipos y textos), `apps/web/components/**` (ídem), `apps/web/styles/*.css`, `apps/web/messages/es.json`, `apps/web/**/*.test.ts(x)` (nuevos: contraste, contrato, i18n), `apps/server/app/domain_routes.py` y `apps/server/app/api_models.py` (solo los DTO de respuesta de CA-2), `packages/contracts/openapi.json`, `scripts/fetch_web_tools.py`, `scripts/web_build_inputs.py` y `scripts/pnpm.*` (solo si CA-5 lo exige). Añadidos al revisar (2026-10-23, justificados): `apps/web/lib/enum-labels.ts` (i18n de estados, CA-4), `apps/web/lib/{contract,contrast,enum-labels,i18n-keys}.test.ts`, `apps/web/eslint.config.mjs` (regla de literales de UI, CA-4), `docs/producto/ux.md` (tokens AA), `tests/test_web_tool_entrypoints.py`, `.gitignore` y `.dockerignore` (raíz corta del test de SWC, CA-5)
@@ -470,11 +487,12 @@ verificacion: obligatoria
   - la Verificación está en verde;
   - **`qa-gate.py` sale con exit 1** («sin resultados»), porque las E2E de la web son de T-15;
   - T-08 queda `en-revision`, se integra en `main` y pasa a `completado` cuando T-15 ejecute las E2E en verde.
+- **Cierre técnico (2026-11-05)**: Web419 pass, lint/tsc/build/contratos exit0; herramientas138 pass. M-02 oscuro, teclado y movimiento reducido aprobado por QA independiente. Verificación consolidada Docker arriba; recibos e informe final de T-15.
 
 ### T-09 — Crear: letra, estilo, autoría y avanzado
 - **Cubre (tests)**: E2E-01, E2E-02, E2E-03, E2E-11
 - **Descripción**: Editor de letra con validación en vivo, estilo, autoría obligatoria, instrumental y avanzado según el `params_schema`. Chips y estilos a excluir quedan fuera.
-- **Estado**: en-revision
+- **Estado**: completado
 - **Dependencias**: T-08, T-07
 - **Archivos**: `apps/web/app/create/page.tsx` y su test, `apps/web/components/LyricsEditor/**`, `apps/web/lib/api.ts` (lectura del `code`), `apps/web/messages/es.json`
 - **Verificación** (PowerShell): `pnpm --filter ./apps/web lint`, `exec tsc --noEmit`, `test` y `build` en verde; E2E-crear de T-15.
@@ -485,16 +503,18 @@ verificacion: obligatoria
 
 **Criterios de aceptación**
 - [x] CA-1: la duración arranca vacía con el placeholder de 30. Vacía no envía `duration_s` y el server aplica 30 s. Nunca se envía `duration_s: 0`.
-- [x] CA-2: las variantes arrancan en 1. El 2 solo se ofrece si la estimación (`vram_mb`) cabe en la VRAM libre de `/api/system`. Si no hay datos, solo 1.
+- [x] CA-2: las variantes arrancan en 1. El 2 sólo se ofrece con estimación válida que cabe en la VRAM libre de `/api/system`; un modelo CPU verificado con coste VRAM cero también cabe con GPU libre cero. Sin datos válidos, sólo 1. Regresiones del compositor: 50 pass el 05/11.
 - [x] CA-3: con el botón deshabilitado se ve un texto con cada motivo (letra vacía o inválida, estilo, autoría, idioma, avanzado inválido), enlazado con `aria-describedby`.
 - [x] CA-4: un error de envío muestra el `code` del problem+json y su texto, no un mensaje genérico (CA-10 de la spec).
 - [x] CA-5: el resaltado de etiquetas de `LyricsEditor` sale de `parseLyrics(...)`, sin una regex propia que contradiga la validación.
 - [x] CA-6: si `/api/system` no responde, no se muestran parámetros avanzados inventados ni un `model_id` fijo: el formulario explica que el sistema no está disponible.
+- **Cierre técnico (2026-11-05)**: Crear dos takes, letra/autoría e instrumental pasan contra mock CPU real; formulario50 regresiones verdes. Inferencia musical permanece en T-16. Verificación consolidada Docker arriba; recibos e informe final de T-15.
+- **Changelog**: El formulario valida letra, autoría y parámetros del modelo y ofrece dos tomas cuando la estimación lo permite.
 
 ### T-10 — Tarjeta de generación en vivo
 - **Cubre (tests)**: E2E-01, E2E-04, E2E-05
 - **Descripción**: La tarjeta muestra las etapas por SSE, los errores con `code`, `job_id` y reintentar, y la onda al terminar. El feed A/B queda fuera.
-- **Estado**: en-revision
+- **Estado**: completado
 - **Dependencias**: T-09, T-06
 - **Archivos**: `apps/web/components/GenerationCard.tsx`, `apps/web/components/GenerationFeed.tsx`, `apps/web/components/GenerativeViz.tsx` (pares min/max de la onda), `apps/web/lib/generation-feed.ts`, `apps/web/lib/generation-feed.test.ts`, `apps/web/lib/event-reducer.ts`, `apps/web/lib/event-reducer.test.ts`, `apps/web/lib/api.ts`, `apps/web/lib/api.test.ts` (códigos de cancelar/reintentar), `apps/web/app/create/page.tsx` (solo el feed), sus tests y `apps/web/messages/es.json`
 - **Verificación** (PowerShell): `pnpm --filter ./apps/web lint`, `exec tsc --noEmit`, `test` y `build` en verde; E2E-generar de T-15 contra `engine-mock`.
@@ -508,28 +528,33 @@ verificacion: obligatoria
 - [x] CA-2: la tarjeta pasa a «Lista» solo cuando el take está `ready` (siguiendo el `post_job_id` o el estado del take), no cuando acaba la generación.
 - [x] CA-3: la onda final usa los pares [min,max] reales, sin recortar los negativos a 0.
 - [x] CA-4: si Reintentar o Cancelar fallan (409 o 503), la tarjeta muestra el `code`, sin tragarse el error.
+- **Cierre técnico (2026-11-05)**: Etapas SSE, post-proceso, listo, error, retry y cancelar pasan en E2E-01/04/05; sin interceptores ni progreso inventado. Verificación consolidada Docker arriba; recibos e informe final de T-15.
+- **Changelog**: Las tarjetas distinguen generación, post-proceso y toma lista y muestran los errores al cancelar o reintentar.
 
 ### T-11 — Biblioteca de canciones
 - **Cubre (tests)**: E2E-08
 - **Descripción**: Lista con búsqueda FTS y preescucha del maestro. Grid, filtros avanzados y papelera en la UI quedan fuera.
-- **Estado**: en-revision
+- **Estado**: completado
 - **Dependencias**: T-07, T-08
-- **Archivos**: `apps/web/app/songs/page.tsx`, `apps/web/components/MasterPreview.tsx`, sus tests y `apps/web/messages/es.json`; en el server, la consulta FTS de `GET /api/songs` (`apps/server/app/domain_routes.py`) y su test
+- **Archivos**: `apps/web/app/songs/page.tsx`, `apps/web/styles/globals.css` (sólo presentación de las tarjetas existentes, QA-V01), `apps/web/e2e/integration/layout.spec.ts`, `apps/web/components/MasterPreview.tsx`, sus tests y `apps/web/messages/es.json`; en el server, la consulta FTS de `GET /api/songs` (`apps/server/app/domain_routes.py`) y su test
 - **Verificación**: `uv run pytest apps/server/tests -k "songs or fts" -m "not gpu"` en verde; web (PowerShell): `lint`, `tsc`, `test` y `build` en verde; E2E-biblioteca de T-15.
 - **Decisión (orquestador, 2026-10-24, reversible):** una canción sin maestro usa en la preescucha su último take `ready`, y la UI lo indica.
 
 - **RED**: búsquedas con puntuación devolvían error FTS; la preescucha sin maestro no elegía la última toma lista · 2026-11-03.
 - **Verificación CPU (2026-11-03)**: biblioteca 9 pass y preescucha 7 pass; FTS literal cubierto en server. Alineada la expectativa antigua de comillas: 200 vacío, sin relajar los demás filtros. E2E de despliegue pendiente.
+- **QA-V01 (2026-11-05)**: M-02 detecta cuerpo/título a 0 px y acciones fuera de tarjeta; también falla lista móvil. La regresión real da 3 RED (1440/768/390). Se corrige sólo la presentación de las tarjetas que ya muestra la UI, sin añadir funciones de grid/filtros/papelera aplazadas. CSS por áreas/wrap y glyph decorativo; handlers intactos. GREEN desplegado: 3 pass, grid/list en tres anchos, seis capturas y geometrías; 16 unitarias, lint y tipos verdes (`library-visual-fix/`). Revisión3 A/B/D sin gaps y QA final independiente M-02 aprobada (`qa-docker-visual-final/`).
 
 **Criterios de aceptación**
 - [x] CA-1 (server): las búsquedas `hip-hop`, `rock & roll`, `it's`, `AC/DC` y `amo` devuelven 200. Las cuatro primeras encuentran su canción y `amo` encuentra «amor» (por prefijo). Cada término se escapa antes de `MATCH` y una búsqueda nunca da 422 por la sintaxis de FTS5.
 - [x] CA-2: Enter busca, y que se recarguen las dependencias no borra la búsqueda en curso.
 - [x] CA-3: la preescucha funciona en canciones sin maestro, con su último take `ready`, y si no hay ninguno lo dice.
+- **Cierre técnico (2026-11-05)**: E2E-08 búsqueda/preescucha y M-02 pasan; QA-V01 resuelto en seis combinaciones reales, 16 unitarias verdes. Verificación consolidada Docker arriba; recibos e informe final de T-15.
+- **Changelog**: La biblioteca permite buscar y preescuchar canciones y mantiene sus controles legibles en móvil y escritorio.
 
 ### T-12 — Vista de canción
 - **Cubre (tests)**: E2E-07
 - **Descripción**: Takes con valoración y maestro, onda con seek, letra y descarga MP3/FLAC.
-- **Estado**: en-revision
+- **Estado**: completado
 - **Dependencias**: T-11
 - **Archivos**: `apps/web/app/songs/[id]/page.tsx` y su test nuevo, `apps/web/components/Waveform.tsx`, `apps/web/lib/api.ts` (descarga y PATCH), `apps/web/messages/es.json`; en el server, `PATCH /api/takes/{id}` (`domain_routes.py`: borrar la valoración con `null` y devolver `assets`) y su test
 - **Verificación**: `uv run pytest apps/server/tests -k "take" -m "not gpu"` en verde; web (PowerShell): `lint`, `tsc`, `test` y `build` en verde; E2E-cancion de T-15.
@@ -544,11 +569,13 @@ verificacion: obligatoria
 - [x] CA-4: «Marcar maestro» solo se habilita en takes `ready` y su error se muestra.
 - [x] CA-5: la descarga usa `?download=1` y el nombre que da el `Content-Disposition` del server.
 - [x] CA-6: la página tiene test unitario (takes, valoración, maestro, onda y descarga).
+- **Cierre técnico (2026-11-05)**: E2E-07 verifica onda/seek, valoración/borrado, maestro y descargas MP3/FLAC con bytes/nombres reales. Verificación consolidada Docker arriba; recibos e informe final de T-15.
+- **Changelog**: La vista de canción permite escuchar, valorar, elegir maestro y descargar MP3 o FLAC.
 
 ### T-13 — Reproductor persistente
 - **Cubre (tests)**: E2E-01, M-02
 - **Descripción**: El reproductor sobrevive a la navegación. La cola y los atajos quedan fuera.
-- **Estado**: en-revision
+- **Estado**: completado
 - **Dependencias**: T-08
 - **Archivos**: `apps/web/components/PlayerContext.tsx`, `apps/web/components/PlayerDock.tsx` y sus tests; `apps/web/app/create/page.tsx` (solo la lectura de localStorage), `apps/web/lib/api.ts`, `apps/web/lib/api.test.ts` (cancelación de la descarga de audio), `apps/web/messages/es.json`
 - **Verificación** (PowerShell): `lint`, `tsc`, `test` y `build` en verde; E2E-reproductor de T-15.
@@ -560,6 +587,8 @@ verificacion: obligatoria
 - [x] CA-1: no hay desajuste de hidratación: localStorage se lee en un efecto, no en el inicializador de `useState`.
 - [x] CA-2: el `<audio>` nunca carga un `src` sin token. Play se habilita cuando el blob autenticado está listo.
 - [x] CA-3: un test comprueba que la pista sigue al navegar entre `/songs` y `/create`.
+- **Cierre técnico (2026-11-05)**: Navegación conserva reproducción autenticada; teclado, play/pausa y seek comprobados con audio real en M-02 y E2E-01. Verificación consolidada Docker arriba; recibos e informe final de T-15.
+- **Changelog**: El reproductor mantiene la canción al navegar y espera al audio autenticado antes de reproducir.
 
 ### T-14 — Colecciones y página Sistema
 - **Descripción**: Aplazada (ADR-0089); el código parcial se conserva.
@@ -573,14 +602,21 @@ verificacion: obligatoria
 - **Cubre (tests)**: E2E-01, E2E-02, E2E-03, E2E-04, E2E-05, E2E-06, E2E-07, E2E-08, E2E-11, API-01, API-02, M-02
 - **Descripción**: E2E de crear, generar, biblioteca, canción, reproductor y errores contra `engine-mock` (actualizar `test-plan.md` al recorte).
 - **Cierra también T-04, T-05 y T-07**: cuando E2E-01 (T-05), E2E-04, E2E-05 y E2E-06 (T-04) y E2E-01, E2E-02, E2E-07, E2E-08 y E2E-11 (T-07) pasen contra el despliegue real con `qa-gate` en verde. Beats (E2E-09) y la página Sistema (E2E-10) están aplazados por el recorte; los fixtures CPU no sustituyen esta puerta.
-- **Estado**: en-progreso
+- **Estado**: completado
 - **Dependencias**: T-09 a T-13
-- **Archivos**: `apps/web/e2e/`, `apps/web/playwright.config.ts`, `apps/web/playwright.cpu.config.ts`, `docs/roadmap/2026-09-28-m1-mvp-estudio/test-plan.md`, `docs/roadmap/2026-09-28-m1-mvp-estudio/testing/cpu-ui-2026-11-03.md`, `docs/roadmap/2026-09-28-m1-mvp-estudio/testing/cpu-ui-2026-11-03.pdf`, `docs/calidad/pruebas.md`, `docs/README.md`, `docs/knowledge/README.md`, `docs/knowledge/approved/gotchas/music-studio.GOT-003-cobertura-submodulos-numpy-windows.md`, `CONTINUE-HERE.md`
+- **Archivos**: `apps/web/e2e/`, `apps/web/playwright.config.ts`, `apps/web/playwright.cpu.config.ts`, `apps/web/playwright.integration.config.ts`, `scripts/e2e_stack.py`, `tests/test_e2e_stack.py`, `scripts/pnpm.py`, `tests/test_web_tool_entrypoints.py`, `apps/server/tests/test_worker_native_custody.py`, `docs/roadmap/2026-09-28-m1-mvp-estudio/test-plan.md`, `docs/roadmap/2026-09-28-m1-mvp-estudio/testing/cpu-ui-2026-11-03.md`, `docs/roadmap/2026-09-28-m1-mvp-estudio/testing/cpu-ui-2026-11-03.pdf`, `docs/roadmap/2026-09-28-m1-mvp-estudio/testing/docker-ui-2026-11-05.md`, `docs/roadmap/2026-09-28-m1-mvp-estudio/testing/docker-ui-2026-11-05.pdf`, `README.md`, `docs/calidad/pruebas.md`, `docs/desarrollo/server-y-contratos.md`, `docs/README.md`, `docs/knowledge/README.md`, `docs/knowledge/approved/gotchas/music-studio.GOT-003-cobertura-submodulos-numpy-windows.md`, `CONTINUE-HERE.md`
 - **Verificación**: `pnpm --filter web exec playwright test` en verde; informe de `qa` con 0 fallos.
 - **QA CPU (2026-11-03)**: revisión 2, tres corridas consecutivas de 21/21, cada `qa-gate` exit 0: 19 UI con API interceptada y 2 HTTP reales aislados. Informe enlazado en `testing/cpu-ui-2026-11-03.md`; no son 63 escenarios distintos.
 - **Límites**: fixtures WAV/VRAM/eventos sintéticos; sin engines, BD del usuario, WSL, Docker, Ollama ni GPU. No acredita recuperación, FFmpeg Linux, SSE/Range de producto ni cierre de M1. PDF comprobado estructuralmente e inspeccionado en sus siete páginas por el orquestador el 04/11 con Chromium sin GPU (`qa-ui/pdf-visual/inspection.json`); conserva los títulos literales del reporter y los pendientes históricos de QA.
 - **Trazabilidad**: «Cubre (tests)» añadido después de QA; coverage-check exit 0. Avisos triados: T-00/T-14 cancelados, T-17 backend; E2E-09/10 aplazados. Sin equivalencia entre declarar cobertura y ejecutar escenarios.
-
+- **Integración Docker en curso (2026-11-05)**: despliegue privado web/server/mock CPU construido desde fuentes acotadas; SQLite sólo leído dentro de Linux. Recrear el server conserva tres takes listas y sus doce assets; FFmpeg fijado, LGPL y sin torch verificados. Evidencia local: `.cache/dev-cycle/20261105-m1-docker/`.
+- **RED de producto y correcciones pendientes de QA integrada**: compositor CPU rechaza dos variantes; navegador no ve `Content-Disposition`; engine fallido/cancelado deja la toma `queued` y el post falla durante un retry recuperable. Regresiones unitarias verdes: formulario 50, seguridad 67 (204 vecinas), terminales 22. Vecinos de cola/Linux aún en ejecución; no se cierran criterios con estos resultados parciales.
+- **Arneses**: aislamiento Compose 17 pass; wrapper/guard 66 pass/31 deselected; cobertura completa 95,33 % y 90,95 %. Corridas iniciales Docker 1/5 y 2/5; tras correcciones, una corrida parcial pasa 4/5 (autoría, instrumental, fallo permanente y retry manual conservando toma/semilla). Fallan dos tomas por UI atrasada/422 SSE; cancelación deja BD correcta pero no notifica, corregido y aún pendiente de rebuild. Observador requiere reconexiones válidas sin límite acumulado arbitrario. Faltan tres corridas integradas verdes, recuperación y revisión/QA independientes.
+- **Última corrida de desarrollo (2026-11-05)**: `core-coherent-final.log`, **9/9 pass**, recuperación excluida expresamente; servidor con ocho módulos propios verificados por SHA dentro del contenedor (`deployed-source-verified.json`). Crear dos tomas, SSE, cancelación, retry, descargas, reproducción/Range, biblioteca y API reales en verde. `verify_manifest.py` dentro de Linux: exit 0, 15 manifiestos válidos. El primer intento de recuperación falló antes de ejecutar Docker: el PATH filtrado del wrapper no encuentra el CLI; no acredita caída ni recuperación. Corrección del arnés y fullsuite Linux en curso.
+- **Recuperación técnica adicional**: `native-recovery-receipt.json`, SIGKILL real sólo del server (exit 137), nueva hora de arranque; misma toma/semilla, mismo attempt/ordinal y solicitud, cursor 1→5 y take `ready`. Es una prueba nativa sin navegador, no sustituye E2E-06. Backup/restauración privados: mismas filas (18 canciones, 22 takes, 60 assets), 15 manifiestos válidos al conservar medios y `private-contexts/`; evidencia `backup-restore-private.json`, sin tocar datos del usuario.
+- **QA independiente, primera evaluación**: tres corridas consecutivas 11/11 (3,4/2,8/3,2 min), cada `qa-gate` exit 0, sin flaky/retries/skips; son los mismos once casos. M-02 global **NO-VERDE** por QA-V01 de biblioteca; informe y PDF lo declaran. Corregir y volver a validar geometría/inspección sobre la web nueva; los gates automáticos anteriores no aceptan el defecto visual.
+- **Cierre técnico (2026-11-05)**: Catorce casos únicos pasan tres veces con qa-gate0 y M-02 verde; informe final y PDF inspeccionados. No equivale al cierre musical de M1. Verificación consolidada Docker arriba; recibos e informe final de T-15.
+- **Changelog**: Las pruebas integradas verifican el camino completo del estudio y su recuperación sobre Docker con un motor simulado.
 
 ### T-16 — Prueba real con ACE-Step, README y cierre
 - **Cubre (tests)**: M-01, M-03
@@ -588,6 +624,7 @@ verificacion: obligatoria
 - **Estado**: en-progreso
 - **Dependencias**: T-15, M0/T-13
 - **Verificación**: take real `ready` con manifiesto válido, escuchado y aceptado por el propietario · README seguido desde cero.
+- **Revisión posterior solicitada (2026-11-05)**: una vez cerrado M1, ejecutar Claude CLI sobre lo implementado para buscar hallazgos y conservar su informe. No sustituye las revisiones ni las pruebas que condicionan el cierre de M1.
 
 
 ### T-17 — Fuga de temporales en `data/tmp` (vía rápida)
@@ -923,4 +960,38 @@ Lentes A y B sobre `46490f4..43f1d3f` (commits `840a227` y `43f1d3f`). Las lente
 - Resueltos D1/D2: lecturas por canción y peaks ya completados sin redescargas.
 - Delta final de dos tests, intento 1: A/B/D sin gaps; C no aplica según selector. Conserva los 3 asserts de retry y los 10 de publicación, con staging real y dos seams delimitados.
 - Evidencia: `.cache/dev-cycle/20261103-cpu-m1/review{1,2,3}-verdicts.json` y `harness-final/review/`; scope exit 0 y SHA coincidentes. Revisión de código, sin aceptación implícita de Docker o M1.
+
+## Revisión de dos lentes — intento 1: lote Docker, 2026-11-05
+
+Lentes A/B/D sobre 28 archivos propios congelados; scope exit 0, sin exclusiones añadidas. C no aplica según selector. A y D sin gaps; B reproduce dos Important. T-04 y T-07 vuelven a `en-progreso`; no se cierra T-15.
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| B1 | Important | Retry `VRAM_EXCEEDED` imposible se declara pendiente: sin offload o ya en offload, runtime lo descarta pero post y takes esperan para siempre | T-04 | corregido en fix1, pendiente revisión 2: CAS coordinada cierra el tope operativo al ordinal ejecutado sólo ante rechazo estructural; historia/semillas intactas y transitorios conservados | `review1-fix/`: RED legacy/captured, matriz 20/20, focales 67 pass y manual 52 pass; Docker `vram-fix1-development.log` 1/1 |
+| B2 | Important | Timeout de la barrera de cancelación escapa como 500 INTERNAL sin cancelar | T-07 | corregido en fix1, pendiente revisión 2: captura sólo PublicationTimeout → 503 SERVICE_UNAVAILABLE, sin mutar SQLite/feed | `review1-fix/b2-red.log`, `b2-green.log`; barrera retenida por otro hilo, timeout 0,01 s |
+
+Input reproducible y alcance: `.cache/dev-cycle/20261105-m1-docker/review-1-source.json`, `review-1.diff` y `review-1-{scope,lenses}.json`. Fullsuite Linux sobre esa fuente: 2178 pass/17 skip; suplemento SSE final 19/19, por separado. Runtime: 87,85 % líneas/77,88 % ramas; los otros siete módulos superan 80 % en ambas métricas, sin exclusiones. Esto no acepta los dos defectos ni sustituye QA integrada.
+
+Fix1 congela seis fuentes (`review1-fix/source-before-after.json`), sin migración ni cambio de terminales históricos. Cobertura de líneas cambiadas: terminales 6/6, retry 37/37, runtime 12/13 y cancelación 3/3; ramas nuevas de retry 12/12. Herramientas host finales: 138 pass/0 skip; Compose autónomo y endpoint local conservan HOME/PATH privados, sin copiar credenciales. Imagen fix1 desplegada y nueve módulos comprobados por SHA (`deployed-source-fix1-verified.json`); falta revisión 2 y QA sobre esta fuente.
+
+## Revisión de dos lentes — intento 2: lote Docker, 2026-11-05 — sin gaps Critical/Important
+
+Lentes A/B/D frescas: los dos Important están corregidos, sin gaps nuevos; C no aplica según selector. Se conserva la tabla completa anterior sin reabrir aprobados. Scope 29/29 y SHA de fuentes/delta coincidentes; sólo diez archivos cambian frente a intento 1.
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| B1 | Important | Retry VRAM estructuralmente imposible deja post/takes esperando | T-04 | corregido: CAS/cierre operativo e historia intacta; transitorios, rollback y manual retry conservados | B: 67 focales + 62 vecinos; D: 6 focales; Docker VRAM 1/1 |
+| B2 | Important | Cancelación ocupada devuelve 500 en vez de 503 | T-07 | corregido: catch exacto y ninguna mutación DB/feed | `test_queue_cancel_publication.py`; B 67 focales |
+
+Evidencia local: `review-2-source.json`, `review-2-delta.diff`, `review-2-{scope,lenses}.json`, `review-1-verdicts.md`. A ejecuta ledger-lint (0 incoherencias) y verifica 29/29 SHA. Desarrollo desplegado sobre fix1: `development-fix1-complete.log`, 11/11 con recuperación, sin skips. No sustituye QA: fullsuite Linux final y tres corridas independientes posteriores aprobadas en T-15; T-16 y M1 siguen abiertos.
+
+## Revisión de dos lentes — intento 3: lote Docker, 2026-11-05 — QA-V01 corregido, sin gaps
+
+Lentes A/B/D frescas sobre los trece archivos nuevos/corregidos (cuarenta propios en total). Scope 40/40 y SHA de fuentes/diffs coincidentes; C no aplica según selector. Aprobados anteriores conservados; los dos candidatos de conocimiento siguen pendientes, sin promoción ni exportación.
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| QA-V01 | Important | Biblioteca oculta títulos y desborda controles en grid/lista móvil | T-11 | corregido: sólo presentación responsiva, acciones envueltas y placeholder accesible; handlers sin cambios | 3 RED→3 GREEN; seis geometrías/24 tarjetas con cero violaciones recalculadas por A/B; 16 unitarias/lint/tipos en verde |
+
+A comprueba los catorce bloques PowerShell y las ocho páginas del PDF NO-VERDE anterior; B verifica lógica pre-JSX y seis geometrías; D descarta regresión de carga y mide sólo el predicado aislado de test (200 tarjetas, 19.900 pares, mediana 0,243 ms), sin atribuirlo a rendimiento del navegador. Raw: `review-3-source.json`, `review-3-delta.diff`, `review-{1,2}-verdicts.md`, `library-visual-fix/`. QA independiente posterior aprobada: 14/14 ×3 y M-02 sobre web `68da3894…` y server `69e939e7…`; el cierre de M1 sigue condicionado por T-16.
 

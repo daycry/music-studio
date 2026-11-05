@@ -1,8 +1,10 @@
 # Desarrollar el server y sus contratos
 
-Última actualización: 2026-10-07.
+Última actualización: 2026-11-05.
 
 Esta guía describe implementación técnica disponible y código candidato expresamente señalado. Los estados pertenecen a los ledgers de [M0](../roadmap/2026-09-28-m0-entorno-y-motor/tasks.md) y [M1](../roadmap/2026-09-28-m1-mvp-estudio/tasks.md). Ambos hitos siguen abiertos.
+
+Las menciones a candidatos T03, dispatcher futuro y migraciones `0001`–`0004` conservan el contexto de las verificaciones de octubre. No son un inventario actual del runtime. Para la entrega técnica Docker de T-15 consulta la [guía de integración](../calidad/pruebas.md#integración-docker-con-http-sse-y-medios-reales) y el ledger M1; el mock no acepta el modelo musical.
 
 ## Qué módulos leer
 
@@ -102,7 +104,24 @@ Las canciones importadas como soporte no se publican como proyectos ni entran en
 
 `DailyBackup` comprueba al arrancar y cada hora si la última copia válida tiene al menos 24 horas. Trabaja fuera del event loop sin solapamientos. Si el backend estuvo parado, aplaza el trabajo al arranque siguiente.
 
-Un fallo del origen mantiene la copia válida anterior. La parada cancela mediante el callback de progreso y espera el hilo propio. `restore_backup(source, target)` exige backend parado y destino nuevo, sin BD, WAL ni SHM existentes. El backup contiene la BD; no contiene medios.
+Un fallo del origen mantiene la copia válida anterior. La parada cancela mediante el callback de progreso y espera el hilo propio. `restore_backup(source, target)` exige backend parado y destino nuevo, sin BD, WAL ni SHM existentes. El backup contiene la BD; no contiene medios ni los recibos privados de las peticiones.
+
+### Qué conservar junto con la copia SQLite
+
+Una restauración verificable también necesita `songs/` y `private-contexts/` de la raíz de datos correspondiente. Conserva sus rutas relativas y hashes. [private_context.py](../../packages/audio-post/audio_post/private_context.py) almacena los recibos en `private-contexts/<sha256>.json`; los manifiestos los referencian por hash. Contienen datos privados y no se publican en Git.
+
+Copiar sólo BD y medios puede producir `PRIVATE_CONTEXT_INVALID`. El verificador exige el contexto original; no se arregla eliminando la referencia ni reconstruyendo una petición aproximada. Las pruebas [test_missing_private_context_is_rejected](../../packages/audio-post/tests/test_private_request_context.py) y `test_explicit_root_required_for_other_layouts` documentan esa dependencia.
+
+Valida el destino privado con [verify_manifest.py](../../scripts/verify_manifest.py), usando la raíz restaurada como `--data-dir`. Por ejemplo, si el destino preparado es `.cache/restore-check/`:
+
+```powershell
+. ./scripts/env.ps1
+uv run --frozen --no-sync scripts/verify_manifest.py .cache/restore-check/songs --data-dir .cache/restore-check
+```
+
+El comando sólo valida archivos; no restaura SQLite ni demuestra por sí solo igualdad de filas. El ensayo de restauración debe comprobar además integridad, claves foráneas, cuentas e identidades del destino. Mantén intactos el origen y la historia de takes. No abras la SQLite viva desde Windows ni pruebes sobre la biblioteca del usuario.
+
+La entrega Docker de T-15 conserva un ensayo privado con igualdad de cuentas y manifiestos válidos tras restaurar BD, medios y contextos. La consolidación de su evidencia corresponde al orquestador en el ledger; no equivale a aceptación de inferencia o escucha. El backup diario queda fuera de los bloqueantes del [M1 recortado](../roadmap/2026-09-28-m1-mvp-estudio/spec.md#recorte-del-2026-10-22-adr-0089).
 
 ## Contratos code-first y tipos TypeScript: candidato T03
 
