@@ -63,14 +63,24 @@ main { min-width:0; padding:40px clamp(20px,5vw,72px); }
 .view-toggle { display:flex; gap:4px; }
 .view-toggle button[aria-pressed=true] { color:var(--text-primary); outline:1px solid var(--accent); }
 .song-library { display:grid; gap:14px; margin-bottom:24px; }
-.song-library.grid { grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
+.song-library.grid { grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr)); }
 .song-library.list { grid-template-columns:1fr; }
-.song-card { display:flex; align-items:center; gap:12px; min-width:0; padding:14px; border:1px solid var(--border-subtle); border-radius:var(--radius-lg); background:var(--bg-1); }
+.song-card { display:grid; grid-template-columns:minmax(0,1fr) 56px; grid-template-areas:"select art" "body body" "actions actions"; align-items:center; gap:12px; min-width:0; padding:14px; border:1px solid var(--border-subtle); border-radius:var(--radius-lg); background:var(--bg-1); }
+.song-select { grid-area:select; display:flex; align-items:center; gap:6px; min-width:0; }
+.song-art-link,.song-card > .song-art { grid-area:art; justify-self:end; }
 .song-art { display:grid; place-items:center; flex:none; width:56px; height:56px; border-radius:var(--radius-sm); background:var(--bg-2); color:var(--accent); font-size:1.8rem; }
-.song-card-body { min-width:0; flex:1; }
+.song-art-placeholder::before { content:"\266B"; }
+.song-card-body { grid-area:body; min-width:0; }
+.song-card-body label { display:grid; gap:6px; margin-top:10px; }
+.song-card-body select { width:100%; min-width:0; }
 .song-card-body h2,.song-card-body p { margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .song-card-body p,.song-card-body small { color:var(--text-secondary); }
-.song-card > button { flex:none; }
+.song-card-actions { grid-area:actions; display:flex; flex-wrap:wrap; align-items:center; gap:8px; min-width:0; }
+.song-card-actions button { max-width:100%; overflow-wrap:anywhere; }
+.song-library.list .song-card { grid-template-columns:auto 56px minmax(0,1fr) minmax(0,280px); grid-template-areas:"select art body actions"; }
+@media (max-width:768px) {
+  .song-library.list .song-card { grid-template-columns:minmax(0,1fr) 56px; grid-template-areas:"select art" "body body" "actions actions"; }
+}
 .song-skeletons { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
 .song-skeletons span { display:block; height:120px; border-radius:var(--radius-lg); background:var(--bg-2); animation:pulse 1.2s ease-in-out infinite alternate; }
 @keyframes pulse { from { opacity:.45; } to { opacity:.8; } }

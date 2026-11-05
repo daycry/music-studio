@@ -221,18 +221,21 @@ export default function CreatePage() {
   const estimateKey = modelId && !invalidLyrics && !invalidStyle && !invalidAdvanced && !invalidLanguage
     ? JSON.stringify({task, model_id: modelId, params, ...(seed ? {seed: Number(seed)} : {}), n_outputs: 2}) : null;
   const freeVram = systemInfo?.gpu?.free_mb;
+  const cpuTask = selectedTask?.verified === true && selectedTask.device === 'cpu';
   const allowsTwoVariants = Boolean(estimateKey && batchEstimate?.key === estimateKey
-    && typeof freeVram === 'number' && Number.isFinite(freeVram) && freeVram > 0
-    && Number.isFinite(batchEstimate.vram) && batchEstimate.vram > 0 && batchEstimate.vram <= freeVram);
+    && Number.isFinite(batchEstimate.vram)
+    && (cpuTask ? batchEstimate.vram === 0
+      : typeof freeVram === 'number' && Number.isFinite(freeVram) && freeVram > 0
+        && batchEstimate.vram > 0 && batchEstimate.vram <= freeVram));
   const effectiveVariants = allowsTwoVariants ? Number(variants) : 1;
   useEffect(() => {
-    if (!estimateKey || typeof freeVram !== 'number' || !Number.isFinite(freeVram) || freeVram <= 0) return;
+    if (!estimateKey || (!cpuTask && (typeof freeVram !== 'number' || !Number.isFinite(freeVram) || freeVram <= 0))) return;
     let active = true;
     void estimateGeneration(JSON.parse(estimateKey)).then(preview => {
       if (active) setBatchEstimate({key: estimateKey, vram: preview.vram_mb});
     }).catch(() => { if (active) setBatchEstimate(null); });
     return () => { active = false; };
-  }, [estimateKey, freeVram]);
+  }, [estimateKey, freeVram, cpuTask]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

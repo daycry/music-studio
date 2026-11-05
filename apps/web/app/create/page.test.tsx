@@ -108,6 +108,48 @@ test('fallo de estimación conserva generación de una variante sin ETA inventad
   await waitFor(() => expect(createGeneration).toHaveBeenCalledWith(expect.objectContaining({n_outputs: 1})));
   expect(screen.queryByText(/Estimación local/)).toBeNull();
 });
+
+test('CPU verificada permite dos variantes con estimación cero aunque no haya VRAM libre', async () => {
+  const info = system(0);
+  info.models[0].tasks!['music.song'].device = 'cpu';
+  vi.mocked(getSystemInfo).mockResolvedValue(info);
+  vi.mocked(estimateGeneration).mockResolvedValue({eta_s: 4, vram_mb: 0});
+  await ready(); fill();
+  const variants = screen.getByLabelText<HTMLSelectElement>(messages.create.variantsLabel);
+  expect(variants.value).toBe('1');
+  await waitFor(() => expect([...variants.options].map(option => option.value)).toEqual(['1', '2']));
+  fireEvent.change(variants, {target: {value: '2'}});
+  fireEvent.click(submit());
+  await waitFor(() => expect(createGeneration).toHaveBeenCalledWith(expect.objectContaining({n_outputs: 2})));
+});
+
+test.each([-1, 1, NaN, Infinity])('CPU rechaza estimación distinta de cero finito (%s)', async vram_mb => {
+  const info = system(null); info.gpu = null;
+  info.models[0].tasks!['music.song'].device = 'cpu';
+  vi.mocked(getSystemInfo).mockResolvedValue(info);
+  vi.mocked(estimateGeneration).mockResolvedValue({eta_s: 4, vram_mb});
+  await ready(); fill();
+  await waitFor(() => expect(estimateGeneration).toHaveBeenCalled());
+  expect([...screen.getByLabelText<HTMLSelectElement>(messages.create.variantsLabel).options].map(option => option.value)).toEqual(['1']);
+});
+
+test('CPU sin telemetría invalida estimación al cambiar parámetros y conserva uno si falla', async () => {
+  const info = system(null); info.gpu = null;
+  info.models[0].tasks!['music.song'].device = 'cpu';
+  vi.mocked(getSystemInfo).mockResolvedValue(info);
+  vi.mocked(estimateGeneration).mockResolvedValue({eta_s: 4, vram_mb: 0});
+  await ready(); fill();
+  const variants = screen.getByLabelText<HTMLSelectElement>(messages.create.variantsLabel);
+  await waitFor(() => expect(variants.options).toHaveLength(2));
+  fireEvent.change(variants, {target: {value: '2'}});
+  vi.mocked(estimateGeneration).mockRejectedValue(new Error('offline'));
+  fireEvent.change(screen.getByLabelText(messages.create.styleLabel), {target: {value: 'jazz'}});
+  expect(variants.value).toBe('1');
+  await act(async () => {});
+  expect(variants.options).toHaveLength(1);
+  fireEvent.click(submit());
+  await waitFor(() => expect(createGeneration).toHaveBeenCalledWith(expect.objectContaining({n_outputs: 1})));
+});
 test('instrumental conserva letra pero no la envía ni exige autoría o idioma', async () => {
   await ready();
   fireEvent.change(screen.getByLabelText(messages.create.lyricsLabel), {target: {value: '[Verse]'}});
