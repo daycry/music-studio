@@ -482,6 +482,189 @@ def test_environment_preserves_only_e2e_control_variables(cli, tmp_path, monkeyp
     assert "FOREIGN_RUNTIME_OVERRIDE" not in env
 
 
+def test_environment_preserves_private_integration_target(cli, tmp_path, monkeypatch):
+    controls = {
+        "E2E_PROJECT_NAME": "music-studio-e2e-private-run",
+        "COMPOSE_PROJECT_NAME": "music-studio-e2e-private-run",
+        "E2E_COMPOSE_FILE": str(tmp_path / "docker-compose.yml"),
+        "E2E_ENV_FILE": str(tmp_path / ".cache/private/.env"),
+        "STUDIO_DATA_ROOT": str(tmp_path / ".cache/private/data"),
+        "E2E_ARTIFACT_ROOT": str(tmp_path / ".cache/private/receipts"),
+        "E2E_API_ORIGIN": "http://127.0.0.1:18000",
+        "E2E_WEB_ORIGIN": "http://localhost:13000",
+    }
+    for key, value in controls.items():
+        monkeypatch.setenv(key, value)
+    monkeypatch.setenv("NODE_OPTIONS", "--require foreign")
+    monkeypatch.setenv("PATH", "foreign")
+    monkeypatch.setenv("STUDIO_ENGINE_TOKEN", "private-token")
+    monkeypatch.setenv("E2E_UNKNOWN", "foreign")
+    env = cli.environment(tmp_path, {"node": {"dest": tmp_path / "node"}})
+    assert {key: env.get(key) for key in controls} == controls
+    assert not {"NODE_OPTIONS", "STUDIO_ENGINE_TOKEN", "E2E_UNKNOWN"} & env.keys()
+    assert "foreign" not in env["PATH"]
+
+
+@pytest.mark.parametrize(
+    ("key", "value"),
+    [
+        ("E2E_PROJECT_NAME", "music-studio"),
+        ("E2E_PROJECT_NAME", "music-studio-e2e;other"),
+        ("E2E_API_ORIGIN", "https://example.org"),
+        ("E2E_WEB_ORIGIN", "http://127.0.0.1:3000/path"),
+        ("E2E_API_ORIGIN", "http://user:secret@localhost:8000"),
+        ("E2E_API_ORIGIN", "http://localhost:0"),
+        ("E2E_API_ORIGIN", "http://localhost:65536"),
+        ("E2E_WEB_ORIGIN", "http://localhost:3000\n"),
+        ("E2E_COMPOSE_FILE", "../outside.yml"),
+        ("E2E_ENV_FILE", "../private.env"),
+        ("STUDIO_DATA_ROOT", "data"),
+        ("E2E_ARTIFACT_ROOT", ".cache"),
+        ("STUDIO_DATA_ROOT", ".cache/../../outside"),
+        ("E2E_ENV_FILE", ""),
+    ],
+)
+def test_environment_rejects_unsafe_integration_target(
+    cli, tmp_path, monkeypatch, key, value
+):
+    monkeypatch.setenv(key, value)
+    with pytest.raises(ValueError, match="E2E"):
+        cli.environment(tmp_path, {"node": {"dest": tmp_path / "node"}})
+
+
+def test_environment_resolves_private_integration_paths(cli, tmp_path, monkeypatch):
+    monkeypatch.setenv("E2E_COMPOSE_FILE", "docker-compose.yml")
+    monkeypatch.setenv("E2E_ENV_FILE", ".cache/private/.env")
+    monkeypatch.setenv("STUDIO_DATA_ROOT", ".cache/private/data")
+    monkeypatch.setenv("E2E_ARTIFACT_ROOT", ".cache/private/results")
+    env = cli.environment(tmp_path, {"node": {"dest": tmp_path / "node"}})
+    for key, relative in (
+        ("E2E_COMPOSE_FILE", "docker-compose.yml"),
+        ("E2E_ENV_FILE", ".cache/private/.env"),
+        ("STUDIO_DATA_ROOT", ".cache/private/data"),
+        ("E2E_ARTIFACT_ROOT", ".cache/private/results"),
+    ):
+        assert env[key] == str(tmp_path / relative)
+
+
+def test_environment_rejects_linked_integration_path(cli, tmp_path, monkeypatch):
+    target = tmp_path / "target"
+    target.mkdir()
+    link = tmp_path / ".cache/alias"
+    link.parent.mkdir()
+    if os.name == "nt":
+        import _winapi
+
+        _winapi.CreateJunction(str(target), str(link))
+    else:
+        link.symlink_to(target, target_is_directory=True)
+    try:
+        monkeypatch.setenv("STUDIO_DATA_ROOT", str(link / "data"))
+        with pytest.raises(ValueError, match="E2E"):
+            cli.environment(tmp_path, {"node": {"dest": tmp_path / "node"}})
+    finally:
+        if os.name == "nt":
+            link.rmdir()
+        else:
+            link.unlink()
+
+
+def test_lint_ignores_ambient_unrelated_compose_project(cli, tmp_path, monkeypatch):
+    tools = {name: {"dest": tmp_path / name} for name in ("node", "pnpm")}
+    monkeypatch.setattr(cli, "verified_tools", lambda root: tools)
+    monkeypatch.setenv("COMPOSE_PROJECT_NAME", "knowledge-graphs")
+    monkeypatch.setenv("NODE_OPTIONS", "--require foreign")
+    monkeypatch.setenv("E2E_DOCKER_CLI", "foreign.exe")
+    monkeypatch.setenv("E2E_COMPOSE_CLI", "foreign-compose.exe")
+    monkeypatch.setenv("E2E_DOCKER_HOST", "tcp://remote:2375")
+
+    def run(argv, **options):
+        assert argv[-1] == "lint"
+        assert "COMPOSE_PROJECT_NAME" not in options["env"]
+        assert "NODE_OPTIONS" not in options["env"]
+        assert "E2E_DOCKER_CLI" not in options["env"]
+        assert "E2E_COMPOSE_CLI" not in options["env"]
+        assert "E2E_DOCKER_HOST" not in options["env"]
+        return subprocess.CompletedProcess(argv, 0)
+
+    monkeypatch.setattr(cli.subprocess, "run", run)
+    assert cli.execute(["lint"], tmp_path) == 0
+
+
+def test_recovery_transports_resolved_docker_without_ambient_path(
+    cli, tmp_path, monkeypatch
+):
+    docker = tmp_path / "Docker Desktop/docker.exe"
+    docker.parent.mkdir()
+    docker.write_bytes(b"simulated executable; never executed")
+    docker.chmod(0o700)
+    compose = docker.with_name("docker-compose.exe")
+    compose.write_bytes(b"simulated executable; never executed")
+    compose.chmod(0o700)
+    monkeypatch.setenv("E2E_RECOVERY", "1")
+    monkeypatch.setenv("E2E_PROJECT_NAME", "music-studio-e2e-private")
+    monkeypatch.setenv("STUDIO_DATA_ROOT", str(tmp_path / ".cache/private/data"))
+    monkeypatch.setenv("PATH", str(docker.parent))
+    monkeypatch.setenv("NODE_OPTIONS", "--require foreign")
+    monkeypatch.setattr(
+        cli.subprocess,
+        "run",
+        lambda *args, **kwargs: subprocess.CompletedProcess(
+            args, 0, '"npipe:////./pipe/dockerDesktopLinuxEngine"'
+        ),
+    )
+    env = cli.environment(tmp_path, {"node": {"dest": tmp_path / "node"}})
+    assert Path(env["E2E_DOCKER_CLI"]) == docker
+    assert str(docker.parent) not in env["PATH"]
+    assert "NODE_OPTIONS" not in env
+    assert Path(env["E2E_COMPOSE_CLI"]) == compose
+    assert env["E2E_DOCKER_HOST"] == "npipe:////./pipe/dockerDesktopLinuxEngine"
+
+
+def test_nested_recovery_preserves_validated_docker_with_filtered_path(
+    cli, tmp_path, monkeypatch
+):
+    docker = tmp_path / "docker.exe"
+    docker.write_bytes(b"simulated executable; never executed")
+    docker.chmod(0o700)
+    compose = docker.with_name("docker-compose.exe")
+    compose.write_bytes(b"simulated executable; never executed")
+    compose.chmod(0o700)
+    monkeypatch.setenv("E2E_RECOVERY", "1")
+    monkeypatch.setenv("E2E_PROJECT_NAME", "music-studio-e2e-private")
+    monkeypatch.setenv("STUDIO_DATA_ROOT", str(tmp_path / ".cache/private/data"))
+    monkeypatch.setenv("E2E_DOCKER_CLI", str(docker))
+    monkeypatch.setenv("E2E_COMPOSE_CLI", str(compose))
+    monkeypatch.setenv("E2E_DOCKER_HOST", "npipe:////./pipe/dockerDesktopLinuxEngine")
+    monkeypatch.setenv("PATH", str(tmp_path / "node-only"))
+    monkeypatch.setattr(
+        cli.subprocess,
+        "run",
+        lambda *args, **kwargs: pytest.fail(
+            "Nested recovery must not resolve global context"
+        ),
+    )
+    env = cli.environment(tmp_path, {"node": {"dest": tmp_path / "node"}})
+    assert Path(env["E2E_DOCKER_CLI"]) == docker
+    assert Path(env["E2E_COMPOSE_CLI"]) == compose
+    assert env["E2E_DOCKER_HOST"] == "npipe:////./pipe/dockerDesktopLinuxEngine"
+
+
+@pytest.mark.parametrize("has_data", [False, True])
+def test_recovery_requires_private_data_and_available_docker(
+    cli, tmp_path, monkeypatch, has_data
+):
+    monkeypatch.setenv("E2E_RECOVERY", "1")
+    monkeypatch.setenv("E2E_PROJECT_NAME", "music-studio-e2e-private")
+    monkeypatch.delenv("E2E_DOCKER_CLI", raising=False)
+    monkeypatch.delenv("STUDIO_DATA_ROOT", raising=False)
+    if has_data:
+        monkeypatch.setenv("STUDIO_DATA_ROOT", str(tmp_path / ".cache/private/data"))
+    monkeypatch.setattr(cli.shutil, "which", lambda command: None)
+    with pytest.raises(ValueError, match="Docker CLI E2E|datos privados"):
+        cli.environment(tmp_path, {"node": {"dest": tmp_path / "node"}})
+
+
 def test_rejects_project_config_before_execution(cli, tmp_path, monkeypatch):
     (tmp_path / ".npmrc").write_text("store-dir=outside")
     monkeypatch.setattr(

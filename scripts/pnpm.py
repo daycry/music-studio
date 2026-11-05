@@ -5,6 +5,8 @@ from __future__ import annotations
 import base64
 import json
 import os
+import re
+import shutil
 import stat
 import subprocess
 import sys
@@ -26,6 +28,14 @@ SWC_LOCK_SUFFIX = (
     len("/swc-native-") + SWC_SID_BUDGET + len("/v1/") + 128 + len(".lock")
 )
 E2E_CONTROL_ENV = {"E2E_ISOLATED", "E2E_RECOVERY", "MOCK_STAGE_DELAY_MS"}
+E2E_PROJECT_ENV = {"E2E_PROJECT_NAME", "COMPOSE_PROJECT_NAME"}
+E2E_PATH_ENV = {
+    "E2E_COMPOSE_FILE": False,
+    "E2E_ENV_FILE": False,
+    "STUDIO_DATA_ROOT": True,
+    "E2E_ARTIFACT_ROOT": True,
+}
+E2E_ORIGIN_ENV = {"E2E_API_ORIGIN", "E2E_WEB_ORIGIN"}
 COMMANDS = {
     "install",
     "fetch",
@@ -272,6 +282,69 @@ def native_cache(root: Path, path: Path) -> Path:
     return path
 
 
+def integration_environment(root: Path) -> dict[str, str]:
+    """Transporta sólo destinos E2E locales revisados, sin leer sus secretos."""
+    env = {}
+    for key in E2E_PROJECT_ENV | E2E_ORIGIN_ENV | E2E_PATH_ENV.keys():
+        value = os.environ.get(key)
+        if value is None:
+            continue
+        if key in E2E_PROJECT_ENV:
+            valid = re.fullmatch(r"music-studio-e2e(?:-[a-z0-9][a-z0-9_-]*)?", value)
+            if key == "COMPOSE_PROJECT_NAME" and not valid:
+                continue  # Un stack ajeno puede compartir la consola de desarrollo.
+        elif key in E2E_ORIGIN_ENV:
+            origin = re.fullmatch(
+                r"http://(?:127\.0\.0\.1|localhost|\[::1\]):([0-9]{1,5})", value
+            )
+            valid = origin and 1 <= int(origin[1]) <= 65535
+        else:
+            boundary = root / ".cache" if E2E_PATH_ENV[key] else root
+            try:
+                path = manager.safe_path(root / value, root)
+                valid = (
+                    bool(value) and path != boundary and path.is_relative_to(boundary)
+                )
+            except (OSError, ValueError):
+                valid = False
+            if valid:
+                value = str(path)
+        if not valid:
+            raise ValueError(f"Destino E2E no autorizado: {key}")
+        env[key] = value
+    if os.environ.get("E2E_RECOVERY") == "1" and "E2E_PROJECT_NAME" in env:
+        if "STUDIO_DATA_ROOT" not in env:
+            raise ValueError("La recuperación E2E exige datos privados explícitos")
+        candidate = os.environ.get("E2E_DOCKER_CLI") or shutil.which("docker")
+        if candidate is None:
+            raise ValueError("Docker CLI E2E no disponible en el entorno padre")
+        stack = __import__("e2e_stack")
+        env["E2E_DOCKER_CLI"] = stack.docker_cli(candidate)
+        compose = os.environ.get("E2E_COMPOSE_CLI") or str(
+            Path(candidate).with_name(
+                "docker-compose.exe" if os.name == "nt" else "docker-compose"
+            )
+        )
+        env["E2E_COMPOSE_CLI"] = stack.compose_cli(compose)
+        endpoint = os.environ.get("E2E_DOCKER_HOST")
+        if endpoint is None:
+            result = subprocess.run(
+                [
+                    env["E2E_DOCKER_CLI"],
+                    "context",
+                    "inspect",
+                    "--format",
+                    "{{json .Endpoints.docker.Host}}",
+                ],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            endpoint = json.loads(result.stdout)
+        env["E2E_DOCKER_HOST"] = stack.local_docker_host(endpoint)
+    return env
+
+
 def environment(root: Path, tools: dict) -> dict:
     # El producto nunca escribe en los runtimes sellados de las pruebas.
     base = manager.safe_path(root / CACHE, root)
@@ -282,6 +355,7 @@ def environment(root: Path, tools: dict) -> dict:
         if key.upper() in {"SYSTEMROOT", "WINDIR", "SYSTEMDRIVE"}
         or key.upper() in E2E_CONTROL_ENV
     }
+    env.update(integration_environment(root))
     system = Path(env.get("SYSTEMROOT", "C:/Windows"))
     env["COMSPEC"] = str(system / "System32/cmd.exe")
     env["PATHEXT"] = ".COM;.EXE;.BAT;.CMD"
