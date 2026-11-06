@@ -10,5 +10,8 @@ conocimiento aprobado. La promoción a `approved/` corresponde al
 | [GOT-002 · Copia de pesos y persistencia de observaciones](approved/gotchas/GOT-002-copia-de-pesos-y-persistencia-de-observaciones.md) | Almacenamiento | aprobado; caso CPU/Docker |
 | [music-studio.GOT-003 · Coverage con submódulos y NumPy](approved/gotchas/music-studio.GOT-003-cobertura-submodulos-numpy-windows.md) | Pruebas | aprobado; colección aislada Windows |
 | [Identidad de directorios Windows y residencia local](candidates/pending/2026-11-06-identidad-directorios-windows-residencia.md) | Postproceso y almacenamiento | propuesta pendiente de curación |
+| [Semilla LM en la ruta PT individual](candidates/pending/2026-11-06-semilla-lm-pt-individual.md) | ACE-Step y reproducibilidad | propuesta pendiente de curación; control CPU/mock |
 
 [Journal de sesiones](journal/README.md): registro histórico, sin promoción implícita.
+
+Última actualización: 2026-11-06.

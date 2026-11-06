@@ -190,6 +190,28 @@ def configure_handler(dit):
 
 
 @contextmanager
+def lm_seed(runtime, seed):
+    """Compatibilidad PT single: upstream descarta seeds antes del muestreo LM."""
+    if runtime.lm is None:
+        yield
+        return
+    original = runtime.lm._run_pt_single
+
+    @wraps(original)
+    def single(*args, **kwargs):
+        # Justo en PT, después del preprocesado; manual_seed cubre CPU y CUDA.
+        # Una vez por secuencia, nunca por token ni antes de generate_music.
+        runtime.torch.manual_seed(seed)
+        return original(*args, **kwargs)
+
+    runtime.lm._run_pt_single = single
+    try:
+        yield
+    finally:
+        runtime.lm._run_pt_single = original
+
+
+@contextmanager
 def input_capture(runtime, planned, values, index):
     """Envolturas temporales: solo se acredita una frontera cuando se ejecuta."""
     captured = {
@@ -727,6 +749,7 @@ class AceStepAdapter:
             with (
                 private_upstream_output(),
                 step_hooks(runtime, token, progress, values["inference_steps"]),
+                lm_seed(runtime, values["seed"]),
                 input_capture(runtime, planned, values, index) as captured,
             ):
                 actual_params = params if isinstance(params, dict) else vars(params)
