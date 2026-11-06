@@ -1,40 +1,24 @@
 # Continuar aquí
 
-> Estado canónico: [M1/tasks.md](docs/roadmap/2026-09-28-m1-mvp-estudio/tasks.md). M2/M3 congelados por ADR-0089.
+2026-11-06 · Rama `m0/t-08-verificacion-cpu`, apilada sobre T-16 (`f7d7c39`).
+Estado canónico: [M0](docs/roadmap/2026-09-28-m0-entorno-y-motor/tasks.md) y [M1](docs/roadmap/2026-09-28-m1-mvp-estudio/tasks.md). M2/M3 congelados: ADR-0089.
 
-**Actualizado:** 2026-11-06. M1: **15 tareas completadas, 2 canceladas y T-16 en-progreso**. La parte README de T-16 ya pasó; falta la aceptación con ACE-Step real.
+**T-08 cerrada:** CPU48 pass/0 skip; suplemento beats CPU1 pass. Informe CPU publicado en `cd40c2b` antes de GPU, como pidió el propietario.
+Batch GPU original: **4 pass/0 fail/0 skip/48 deselected**,275,83 s. ASR/alineador, CLAP y estética CUDA/BF16; beats CPU.
+[CPU](docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/analysis-cpu-2026-11-06.md) · [GPU](docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/analysis-gpu-2026-11-06.md). A/B sin hallazgos y QA final aprobada; cierre técnico aceptado, sin cambios de producto.
 
-**M0:** 14 tareas completadas, 3 canceladas; abiertas T-08/T-09/T-13/T-16. T-20 documental cerrada en main `3dede62`, con revisión A/B, Compose validado en cuatro perfiles y QA sin UI (`.cache/dev-cycle/20261106-m0-t20/`). No acredita ejecución GPU ni conectividad Ollama.
+**Abierto:** M0 tiene15 completadas/3 canceladas; T-09/T-13/T-16 pendientes. M1 tiene15 completadas/2 canceladas; T-16 exige ACE-Step real desde web, escucha y ritual final.
+T-16 tiene captura opcional y fix Windows aceptados en CPU (437 pass/9 skip). Sus seis audios históricos no prueban identidad de códigos LM/backend; no certificar parejas.
+**Siguiente:** benchmark básico T-09; capturas comparables T-16; elección del propietario T-13 y aceptación M1.
+**Claude CLI:** ejecutar análisis de hallazgos sólo después del cierre real de M1; aún no invocado.
 
-**Ahora, M0/T-08:** informe CPU cerrado en rama `m0/t-08-verificacion-cpu`, apilada sobre `f7d7c39` de T-16. Suite completa en Docker sin GPU con PyTorch CPU real: **48 pass/0 skip/4 deselected**; sentencias90,58 %/ramas81,69 %. Primera corrida roja conservada, por lock omitido en el harness QA; corregido sólo el entorno. Suplemento independiente beats real100 %CPU: **1 pass**,120 BPM/61beats sobre clic sintético30 s, peso seguro verificado, hijo separado y descarga comprobada. Guard padre/hijo registra0 intentosCUDA, sin inicialización. A/B sin gaps y QA documental aprobada; sin cambios del engine, contenedores QA retirados. [Informe](docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/analysis-cpu-2026-11-06.md). La tarea sigue en-revision por las tres pruebas reales GPU pendientes; el propietario ha autorizado ejecutarlas después de cerrar este informe. Evidencia `.cache/dev-cycle/20261106-m0-t08/qa/`.
+**GPU:** pruebas T-08 autorizadas y terminadas. Ollama vacío al inicio/final; contenedor QA retirado. Pico host6226MiB, poslimpieza1305MiB (root posterior1290).
+Imagen Compose `engine-analysis:m0-t08-asr-cache` actualizada al producto validado3923255f; alias anterior conservado, sin arrancar servicios.
+No certifica `spilled:false` ni benchmarkT09. Para otra fase GPU aplicar AGENTS§4.8 y un único modelo residente; no detener servicios ni borrar modelos.
 
-**En curso, M0/T-16:** entrega software CPU aceptada en rama `m0/t-16-verificacion-cpu-tomas`, sin cerrar la tarea ni integrar en main. Captura opcional v2 y lector compatible/estricto implementados; falso cambio de identidad Windows corregido tras diagnóstico del mismo defecto en base/actual. A/B intentos 1 y 2 sin gaps; QA2 única **437 pass/9 skip/0 fail**, delta **18/18 sentencias afectadas** cubiertas (no cobertura global). La QA previa roja se conserva. [Informe](docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/condicionamiento-cpu-2026-11-06.md). Seis tomas íntegras y control T-15 por hash comprobado, pero sus recibos históricos carecen de huella independiente de códigos y backend observado; no certificar emparejamiento completo. Sin GPU ni modificación de activos antiguos. Evidencia `.cache/dev-cycle/20261106-m0-t16/qa-fixed2/`.
-
-## Restricciones
-
-- Docker/WSL disponibles. **El propietario autoriza las pruebas GPU de T-08 después de cerrar el informe CPU.** Aplicar AGENTS.md §4.8: consultar y descargar temporalmente el modelo cargado de Ollama, comprobar VRAM ≲1,6 GB antes de cargar y restaurar ese modelo al terminar. No detener servicios ni alterar aplicaciones ajenas.
-- No abrir SQLite viva desde Windows. Preservar los cambios ajenos del journal y restos M2/almacenamiento; 71 archivos iguales al estado al retomar. Dos journals ya diferían del baseline original; no restaurarlos ni incluirlos en la entrega.
-- Sólo el orquestador actualiza el ledger. Ningún verde mock equivale a escucha o cierre musical.
-
-## Evidencia técnica
-
-- T-15: servidor Linux2214 pass/17 skip; web419/32 archivos; herramientas138 pass. QA Docker14/14 x3 y M-02 oscuro/teclado/reducedmotion aprobados, QA-V01 corregido. [Informe](docs/roadmap/2026-09-28-m1-mvp-estudio/testing/docker-ui-2026-11-05.md) y PDF8p inspeccionado. Entrega integrada en main por a8b2824.
-- T-16: el clon limpio inicial descubrió que bootstrap exigía una caché histórica. Corregido con preparación explícita de Node/pnpm fijados antes del launcher; hashes/check-only conservados. A/B sin gaps; C/D no aplican al delta según selector.
-- Candidato público de código T-16 **faf4be7**, rama `m1/t-16-arranque-documentado`: otro clon nuevo `.cache/r`, bootstrap+init+FFmpeg Linux+Compose/health/seed+Chromium exit0; **una corrida14/14**, gate0. Módulo host separado **103/103**, exit0. [Informe de primer arranque](docs/roadmap/2026-09-28-m1-mvp-estudio/testing/readme-arranque-2026-11-06.md). No se copiaron herramientas/cachés; Docker sí reutilizó capas normales.
-- El aviso SWC260 del clon anidado no impidió el recorrido Docker; no acredita build host Windows de ese clon. Pytest-cov no mide PowerShell; no se inventa porcentaje. Runtime completo T-15:79,31% ramas; fix1 vs review1:58/59 líneas cambiadas cubiertas.
-- Evidencia privada: `.cache/dev-cycle/20261105-t16-readme/{qa-fixed,review-1,fix1}/`; T-15 en `.cache/dev-cycle/20261105-m1-docker/`. Los cuatro candidatos de conocimiento siguen pendientes de curación; ninguno se promueve por esta entrega.
-
-## Demo activa: sólo audio simulado
-
-- `http://127.0.0.1:3000/create`, API `http://127.0.0.1:8000`. Proyecto exclusivo **music-studio-e2e-368b45c362fb**, reactivado por root DESPUÉS de terminar y retirar QA. No hay procesos de QA vivos.
-- Compose privado `.cache/dev-cycle/20261105-t16-readme/compose.demo.json`, env/datos bajo `.cache/r/.cache/e2e-runs/368b45c362fb/`. No imprimir secretos ni resetear datos. Recibo `demo-receipt.json` en el directorio T-16.
-- Tres imágenes exactas verificadas: web16005ab0, serverd2ae013e, mock35ade972, tags `music-studio/<servicio>:m1-t16-20261106-cold`. Sin DeviceRequests; sólo web/API publicadas en loopback. T-15 antiguo está detenido; sus datos se conservan. No detener Docker/WSL/Ollama globalmente.
-- La demo usa esas imágenes previas verificadas; la entrega CPU actual permanece en la rama de T-16.
-
-## Siguiente puerta
-
-1. Ejecutar las pruebas GPU de M0/T-08 tras el cierre CPU autorizado: transcripción/CLAP/Aesthetics y batch completo, con un modelo residente y descarga real. T-08 ya tiene48 tests CPU y suplemento real de beats aprobados. T-09/T-13 conservan benchmark recortado y escucha/decisión de modelo/modo del propietario; no sustituirlos por los resultados mock.
-2. M0/T-16: obtener nuevas capturas completas en su fase y verificar ambos recibos de cada par en modo fuerte, además de las igualdades de texto/metadata/controles. Los seis MP3 existentes en `data/eval/libre-sft/01M47Q4EJZK09RBPA0ECWC57D4/` son íntegros, pero no recuperan la identidad de códigos LM ausente; conservarlos como referencia histórica. No ejecutar helpers históricos `.cache/dev-cycle/t16/` que pueden arrancar GPU sin el protocolo actual.
-3. M1/T-16: generar desde la web con ACE-Step/GPU reales, manifiesto y telemetría válidos (spilled:false), escucha y aceptación del propietario; conservar M-03 y el ritual final de dev-cycle (docs/changelog/retro). M1 sigue abierto.
-4. **Petición del propietario:** una vez cerrado M1, ejecutar Claude CLI para buscar hallazgos en lo implementado y guardar su informe. CLI instalado; aún NO invocado. No enviar secretos ni datos del usuario.
-5. M2/M3 continúan congelados hasta cerrar M1; no reactivar restos del árbol como si estuvieran aprobados.
+**Demo:** http://127.0.0.1:3000/create · API8000, sólo mock CPU. Proyecto `music-studio-e2e-368b45c362fb`, tres servicios intactos.
+Compose privado `.cache/dev-cycle/20261105-t16-readme/compose.demo.json`; conservar datos/imágenes previos y no resetear.
+**Preservar:**71 archivos ajenos según `.cache/dev-cycle/20261106-m0-t08/initial.json`. No restaurar journals ni reactivar restos M2/almacenamiento.
+No SQLite viva desde Windows ni helpers históricos GPU de `.cache/dev-cycle/t08/` o `t16/`.
+**Git:** main sigue en `3dede62`; rama apilada sin integrar mientras T-16 esté abierta. Sólo stage explícito.
+Evidencia actual: `.cache/dev-cycle/20261106-m0-t08/{qa,gpu/qa}/`; cuatro candidatos de conocimiento pendientes, sin promoción.

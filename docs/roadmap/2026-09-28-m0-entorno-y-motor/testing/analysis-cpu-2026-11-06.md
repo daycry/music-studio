@@ -2,7 +2,7 @@
 
 Última actualización: 2026-11-06.
 
-**La verificación CPU pasa; T-08 continúa `en-revision`.** La corrida completa obtuvo **48 pruebas aprobadas, 0 fallidas, 0 omitidas y 4 deseleccionadas**, en **20,43 s**, dentro de Docker sin acceso GPU. Un suplemento independiente aprobó una prueba real de beats CPU. Son dos ejecuciones separadas: sus resultados y cobertura no se agregan como una suite única.
+**La verificación CPU pasó; al cerrar esta fase T-08 continuaba `en-revision`.** La corrida completa obtuvo **48 pruebas aprobadas, 0 fallidas, 0 omitidas y 4 deseleccionadas**, en **20,43 s**, dentro de Docker sin acceso GPU. Un suplemento independiente aprobó una prueba real de beats CPU. Son dos ejecuciones separadas: sus resultados y cobertura no se agregan como una suite única.
 
 ## Corrida completa y corrección del entorno
 
@@ -34,4 +34,18 @@ Ambas ejecuciones usaron `runc`, red desactivada, sin dispositivos GPU ni puerto
 
 Ruff pasó y ledger-lint informó **0 incoherencias y 25 avisos**. El alcance carece de UI; no se ejecutaron Playwright ni aceptación visual.
 
-Quedan pendientes las tres pruebas GPU reales de transcripción, CLAP y Aesthetics y residencia/descarga GPU. El batch GPU completo aún no se ha ejecutado. La aceptación musical y la selección del modelo pertenecen a las puertas restantes del proyecto. Este resultado no cierra T-08, M0 ni M1, ni aprueba calidad musical general.
+Al cerrar esta fase quedaban pendientes las tres pruebas GPU reales de transcripción, CLAP y Aesthetics y residencia/descarga GPU. El batch GPU posterior se documenta en [su informe separado](analysis-gpu-2026-11-06.md). La aceptación musical y la selección del modelo pertenecen a las puertas restantes del proyecto. Este resultado CPU, por sí solo, no cierra T-08, M0 ni M1 ni aprueba calidad musical general.
+
+## Revisión y cierre documental de la fase CPU
+
+Revisión A/B, intento 1: tres Markdown desde `f7d7c39`; alcance sin exclusiones ni avisos, C/D no activadas. Cero hallazgos. Ambas lentes contrastaron fuentes, logs y JUnit sin repetir suites. A comprobó cobertura, tres SHA y siete enlaces; B verificó la cadena test original→backend predeterminado→safetensors CPU→inferencia y descarga.
+
+| Criterio | A | B |
+|---|---|---|
+| Alcance documental y fuentes intactas | ✓ | Sin defectos |
+| Rojo inicial y reparación exclusiva del harness | ✓ | ✓ |
+| Cobertura y ejecuciones separadas | ✓ | ✓ |
+| Beats real CPU, hijo separado y descarga | ✓ | ✓ |
+| Constitución, estado y límites honestos | ✓ | Sin defectos |
+
+QA documental final: `PASS_CPU_EVIDENCE_AND_DOCS_ONLY`; tres documentos coinciden con revisión, siete enlaces resueltos, fuentes 21/49 y 71 archivos ajenos intactos. Ledger: 0 incoherencias y 25 avisos históricos. Los [recibos de revisión](../../../../.cache/dev-cycle/20261106-m0-t08/review-1/verdicts.md) y [QA documental](../../../../.cache/dev-cycle/20261106-m0-t08/qa/final-docs/report.md) conservan el detalle. Este cierre CPU se publicó antes de ejecutar GPU.
