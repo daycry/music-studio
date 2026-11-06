@@ -33,8 +33,9 @@ def _directory_identity(path):
         info.st_dev,
         info.st_ino,
         info.st_mode,
-        # Native child creation can change this observed bit with stable FileId.
-        getattr(info, "st_file_attributes", 0) & ~0x10000000,
+        # PINNED (0x80000) / UNPINNED (0x100000) describe residency, not identity.
+        # Keep the previously observed mutable bit; retain all other attributes.
+        getattr(info, "st_file_attributes", 0) & ~(0x10000000 | 0x80000 | 0x100000),
         getattr(info, "st_reparse_tag", 0),
     )
 

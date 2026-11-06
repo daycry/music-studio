@@ -87,10 +87,25 @@ def test_plan_accounts_for_both_native_resolutions(sft):
 
 
 @pytest.mark.parametrize(
-    "codes", ["", "  ", [], ["", "  "], "synthetic", ["", "synthetic"]]
+    "codes",
+    [
+        None,
+        "null",
+        "[]",
+        "",
+        " ",
+        "  ",
+        [],
+        [None],
+        ["", "  "],
+        "synthetic",
+        ["", "synthetic"],
+        ["synthetic", ""],
+    ],
 )
 @pytest.mark.parametrize("sft", [False, True])
-def test_capture_binds_native_resolution_and_instructions(codes, sft):
+@pytest.mark.parametrize("keyword", [False, True])
+def test_capture_binds_native_resolution_and_instructions(codes, sft, keyword):
     from types import SimpleNamespace
 
     import numpy as np
@@ -112,9 +127,16 @@ def test_capture_binds_native_resolution_and_instructions(codes, sft):
     runtime = SimpleNamespace(lm=None, dit=dit)
     values, _ = adapter.generation_options(request(sft), 0)
     with adapter.input_capture(runtime, plan, values, 0) as captured:
-        task, instruction = dit._resolve_generate_music_task(
-            "text2music", codes, dit.default_instruction
-        )
+        if keyword:
+            task, instruction = dit._resolve_generate_music_task(
+                task_type="text2music",
+                audio_code_string=codes,
+                instruction=dit.default_instruction,
+            )
+        else:
+            task, instruction = dit._resolve_generate_music_task(
+                "text2music", codes, dit.default_instruction
+            )
         dit._prepare_text_conditioning_inputs(1, [instruction])
     resolution = next(
         b for b in captured["boundaries"] if b["stage"] == "dit_resolution"
@@ -122,6 +144,9 @@ def test_capture_binds_native_resolution_and_instructions(codes, sft):
     assert resolution["resolved_task"] == task
     assert type(resolution["has_audio_codes"]) is bool
     assert resolution["instruction_sha256"] == preflight.digest(instruction)
+    assert resolution["audio_codes_sha256"] == preflight.digest(
+        {"audio_code_string": codes}
+    )
     assert captured["receipt_version"] == 2
 
 

@@ -203,7 +203,9 @@ def verify_manifest(manifest, base_dir, *, private_context_root=None):
     return {"valid": True, "outputs": len(manifest["outputs"])}
 
 
-def validate_input_receipt(payload, request, index, *, private_params=False):
+def validate_input_receipt(
+    payload, request, index, *, private_params=False, require_conditioning=False
+):
     """Comprueba la captura privada sin dependencias de engine/GPU."""
 
     def sha(value):
@@ -224,6 +226,24 @@ def validate_input_receipt(payload, request, index, *, private_params=False):
         values = planned["effective"]["params"]
         boundaries = {b["stage"]: b for b in captured["boundaries"]}
         version = planned["receipt_version"]
+        lm_arguments = boundaries["lm_arguments"]
+        resolution = boundaries.get("dit_resolution", {})
+        if "lm_backend_observed" in lm_arguments and (
+            type(lm_arguments["lm_backend_observed"]) is not str
+            or lm_arguments["lm_backend_observed"] != "pt"
+        ):
+            raise ValueError()
+        if "audio_codes_sha256" in resolution and (
+            type(resolution["audio_codes_sha256"]) is not str
+            or not re.fullmatch(r"[0-9a-f]{64}", resolution["audio_codes_sha256"])
+        ):
+            raise ValueError()
+        if require_conditioning and (
+            version != 2
+            or "lm_backend_observed" not in lm_arguments
+            or "audio_codes_sha256" not in resolution
+        ):
+            raise ValueError()
         stages = {"lm_arguments", "lm_formatted_prompt", "dit_arguments", "dit_tokens"}
         selected_dit = planned["dit"]
         if version == 2:

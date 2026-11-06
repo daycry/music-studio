@@ -3,7 +3,7 @@ documento: pipeline-audio
 titulo: Pipeline de audio — post-proceso, formatos y exportación
 estado: vigente
 fecha: 2026-09-28
-actualizado: 2026-10-05
+actualizado: 2026-11-06
 ---
 
 # Pipeline de audio
@@ -43,6 +43,10 @@ La adaptación portable de [ADR-0053](../decisiones/ADR-0053-postproceso-cpu-por
 | `verify_manifest(manifest, base_dir)` | Acepta un diccionario o fichero; valida esquema y hashes; devuelve `valid` y número de `outputs` | [manifest.py](../../packages/audio-post/audio_post/manifest.py) |
 
 `process_audio` requiere fuente y destino dentro del proyecto y rechaza enlaces simbólicos y junctions. El destino debe ser nuevo: reutilizarlo produce `FileExistsError`. La función prepara los tres ficheros en un directorio temporal dentro del destino. Si falla, limpia su salida; no publica un conjunto parcial. No escribe el manifiesto automáticamente.
+
+En Windows, [`_directory_identity`](../../packages/audio-post/audio_post/pipeline.py) conserva `st_dev`, `st_ino`, `st_mode`, `st_reparse_tag` y los demás atributos al comprobar que el directorio sigue siendo el mismo. Desde el fix del 2026-11-06 excluye únicamente `PINNED=0x80000` y `UNPINNED=0x100000`, además del bit mutable `0x10000000` ya excluido. Los dos primeros expresan residencia local según las [constantes oficiales de Windows](https://learn.microsoft.com/en-us/windows/win32/fileio/file-attribute-constants). Son distintos de `REPARSE_POINT=0x400`: ese bit, un tag no nulo, enlaces y objetos que no sean directorios siguen causando `UNSAFE_PATH`. El cambio no relaja las comprobaciones de identidad restantes.
+
+El diagnóstico privado `.cache/dev-cycle/20261106-m0-t16/windows-diagnosis/diagnóstico.md` reproduce el falso cambio mediante la misma función extraída por AST del árbol y del baseline. No identifica el disparador externo del cambio de atributos. La fase 4 aplica la máscara mínima con regresión sobre el módulo real: RED `524304 != 16`, luego 22 tests focales y 231 tests del paquete aprobados, con 9 omitidos. Los recibos están en `.cache/dev-cycle/20261106-m0-t16/fix2/`, incluidos `full-final.log` y `full-final-exit.txt` (0). La corrida anterior `qa-final` conserva sus 422 aprobados, 9 omitidos y 2 fallos; la QA2 independiente posterior del 2026-11-06 acredita `PASS_CPU_SOFTWARE_ONLY` con 437 aprobados, 9 omitidos y 0 fallos en una corrida. Incluye las dos pruebas nativas antes fallidas y las 13 regresiones nuevas. El [informe CPU](../roadmap/2026-09-28-m0-entorno-y-motor/testing/condicionamiento-cpu-2026-11-06.md) delimita esa aceptación. No cierran T-16, M0 o M1 ni acreditan GPU. La [propuesta de conocimiento](../knowledge/candidates/pending/2026-11-06-identidad-directorios-windows-residencia.md) conserva el caso sin promoverlo a conocimiento aprobado.
 
 ### Procesar una salida del mock
 
@@ -193,7 +197,11 @@ El límite administrativo ampliado de ACE-Step es 16384 caracteres de estilo y 3
 
 ### Resolución nativa del condicionamiento DiT
 
-[ADR-0032](../decisiones/ADR-0032-condicionamiento-dit-segun-rama-nativa.md) define la corrección de integración: el plan debe medir las instrucciones posibles con y sin códigos LM, y la captura debe validar la instrucción resuelta y sus tokens exactos. El cambio interno `text2music` a `cover` no habilita una operación pública nueva. Conservar caption, letra, metadata y reserva LM, y rechazar cualquier rama o instrucción no planificada. Los recibos nuevos declaran candidatos y rama activa; los históricos se preservan. Implementación y validación pendientes en T-16; no se presenta la decisión como soporte ya probado en GPU.
+[ADR-0032](../decisiones/ADR-0032-condicionamiento-dit-segun-rama-nativa.md) define la corrección de integración: el plan mide las instrucciones posibles con y sin códigos LM, y la captura valida la instrucción resuelta y sus tokens exactos. El cambio interno `text2music` a `cover` no habilita una operación pública nueva. Se conservan caption, letra, metadata y reserva LM; una rama o instrucción no planificada se rechaza. Los recibos nuevos declaran candidatos y rama activa; los históricos se preservan.
+
+Desde el fix del 2026-11-06, [`input_capture`](../../apps/engines/acestep/adapter.py) añade observaciones opcionales a las cinco etapas v2. `dit_resolution.audio_codes_sha256` resume el JSON canónico `{'audio_code_string': codes}` del argumento real del resolver, tras comprobar sus guardas. Conserva tipo, espacios y orden sin exponer los códigos. `lm_arguments.lm_backend_observed` observa `runtime.lm.llm_backend` durante la llamada LM; acepta `pt`, rechaza contradicciones y omite el campo si falta el atributo. No usa valores planificados como observaciones. La huella identifica la entrada raw al resolver, sin certificar latentes ni transformaciones posteriores. El backend observado no demuestra inicialización histórica ni ejecución CUDA.
+
+El lector [`validate_input_receipt`](../../packages/audio-post/audio_post/manifest.py) mantiene `require_conditioning=False` para leer v1/v2 históricos. Valida los campos cuando aparecen; con `require_conditioning=True` exige v2 y ambas observaciones válidas. Ese modo valida cada recibo individual. Comparar un par requerirá además contrastar las huellas, backend, texto/metadata y controles LM; dos campos ausentes no prueban igualdad. Los seis audios existentes conservan integridad y lectura histórica, pero no contienen estas observaciones y no acreditan emparejamiento completo. [ADR-0032](../decisiones/ADR-0032-condicionamiento-dit-segun-rama-nativa.md#ampliación-compatible-observaciones-de-condicionamiento--2026-11-06) recoge la aceptación software CPU de QA2 y los límites del fix: sin emparejamiento histórico completo, nuevas generaciones GPU ni decisión musical. No cambian HTTP `/v1` ni manifiesto v1.
 
 
 ## Publicación durable pendiente de integración

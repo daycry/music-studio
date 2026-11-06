@@ -213,7 +213,8 @@ def _native_v2_receipt_fixture(task):
 
 
 @pytest.mark.parametrize("task", ["text2music", "cover"])
-def test_native_v2_receipt_resolution_and_publication(tmp_path, task):
+@pytest.mark.parametrize("observed", [False, True])
+def test_native_v2_receipt_resolution_and_publication(tmp_path, task, observed):
     import hashlib
     import json
 
@@ -221,6 +222,9 @@ def test_native_v2_receipt_resolution_and_publication(tmp_path, task):
 
     receipt, request = _native_v2_receipt_fixture(task)
     captured = receipt["captured"]
+    if observed:
+        captured["boundaries"][0]["lm_backend_observed"] = "pt"
+        captured["boundaries"][3]["audio_codes_sha256"] = "a" * 64
     assert validate_input_receipt(json.dumps(receipt), request, 0) == receipt
     job_id = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
     source = tmp_path / f"tmp/{job_id}"
@@ -236,6 +240,12 @@ def test_native_v2_receipt_resolution_and_publication(tmp_path, task):
     assert module().publish_input_receipts(result, tmp_path, job_id, request, 1) == [
         {"sha256": value, "output_index": 0}
     ]
+    assert (tmp_path / f"preparations/native-{value}.json").read_bytes() == payload
+    if observed:
+        assert (
+            validate_input_receipt(payload, request, 0, require_conditioning=True)
+            == receipt
+        )
     captured["boundaries"][3]["has_audio_codes"] = task != "cover"
     with pytest.raises(ValueError, match="INPUT_RECEIPT_INVALID"):
         validate_input_receipt(json.dumps(receipt), request, 0)
@@ -1074,7 +1084,12 @@ def test_manifest_variant_seed_binding(tmp_path, monkeypatch, requested_seed):
         tmp_path, monkeypatch, variants=2
     )
     request["seed"] = requested_seed
-    monkeypatch.setattr(m.secrets, "randbits", lambda bits: 1234)
+    original_randbits = m.secrets.randbits
+    monkeypatch.setattr(
+        m.secrets,
+        "randbits",
+        lambda bits: 1234 if bits == 32 else original_randbits(bits),
+    )
     base_seed = 1 if requested_seed is not None else 1234
     handler = transport.handle_request
 

@@ -213,9 +213,16 @@ def input_capture(runtime, planned, values, index):
             metadata = dict(kwargs.get("user_metadata") or {})
             metadata["language"] = values["vocal_language"]
             kwargs["user_metadata"] = metadata
+            observed = {}
+            if hasattr(runtime.lm, "llm_backend"):
+                backend = runtime.lm.llm_backend
+                if type(backend) is not str or backend != "pt":
+                    raise EngineError("INVALID_PARAMS", "Backend LM observado no es PT")
+                observed["lm_backend_observed"] = backend
             captured["boundaries"].append(
                 {
                     "stage": "lm_arguments",
+                    **observed,
                     "arguments_sha256": digest(
                         {k: v for k, v in kwargs.items() if k != "progress"}
                     ),
@@ -326,6 +333,9 @@ def input_capture(runtime, planned, values, index):
                     "INVALID_PARAMS", "Resolución DiT cambió tras el preflight"
                 )
             captured["boundaries"].append({"stage": "dit_resolution", **resolved})
+            captured["boundaries"][-1]["audio_codes_sha256"] = digest(
+                {"audio_code_string": codes}
+            )
             return task, instruction
 
         return call

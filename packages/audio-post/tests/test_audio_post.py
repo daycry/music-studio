@@ -413,3 +413,71 @@ def test_manifest_rejects_missing_or_unbound_preparation(
         code = "PREPARATION_REQUEST_MISMATCH"
     with pytest.raises(ValueError, match=code):
         audio_post.verify_manifest(manifest, tmp_path)
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("audio_codes_sha256", None),
+        ("audio_codes_sha256", "A" * 64),
+        ("audio_codes_sha256", "a" * 63),
+        ("audio_codes_sha256", 7),
+        ("lm_backend_observed", None),
+        ("lm_backend_observed", "vllm"),
+        ("lm_backend_observed", 1),
+    ],
+)
+def test_conditioning_present_malformed_is_rejected(field, value):
+    import json
+
+    from audio_post.manifest import validate_input_receipt
+    from test_generate_preparation import (
+        _native_v2_receipt_fixture,
+        _rehash_native_receipt,
+    )
+
+    receipt, request = _native_v2_receipt_fixture("cover")
+    boundaries = receipt["captured"]["boundaries"]
+    target = boundaries[3] if field == "audio_codes_sha256" else boundaries[0]
+    target[field] = value
+    _rehash_native_receipt(receipt)
+    with pytest.raises(ValueError, match="INPUT_RECEIPT_INVALID"):
+        validate_input_receipt(json.dumps(receipt), request, 0)
+
+
+@pytest.mark.parametrize("fields", [(), ("codes",), ("backend",), ("codes", "backend")])
+@pytest.mark.parametrize("version", [1, 2])
+def test_conditioning_strict_requires_both_observations_in_v2(fields, version):
+    import inspect
+    import json
+
+    from audio_post.manifest import validate_input_receipt
+    from test_generate_preparation import (
+        _native_receipt_fixture,
+        _native_v2_receipt_fixture,
+    )
+
+    assert (
+        "require_conditioning" in inspect.signature(validate_input_receipt).parameters
+    )
+    receipt, request = (
+        _native_v2_receipt_fixture("cover")
+        if version == 2
+        else _native_receipt_fixture()
+    )
+    boundaries = receipt["captured"]["boundaries"]
+    if "codes" in fields:
+        target = boundaries[3] if version == 2 else boundaries[2]
+        target["audio_codes_sha256"] = "a" * 64
+    if "backend" in fields:
+        boundaries[0]["lm_backend_observed"] = "pt"
+    payload = json.dumps(receipt)
+    assert validate_input_receipt(payload, request, 0) == receipt
+    if version == 2 and len(fields) == 2:
+        assert (
+            validate_input_receipt(payload, request, 0, require_conditioning=True)
+            == receipt
+        )
+    else:
+        with pytest.raises(ValueError, match="INPUT_RECEIPT_INVALID"):
+            validate_input_receipt(payload, request, 0, require_conditioning=True)

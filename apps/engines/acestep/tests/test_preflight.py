@@ -124,6 +124,34 @@ def test_language_metadata_is_injected_at_real_lm_boundary():
     assert "private" not in str(captured)
 
 
+@pytest.mark.parametrize("backend", ["pt", None, "vllm", 1])
+def test_capture_observes_runtime_backend_without_plan_fallback(backend):
+    from types import SimpleNamespace
+
+    from engine_common import EngineError
+
+    adapter = importlib.import_module("adapter")
+    lm = SimpleNamespace(generate_with_stop_condition=lambda **kwargs: "ok")
+    runtime = SimpleNamespace(lm=lm, dit=None)
+    plan = {"receipt_version": 2, "effective": {"lm_backend": "pt"}}
+    with adapter.input_capture(runtime, plan, {"vocal_language": "es"}, 0) as captured:
+        assert captured["boundaries"] == []
+        # The runtime attribute becomes observable after installing the wrappers.
+        if backend is not None:
+            lm.llm_backend = backend
+        if backend not in (None, "pt"):
+            with pytest.raises(EngineError, match="INVALID_PARAMS"):
+                lm.generate_with_stop_condition()
+            assert captured["boundaries"] == []
+            return
+        lm.generate_with_stop_condition()
+    boundary = captured["boundaries"][0]
+    if backend is None:
+        assert "lm_backend_observed" not in boundary
+    else:
+        assert boundary["lm_backend_observed"] == "pt"
+
+
 def test_direct_generate_preflight_precedes_runtime(tmp_path, monkeypatch):
     from engine_common import CancelToken, EngineError
 
@@ -552,6 +580,35 @@ def test_capture_reaches_four_real_callback_boundaries_and_restores_methods():
         captured["boundaries"][4]["text"]["tokens_sha256"]
         == planned["dit"]["text"]["tokens_sha256"]
     )
+
+
+def test_conditioning_capture_requires_execution_and_is_independent_of_controls():
+    adapter, native, runtime, planned, values, _, dit_kwargs = _capture_fixture()
+    with adapter.input_capture(runtime, planned, values, 0) as uncalled:
+        pass
+    assert uncalled["boundaries"] == []
+
+    hashes = []
+    arguments = []
+    for steps, cfg, codes in ((20, 3, "one"), (50, 7, "one"), (50, 7, "two")):
+        values.update(inference_steps=steps, guidance_scale=cfg)
+        dit_kwargs.update(inference_steps=steps, guidance_scale=cfg)
+
+        def generate(codes=codes, **kwargs):
+            return runtime.dit._resolve_generate_music_task(
+                "text2music", codes, runtime.dit.default_instruction
+            )
+
+        runtime.dit.generate_music = generate
+        with adapter.input_capture(runtime, planned, values, 0) as captured:
+            runtime.dit.generate_music(**dit_kwargs)
+        arguments.append(captured["boundaries"][0]["arguments_sha256"])
+        resolution = captured["boundaries"][1]
+        assert resolution["has_audio_codes"] is True
+        hashes.append(resolution["audio_codes_sha256"])
+        assert hashes[-1] == native.digest({"audio_code_string": codes})
+    assert hashes[0] == hashes[1] != hashes[2]
+    assert arguments[0] != arguments[1]
 
 
 @pytest.mark.parametrize(

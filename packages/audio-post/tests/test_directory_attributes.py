@@ -6,11 +6,79 @@ import subprocess
 import uuid
 from ctypes import wintypes
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from audio_post import pipeline
 
 ROOT = Path(__file__).resolve().parents[3]
+
+
+@pytest.fixture
+def observed_directory(tmp_path, monkeypatch):
+    """Un objeto estable cuyo stat permite variar metadatos sin tocar el SO."""
+    directory = tmp_path / "directory"
+    directory.mkdir()
+    fields = SimpleNamespace(
+        st_dev=123,
+        st_ino=456,
+        st_mode=0o40777,
+        st_file_attributes=0x10,
+        st_reparse_tag=0,
+    )
+    native_lstat = Path.lstat
+
+    def observed(path, *args, **kwargs):
+        return fields if path == directory else native_lstat(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "lstat", observed)
+    return directory, fields
+
+
+@pytest.mark.parametrize(
+    "flags",
+    [0x80000, 0x100000, 0x180000, 0x10000000, 0x10180000],
+    ids=["pinned", "unpinned", "both", "existing-bit", "all"],
+)
+def test_residency_metadata_preserves_same_directory(observed_directory, flags):
+    """La residencia local no sustituye el objeto identificado por dev/ino/mode."""
+    directory, observed = observed_directory
+    original = pipeline._directory_identity(directory)
+    observed.st_file_attributes |= flags
+    assert pipeline._directory_identity(directory) == original
+    observed.st_file_attributes = 0x10
+    assert pipeline._directory_identity(directory) == original
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("st_dev", 124),
+        ("st_ino", 457),
+        ("st_mode", 0o40700),
+        ("st_file_attributes", 0x12),
+    ],
+)
+def test_residency_flags_do_not_hide_identity_changes(observed_directory, field, value):
+    directory, observed = observed_directory
+    observed.st_file_attributes |= 0x10180000
+    original = pipeline._directory_identity(directory)
+    setattr(observed, field, value)
+    observed.st_file_attributes |= 0x10180000
+    assert pipeline._directory_identity(directory) != original
+
+
+@pytest.mark.parametrize("flags", [0, 0x10180000])
+@pytest.mark.parametrize(
+    "field,value",
+    [("st_file_attributes", 0x410), ("st_reparse_tag", 0x12345678)],
+)
+def test_residency_flags_never_allow_reparse(observed_directory, field, value, flags):
+    directory, observed = observed_directory
+    setattr(observed, field, value)
+    observed.st_file_attributes |= flags
+    with pytest.raises(ValueError, match="UNSAFE_PATH"):
+        pipeline._directory_identity(directory)
 
 
 def _native_id(path):
@@ -69,7 +137,9 @@ def test_native_child_creation_preserves_directory_identity():
             before.st_mode,
             before.st_reparse_tag,
         ) == (after.st_dev, after.st_ino, after.st_mode, after.st_reparse_tag)
-        assert before.st_file_attributes ^ after.st_file_attributes in (0, 0x10000000)
+        # Residency flags and the previously observed bit can change in place.
+        changed_attributes = before.st_file_attributes ^ after.st_file_attributes
+        assert changed_attributes & ~(0x10000000 | 0x80000 | 0x100000) == 0
         assert pipeline._directory_identity(directory) == original
     finally:
         child.rmdir()

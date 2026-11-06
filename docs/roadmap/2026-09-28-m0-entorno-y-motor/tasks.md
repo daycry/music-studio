@@ -29,7 +29,7 @@ verificacion: obligatoria
 
 **Para cerrar M0 falta:**
 
-1. Cerrar la revisión de T-08 y T-16. T-20 documental cerrada el 2026-11-06.
+1. Completar la validación de T-08 y las capturas reales comparables de T-16; su entrega software CPU ya está aceptada. T-20 documental cerrada el 2026-11-06.
 2. Hacer el benchmark básico de T-09.
 3. La escucha y la decisión del propietario (T-13).
 
@@ -153,9 +153,16 @@ verificacion: obligatoria
 
 ### T-16 — Controles de inferencia y comparación privada SFT frente a Turbo
 - **Descripción**: Controles de inferencia (pasos, CFG, SFT/Turbo) en la CLI y el adapter, con tomas comparables.
-- **Estado**: en-revision
+- **Estado**: en-progreso
 - **Dependencias**: T-06, T-07, T-15, T-19
+- **Archivos**: `apps/engines/acestep/adapter.py`, `packages/audio-post/audio_post/manifest.py`, `apps/engines/acestep/tests/test_dit_resolution.py`, `apps/engines/acestep/tests/test_preflight.py`, `tests/test_generate_preparation.py`, `packages/audio-post/tests/test_audio_post.py`, `packages/audio-post/audio_post/pipeline.py`, `packages/audio-post/tests/test_directory_attributes.py`, `docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/condicionamiento-cpu-2026-11-06.md`, `docs/knowledge/README.md`, `docs/knowledge/candidates/pending/2026-11-06-identidad-directorios-windows-residencia.md`, `docs/decisiones/ADR-0032-condicionamiento-dit-segun-rama-nativa.md`, `docs/arquitectura/pipeline-audio.md`, `CONTINUE-HERE.md`. Controles y tests canónicos actuales se verifican sin cambios; se extiende la evidencia opcional de condicionamiento, no el auditor canónico aplazado. Alcance adicional justificado por QA: corregir la falsa identidad de directorios de audio ante los flags mutables PINNED/UNPINNED; afecta al postproceso que debe conservar/publicar los recibos. No se relajan controles de sustitución ni de reparse.
 - **Verificación**: `uv run pytest tests/test_generate_inference.py apps/engines/acestep/tests/test_inference_controls.py` en verde y las tomas SFT/Turbo preparadas para T-13.
+- **Verificación actual (2026-11-06)**: 41 pass/0 skip/0 fail, sin importar Torch real. Seis MP3/90 s/48 kHz/estéreo íntegros; seis fuentes CLI locales y 18 salidas válidas, seis preparaciones/capturas; tres controles T-15 preservados coinciden por hashes de caption/letra con las seis T-16. Recibos en `.cache/dev-cycle/20261106-m0-t16/qa/`. Los tokens/resolución observados coinciden por par, pero **no está demostrada la igualdad de los códigos de audio LM**: falta su huella independiente y el hash de argumentos incluye pasos/CFG distintos. Tampoco se conserva la inicialización histórica PT. No se cierra la comparación por estos resultados parciales.
+- **Corrección elegida**: campos observados opcionales de v2, manteniendo cinco etapas y lectura histórica: huella de `audio_code_string` real en `dit_resolution` y backend observado en la frontera LM. Hash de envelope JSON tipado, sin códigos en claro ni valores planificados como si fueran observados; validar semántica cuando estén presentes y exigir presencia para certificar condicionamiento. No reescribir activos antiguos ni completarles hashes. La evidencia que falta sólo puede obtenerse en futuras tomas cuando la GPU esté disponible.
+- **RED histórico**: `test_descriptor_sft_identity_and_limits` falló por identidad Turbo frente a SFT; `test_adapter_sft_load_identity` por MODEL_NOT_FOUND frente a VRAM_EXCEEDED; `test_effective_defaults` por ausencia de 8/50 pasos · 2026-10-06, ledger de `36d4e99`. Los seis archivos de controles actuales son iguales al rescate.
+- **RED del fix (2026-11-06)**: `test_capture_binds_native_resolution_and_instructions[False-False-None]` falló por `KeyError: audio_codes_sha256`; `test_capture_observes_runtime_backend_without_plan_fallback[pt]` por `KeyError: lm_backend_observed`, y `[vllm]` por no lanzar EngineError; `test_conditioning_present_malformed_is_rejected[audio_codes_sha256-None]` por no rechazar el campo; `test_conditioning_strict_requires_both_observations_in_v2[2-fields0]` por falta del argumento nuevo. Cada rojo se ejecutó solo antes del código; logs en `.cache/dev-cycle/20261106-m0-t16/fix1/red-*.log`.
+- **Fix software, previo a revisión/QA**: 230 tests focales y 41 canónicos verdes; 163 tests con cobertura oficial. Delta ejecutable contra `3dede62`: 16/16 líneas, 100 %, sin exclusiones; no es la cobertura global de los módulos. Ruff verde. La corrida ampliada inicial tuvo dos fallos: fixture de ULID corregida y fallo Windows de atributos de directorio intermitente; contraste aislado baseline/actual/workingtree pasó, sin demostrar defecto preexistente ni regresión. No se declara verde de toda la suite. Evidencia en `fix1/evidence.md` y `changed-lines-coverage.json`. Los seis recibos históricos pasan el lector compatible y fallan el modo fuerte por observaciones ausentes; activos preservados. T-16 continúa en-progreso.
+- **Entrega CPU aceptada (2026-11-06)**: tras fix2 y segunda revisión A/B sin gaps, QA2 ejecuta una única selección ampliada: **437 pass / 9 skip / 0 fail**, 446 casos, exit 0, 23,11 s. Incluye los 41 canónicos, dos tests nativos antes rojos y 13 regresiones nuevas. Ruff8 exit 0; ledger0 incoherencias/25 avisos históricos; scope congelado14 archivos exit 0 sin exclusiones/avisos. Cobertura oficial nueva: **18/18 sentencias afectadas**, 100 %, con expresión pipeline38→Return32 incluida; directorios completos74,56 % combinado, sin afirmar80 % global. Seis copias/seis fuentes/18 salidas fuente válidas, legacy6 válidos/strict6 rechazos por ausencia histórica. 14 SHA propios iguales antes/después y71 ajenos iguales al estado al retomar (dos journals ya diferían del original). Sin Torch/GPU/Ollama/SQLite/Claude. [Informe](testing/condicionamiento-cpu-2026-11-06.md); raw `.cache/dev-cycle/20261106-m0-t16/qa-fixed2/`. La entrega queda en la rama; T-16 permanece en-progreso hasta completar evidencia real de las comparaciones.
 - **Changelog**: Controles de inferencia SFT/Turbo en la CLI y en ACE-Step, con tomas privadas comparables.
 
 ### T-17 — Auditoría de fidelidad de prompts hasta LM y DiT
@@ -193,3 +200,42 @@ verificacion: obligatoria
 ## Revisión de dos lentes — intento 1: T-20, arquitectura documentada — sin gaps
 
 Lentes A/B sobre tres archivos propios congelados desde `6ac6920`; scope exit 0, sin avisos ni exclusiones nuevas. C/D no aplican al delta documental. Ambas leen el diff completo y no encuentran Critical/Important/Minor: fuentes, comandos y separación CPU/mock frente a GPU/Ollama coherentes. A verifica ledger, tres SHA propios y seis de configuración; B repite `config -q` con default/studio/engines/* (exit 0) y comprueba 52 destinos locales, ninguno roto. Raw en `.cache/dev-cycle/20261106-m0-t20/review-1/`; QA documental posterior aprobada y T-20 cerrada. No se cierra M0/M1 ni se aprueba conectividad o inferencia por estos checks.
+
+## Revisión de dos lentes — intento 1: T-16, captura compatible — sin gaps
+
+Lentes A/B sobre diez archivos congelados desde `3dede62`; scope exit 0, sin exclusiones ni avisos; selector C/D false. Cero Critical/Important/Minor. A verifica conformidad, cinco RED, cobertura oficial 16/16 líneas del delta y ejecuta 19 tests del snapshot; B ejecuta 67 tests y siete sondas adicionales. Observaciones runtime/resolver, privacidad, compatibilidad y límites documentados coherentes. Raw en `.cache/dev-cycle/20261106-m0-t16/review-1/`. Esta aprobación del delta no cierra T-16 ni sustituye QA.
+
+| Criterio | A | B | Evidencia |
+|---|---|---|---|
+| Huella real tipada y backend observado | ✓ | ✓ | Resolver y llamada LM, sin fallback al plan |
+| Compatibilidad, rechazo semántico y modo fuerte | ✓ | ✓ | Matriz versión/presencia/malformados |
+| Privacidad y publicación exacta | ✓ | Sin defectos | Sin códigos en claro, payload preservado |
+| Alcance, constitución, TDD y límites | ✓ | Sin defectos | Cinco RED, revisión completa y fuentes congeladas |
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| — | — | Sin hallazgos | T-16 | No necesaria | `.cache/dev-cycle/20261106-m0-t16/review-1/verdicts.md` |
+
+**QA posterior, no aprobada:** una corrida ampliada de 433 tests: 422 pass, 9 skip, 2 fail, exit 1 (23,29 s). Fallan `test_native_child_creation_preserves_directory_identity` y `test_native_empty_enumeration_preserves_directory_identity`, con atributos Windows 16→1572880 y FileId estable. Fixture ULID corregida ya pasa. Diez SHA propios y 71 ajenos intactos; seis recibos históricos válidos y seis rechazos fuertes correctos. Sin Torch/GPU/Ollama. Ruff/ledger exit 0. Evidencia `.cache/dev-cycle/20261106-m0-t16/qa-final/`; no se repite para obtener verde. Depuración sistemática en curso: aún no está probada la clasificación baseline/regresión ni la causa del cambio de atributos.
+
+**Depuración posterior (fases 1–3):** AST exacto de `_directory_identity` actual y base `3dede62`, con el mismo SHA, reproduce determinísticamente falsa desigualdad con 0x10→0x180010 y dev/ino/mode/tag iguales. Una máscara acotada sólo en memoria conserva esa identidad y mantiene rechazo de reparse/tipo y diferenciación por dev/ino/mode/otros atributos. Prueba nativa única: ambos directorios nacen ya con 0x180010 y no cambian; no reproduce el disparador intermitente del SO. La causa del falso cambio de identidad sí está aislada al código previo, no a la nueva captura. No se atribuye a ningún proveedor del SO. Evidencia `.cache/dev-cycle/20261106-m0-t16/windows-diagnosis/`; se autoriza corrección mínima con nuevo TDD antes de otra revisión y QA.
+
+**Fix2, fase 4 previa a revisión/QA:** RED `test_residency_metadata_preserves_same_directory[pinned]` falló con `AssertionError: 524304 != 16`, exit 1, 2026-11-06T01:37:49+01:00; después del cambio mínimo el mismo FQ pasa. Regresión final 22 pass; paquete completo `audio-post`: 231 pass/9 skip, exit 0, Ruff/formato verdes. Pipeline sólo excluye PINNED/UNPINNED además del bit ya excluido; conserva dev/ino/mode/tag, resto de atributos y guardas. Cobertura oficial combinada del paquete 87,53 %, pipeline 95,56 %; sentencia Return que contiene la expresión cambiada cubierta (línea 32, expresión 38). No es un porcentaje de todas las líneas nuevas. Evidencia `.cache/dev-cycle/20261106-m0-t16/fix2/{evidence.md,red-pinned.log,full-final.log,coverage-final.json,freeze.json}`. Candidato de conocimiento propuesto, sin curación ni exportación. QA anterior sigue roja; hace falta nueva QA del conjunto.
+
+## Revisión de dos lentes — intento 2: T-16, identidad Windows — sin gaps
+
+Traspaso del intento 1 conservado: seis archivos de captura/lectura sin cambios ni evidencia nueva que reabra su aprobación. Catorce archivos congelados desde `3dede62`, scope exit 0 sin exclusiones/avisos, C/D false. A/B leen el diff completo y evalúan el incremental. A ejecuta22 tests y verifica14 SHA, AST/coverage y ledger; B ejecuta19 pass/3 deselected para limitar escrituras fuera de sus temporales. Esos tres casos sí se ejecutan en la QA2 posterior.
+
+| Criterio | A | B | Evidencia |
+|---|---|---|---|
+| Alcance adicional justificado | ✓ | Sin defectos | Postproceso/publicación, Archivos de T-16 |
+| Residencia mutable conserva identidad | ✓ | ✓ | Cinco variantes y transiciones inversas |
+| Sustitución/dev/ino/mode/otros atributos diferenciados | ✓ | ✓ | Controles con flags iguales y sustitución nativa |
+| Reparse/tag/no directorio rechazados | ✓ | ✓ | Guardas intactas, flags combinados |
+| TDD, documentación y límites coherentes | ✓ | ✓ | RED real, propuesta pendiente, sin afirmaciones GPU |
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| — | — | Sin hallazgos | T-16 | No necesaria | `.cache/dev-cycle/20261106-m0-t16/review-2/verdicts.md` |
+
+**QA2 posterior aceptada sólo como software CPU:** única corrida437 pass/9 skip/0 fail,446 casos,23,11 s; dos nativas antes rojas y13 regresiones nuevas pasan. Delta18/18 sentencias afectadas100 %, directorios completos74,56 % combinado (no80 % global). Scope14 exit0; Ruff8/ledger exit0. Activos históricos íntegros y archivos ajenos preservados contra estado al retomar. Candidato pendiente, sin promoción ni exportación. [Informe](testing/condicionamiento-cpu-2026-11-06.md); raw `.cache/dev-cycle/20261106-m0-t16/qa-fixed2/`. T-16 continúa en-progreso; entrega en su rama hasta completar comparaciones reales. No se integra en main ni se cierran M0/M1 por estos resultados.
