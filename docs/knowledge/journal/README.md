@@ -20,19 +20,21 @@ Este índice lo regenera `journal.py index`; no lo edites.
 
 | Fecha | Iniciativa | Resumen | Fuente |
 |---|---|---|---|
+| [2026-11-06](2026-10-05-m0-entorno-y-motor-4.md) | m0-entorno-y-motor | continua con dev-cycle | hook |
+| [2026-10-24](2026-10-23-m0-entorno-y-motor.md) | m0-entorno-y-motor | analiza el proyecto primero, se ha empezado con codex | hook |
+| [2026-10-12](2026-10-12-m0-entorno-y-motor-2.md) | m0-entorno-y-motor | Sesión sobre m0-entorno-y-motor | hook |
 | [2026-10-12](2026-10-12-m0-entorno-y-motor.md) | m0-entorno-y-motor | Sesión sobre m0-entorno-y-motor | hook |
-| [2026-10-11](2026-10-11-m0-entorno-y-motor-2.md) | m0-entorno-y-motor | Sesión sobre m0-entorno-y-motor | hook |
 | [2026-10-11](2026-10-11-m0-entorno-y-motor.md) | m0-entorno-y-motor | Sesión sobre m0-entorno-y-motor | hook |
-| [2026-10-09](2026-10-05-m0-entorno-y-motor-4.md) | m0-entorno-y-motor | continua con dev-cycle | hook |
-| [2026-10-08](2026-10-08-m0-entorno-y-motor-2.md) | m0-entorno-y-motor | Sesión sobre m0-entorno-y-motor | hook |
+| [2026-10-11](2026-10-11-m0-entorno-y-motor-2.md) | m0-entorno-y-motor | Sesión sobre m0-entorno-y-motor | hook |
 | [2026-10-08](2026-10-08-m0-entorno-y-motor.md) | m0-entorno-y-motor | Sesión sobre m0-entorno-y-motor | hook |
+| [2026-10-08](2026-10-08-m0-entorno-y-motor-2.md) | m0-entorno-y-motor | Sesión sobre m0-entorno-y-motor | hook |
 | [2026-10-07](2026-10-07-m0-entorno-y-motor.md) | m0-entorno-y-motor | Sesión sobre m0-entorno-y-motor | hook |
+| [2026-10-06](2026-10-06-m0-entorno-y-motor.md) | m0-entorno-y-motor | Sesión sobre m0-entorno-y-motor | hook |
 | [2026-10-06](2026-10-06-m0-entorno-y-motor-3.md) | m0-entorno-y-motor | Sesión sobre m0-entorno-y-motor | hook |
 | [2026-10-06](2026-10-06-m0-entorno-y-motor-2.md) | m0-entorno-y-motor | Sesión sobre m0-entorno-y-motor | hook |
-| [2026-10-06](2026-10-06-m0-entorno-y-motor.md) | m0-entorno-y-motor | Sesión sobre m0-entorno-y-motor | hook |
+| [2026-10-05](2026-10-05-m0-entorno-y-motor.md) | m0-entorno-y-motor | Sesión sobre m0-entorno-y-motor | hook |
 | [2026-10-05](2026-10-05-m0-entorno-y-motor-6.md) | m0-entorno-y-motor | continua con dev-cycle de custom-agents | hook |
 | [2026-10-05](2026-10-05-m0-entorno-y-motor-5.md) | m0-entorno-y-motor | continua con dev-cycle | hook |
 | [2026-10-05](2026-10-05-m0-entorno-y-motor-3.md) | m0-entorno-y-motor | continua con dev-cycle | hook |
 | [2026-10-05](2026-10-05-m0-entorno-y-motor-2.md) | m0-entorno-y-motor | Sesión sobre m0-entorno-y-motor | hook |
-| [2026-10-05](2026-10-05-m0-entorno-y-motor.md) | m0-entorno-y-motor | Sesión sobre m0-entorno-y-motor | hook |
 | [2026-09-28](2026-09-28-m0-entorno-y-motor.md) | m0-entorno-y-motor | /custom-agents:setup | hook |

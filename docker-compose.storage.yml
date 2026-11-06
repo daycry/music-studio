@@ -1,0 +1,102 @@
+# ADR-0069/0071. Override preparado, NO autoriza startup sin preflight nativo.
+# Ejecutar Compose desde el contexto Linux que ve el mount acreditado.
+# create_host_path:false evita el fallback mkdir; no demuestra UUID/ext4.
+services:
+  # UID 19000 pertenece únicamente a este proceso. Sin healthcheck/exec,
+  # namespaces compartidos ni puertos: la autoridad es el IPC fresco protegido.
+  storage-guard:
+    image: music-studio/storage-guard:m1-t05
+    build:
+      context: .
+      dockerfile: apps/storage-guard/Dockerfile
+    profiles: [studio, engines]
+    user: "19000:10001"
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      STUDIO_STORAGE_UUID: ${STUDIO_STORAGE_UUID:?Falta UUID ext4 autorizado del helper}
+    volumes:
+      - type: bind
+        source: ${STUDIO_STORAGE_ROOT:?Falta mount ext4 acreditado por preflight}
+        target: /data
+        bind:
+          create_host_path: false
+  server:
+    user: "10001:10001"
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    # Orden de arranque; no sustituye la validación IPC de cada consumidor.
+    depends_on:
+      storage-guard:
+        condition: service_started
+    environment:
+      STUDIO_STORAGE_UUID: ${STUDIO_STORAGE_UUID:?Falta UUID ext4 acreditado}
+    volumes:
+      - type: bind
+        source: ${STUDIO_STORAGE_ROOT:?Falta mount ext4 acreditado por preflight}
+        target: /data
+        bind:
+          create_host_path: false
+  engine-mock:
+    user: "10001:10001"
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    depends_on:
+      storage-guard:
+        condition: service_started
+    environment:
+      STUDIO_STORAGE_UUID: ${STUDIO_STORAGE_UUID:?Falta UUID ext4 acreditado}
+    volumes:
+      - type: bind
+        source: ${STUDIO_STORAGE_ROOT:?Falta mount ext4 acreditado por preflight}
+        target: /data
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${STUDIO_STORAGE_ROOT:?Falta mount ext4 acreditado por preflight}/tmp
+        target: /data/tmp
+        bind:
+          create_host_path: false
+  engine-analysis:
+    user: "10001:10001"
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    depends_on:
+      storage-guard:
+        condition: service_started
+    environment:
+      STUDIO_STORAGE_UUID: ${STUDIO_STORAGE_UUID:?Falta UUID ext4 acreditado}
+    volumes:
+      - type: bind
+        source: ${STUDIO_STORAGE_ROOT:?Falta mount ext4 acreditado por preflight}
+        target: /data
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${STUDIO_STORAGE_ROOT:?Falta mount ext4 acreditado por preflight}/tmp
+        target: /data/tmp
+        bind:
+          create_host_path: false
+  engine-acestep:
+    user: "10001:10001"
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    depends_on:
+      storage-guard:
+        condition: service_started
+    environment:
+      STUDIO_STORAGE_UUID: ${STUDIO_STORAGE_UUID:?Falta UUID ext4 acreditado}
+    volumes:
+      - type: bind
+        source: ${STUDIO_STORAGE_ROOT:?Falta mount ext4 acreditado por preflight}
+        target: /data
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${STUDIO_STORAGE_ROOT:?Falta mount ext4 acreditado por preflight}/tmp
+        target: /data/tmp
+        bind:
+          create_host_path: false
