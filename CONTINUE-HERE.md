@@ -13,11 +13,12 @@ Software T-16 aceptado en CPU: 437 pass/9 skip. No recertificar audios históric
 [Benchmark](docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/benchmark-basico-2026-11-06.md). El guard no certifica ausencia absoluta de paginación WSL.
 **T-08 cerrada:** CPU 48+1 pass, GPU 4 pass/0 skip; A/B y QA aprobadas, sin cambios de producto.
 **Abierto:** M0 tiene17 completadas/3 canceladas; sólo T-13 pendiente. M1 tiene15 completadas/2 canceladas; T-16 depende de T-13, capacidad verificada y canción real desde web/escucha.
-**Después:** escuchar hoja A/B, exportar valoraciones y decisión T-13. No hay override unverified en server. Claude CLI sólo tras cierre real de M1; aún no invocado.
+**T-13 en curso:** el propietario ya escuchó y rechaza las seis tomas por falta de sincronía voz/música y distancia con Suno; sin modelo aceptado. [Búsqueda ampliada: 18 opciones](docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/modelos-locales-t13-2026-11-06.md): viabilidad Music3/HeartMuLa, ACE LM mayor/XL como controles; sin pesos nuevos ni GPU. Separar generación libre de cover. No repetir la petición de esa escucha. Claude CLI sólo tras cierre real de M1.
 
 **Demo:** http://127.0.0.1:3000/create · API8000, sólo mock CPU. Proyecto `music-studio-e2e-368b45c362fb`, tres servicios intactos.
 Compose privado `.cache/dev-cycle/20261105-t16-readme/compose.demo.json`; conservar datos e imágenes previos.
 **Preservar:** 71 archivos ajenos y68 fuentes según `.cache/dev-cycle/20261106-m0-t16/gpu-pairs/initial.json`; no restaurar journals ni reactivar M2/almacenamiento.
 No SQLite viva desde Windows ni ejecutar/importar helpers históricos GPU de `.cache/`.
-**Git:** rama de entrega indicada, cierre por fast-forward a `main`; SHA y push en `.cache/dev-cycle/20261106-m0-t16/gpu-pairs/final-validation.json`. Sólo stage explícito.
+**Git:** investigación actual en `m0/t-13-escucha-y-modelo`; T-13 abierta, sin merge a `main`. Entrega T-16 previa en `main`, SHA y push en `.cache/dev-cycle/20261106-m0-t16/gpu-pairs/final-validation.json`. Sólo stage explícito.
 Limpieza: 55 contenedores,30 referencias antiguas de imágenes,6 copias de revisión (128 MB) y214 temporales pytest (1,47 GB) retirados; motor sustituido eliminado. Recibos `.cache/cleanup/20261106/`; copia adicional T-16 retenida por bloqueo automático.
+Modelos: 65,50 GB con caché; el propietario solicita borrarlos. La revisión automática rechazó el borrado («blocked by policy»); siguen presentes. Conservar lock; Ollama fuera del alcance.

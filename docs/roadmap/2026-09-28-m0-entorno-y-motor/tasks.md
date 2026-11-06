@@ -146,8 +146,13 @@ verificacion: obligatoria
 
 ### T-13 — Escucha y decisión de modelo
 - **Descripción**: Escucha a ciegas del propietario (T-14, T-15, T-16 y T-09) y decisión de modelo y modo por defecto registrada en un ADR.
-- **Estado**: borrador
+- **Estado**: en-progreso
 - **Dependencias**: T-09
+- **Archivos**: `docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/modelos-locales-t13-2026-11-06.md`, `CONTINUE-HERE.md`.
+- **Escucha del propietario (2026-11-06)**: rechaza las seis tomas nuevas de T-16; percibe falta de sincronía entre voz y música y un resultado alejado del original de Suno. Sin ganador ni modelo aceptado. La comparabilidad técnica 3/3 permanece acreditada; no equivale a aceptación musical. El tamaño del modelo como causa es una hipótesis sin demostrar. Solicita investigar modelos musicales MoE para aprovechar mejor los recursos; investigación sin descargar pesos ni ejecutar nuevas tomas.
+- **Investigación inicial (2026-11-06)**: MoE reduce cómputo activo, pero no garantiza menor residencia de pesos ([explicación de Hugging Face](https://huggingface.co/blog/moe)). StepAudio 3 Music publica un planificador MoE, con demo oficial mediante API; sin ejecución local verificada. Candidato adicional: [MiniMax Music3](https://huggingface.co/MiniMaxAI/MiniMax-Music3), arquitectura 8B global +0,6B local; el proveedor documenta offload por capas para 8GB. Existen perfiles GGUF comunitarios. Ninguna de esas afirmaciones verifica VRAM/RAM, rendimiento, español ni calidad en esta RTX; integración y licencia pendientes, sin instalar ni cambiar el modelo predeterminado.
+- **Investigación ampliada (2026-11-06)**: [18 opciones/variantes y fuentes](testing/modelos-locales-t13-2026-11-06.md). Prioridad de viabilidad: MiniMax Music3 y HeartMuLa 3B; ACE LM mayor/XL como controles. Español `es` contrastado en metadatos oficiales HeartMuLa; no acreditado en Music3. Separar generación libre de cover y calidad de transporte de prompts; MoE/MoT no garantizan residencia baja. LeVo/YuE2/MuLaCover y otras opciones documentadas con límites de memoria, disponibilidad/licencia. Seis revisiones HF consultadas, sólo metadatos; sin descargar pesos ni usar GPU. TDD n/a: prosa. T-13 sigue abierta, sin ganador ni modelo aceptado.
+- **Limpieza solicitada (2026-11-06)**: el propietario pide eliminar los modelos descargados del proyecto (65,50 GB con caché). La revisión automática rechaza el borrado con «blocked by policy», sin detalle adicional; no se ejecutó y los modelos permanecen. Conservar `models.lock.json`; Ollama compartido fuera del alcance. La investigación no implica que haya pesos nuevos descargados.
 - **Verificación**: ADR con el modelo y el modo por defecto elegidos por el propietario y `models/models.lock.json` coherente.
 
 ### T-14 — Comparación privada de «Libre»: shift 1 frente a 3
