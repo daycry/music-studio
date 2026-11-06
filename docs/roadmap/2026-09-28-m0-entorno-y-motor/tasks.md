@@ -24,14 +24,13 @@ verificacion: obligatoria
 | Fase 1 — Preparación | 2 | 2 | 100% | 0 |
 | Fase 2 — Cimientos compartidos | 3 | 3 | 100% | 0 |
 | Fase 3 — Motor musical | 3 | 3 | 100% | 0 |
-| Fase 4 — Medición y elección | 7 | 13 | 54% (7 de 10 vigentes) | 3 |
-| **TOTAL** | **15** | **21** | **83% de lo vigente (15/18)** | **3** |
+| Fase 4 — Medición y elección | 8 | 13 | 62% (8 de 10 vigentes) | 3 |
+| **TOTAL** | **16** | **21** | **89% de lo vigente (16/18)** | **3** |
 
 **Para cerrar M0 falta:**
 
-1. Completar las capturas reales comparables de T-16; su entrega software CPU ya está aceptada. T-08 y T-20 cerradas el 2026-11-06.
-2. Hacer el benchmark básico de T-09.
-3. La escucha y la decisión del propietario (T-13).
+1. Completar las capturas reales comparables de T-16; su entrega software CPU ya está aceptada. T-08, T-09 y T-20 cerradas el 2026-11-06.
+2. La escucha y la decisión del propietario (T-13).
 
 ---
 
@@ -112,9 +111,20 @@ verificacion: obligatoria
 
 ### T-09 — Benchmark básico en la 5070
 - **Descripción**: **Recortado (ADR-0089).** Medir tiempo por canción, VRAM de pico y si hay desbordamiento a RAM con el modo por defecto de ACE-Step en la 5070. La auditoría canónica y el presupuesto absoluto quedan fuera.
-- **Estado**: en-progreso
+- **Estado**: completado
 - **Dependencias**: T-07, T-19
+- **Archivos**: `docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/benchmark-basico-2026-11-06.md`, `CONTINUE-HERE.md`. Verificación del producto existente, sin cambios de código; TDD n/a: documentación y ejecución.
 - **Verificación**: una tabla en este ledger con 3 generaciones (≈2 min de canción): duración, VRAM de pico (`nvidia-smi`) y `spilled=false`.
+- **Salida ejecutada (2026-11-06)**: tres jobs CLI independientes en Docker con Turbo/BF16/PT, ocho pasos por defecto, semilla 1/2/3. Tres terminales `done` originales, CLI exit 0; tabla en segundos y MiB:
+
+  | Semilla | Audio real (s) | CLI completa (s) | Inferencia (s) | Pico host (`nvidia-smi`, MiB) | `spilled` |
+  |---|---:|---:|---:|---:|---|
+  | 1 | 120,00 | 229,56 | 30,69 | 9.376 | `false` |
+  | 2 | 120,00 | 185,49 | 33,74 | 9.394 | `false` |
+  | 3 | 120,00 | 182,51 | 37,28 | 9.394 | `false` |
+
+- **Alcance medido**: proceso recargado por job, sin vaciar cachés de archivos. `spilled:false` literal del guard allocator, no certificado absoluto de paginación WSL. El extractor QA falló tras la primera generación válida; NDJSON conservado y lectura corregida, sin repetirla. [Informe](testing/benchmark-basico-2026-11-06.md); raw `.cache/dev-cycle/20261106-m0-t09/qa/`.
+- **Revisión de dos lentes — intento 1 (T-09)**: A/B sin hallazgos; scope 0, sin exclusiones ni avisos; C/D no activadas. QA sin UI por diseño. QA final `PASS_T09_FINAL_DOCS_EVIDENCE`: 37 comprobaciones conformes, 0 gaps; ledger 0 incoherencias/25 avisos, cobertura n/a, 18 enlaces válidos. El orquestador acepta el cierre técnico; M0/M1 y su aceptación musical siguen abiertos. Detalle en el informe, sin recibos crudos versionados.
 - **Changelog**: Benchmark básico de ACE-Step en la RTX 5070: tiempo por canción y VRAM de pico.
 
 ### T-10 — Matriz de capacidades verificadas
