@@ -6,11 +6,13 @@
 
 **M0:** 14 tareas completadas, 3 canceladas; abiertas T-08/T-09/T-13/T-16. T-20 documental cerrada en main `3dede62`, con revisión A/B, Compose validado en cuatro perfiles y QA sin UI (`.cache/dev-cycle/20261106-m0-t20/`). No acredita ejecución GPU ni conectividad Ollama.
 
+**Ahora, M0/T-08:** informe CPU cerrado en rama `m0/t-08-verificacion-cpu`, apilada sobre `f7d7c39` de T-16. Suite completa en Docker sin GPU con PyTorch CPU real: **48 pass/0 skip/4 deselected**; sentencias90,58 %/ramas81,69 %. Primera corrida roja conservada, por lock omitido en el harness QA; corregido sólo el entorno. Suplemento independiente beats real100 %CPU: **1 pass**,120 BPM/61beats sobre clic sintético30 s, peso seguro verificado, hijo separado y descarga comprobada. Guard padre/hijo registra0 intentosCUDA, sin inicialización. A/B sin gaps y QA documental aprobada; sin cambios del engine, contenedores QA retirados. [Informe](docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/analysis-cpu-2026-11-06.md). La tarea sigue en-revision por las tres pruebas reales GPU pendientes; el propietario ha autorizado ejecutarlas después de cerrar este informe. Evidencia `.cache/dev-cycle/20261106-m0-t08/qa/`.
+
 **En curso, M0/T-16:** entrega software CPU aceptada en rama `m0/t-16-verificacion-cpu-tomas`, sin cerrar la tarea ni integrar en main. Captura opcional v2 y lector compatible/estricto implementados; falso cambio de identidad Windows corregido tras diagnóstico del mismo defecto en base/actual. A/B intentos 1 y 2 sin gaps; QA2 única **437 pass/9 skip/0 fail**, delta **18/18 sentencias afectadas** cubiertas (no cobertura global). La QA previa roja se conserva. [Informe](docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/condicionamiento-cpu-2026-11-06.md). Seis tomas íntegras y control T-15 por hash comprobado, pero sus recibos históricos carecen de huella independiente de códigos y backend observado; no certificar emparejamiento completo. Sin GPU ni modificación de activos antiguos. Evidencia `.cache/dev-cycle/20261106-m0-t16/qa-fixed2/`.
 
 ## Restricciones
 
-- Docker/WSL disponibles; **GPU/Ollama fuera de las pruebas actuales**. No cargar modelos ni alterar servicios ajenos.
+- Docker/WSL disponibles. **El propietario autoriza las pruebas GPU de T-08 después de cerrar el informe CPU.** Aplicar AGENTS.md §4.8: consultar y descargar temporalmente el modelo cargado de Ollama, comprobar VRAM ≲1,6 GB antes de cargar y restaurar ese modelo al terminar. No detener servicios ni alterar aplicaciones ajenas.
 - No abrir SQLite viva desde Windows. Preservar los cambios ajenos del journal y restos M2/almacenamiento; 71 archivos iguales al estado al retomar. Dos journals ya diferían del baseline original; no restaurarlos ni incluirlos en la entrega.
 - Sólo el orquestador actualiza el ledger. Ningún verde mock equivale a escucha o cierre musical.
 
@@ -31,8 +33,8 @@
 
 ## Siguiente puerta
 
-1. M0/T-16: cuando se habilite GPU, obtener nuevas capturas completas y verificar ambos recibos de cada par en modo fuerte, además de las igualdades de texto/metadata/controles. Los seis MP3 existentes en `data/eval/libre-sft/01M47Q4EJZK09RBPA0ECWC57D4/` son íntegros, pero no recuperan la identidad de códigos LM ausente; conservarlos como referencia histórica. No ejecutar helpers históricos `.cache/dev-cycle/t16/` que pueden arrancar GPU. No hay nuevas generaciones autorizadas mientras la GPU siga fuera de estas pruebas.
-2. Cerrar M0/T-08/T-09/T-13 cuando se pueda usar GPU: validación del engine de análisis, benchmark recortado y escucha/decisión de modelo/modo del propietario. No sustituir esa decisión por los resultados mock.
+1. Ejecutar las pruebas GPU de M0/T-08 tras el cierre CPU autorizado: transcripción/CLAP/Aesthetics y batch completo, con un modelo residente y descarga real. T-08 ya tiene48 tests CPU y suplemento real de beats aprobados. T-09/T-13 conservan benchmark recortado y escucha/decisión de modelo/modo del propietario; no sustituirlos por los resultados mock.
+2. M0/T-16: obtener nuevas capturas completas en su fase y verificar ambos recibos de cada par en modo fuerte, además de las igualdades de texto/metadata/controles. Los seis MP3 existentes en `data/eval/libre-sft/01M47Q4EJZK09RBPA0ECWC57D4/` son íntegros, pero no recuperan la identidad de códigos LM ausente; conservarlos como referencia histórica. No ejecutar helpers históricos `.cache/dev-cycle/t16/` que pueden arrancar GPU sin el protocolo actual.
 3. M1/T-16: generar desde la web con ACE-Step/GPU reales, manifiesto y telemetría válidos (spilled:false), escucha y aceptación del propietario; conservar M-03 y el ritual final de dev-cycle (docs/changelog/retro). M1 sigue abierto.
 4. **Petición del propietario:** una vez cerrado M1, ejecutar Claude CLI para buscar hallazgos en lo implementado y guardar su informe. CLI instalado; aún NO invocado. No enviar secretos ni datos del usuario.
 5. M2/M3 continúan congelados hasta cerrar M1; no reactivar restos del árbol como si estuvieran aprobados.

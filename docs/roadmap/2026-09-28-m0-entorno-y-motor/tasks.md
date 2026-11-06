@@ -103,7 +103,10 @@ verificacion: obligatoria
 - **Descripción**: Contenedor de análisis que usan M0 (evaluación) y M1 (beats).
 - **Estado**: en-revision
 - **Dependencias**: T-03, T-02, T-19
+- **Archivos**: `docs/roadmap/2026-09-28-m0-entorno-y-motor/testing/analysis-cpu-2026-11-06.md`, `CONTINUE-HERE.md`. El engine, sus tests y dependencias se cotejan por SHA sin cambios de producto.
+- **TDD n/a: verificación sin código nuevo**. Se ejecutan las pruebas existentes dentro del runtime Docker, sin instalar PyTorch en el host ni acceder a GPU.
 - **Verificación**: `uv run pytest apps/engines/analysis -m "not gpu"` en verde **y** `docker compose run --rm engine-analysis uv run pytest -m gpu` en verde. Pendiente de ejecutar después del reencauce.
+- **Verificación CPU (2026-11-06)**: rama `m0/t-08-verificacion-cpu`, base apilada `f7d7c39` (T-16 CPU); main permanece en `3dede62`. Runtime Docker runc sin dispositivos GPU, red ni puertos; fuentes/test/dependencias actuales cotejados por SHA con imagen y overlay QA. Primera corrida roja conservada: 39 pass/9 fail/4 GPU deselected, cero skips, por omisión de `models.lock.json` en el harness QA; no se cambia producto. Tras copiar el lock verbatim y verificarlo, segunda corrida completa **48 pass/0 fail/0 skip/4 deselected**, exit 0,20,43 s. Cobertura oficial346/382 sentencias90,58 % y116/142 ramas81,69 %; combinado88,17 %. CUDAguard0 intentos, sin inicialización; fuentes21analysis/49snapshot y71 ajenos iguales. Suplemento separado del test original de beats CPU: **1 pass**, una corrida4,79 s,120 BPM/61beats en clic sintético30 s; peso safetensors81.031.368bytes verificado por SHA, proceso hijo separado y unload200→terminado. Guard heredado registra0 intentosCUDA/initializedfalse en padre/hijo y SIGTERM. No se suman ambos pases como suite única ni se altera su cobertura. T-08 continúa en-revision: tres pruebas GPU reales y batch completo pendientes. [Informe](testing/analysis-cpu-2026-11-06.md); raw `.cache/dev-cycle/20261106-m0-t08/qa/` y `qa/beats-cpu/`. Contenedores QA retirados, demo intacta.
 - **Changelog**: Motor local de análisis con transcripción y alineación secuenciales, similitud CLAP, estética y beats en CPU; pesos verificados, caché segura y descarga del proceso hijo.
 
 ### T-09 — Benchmark básico en la 5070
@@ -239,3 +242,21 @@ Traspaso del intento 1 conservado: seis archivos de captura/lectura sin cambios 
 | — | — | Sin hallazgos | T-16 | No necesaria | `.cache/dev-cycle/20261106-m0-t16/review-2/verdicts.md` |
 
 **QA2 posterior aceptada sólo como software CPU:** única corrida437 pass/9 skip/0 fail,446 casos,23,11 s; dos nativas antes rojas y13 regresiones nuevas pasan. Delta18/18 sentencias afectadas100 %, directorios completos74,56 % combinado (no80 % global). Scope14 exit0; Ruff8/ledger exit0. Activos históricos íntegros y archivos ajenos preservados contra estado al retomar. Candidato pendiente, sin promoción ni exportación. [Informe](testing/condicionamiento-cpu-2026-11-06.md); raw `.cache/dev-cycle/20261106-m0-t16/qa-fixed2/`. T-16 continúa en-progreso; entrega en su rama hasta completar comparaciones reales. No se integra en main ni se cierran M0/M1 por estos resultados.
+
+## Revisión de dos lentes — intento 1: T-08, informe CPU — sin gaps
+
+Tres Markdown congelados desde `f7d7c39`; scope exit0 sin exclusiones/avisos, C/D false. A/B leen el diff completo y contrastan los artefactos primarios, sin ejecutar suites adicionales. Fuente del engine y sus tests sin cambios; TDD n/a: verificación existente, no código nuevo.
+
+| Criterio | A | B | Evidencia |
+|---|---|---|---|
+| Alcance documental y fuentes intactas | ✓ | Sin defectos | Tres SHA, fuente21analysis/49snapshot y71 ajenos |
+| Rojo inicial y reparación exclusiva del harness | ✓ | ✓ | Lock omitido; corrida2completa48pass0skip4deselected |
+| Cobertura y ejecuciones separadas | ✓ | ✓ | 346/382sentencias,116/142ramas; suplemento1pass aparte |
+| Beats real CPU, hijo separado y descarga | ✓ | ✓ | Test original→backend→safetensorsCPU→inferencia; unload/SIGTERM |
+| Constitución, estado y límites honestos | ✓ | Sin defectos | T-08 en-revision, sin aceptación GPU ni cierre M0/M1 |
+
+| # | Grado | Gap | Tarea | Corrección | Evidencia |
+|---|---|---|---|---|---|
+| — | — | Sin hallazgos | T-08 | No necesaria | `.cache/dev-cycle/20261106-m0-t08/review-1/verdicts.md` |
+
+**Cierre del informe CPU, sin cierre de T-08:** QA final `PASS_CPU_EVIDENCE_AND_DOCS_ONLY`; tres documentos coinciden con revisión, siete enlaces resueltos, fuente21/49 y71 ajenos iguales. Ledger0 incoherencias/25 avisos históricos; plan sinUI, sin Playwright ni PDF/gate inventado. Dos ejecuciones verificadas por separado:48pass/0skip/4deselected y suplemento1pass120BPM/61beats, guardCUDA0 padre/hijo. No se repiten pruebas. Raw `.cache/dev-cycle/20261106-m0-t08/qa/final-docs/`. El propietario autoriza a continuación las pruebas GPU después de cerrar este informe; sus resultados aún no constan aquí. M0/M1 siguen abiertos y Claude CLI continúa pendiente del cierre real de M1.
